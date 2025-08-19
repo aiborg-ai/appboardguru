@@ -57,6 +57,11 @@ async function handleRegistrationEmail(request: NextRequest) {
   }
 
   const { sanitizedData } = validation
+  
+  // TypeScript assertion: sanitizedData is guaranteed to be defined when isValid is true
+  if (!sanitizedData) {
+    return createErrorResponse('Data validation failed', 500)
+  }
 
   try {
     // Generate secure token for approval links
@@ -66,7 +71,7 @@ async function handleRegistrationEmail(request: NextRequest) {
     const { approveUrl, rejectUrl } = generateApprovalUrls(registrationId, securityToken)
 
     // Create email transporter with validated config
-    const transporter = nodemailer.createTransporter(getSmtpConfig())
+    const transporter = nodemailer.createTransport(getSmtpConfig())
 
     // Verify SMTP connection (in development)
     if (env.NODE_ENV === 'development') {

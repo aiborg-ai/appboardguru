@@ -68,7 +68,7 @@ async function handleApprovalRequest(request: NextRequest) {
 
     // Send approval email to the user
     try {
-      const transporter = nodemailer.createTransporter(getSmtpConfig())
+      const transporter = nodemailer.createTransport(getSmtpConfig())
 
       const approvalEmailHTML = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
