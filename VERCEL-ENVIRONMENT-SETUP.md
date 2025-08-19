@@ -24,12 +24,16 @@ NEXTAUTH_URL=https://appboardguru-nuexkl4gi-h-viks-projects.vercel.app
 
 # Node Environment
 NODE_ENV=production
+
+# AI Configuration (OpenRouter)
+OPENROUTER_API_KEY=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
 ```
 
-### 🚫 AI Features Removed
-- **No AI dependencies** - Anthropic SDK and all AI features have been removed
-- **Simplified codebase** - Focus on core board management functionality
-- **Faster deployment** - No external AI API dependencies
+### 🤖 AI Features Restored with OpenRouter
+- **OpenRouter AI integration** - Using unified API for multiple AI models
+- **Document summarization** - Intelligent analysis of board materials
+- **Interactive AI chat** - Ask questions about documents and governance
+- **Multiple model support** - Access to Claude, GPT, and other models via OpenRouter
 
 ### ✅ Existing Variables (Already Set)
 These should already be configured in Vercel:

@@ -89,7 +89,7 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Successful!</h3>
               <p className="text-gray-600">
-                Your board pack has been uploaded successfully.
+                Your board pack has been uploaded and is being processed for AI analysis.
               </p>
             </div>
           ) : uploadStatus === 'error' ? (
@@ -223,9 +223,10 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
                 <div className="flex items-start space-x-3">
                   <FileText className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
-                    <h4 className="font-medium text-blue-800 mb-1">Document Ready</h4>
+                    <h4 className="font-medium text-blue-800 mb-1">AI Processing</h4>
                     <p className="text-blue-600">
-                      Your document has been uploaded and is ready for board member access.
+                      Your document will be automatically processed for AI summarization and analysis.
+                      This typically takes 2-5 minutes depending on document size.
                     </p>
                   </div>
                 </div>

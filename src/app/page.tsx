@@ -17,8 +17,8 @@ export default function HomePage() {
     },
     {
       icon: <Brain className="h-8 w-8 text-primary-600" />,
-      title: "Efficient Document Processing",
-      description: "Fast document upload and processing with secure access control for efficient board preparation."
+      title: "AI-Powered Analysis",
+      description: "Intelligent document summarization with OpenRouter AI integration for efficient board preparation."
     },
     {
       icon: <FileText className="h-8 w-8 text-primary-600" />,
@@ -117,7 +117,7 @@ export default function HomePage() {
               <span className="text-primary-600 block">Board Management</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Secure board pack management with document organization, 
+              Secure, AI-powered board pack management with intelligent summarization, 
               interactive analysis, and enterprise-grade security for modern board directors.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
