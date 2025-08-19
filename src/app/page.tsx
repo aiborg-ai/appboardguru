@@ -67,6 +67,9 @@ export default function HomePage() {
                 <Link href="#security" className="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   Security
                 </Link>
+                <Link href="/demo" className="text-orange-600 hover:text-orange-700 px-3 py-2 rounded-md text-sm font-medium transition-colors font-semibold">
+                  🚀 Live Demo
+                </Link>
                 <Link href="/auth/signin" className="btn-ghost px-4 py-2">
                   Sign In
                 </Link>
@@ -96,6 +99,7 @@ export default function HomePage() {
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link href="#features" className="block px-3 py-2 text-gray-600 hover:text-primary-600">Features</Link>
               <Link href="#security" className="block px-3 py-2 text-gray-600 hover:text-primary-600">Security</Link>
+              <Link href="/demo" className="block px-3 py-2 text-orange-600 hover:text-orange-700 font-semibold">🚀 Live Demo</Link>
               <Link href="/auth/signin" className="block px-3 py-2 text-gray-600 hover:text-primary-600">Sign In</Link>
               <button 
                 onClick={() => setIsRegistrationOpen(true)}
@@ -121,16 +125,19 @@ export default function HomePage() {
               interactive analysis, and enterprise-grade security for modern board directors.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button 
-                onClick={() => setIsRegistrationOpen(true)}
+              <Link 
+                href="/demo"
                 className="btn-primary px-8 py-3 text-lg flex items-center space-x-2"
               >
-                <span>Request Demo Access</span>
+                <span>🚀 Try Live Demo</span>
                 <ArrowRight className="h-5 w-5" />
-              </button>
-              <Link href="#features" className="btn-secondary px-8 py-3 text-lg">
-                Learn More
               </Link>
+              <button 
+                onClick={() => setIsRegistrationOpen(true)}
+                className="btn-secondary px-8 py-3 text-lg"
+              >
+                Request Full Access
+              </button>
             </div>
           </div>
         </div>
