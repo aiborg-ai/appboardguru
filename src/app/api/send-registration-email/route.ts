@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import nodemailer from 'nodemailer'
 import { generateApprovalUrls } from '@/utils/url'
-import { env, getSmtpConfig, logEnvironmentInfo, getAppUrl } from '@/config/environment'
+import { env, getSmtpConfig } from '@/config/environment'
 import { 
   validateRegistrationData, 
   generateSecureApprovalToken,
@@ -33,8 +33,7 @@ async function handleRegistrationEmail(request: NextRequest) {
     return createRateLimitErrorResponse(900) // 15 minutes
   }
 
-  // Log environment info (development only)
-  logEnvironmentInfo()
+  // Environment info logging removed for production builds
 
   let body: any
   try {
