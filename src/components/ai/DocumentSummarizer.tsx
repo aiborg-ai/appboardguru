@@ -111,7 +111,7 @@ export default function DocumentSummarizer({
                 <Checkbox
                   id="keyPoints"
                   checked={options.includeKeyPoints}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked: boolean) =>
                     setOptions({ ...options, includeKeyPoints: !!checked })
                   }
                   disabled={isLoading}
@@ -125,7 +125,7 @@ export default function DocumentSummarizer({
                 <Checkbox
                   id="actionItems"
                   checked={options.includeActionItems}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked: boolean) =>
                     setOptions({ ...options, includeActionItems: !!checked })
                   }
                   disabled={isLoading}
@@ -139,7 +139,7 @@ export default function DocumentSummarizer({
                 <Checkbox
                   id="generateAudio"
                   checked={options.generateAudio}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked: boolean) =>
                     setOptions({ ...options, generateAudio: !!checked })
                   }
                   disabled={isLoading}
