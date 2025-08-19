@@ -19,7 +19,7 @@ INSERT INTO registration_requests (
   created_at
 ) VALUES 
 (
-  'demo-req-001',
+  gen_random_uuid(),
   'demo.director@boardguru.ai',
   'Demo Director',
   'BoardGuru Demo Corp',
@@ -29,7 +29,7 @@ INSERT INTO registration_requests (
   NOW()
 ),
 (
-  'demo-req-002', 
+  gen_random_uuid(), 
   'jane.smith@techcorp.com',
   'Jane Smith',
   'TechCorp Industries',
@@ -39,7 +39,7 @@ INSERT INTO registration_requests (
   NOW()
 ),
 (
-  'demo-req-003',
+  gen_random_uuid(),
   'approved.user@example.com', 
   'Already Approved User',
   'Example Company',
@@ -67,7 +67,7 @@ INSERT INTO users (
   approved_by
 ) VALUES 
 (
-  'demo-user-001',
+  gen_random_uuid(),
   'demo.director@boardguru.ai',
   'Demo Director',
   'director',
@@ -76,10 +76,10 @@ INSERT INTO users (
   'Chief Executive Officer',
   NOW(),
   NOW(),
-  'admin-user-001'
+  gen_random_uuid()
 ),
 (
-  'admin-user-001',
+  gen_random_uuid(),
   'admin@boardguru.ai',
   'BoardGuru Admin',
   'admin',
@@ -88,7 +88,7 @@ INSERT INTO users (
   'Platform Administrator', 
   NOW() - INTERVAL '30 days',
   NOW() - INTERVAL '30 days',
-  'admin-user-001'
+  gen_random_uuid()
 );
 
 -- 3. Create some demo board packs for testing
@@ -107,28 +107,28 @@ INSERT INTO board_packs (
   watermark_applied
 ) VALUES
 (
-  'demo-pack-001',
+  gen_random_uuid(),
   'Q4 2024 Board Package',
   'Complete quarterly board materials including financial reports, strategic updates, and governance matters.',
   '/demo/q4-2024-board-package.pdf',
   'Q4_2024_Board_Package.pdf',
   2500000,
   'application/pdf',
-  'demo-user-001',
+  (SELECT id FROM users WHERE email = 'demo.director@boardguru.ai'),
   'ready',
   'This quarterly board package covers Q4 2024 performance with revenue growth of 15% YoY. Key highlights include successful product launches, expansion into new markets, and strong financial performance. The package includes detailed financial statements, strategic initiatives progress, risk assessment updates, and recommendations for Q1 2025 priorities.',
   NOW() - INTERVAL '2 days',
   true
 ),
 (
-  'demo-pack-002', 
+  gen_random_uuid(), 
   'Strategic Planning Session Materials',
   'Materials for the upcoming strategic planning session including market analysis and growth opportunities.',
   '/demo/strategic-planning-2025.pdf',
   'Strategic_Planning_2025.pdf',
   1800000,
   'application/pdf',
-  'demo-user-001',
+  (SELECT id FROM users WHERE email = 'demo.director@boardguru.ai'),
   'ready',
   'Strategic planning materials for 2025 focusing on digital transformation, market expansion, and operational efficiency. Includes competitive analysis, market opportunities assessment, resource allocation recommendations, and key performance indicators for the upcoming fiscal year.',
   NOW() - INTERVAL '5 days',
@@ -146,29 +146,29 @@ INSERT INTO audit_logs (
   created_at
 ) VALUES
 (
-  'audit-001',
-  'demo-user-001',
+  gen_random_uuid(),
+  (SELECT id FROM users WHERE email = 'demo.director@boardguru.ai'),
   'document_uploaded',
   'board_pack',
-  'demo-pack-001',
+  gen_random_uuid(),
   '{"file_name": "Q4_2024_Board_Package.pdf", "file_size": 2500000}',
   NOW() - INTERVAL '2 days'
 ),
 (
-  'audit-002',
-  'demo-user-001', 
+  gen_random_uuid(),
+  (SELECT id FROM users WHERE email = 'demo.director@boardguru.ai'), 
   'document_summarized',
   'board_pack',
-  'demo-pack-001',
+  gen_random_uuid(),
   '{"summary_generated": true, "ai_model": "claude-3-5-sonnet"}',
   NOW() - INTERVAL '2 days'
 ),
 (
-  'audit-003',
-  'admin-user-001',
+  gen_random_uuid(),
+  (SELECT id FROM users WHERE email = 'admin@boardguru.ai'),
   'user_approved',
   'registration_request', 
-  'demo-req-003',
+  gen_random_uuid(),
   '{"approved_user": "approved.user@example.com", "approval_method": "email"}',
   NOW() - INTERVAL '1 day'
 );
