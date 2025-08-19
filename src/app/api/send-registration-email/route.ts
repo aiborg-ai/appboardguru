@@ -1,233 +1,272 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import nodemailer from 'nodemailer'
-import crypto from 'crypto'
-import { generateApprovalUrls, logUrlConfig, getAppUrl } from '@/utils/url'
+import { generateApprovalUrls } from '@/utils/url'
+import { env, getSmtpConfig, logEnvironmentInfo } from '@/config/environment'
+import { 
+  validateRegistrationData, 
+  generateSecureApprovalToken,
+  RateLimiter 
+} from '@/lib/security'
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  createValidationErrorResponse,
+  createRateLimitErrorResponse,
+  withErrorHandling,
+  addSecurityHeaders,
+  validateRequestMethod,
+  getClientIP
+} from '@/lib/api-response'
 
-export async function POST(request: NextRequest) {
+// Rate limiter for email sending (5 emails per 15 minutes per IP)
+const emailRateLimiter = new RateLimiter(5, 5, 15 * 60 * 1000)
+
+async function handleRegistrationEmail(request: NextRequest) {
+  // Validate request method
+  if (!validateRequestMethod(request, ['POST'])) {
+    return createErrorResponse('Method not allowed', 405)
+  }
+
+  // Check rate limiting
+  const clientIP = getClientIP(request)
+  if (!emailRateLimiter.isAllowed(clientIP)) {
+    return createRateLimitErrorResponse(900) // 15 minutes
+  }
+
+  // Log environment info (development only)
+  logEnvironmentInfo()
+
+  let body: any
   try {
-    const body = await request.json()
-    const { fullName, email, company, position, message, registrationId } = body
+    body = await request.json()
+  } catch (error) {
+    return createErrorResponse('Invalid JSON in request body', 400)
+  }
 
-    // Validate required fields
-    if (!fullName || !email || !company || !position || !registrationId) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+  const { registrationId, ...userData } = body
+
+  // Validate registration ID
+  if (!registrationId || typeof registrationId !== 'string') {
+    return createValidationErrorResponse(['Registration ID is required'])
+  }
+
+  // Validate and sanitize user data
+  const validation = validateRegistrationData(userData)
+  if (!validation.isValid) {
+    return createValidationErrorResponse(validation.errors)
+  }
+
+  const { sanitizedData } = validation
+
+  try {
+    // Generate secure token for approval links
+    const securityToken = generateSecureApprovalToken(registrationId)
+
+    // Generate approval URLs
+    const { approveUrl, rejectUrl } = generateApprovalUrls(registrationId, securityToken)
+
+    // Create email transporter with validated config
+    const transporter = nodemailer.createTransporter(getSmtpConfig())
+
+    // Verify SMTP connection (in development)
+    if (env.NODE_ENV === 'development') {
+      try {
+        await transporter.verify()
+        console.log('✅ SMTP connection verified')
+      } catch (error) {
+        console.error('❌ SMTP connection failed:', error)
+        return createErrorResponse('Email service configuration error', 500)
+      }
     }
 
-    // Log URL configuration for debugging
-    logUrlConfig()
-
-    // ENHANCED DEBUGGING: Log all environment variables and URL generation
-    console.log('🚨 DEBUGGING APPROVAL URL GENERATION:')
-    console.log('   NODE_ENV:', process.env.NODE_ENV)
-    console.log('   APP_URL:', process.env.APP_URL)
-    console.log('   VERCEL_URL:', process.env.VERCEL_URL)
-    console.log('   NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
-    console.log('   getAppUrl() result:', getAppUrl())
-
-    // Generate secure token for approve/reject links
-    const securityToken = crypto
-      .createHash('sha256')
-      .update(`${registrationId}-${process.env.NEXTAUTH_SECRET || 'fallback-secret'}`)
-      .digest('hex')
-      .substring(0, 32)
-
-    // Generate environment-aware URLs
-    const { approveUrl, rejectUrl, adminPanelUrl } = generateApprovalUrls(registrationId, securityToken)
-    
-    // LOG THE ACTUAL GENERATED URLS
-    console.log('🚨 GENERATED APPROVAL URLS:')
-    console.log('   Approve URL:', approveUrl)
-    console.log('   Reject URL:', rejectUrl)
-    console.log('   Admin Panel URL:', adminPanelUrl)
-
-    // Create email transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    })
-
-    // Admin notification email with approve/reject buttons
+    // Admin notification email template
     const adminEmailHTML = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">🔔 New Registration Request</h1>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">🔔 New Registration Request</h1>
+          <p style="color: #bfdbfe; margin: 10px 0 0 0; font-size: 16px;">BoardGuru Platform Access Request</p>
         </div>
         
-        <div style="padding: 30px; background: white; border: 1px solid #e5e7eb;">
-          <h2 style="color: #1f2937; margin-bottom: 20px;">Review Registration Request</h2>
+        <div style="padding: 40px; background: white; border: 1px solid #e5e7eb; border-top: none;">
+          <h2 style="color: #1f2937; margin-bottom: 30px; font-size: 24px;">Review Registration Request</h2>
           
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151; width: 30%;">Full Name:</td>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${fullName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Email:</td>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${email}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Company:</td>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${company}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Position:</td>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${position}</td>
-            </tr>
-            ${message ? `
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Message:</td>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${message}</td>
-            </tr>
-            ` : ''}
-          </table>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 30px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #374151; width: 30%;">Full Name:</td>
+                <td style="padding: 8px 0; color: #6b7280;">${sanitizedData.fullName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Email:</td>
+                <td style="padding: 8px 0; color: #6b7280;">${sanitizedData.email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Company:</td>
+                <td style="padding: 8px 0; color: #6b7280;">${sanitizedData.company}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Position:</td>
+                <td style="padding: 8px 0; color: #6b7280;">${sanitizedData.position}</td>
+              </tr>
+              ${sanitizedData.message ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #374151; vertical-align: top;">Message:</td>
+                <td style="padding: 8px 0; color: #6b7280; line-height: 1.5;">${sanitizedData.message}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
           
           <!-- Action Buttons -->
           <div style="text-align: center; margin: 40px 0;">
-            <h3 style="color: #1f2937; margin-bottom: 20px;">Take Action:</h3>
+            <h3 style="color: #1f2937; margin-bottom: 24px; font-size: 20px;">Take Action:</h3>
             
-            <!-- Approve Button -->
-            <a href="${approveUrl}" 
-               style="display: inline-block; background: #059669; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 0 10px; font-weight: 600; font-size: 16px;">
-              ✅ APPROVE REQUEST
-            </a>
+            <div style="display: inline-block; margin: 0 8px;">
+              <a href="${approveUrl}" 
+                 style="display: inline-block; background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                ✅ APPROVE REQUEST
+              </a>
+            </div>
             
-            <!-- Reject Button -->
-            <a href="${rejectUrl}" 
-               style="display: inline-block; background: #dc2626; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 0 10px; font-weight: 600; font-size: 16px;">
-              ❌ REJECT REQUEST
-            </a>
+            <div style="display: inline-block; margin: 0 8px;">
+              <a href="${rejectUrl}" 
+                 style="display: inline-block; background: #dc2626; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                ❌ REJECT REQUEST
+              </a>
+            </div>
           </div>
           
-          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 15px; margin: 20px 0;">
-            <h4 style="color: #0c4a6e; margin: 0 0 10px 0; font-size: 14px;">⚡ One-Click Actions:</h4>
-            <p style="color: #0c4a6e; margin: 0; font-size: 14px;">
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 30px 0;">
+            <h4 style="color: #0c4a6e; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">⚡ One-Click Actions:</h4>
+            <p style="color: #0c4a6e; margin: 0; font-size: 14px; line-height: 1.5;">
               Click the buttons above to instantly approve or reject this registration request. 
               The user will be automatically notified of your decision via email.
             </p>
           </div>
           
-          <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 15px; margin: 20px 0;">
-            <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 14px;">🔐 Security Note:</h4>
-            <p style="color: #92400e; margin: 0; font-size: 14px;">
-              These links are secured with cryptographic tokens and can only be used once. 
-              They will expire automatically after processing.
+          <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">
+              Registration ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${registrationId}</code>
             </p>
           </div>
         </div>
         
-        <div style="background: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #6b7280;">
-          This email was sent automatically from BoardGuru registration system.
-          <br>Registration ID: ${registrationId}
+        <div style="background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px;">
+          This email was sent automatically from the BoardGuru registration system.
         </div>
       </div>
     `
 
-    // Send admin notification
-    await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: process.env.ADMIN_EMAIL || 'hirendra.vikram@boardguru.ai',
-      subject: `🔔 New BoardGuru Registration Request - ${fullName}`,
-      html: adminEmailHTML,
-    })
-
-    // User confirmation email
+    // User confirmation email template
     const userEmailHTML = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">Registration Request Received</h1>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">Registration Request Received</h1>
+          <p style="color: #bfdbfe; margin: 10px 0 0 0; font-size: 16px;">Thank you for your interest in BoardGuru</p>
         </div>
         
-        <div style="padding: 30px; background: white; border: 1px solid #e5e7eb;">
-          <h2 style="color: #1f2937; margin-bottom: 20px;">Thank you for your interest in BoardGuru!</h2>
+        <div style="padding: 40px; background: white; border: 1px solid #e5e7eb; border-top: none;">
+          <h2 style="color: #1f2937; margin-bottom: 24px; font-size: 24px;">Thank you for your interest in BoardGuru!</h2>
           
-          <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px;">
-            Dear ${fullName},
+          <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
+            Dear ${sanitizedData.fullName},
           </p>
           
-          <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px;">
+          <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
             We have received your registration request for BoardGuru, our enterprise board management platform. 
             Your request is being reviewed and you'll receive an email notification once it's processed.
           </p>
           
-          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 15px; margin: 20px 0;">
-            <h3 style="color: #0c4a6e; margin: 0 0 10px 0; font-size: 16px;">What happens next?</h3>
-            <ul style="color: #0c4a6e; margin: 0; padding-left: 20px;">
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 24px; margin: 30px 0;">
+            <h3 style="color: #0c4a6e; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">What happens next?</h3>
+            <ul style="color: #0c4a6e; margin: 0; padding-left: 24px; line-height: 1.6;">
               <li>Our team reviews your request (typically within 24 hours)</li>
-              <li>We verify your company and position details</li>
-              <li>You'll receive an email with the decision and next steps</li>
-              <li>If approved, you'll get immediate access to BoardGuru</li>
+              <li>You'll receive an email notification of the decision</li>
+              <li>If approved, you'll get access instructions and login details</li>
+              <li>You can then start using BoardGuru's powerful features</li>
             </ul>
           </div>
           
-          <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin: 20px 0;">
-            <h4 style="color: #374151; margin: 0 0 10px 0; font-size: 14px;">Your Registration Details:</h4>
-            <p style="color: #6b7280; margin: 0; font-size: 14px;">
-              <strong>Email:</strong> ${email}<br>
-              <strong>Company:</strong> ${company}<br>
-              <strong>Position:</strong> ${position}
-            </p>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 30px 0;">
+            <h4 style="color: #374151; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Your Request Details:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <tr>
+                <td style="padding: 4px 0; color: #6b7280; width: 30%;">Email:</td>
+                <td style="padding: 4px 0; color: #374151; font-weight: 500;">${sanitizedData.email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #6b7280;">Company:</td>
+                <td style="padding: 4px 0; color: #374151; font-weight: 500;">${sanitizedData.company}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #6b7280;">Position:</td>
+                <td style="padding: 4px 0; color: #374151; font-weight: 500;">${sanitizedData.position}</td>
+              </tr>
+            </table>
           </div>
           
-          <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px;">
-            If you have any questions in the meantime, please don't hesitate to contact our support team.
+          <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+            If you have any questions or need immediate assistance, please don't hesitate to contact our support team.
           </p>
           
-          <p style="color: #6b7280; line-height: 1.6;">
+          <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
             Best regards,<br>
-            The BoardGuru Team
+            <strong style="color: #374151;">The BoardGuru Team</strong>
           </p>
         </div>
         
-        <div style="background: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #6b7280;">
-          This email was sent automatically from BoardGuru registration system.
+        <div style="background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px;">
+          This email was sent automatically from the BoardGuru registration system.
         </div>
       </div>
     `
 
-    // Send user confirmation
+    // Send admin notification email
     await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: email,
+      from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
+      to: env.ADMIN_EMAIL,
+      subject: `🔔 New BoardGuru Registration Request - ${sanitizedData.fullName}`,
+      html: adminEmailHTML,
+    })
+
+    // Send user confirmation email
+    await transporter.sendMail({
+      from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
+      to: sanitizedData.email,
       subject: '✅ BoardGuru Registration Request Received',
       html: userEmailHTML,
     })
 
     console.log(`📧 Registration emails sent successfully`)
-    console.log(`   Admin notification: ${process.env.ADMIN_EMAIL}`)
-    console.log(`   User confirmation: ${email}`)
+    console.log(`   Admin notification: ${env.ADMIN_EMAIL}`)
+    console.log(`   User confirmation: ${sanitizedData.email}`)
     console.log(`   Registration ID: ${registrationId}`)
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Registration request submitted successfully' 
-    })
+    const response = createSuccessResponse(
+      { 
+        registrationId,
+        adminEmail: env.ADMIN_EMAIL,
+        userEmail: sanitizedData.email 
+      },
+      'Registration request submitted successfully'
+    )
+
+    return addSecurityHeaders(response)
 
   } catch (error) {
     console.error('Email sending error:', error)
     
-    // Provide more specific error message
-    let errorMessage = 'Failed to send registration notification'
     if (error instanceof Error) {
       if (error.message.includes('Invalid login') || error.message.includes('authentication failed')) {
-        errorMessage = 'Email authentication failed - please check SMTP credentials'
-      } else if (error.message.includes('API key')) {
-        errorMessage = 'API key error - but email sending should not require API keys'
-      } else {
-        errorMessage = `Email error: ${error.message}`
+        return createErrorResponse('Email service authentication failed', 500)
+      }
+      if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+        return createErrorResponse('Email service unavailable', 503)
       }
     }
     
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    )
+    return createErrorResponse('Failed to send registration notification', 500)
   }
 }
+
+export const POST = withErrorHandling(handleRegistrationEmail)
