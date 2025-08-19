@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ResponsePage } from '@/components/ui/ResponsePage'
 
@@ -17,7 +17,7 @@ interface ResultData {
   }
 }
 
-export default function ApprovalResultPage() {
+function ApprovalResultContent() {
   const searchParams = useSearchParams()
   const [resultData, setResultData] = useState<ResultData | null>(null)
 
@@ -69,5 +69,17 @@ export default function ApprovalResultPage() {
       showBackButton={true}
       backUrl="/"
     />
+  )
+}
+
+export default function ApprovalResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <ApprovalResultContent />
+    </Suspense>
   )
 }
