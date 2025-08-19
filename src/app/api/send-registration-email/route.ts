@@ -19,6 +19,14 @@ export async function POST(request: NextRequest) {
     // Log URL configuration for debugging
     logUrlConfig()
 
+    // ENHANCED DEBUGGING: Log all environment variables and URL generation
+    console.log('🚨 DEBUGGING APPROVAL URL GENERATION:')
+    console.log('   NODE_ENV:', process.env.NODE_ENV)
+    console.log('   APP_URL:', process.env.APP_URL)
+    console.log('   VERCEL_URL:', process.env.VERCEL_URL)
+    console.log('   NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
+    console.log('   getAppUrl() result:', getAppUrl())
+
     // Generate secure token for approve/reject links
     const securityToken = crypto
       .createHash('sha256')
@@ -28,6 +36,12 @@ export async function POST(request: NextRequest) {
 
     // Generate environment-aware URLs
     const { approveUrl, rejectUrl, adminPanelUrl } = generateApprovalUrls(registrationId, securityToken)
+    
+    // LOG THE ACTUAL GENERATED URLS
+    console.log('🚨 GENERATED APPROVAL URLS:')
+    console.log('   Approve URL:', approveUrl)
+    console.log('   Reject URL:', rejectUrl)
+    console.log('   Admin Panel URL:', adminPanelUrl)
 
     // Create email transporter
     const transporter = nodemailer.createTransport({
