@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
             <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 15px; margin: 20px 0;">
               <h3 style="color: #0c4a6e; margin: 0 0 10px 0; font-size: 16px;">Next Steps:</h3>
               <ol style="color: #0c4a6e; margin: 0; padding-left: 20px;">
-                <li>Visit the BoardGuru platform: <a href="${process.env.NEXTAUTH_URL}/auth/signin">Sign In Here</a></li>
+                <li>Visit the BoardGuru platform: <a href="${getAppUrl()}/auth/signin">Sign In Here</a></li>
                 <li>Use your registered email: <strong>${registrationRequest.email}</strong></li>
                 <li>Create your secure password during first login</li>
                 <li>Complete your profile setup</li>
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXTAUTH_URL}/auth/signin" 
+              <a href="${getAppUrl()}/auth/signin" 
                  style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">
                 Access BoardGuru Now
               </a>
