@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, FileText, Volume2 } from 'lucide-react';
 import { summarizeDocumentAPI } from '@/lib/api/claude-client';
 import type { DocumentSummaryRequest, DocumentSummaryResponse } from '@/types/claude';
@@ -92,22 +92,18 @@ export default function DocumentSummarizer({
               <label className="text-sm font-medium mb-2 block">
                 Summary Length
               </label>
-              <Select
+              <select
                 value={options.maxLength}
-                onValueChange={(value: 'short' | 'medium' | 'long') =>
-                  setOptions({ ...options, maxLength: value })
+                onChange={(e) =>
+                  setOptions({ ...options, maxLength: e.target.value as 'short' | 'medium' | 'long' })
                 }
                 disabled={isLoading}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="short">Short (2-3 paragraphs)</SelectItem>
-                  <SelectItem value="medium">Medium (4-6 paragraphs)</SelectItem>
-                  <SelectItem value="long">Long (Comprehensive)</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="short">Short (2-3 paragraphs)</option>
+                <option value="medium">Medium (4-6 paragraphs)</option>
+                <option value="long">Long (Comprehensive)</option>
+              </select>
             </div>
 
             <div className="space-y-3">
