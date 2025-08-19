@@ -42,8 +42,8 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
     setErrorMessage('')
 
     try {
-      // Insert registration request into database
-      const { error: dbError } = await supabase
+      // Insert registration request into database and get the ID
+      const { data: insertData, error: dbError } = await supabase
         .from('registration_requests')
         .insert([
           {
@@ -55,10 +55,13 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
             status: 'pending'
           }
         ])
+        .select()
 
-      if (dbError) {
-        throw new Error(dbError.message)
+      if (dbError || !insertData || insertData.length === 0) {
+        throw new Error(dbError?.message || 'Failed to create registration request')
       }
+
+      const registrationId = insertData[0].id
 
       // Send email notification to admin
       const emailResponse = await fetch('/api/send-registration-email', {
@@ -66,7 +69,10 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          registrationId
+        }),
       })
 
       if (!emailResponse.ok) {
