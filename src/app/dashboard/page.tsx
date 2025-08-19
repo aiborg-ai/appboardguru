@@ -92,7 +92,7 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Board Pack Dashboard</h1>
               <p className="text-gray-600 mt-2">
-                Manage and analyze your board materials with AI-powered insights
+                Manage and organize your board materials efficiently
               </p>
             </div>
             <button className="btn-primary px-6 py-3 flex items-center space-x-2 mt-4 lg:mt-0">
@@ -137,7 +137,7 @@ export default function DashboardPage() {
               <div className="flex items-center">
                 <Brain className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-purple-600">AI Analyzed</p>
+                  <p className="text-sm font-medium text-purple-600">Ready</p>
                   <p className="text-2xl font-bold text-purple-900">0</p>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
               No board packs yet
             </h3>
             <p className="text-gray-600 mb-4">
-              Upload your first board pack to get started with AI-powered analysis.
+              Upload your first board pack to get started with board management.
             </p>
             <button className="btn-primary px-6 py-3">
               Upload Board Pack

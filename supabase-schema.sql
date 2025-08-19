@@ -7,7 +7,7 @@ ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 -- Create custom types/enums
 CREATE TYPE user_role AS ENUM ('pending', 'director', 'admin', 'viewer');
 CREATE TYPE user_status AS ENUM ('pending', 'approved', 'rejected');
-CREATE TYPE pack_status AS ENUM ('processing', 'ready', 'failed');
+CREATE TYPE pack_status AS ENUM ('ready', 'archived');
 
 -- Create users table (extends auth.users)
 CREATE TABLE IF NOT EXISTS users (
@@ -49,9 +49,7 @@ CREATE TABLE IF NOT EXISTS board_packs (
   file_size BIGINT NOT NULL,
   file_type TEXT NOT NULL,
   uploaded_by UUID NOT NULL REFERENCES users(id),
-  status pack_status DEFAULT 'processing',
-  summary TEXT,
-  audio_summary_url TEXT,
+  status pack_status DEFAULT 'ready',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   watermark_applied BOOLEAN DEFAULT false

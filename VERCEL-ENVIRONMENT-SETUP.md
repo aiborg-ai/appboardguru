@@ -24,16 +24,12 @@ NEXTAUTH_URL=https://appboardguru-nuexkl4gi-h-viks-projects.vercel.app
 
 # Node Environment
 NODE_ENV=production
-
-# AI Features (OPTIONAL - only needed for document summarization)
-ANTHROPIC_API_KEY=your-actual-anthropic-api-key-here
 ```
 
-### 🔑 AI API Key Notes
-- **ANTHROPIC_API_KEY** is only needed for document summarization and AI chat features
-- **Registration and approval workflow works without AI features**
-- If you don't have an Anthropic API key, the core platform functions normally
-- AI features will show error messages but won't break the main functionality
+### 🚫 AI Features Removed
+- **No AI dependencies** - Anthropic SDK and all AI features have been removed
+- **Simplified codebase** - Focus on core board management functionality
+- **Faster deployment** - No external AI API dependencies
 
 ### ✅ Existing Variables (Already Set)
 These should already be configured in Vercel:
@@ -53,9 +49,6 @@ SMTP_PASS=zyzr hvkc tlwk jjqs
 
 # Security
 NEXTAUTH_SECRET=boardguru-secure-secret-key-2025
-
-# AI (Set your actual API key)
-ANTHROPIC_API_KEY=your-actual-anthropic-api-key-here
 ```
 
 ## How URL Detection Works

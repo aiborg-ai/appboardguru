@@ -1,5 +1,6 @@
 -- Simple Demo Data Setup for BoardGuru Testing
 -- This only creates registration requests to test the approval workflow
+-- No AI features - just core board management functionality
 -- Run this in your Supabase SQL Editor
 
 -- Clean up any existing demo data first
