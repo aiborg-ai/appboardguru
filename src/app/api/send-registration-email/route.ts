@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import crypto from 'crypto'
-import { generateApprovalUrls, logUrlConfig } from '@/utils/url'
+import { generateApprovalUrls, logUrlConfig, getAppUrl } from '@/utils/url'
 
 export async function POST(request: NextRequest) {
   try {
