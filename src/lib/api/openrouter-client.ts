@@ -2,6 +2,8 @@
  * Client-side API functions for OpenRouter integration
  */
 
+import React from 'react';
+
 export interface DocumentSummaryRequest {
   content: string;
   fileName: string;
@@ -167,5 +169,3 @@ export function useChatSession() {
   };
 }
 
-// Import React for the hook
-import React from 'react';

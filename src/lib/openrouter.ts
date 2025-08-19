@@ -46,9 +46,10 @@ async function makeOpenRouterRequest(
   } = options;
 
   if (!process.env.OPENROUTER_API_KEY) {
+    console.warn('OpenRouter API key not configured - AI features disabled');
     return {
       success: false,
-      error: 'OpenRouter API key not configured'
+      error: 'AI features are temporarily unavailable - OpenRouter API key not configured'
     };
   }
 
