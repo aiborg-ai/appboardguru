@@ -67,3 +67,5 @@ npm run dev
 ```
 
 Built with ❤️ using Claude Code (claude.ai/code)
+
+*Ready for production deployment!*
