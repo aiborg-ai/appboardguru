@@ -42,7 +42,7 @@ APP_URL=https://your-domain.vercel.app
 
 ## 🚀 Quick Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/appboardguru)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/BoardGuruHV/app)
 
 ## 📧 Email Approval Workflow
 
