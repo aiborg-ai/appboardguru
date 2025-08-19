@@ -198,8 +198,21 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Email sending error:', error)
+    
+    // Provide more specific error message
+    let errorMessage = 'Failed to send registration notification'
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid login') || error.message.includes('authentication failed')) {
+        errorMessage = 'Email authentication failed - please check SMTP credentials'
+      } else if (error.message.includes('API key')) {
+        errorMessage = 'API key error - but email sending should not require API keys'
+      } else {
+        errorMessage = `Email error: ${error.message}`
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to send registration notification' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

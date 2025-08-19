@@ -1,9 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize Claude client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || 'placeholder-key-for-build',
-});
+// Initialize Claude client with safe fallback
+const anthropic = process.env.ANTHROPIC_API_KEY 
+  ? new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    })
+  : null;
 
 export interface DocumentSummaryOptions {
   content: string;
@@ -25,6 +27,13 @@ export interface ChatOptions {
 export async function summarizeDocument(options: DocumentSummaryOptions) {
   const { content, fileName, includeKeyPoints = true, includeActionItems = true, maxLength = 'medium' } = options;
   
+  if (!anthropic) {
+    return {
+      success: false,
+      error: 'AI features are not available - ANTHROPIC_API_KEY not configured',
+    };
+  }
+
   const lengthInstructions = {
     short: 'Keep the summary concise, around 2-3 paragraphs.',
     medium: 'Provide a detailed summary, around 4-6 paragraphs.',
@@ -92,6 +101,13 @@ Format the response in clear sections with bullet points where appropriate.`;
 export async function chatWithClaude(options: ChatOptions) {
   const { message, context, conversationHistory = [] } = options;
 
+  if (!anthropic) {
+    return {
+      success: false,
+      error: 'AI features are not available - ANTHROPIC_API_KEY not configured',
+    };
+  }
+
   const systemPrompt = `You are BoardGuru AI, an intelligent assistant specialized in corporate governance, board management, and business strategy. You help board members, executives, and governance professionals analyze documents, understand strategic implications, and make informed decisions.
 
 Your capabilities include:
@@ -154,6 +170,13 @@ Guidelines:
  * Generate audio script from document summary for accessibility
  */
 export async function generateAudioScript(summary: string) {
+  if (!anthropic) {
+    return {
+      success: false,
+      error: 'AI features are not available - ANTHROPIC_API_KEY not configured',
+    };
+  }
+
   const systemPrompt = `You are a professional script writer specializing in converting written board materials into clear, engaging audio scripts. Your role is to make complex business information accessible through audio format.
 
 Guidelines:
