@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import nodemailer from 'nodemailer'
 import { generateApprovalUrls } from '@/utils/url'
-import { env, getSmtpConfig, logEnvironmentInfo } from '@/config/environment'
+import { env, getSmtpConfig, logEnvironmentInfo, getAppUrl } from '@/config/environment'
 import { 
   validateRegistrationData, 
   generateSecureApprovalToken,
