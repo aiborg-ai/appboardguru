@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 export default function GlobalError({
   error,
   reset,
@@ -7,6 +9,25 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    // Suppress error overlays in development
+    if (typeof window !== 'undefined') {
+      const style = document.createElement('style')
+      style.textContent = `
+        [data-nextjs-error-overlay] {
+          display: none !important;
+        }
+        #webpack-dev-server-client-overlay {
+          display: none !important;
+        }
+        [data-nextjs-dialog-overlay] {
+          display: none !important;
+        }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
+
   // In development/demo mode, just show a minimal error without overlay
   return (
     <html>
@@ -41,6 +62,24 @@ export default function GlobalError({
             </button>
           </div>
         </div>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Hide Next.js error overlays
+              if (typeof window !== 'undefined') {
+                const hideOverlays = () => {
+                  const overlays = document.querySelectorAll('[data-nextjs-error-overlay], #webpack-dev-server-client-overlay, [data-nextjs-dialog-overlay]');
+                  overlays.forEach(overlay => overlay.remove());
+                };
+                
+                // Run immediately and on DOM changes
+                hideOverlays();
+                const observer = new MutationObserver(hideOverlays);
+                observer.observe(document.body, { childList: true, subtree: true });
+              }
+            `
+          }}
+        />
       </body>
     </html>
   )

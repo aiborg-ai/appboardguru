@@ -114,3 +114,13 @@
     transform: translateY(0);
   }
 }
+
+/* Suppress Next.js development error overlays */
+[data-nextjs-error-overlay],
+#webpack-dev-server-client-overlay,
+[data-nextjs-dialog-overlay] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
