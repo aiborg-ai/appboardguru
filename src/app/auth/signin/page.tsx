@@ -20,6 +20,10 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [showMagicLinkForm, setShowMagicLinkForm] = useState(false)
+  const [magicLinkEmail, setMagicLinkEmail] = useState('')
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false)
+  const [magicLinkMessage, setMagicLinkMessage] = useState('')
   const router = useRouter()
 
   const {
@@ -41,6 +45,28 @@ export default function SignInPage() {
       })
 
       if (authError) {
+        // Check if this is a user who needs to set their password first
+        if (authError.message.includes('Invalid login credentials') || 
+            authError.message.includes('Email not confirmed') ||
+            authError.message.includes('Invalid password')) {
+          
+          // Check if user exists and needs password setup
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('status, password_set, email')
+            .eq('email', data.email)
+            .single()
+
+          if (userData && userData.status === 'approved' && !userData.password_set) {
+            // User exists, is approved, but hasn't set password
+            setError('')
+            setMagicLinkEmail(data.email)
+            setMagicLinkMessage('✨ This account needs password setup. Click below to get your setup link.')
+            setShowMagicLinkForm(true)
+            return
+          }
+        }
+        
         throw new Error(authError.message)
       }
 
@@ -48,7 +74,7 @@ export default function SignInPage() {
         // Check user status and role
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('status, role')
+          .select('status, role, password_set')
           .eq('id', authData.user.id)
           .single()
 
@@ -59,6 +85,15 @@ export default function SignInPage() {
         if (userData.status !== 'approved') {
           await supabase.auth.signOut()
           throw new Error('Your account is pending approval or has been rejected')
+        }
+
+        // Check if user needs to complete password setup
+        if (!userData.password_set) {
+          await supabase.auth.signOut()
+          setMagicLinkEmail(data.email)
+          setMagicLinkMessage('✨ Please complete your password setup. Click below to get your setup link.')
+          setShowMagicLinkForm(true)
+          return
         }
 
         // Redirect based on role
@@ -73,6 +108,41 @@ export default function SignInPage() {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleMagicLinkRequest = async () => {
+    if (!magicLinkEmail) {
+      setMagicLinkMessage('Please enter your email address')
+      return
+    }
+
+    setMagicLinkLoading(true)
+    setMagicLinkMessage('')
+
+    try {
+      const response = await fetch('/api/request-magic-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: magicLinkEmail }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setMagicLinkMessage('✅ Secure access link sent! Check your email inbox.')
+        setMagicLinkEmail('')
+        setShowMagicLinkForm(false)
+      } else {
+        setMagicLinkMessage(`❌ ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Magic link request error:', error)
+      setMagicLinkMessage('❌ Failed to send magic link. Please try again.')
+    } finally {
+      setMagicLinkLoading(false)
     }
   }
 
@@ -93,6 +163,11 @@ export default function SignInPage() {
           <p className="mt-2 text-sm text-gray-600">
             Sign in to your BoardGuru account
           </p>
+          {magicLinkMessage && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">{magicLinkMessage}</p>
+            </div>
+          )}
         </div>
 
         {/* Sign In Form */}
@@ -195,15 +270,67 @@ export default function SignInPage() {
           </form>
         </div>
 
-        {/* Footer */}
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link href="/" className="font-medium text-primary-600 hover:text-primary-500">
-              Request access
-            </Link>
-          </p>
-        </div>
+        {/* First Time User Section */}
+        {showMagicLinkForm ? (
+          <div className="card p-6 bg-white shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">First Time Access</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              If you've been approved but haven't set your password yet, enter your email to receive a secure setup link.
+            </p>
+            <div className="space-y-4">
+              <input
+                type="email"
+                value={magicLinkEmail}
+                onChange={(e) => setMagicLinkEmail(e.target.value)}
+                placeholder="Enter your approved email address"
+                className="input w-full"
+                disabled={magicLinkLoading}
+              />
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleMagicLinkRequest}
+                  disabled={magicLinkLoading}
+                  className="btn-primary flex-1 py-2 text-sm disabled:opacity-50"
+                >
+                  {magicLinkLoading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Sending...</span>
+                    </div>
+                  ) : (
+                    'Send Setup Link'
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMagicLinkForm(false)
+                    setMagicLinkMessage('')
+                    setMagicLinkEmail('')
+                  }}
+                  disabled={magicLinkLoading}
+                  className="btn-secondary px-4 py-2 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-3">
+              Don't have an account?{' '}
+              <Link href="/" className="font-medium text-primary-600 hover:text-primary-500">
+                Request access
+              </Link>
+            </p>
+            <button
+              onClick={() => setShowMagicLinkForm(true)}
+              className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+            >
+              First time user? Get password setup link
+            </button>
+          </div>
+        )}
 
         {/* Security Notice */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createUserForApprovedRegistration, generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
 import nodemailer from 'nodemailer'
-import { getAppUrl } from '@/utils/url'
+import { getAppUrl } from '@/config/environment'
 import { env, getSmtpConfig } from '@/config/environment'
 import {
   addSecurityHeaders,
@@ -73,6 +74,37 @@ async function handleApprovalRequest(request: NextRequest) {
       return NextResponse.redirect(errorUrl, 302)
     }
 
+    // Create Supabase auth user and generate magic link for password setup
+    let magicLink: string | null = null
+    try {
+      // Create auth user without password
+      const { success: userCreateSuccess, error: userCreateError } = await createUserForApprovedRegistration(
+        registrationRequest.email,
+        registrationRequest.full_name
+      )
+
+      if (!userCreateSuccess) {
+        console.error('Failed to create auth user:', userCreateError)
+        // Continue with email but log the issue
+      } else {
+        // Generate magic link for password setup
+        const { magicLink: generatedMagicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(
+          registrationRequest.email
+        )
+
+        if (linkSuccess && generatedMagicLink) {
+          magicLink = generatedMagicLink
+          console.log('✅ Generated magic link for first-time access')
+        } else {
+          console.error('Failed to generate magic link:', linkError)
+          // Continue with email but without magic link
+        }
+      }
+    } catch (authError) {
+      console.error('Auth user creation error:', authError)
+      // Continue with email but log the issue
+    }
+
     // Send approval email to the user
     try {
       const transporter = nodemailer.createTransport(getSmtpConfig())
@@ -99,18 +131,32 @@ async function handleApprovalRequest(request: NextRequest) {
             <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 24px; margin: 30px 0;">
               <h3 style="color: #0c4a6e; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Next Steps:</h3>
               <ol style="color: #0c4a6e; margin: 0; padding-left: 24px; line-height: 1.6;">
-                <li>Visit the BoardGuru platform: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">Sign In Here</a></li>
-                <li>Use your registered email: <strong>${registrationRequest.email}</strong></li>
-                <li>Create your secure password during first login</li>
-                <li>Complete your profile setup</li>
+                ${magicLink ? `
+                  <li><strong>Click the secure access link below to set up your password</strong></li>
+                  <li>Create your secure password during first login</li>
+                  <li>Complete your profile setup</li>
+                ` : `
+                  <li>Visit the BoardGuru platform: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">Sign In Here</a></li>
+                  <li>Use your registered email: <strong>${registrationRequest.email}</strong></li>
+                  <li>Create your secure password during first login</li>
+                  <li>Complete your profile setup</li>
+                `}
               </ol>
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${getAppUrl()}/auth/signin" 
-                 style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                Access BoardGuru Now
-              </a>
+              ${magicLink ? `
+                <a href="${magicLink}" 
+                   style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
+                  🔐 Set Up Your Password
+                </a>
+                <p style="color: #6b7280; font-size: 12px; margin: 0;">This secure link expires in 1 hour for your security</p>
+              ` : `
+                <a href="${getAppUrl()}/auth/signin" 
+                   style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                  Access BoardGuru Now
+                </a>
+              `}
             </div>
             
             <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
