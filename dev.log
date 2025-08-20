@@ -136,3 +136,49 @@ RangeError: Maximum call stack size exceeded
 
  ✓ Starting...
  ✓ Ready in 1465ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.4.7
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.34:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ⚠ The config property `experimental.turbo` is deprecated. Move this setting to `config.turbopack` as Turbopack is now stable.
+ ✓ Ready in 1427ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.4.7
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.34:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1405ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 683ms (177 modules)
+ ○ Compiling /dashboard/assets ...
+ ✓ Compiled /dashboard/assets in 4.2s (906 modules)
+ GET /dashboard/assets 200 in 4706ms
+ ✓ Compiled in 557ms (382 modules)
+ ✓ Compiled /_not-found in 266ms (884 modules)
+ GET /sw.js 404 in 401ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard/assets 200 in 111ms
+ GET /sw.js 404 in 33ms
+ GET /sw.js 404 in 33ms
+ GET /dashboard/assets 200 in 45ms
+[SECURITY:LOW] api_request {
+  ip: '::1',
+  userAgent: 'curl/8.5.0',
+  method: 'GET',
+  pathname: '/api/assets',
+  organizationContext: {},
+  processingTime: 1,
+  requestId: 'req_1755708893974_9zkv8'
+}
+ ○ Compiling /api/assets ...
+ ✓ Compiled /api/assets in 730ms (984 modules)
+ GET /api/assets 401 in 887ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard/assets 200 in 206ms
+ GET /sw.js 404 in 34ms
+ GET /sw.js 404 in 24ms
