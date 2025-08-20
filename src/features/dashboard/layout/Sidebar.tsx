@@ -121,7 +121,20 @@ const menuItems: MenuItem[] = [
     id: 'boardmates',
     label: 'BoardMates',
     icon: Users,
-    href: '/dashboard/boardmates'
+    children: [
+      {
+        id: 'view-boardmates',
+        label: 'My BoardMates',
+        icon: Users,
+        href: '/dashboard/boardmates'
+      },
+      {
+        id: 'add-boardmate',
+        label: 'Add BoardMate',
+        icon: Plus,
+        href: '/dashboard/boardmates/create'
+      }
+    ]
   },
   {
     id: 'organizations',
@@ -158,7 +171,7 @@ const menuItems: MenuItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const [expandedItems, setExpandedItems] = useState<string[]>(['instruments', 'organizations'])
+  const [expandedItems, setExpandedItems] = useState<string[]>(['instruments', 'boardmates', 'organizations'])
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => 

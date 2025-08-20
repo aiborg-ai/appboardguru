@@ -102,16 +102,16 @@ async function handleValidateInvitation(request: NextRequest) {
           createdAt: invitation.created_at
         },
         boardMate: {
-          id: invitation.board_members.id,
-          fullName: invitation.board_members.full_name,
-          email: invitation.board_members.email,
-          role: invitation.board_members.board_role,
-          organizationName: invitation.board_members.organization_name
+          id: (invitation.board_members as any).id,
+          fullName: (invitation.board_members as any).full_name,
+          email: (invitation.board_members as any).email,
+          role: (invitation.board_members as any).board_role,
+          organizationName: (invitation.board_members as any).organization_name
         },
         organization: {
-          id: invitation.organizations.id,
-          name: invitation.organizations.name,
-          slug: invitation.organizations.slug
+          id: (invitation.organizations as any).id,
+          name: (invitation.organizations as any).name,
+          slug: (invitation.organizations as any).slug
         }
       },
       'Invitation details retrieved successfully'
@@ -201,7 +201,7 @@ async function handleAcceptInvitation(request: NextRequest) {
     const { data: existingUser, error: userCheckError } = await supabaseAdmin
       .from('users')
       .select('id, email')
-      .eq('email', invitation.board_members.email)
+      .eq('email', (invitation.board_members as any).email)
       .single()
 
     if (userCheckError && userCheckError.code !== 'PGRST116') {
@@ -215,7 +215,7 @@ async function handleAcceptInvitation(request: NextRequest) {
 
     // Create user account with Supabase Auth
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: invitation.board_members.email,
+      email: (invitation.board_members as any).email,
       password: password,
       email_confirm: true, // Auto-confirm since they were invited
       user_metadata: {
