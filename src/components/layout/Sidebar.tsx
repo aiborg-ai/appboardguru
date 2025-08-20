@@ -22,7 +22,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Calendar,
-  Zap
+  Zap,
+  Folder as FolderIcon
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -107,6 +108,12 @@ const menuItems: MenuItem[] = [
         href: '/dashboard/benchmarking'
       }
     ]
+  },
+  {
+    id: 'assets',
+    label: 'Assets',
+    icon: FolderIcon,
+    href: '/dashboard/assets'
   },
   {
     id: 'boardmates',

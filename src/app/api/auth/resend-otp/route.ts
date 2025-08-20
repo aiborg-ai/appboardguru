@@ -194,7 +194,7 @@ async function handleResendOtp(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      const errors = error.issues.map((err: any) => `${err.path.join('.')}: ${err.message}`)
       return createValidationErrorResponse(errors)
     }
 

@@ -20,7 +20,8 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Eye
+  Eye,
+  Folder as FolderIcon
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -150,11 +151,14 @@ export default function DashboardPage() {
                   <ChevronRight className="h-5 w-5 text-gray-400 ml-auto" />
                 </button>
 
-                <button className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                  <Plus className="h-6 w-6 text-green-600" />
+                <button 
+                  onClick={() => window.location.href = '/dashboard/assets'}
+                  className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <FolderIcon className="h-6 w-6 text-green-600" />
                   <div className="text-left">
-                    <div className="font-medium text-gray-900">Create Project</div>
-                    <div className="text-sm text-gray-600">Start a new governance project</div>
+                    <div className="font-medium text-gray-900">Manage Assets</div>
+                    <div className="text-sm text-gray-600">Upload and share documents</div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-gray-400 ml-auto" />
                 </button>

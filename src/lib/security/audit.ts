@@ -722,5 +722,4 @@ export async function generateSecurityReport(
   }
 }
 
-// Export the main logger class
-export { SecurityAuditLogger }
+// SecurityAuditLogger is already exported above at line 227
