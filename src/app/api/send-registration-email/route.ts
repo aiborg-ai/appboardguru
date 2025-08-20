@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import nodemailer from 'nodemailer'
 import { generateApprovalUrls } from '@/utils/url'
 import { env, getSmtpConfig } from '@/config/environment'
+import { supabase } from '@/lib/supabase'
 import { 
   validateRegistrationData, 
   generateSecureApprovalToken,
@@ -42,15 +43,8 @@ async function handleRegistrationEmail(request: NextRequest) {
     return createErrorResponse('Invalid JSON in request body', 400)
   }
 
-  const { registrationId, ...userData } = body
-
-  // Validate registration ID
-  if (!registrationId || typeof registrationId !== 'string') {
-    return createValidationErrorResponse(['Registration ID is required'])
-  }
-
   // Validate and sanitize user data
-  const validation = validateRegistrationData(userData)
+  const validation = validateRegistrationData(body)
   if (!validation.isValid) {
     return createValidationErrorResponse(validation.errors)
   }
@@ -63,8 +57,47 @@ async function handleRegistrationEmail(request: NextRequest) {
   }
 
   try {
+    // Insert registration request into database
+    const { data: insertData, error: dbError } = await supabase
+      .from('registration_requests')
+      .insert([
+        {
+          email: sanitizedData.email,
+          full_name: sanitizedData.fullName,
+          company: sanitizedData.company,
+          position: sanitizedData.position,
+          message: sanitizedData.message || null,
+          status: 'pending'
+        }
+      ])
+      .select()
+
+    if (dbError || !insertData || insertData.length === 0) {
+      console.error('Database insertion error:', dbError)
+      return createErrorResponse('Failed to create registration request', 500)
+    }
+
+    const registrationId = insertData[0].id
+
     // Generate secure token for approval links
     const securityToken = generateSecureApprovalToken(registrationId)
+    
+    // Calculate token expiration (24 hours from now)
+    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+    // Update registration with token and expiration
+    const { error: tokenUpdateError } = await supabase
+      .from('registration_requests')
+      .update({
+        approval_token: securityToken,
+        token_expires_at: tokenExpiresAt
+      })
+      .eq('id', registrationId)
+
+    if (tokenUpdateError) {
+      console.error('Token update error:', tokenUpdateError)
+      return createErrorResponse('Failed to generate approval token', 500)
+    }
 
     // Generate approval URLs
     const { approveUrl, rejectUrl } = generateApprovalUrls(registrationId, securityToken)

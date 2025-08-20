@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS registration_requests (
   status user_status DEFAULT 'pending',
   reviewed_by UUID REFERENCES users(id),
   reviewed_at TIMESTAMPTZ,
+  approval_token TEXT,
+  token_expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -76,6 +78,8 @@ CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_registration_requests_email ON registration_requests(email);
 CREATE INDEX IF NOT EXISTS idx_registration_requests_status ON registration_requests(status);
+CREATE INDEX IF NOT EXISTS idx_registration_requests_approval_token ON registration_requests(approval_token) WHERE approval_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_registration_requests_token_expires_at ON registration_requests(token_expires_at) WHERE token_expires_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_board_packs_uploaded_by ON board_packs(uploaded_by);
 CREATE INDEX IF NOT EXISTS idx_board_packs_status ON board_packs(status);
 CREATE INDEX IF NOT EXISTS idx_board_packs_created_at ON board_packs(created_at);

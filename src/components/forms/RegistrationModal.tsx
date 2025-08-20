@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X, Send, CheckCircle, AlertCircle } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 
 const registrationSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
@@ -42,43 +41,22 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
     setErrorMessage('')
 
     try {
-      // Insert registration request into database and get the ID
-      const { data: insertData, error: dbError } = await supabase
-        .from('registration_requests')
-        .insert([
-          {
-            email: data.email,
-            full_name: data.fullName,
-            company: data.company,
-            position: data.position,
-            message: data.message || null,
-            status: 'pending'
-          }
-        ])
-        .select()
-
-      if (dbError || !insertData || insertData.length === 0) {
-        throw new Error(dbError?.message || 'Failed to create registration request')
-      }
-
-      const registrationId = insertData[0].id
-
-      // Send email notification to admin
-      const emailResponse = await fetch('/api/send-registration-email', {
+      // Send registration request to API (handles database insertion and email sending)
+      const response = await fetch('/api/send-registration-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...data,
-          registrationId
-        }),
+        body: JSON.stringify(data),
       })
 
-      if (!emailResponse.ok) {
-        const errorData = await emailResponse.json()
-        throw new Error(errorData.error || 'Failed to send notification email')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to submit registration request')
       }
+
+      const result = await response.json()
+      console.log('Registration submitted successfully:', result)
 
       setSubmitStatus('success')
       reset()

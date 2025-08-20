@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import nodemailer from 'nodemailer'
-import crypto from 'crypto'
 import { getAppUrl } from '@/utils/url'
 
 export async function GET(request: NextRequest) {
@@ -15,19 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(errorUrl, 302)
     }
 
-    // Verify the token
-    const expectedToken = crypto
-      .createHash('sha256')
-      .update(`${id}-${process.env.NEXTAUTH_SECRET || 'fallback-secret'}`)
-      .digest('hex')
-      .substring(0, 32)
-
-    if (token !== expectedToken) {
-      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Security Error&message=Invalid security token&details=This link may have expired or been tampered with. Please contact support if you believe this is an error.`
-      return NextResponse.redirect(errorUrl, 302)
-    }
-
-    // Get the registration request
+    // Get the registration request with token verification
     const { data: registrationRequest, error: fetchError } = await supabase
       .from('registration_requests')
       .select('*')
@@ -39,18 +26,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(errorUrl, 302)
     }
 
+    // Verify the security token from database
+    if (!registrationRequest.approval_token || registrationRequest.approval_token !== token) {
+      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Security Error&message=Invalid security token&details=This link appears to be invalid or tampered with. Please contact support if you believe this is an error.`
+      return NextResponse.redirect(errorUrl, 302)
+    }
+
+    // Check if token has expired
+    if (registrationRequest.token_expires_at && new Date(registrationRequest.token_expires_at) < new Date()) {
+      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Link Expired&message=This rejection link has expired&details=For security reasons, approval links expire after 24 hours. Please contact support if needed.`
+      return NextResponse.redirect(errorUrl, 302)
+    }
+
     // Check if already processed
     if (registrationRequest.status !== 'pending') {
       const warningUrl = `${getAppUrl()}/approval-result?type=warning&title=Already Processed&message=This registration request has already been ${registrationRequest.status}&details=No further action is needed&name=${encodeURIComponent(registrationRequest.full_name)}&email=${encodeURIComponent(registrationRequest.email)}`
       return NextResponse.redirect(warningUrl, 302)
     }
 
-    // Reject the registration request
+    // Reject the registration request and clear the token (one-time use)
     const { error: updateError } = await supabase
       .from('registration_requests')
       .update({
         status: 'rejected',
-        reviewed_at: new Date().toISOString()
+        reviewed_at: new Date().toISOString(),
+        approval_token: null,
+        token_expires_at: null
       })
       .eq('id', id)
 
