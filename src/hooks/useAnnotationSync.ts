@@ -105,12 +105,12 @@ export function useAnnotationSync({
               filter: `asset_id=eq.${assetId}`,
             },
             async (payload) => {
-              if (payload.new && payload.new.created_by !== currentUserId) {
+              if (payload.new && (payload.new as any).created_by !== currentUserId) {
                 // Fetch user information for the annotation
                 const { data: userInfo } = await supabase
                   .from('users')
                   .select('id, full_name, avatar_url')
-                  .eq('id', payload.new.created_by)
+                  .eq('id', (payload.new as any).created_by)
                   .single();
 
                 const annotationData: AnnotationData = {
@@ -147,12 +147,12 @@ export function useAnnotationSync({
               filter: `annotation_id=in.(${assetId})`, // This would need to be adjusted to filter by asset's annotations
             },
             async (payload) => {
-              if (payload.new && payload.new.created_by !== currentUserId) {
+              if (payload.new && (payload.new as any).created_by !== currentUserId) {
                 // Fetch user information for the reply
                 const { data: userInfo } = await supabase
                   .from('users')
                   .select('id, full_name, avatar_url')
-                  .eq('id', payload.new.created_by)
+                  .eq('id', (payload.new as any).created_by)
                   .single();
 
                 const replyData: AnnotationReply = {
