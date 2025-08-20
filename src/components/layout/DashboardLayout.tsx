@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Sidebar from './Sidebar'
+import EnhancedSidebar from './EnhancedSidebar'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 flex-shrink-0">
-        <Sidebar />
+        <EnhancedSidebar />
       </div>
       
       {/* Main content */}
