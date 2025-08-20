@@ -86,8 +86,7 @@ export async function createInvitationsAction(
     }
 
     // Get current user from Supabase
-    const cookieStore = await cookies()
-    const supabase = createSupabaseServerClient(cookieStore)
+    const supabase = await createSupabaseServerClient()
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
