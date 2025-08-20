@@ -56,7 +56,7 @@ export async function GET(
 
     // Check if user has download access
     const isOwner = asset.owner_id === user.id
-    const userShare = asset.asset_shares?.find(share => 
+    const userShare = asset.asset_shares?.find((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       (!share.expires_at || new Date(share.expires_at) > new Date())
