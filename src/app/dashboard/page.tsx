@@ -1,6 +1,7 @@
 'use client'
 
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import { EnhancedAIChat } from '@/components/ai/EnhancedAIChat'
 import { 
   Target,
   Shield,
@@ -158,11 +159,14 @@ export default function DashboardPage() {
                   <ChevronRight className="h-5 w-5 text-gray-400 ml-auto" />
                 </button>
 
-                <button className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <button 
+                  onClick={() => window.location.href = '/dashboard/ai-chat'}
+                  className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                >
                   <Brain className="h-6 w-6 text-purple-600" />
                   <div className="text-left">
-                    <div className="font-medium text-gray-900">AI Analysis</div>
-                    <div className="text-sm text-gray-600">Generate insights with AI</div>
+                    <div className="font-medium text-gray-900">AI Assistant</div>
+                    <div className="text-sm text-gray-600">Chat and get AI insights</div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-gray-400 ml-auto" />
                 </button>
@@ -330,6 +334,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* Floating AI Chat */}
+      <EnhancedAIChat />
     </DashboardLayout>
   )
 }

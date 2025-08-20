@@ -115,10 +115,10 @@ const menuItems: MenuItem[] = [
     href: '/dashboard/boardmates'
   },
   {
-    id: 'boardchat',
-    label: 'BoardChat',
+    id: 'ai-assistant',
+    label: 'AI Assistant',
     icon: MessageSquare,
-    href: '/dashboard/chat'
+    href: '/dashboard/ai-chat'
   },
   {
     id: 'settings',

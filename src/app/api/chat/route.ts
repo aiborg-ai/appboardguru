@@ -1,44 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { chatWithOpenRouter } from '@/lib/openrouter'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { message, context, conversationHistory } = body
+    const { messages, model, max_tokens, temperature, apiKey } = await request.json()
 
-    // Validate required fields
-    if (!message) {
-      return NextResponse.json(
-        { success: false, error: 'Message is required' },
-        { status: 400 }
-      )
+    // Use provided API key or fallback to server environment variable
+    const openRouterKey = apiKey || process.env.OPENROUTER_API_KEY
+
+    if (!openRouterKey) {
+      return NextResponse.json({
+        success: false,
+        error: 'API key not configured'
+      }, { status: 400 })
     }
 
-    // Send chat message to OpenRouter
-    const chatResult = await chatWithOpenRouter({
-      message,
-      context,
-      conversationHistory
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
+        'X-Title': 'BoardGuru'
+      },
+      body: JSON.stringify({
+        model: model || 'anthropic/claude-3.5-sonnet',
+        messages,
+        max_tokens: max_tokens || 2000,
+        temperature: temperature || 0.7,
+        stream: false
+      })
     })
 
-    if (!chatResult.success) {
-      return NextResponse.json(
-        { success: false, error: chatResult.error },
-        { status: 500 }
-      )
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response format from OpenRouter')
     }
 
     return NextResponse.json({
       success: true,
-      message: chatResult.data?.message,
-      usage: chatResult.data?.usage
+      message: data.choices[0].message.content,
+      usage: data.usage
     })
 
   } catch (error) {
     console.error('Chat API error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to process chat message' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 })
   }
 }

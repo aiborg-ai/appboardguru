@@ -5,10 +5,21 @@ const nextConfig = {
   },
   // Disable React strict mode to reduce development warnings
   reactStrictMode: false,
-  // Disable fast refresh error overlays
+  // Disable all development indicators and overlays
   devIndicators: {
     buildActivity: false,
-    buildActivityPosition: 'top-right',
+  },
+  // Disable error overlays in development
+  experimental: {
+    appDir: true,
+  },
+  // Custom webpack configuration to disable overlays
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Disable the error overlay
+      config.devtool = false
+    }
+    return config
   }
 }
 
