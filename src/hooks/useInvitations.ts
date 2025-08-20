@@ -408,7 +408,8 @@ export function useValidateInvitation(token?: string) {
   })
 }
 
-// Validation schemas for forms
+// Legacy validation - replaced by lightweight form validators
+// This export is kept for backward compatibility but should be migrated
 export const invitationValidation = {
   email: {
     required: 'Email address is required',
