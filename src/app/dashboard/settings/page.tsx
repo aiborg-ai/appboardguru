@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { AISettingsPanel } from '@/components/settings/AISettingsPanel'
+import { ActivityLogsTab } from '@/components/settings/ActivityLogsTab'
 import { 
   Settings, 
   Brain, 
@@ -10,7 +11,8 @@ import {
   Shield, 
   Bell, 
   Download,
-  Upload
+  Upload,
+  Activity
 } from 'lucide-react'
 
 type SettingsTab = 'ai' | 'account' | 'security' | 'notifications' | 'export'
@@ -21,7 +23,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'ai' as const, label: 'AI Assistant', icon: Brain, color: 'text-purple-600' },
     { id: 'account' as const, label: 'Account', icon: User, color: 'text-blue-600' },
-    { id: 'security' as const, label: 'Security', icon: Shield, color: 'text-green-600' },
+    { id: 'security' as const, label: 'Security & Activity', icon: Activity, color: 'text-green-600' },
     { id: 'notifications' as const, label: 'Notifications', icon: Bell, color: 'text-yellow-600' },
     { id: 'export' as const, label: 'Export & Backup', icon: Download, color: 'text-gray-600' }
   ]
@@ -41,13 +43,7 @@ export default function SettingsPage() {
         )
       
       case 'security':
-        return (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <Shield className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Security Settings</h3>
-            <p className="text-gray-600">Security and privacy settings coming soon.</p>
-          </div>
-        )
+        return <ActivityLogsTab />
       
       case 'notifications':
         return (
