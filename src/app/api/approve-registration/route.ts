@@ -76,33 +76,65 @@ async function handleApprovalRequest(request: NextRequest) {
 
     // Create Supabase auth user and generate magic link for password setup
     let magicLink: string | null = null
+    let userRecord: any = null
+    
     try {
-      // Create auth user without password
-      const { success: userCreateSuccess, error: userCreateError } = await createUserForApprovedRegistration(
+      // Import debug logger
+      const { debugLogger } = await import('@/lib/debug-logger')
+      
+      debugLogger.approvalStart(registrationRequest.email, registrationRequest.id)
+      
+      // Create auth user without password - THIS IS MANDATORY
+      const { success: userCreateSuccess, error: userCreateError, userRecord: createdUserRecord } = await createUserForApprovedRegistration(
         registrationRequest.email,
         registrationRequest.full_name
       )
 
       if (!userCreateSuccess) {
-        console.error('Failed to create auth user:', userCreateError)
-        // Continue with email but log the issue
-      } else {
-        // Generate magic link for password setup
-        const { magicLink: generatedMagicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(
-          registrationRequest.email
-        )
-
-        if (linkSuccess && generatedMagicLink) {
-          magicLink = generatedMagicLink
-          console.log('✅ Generated magic link for first-time access')
-        } else {
-          console.error('Failed to generate magic link:', linkError)
-          // Continue with email but without magic link
-        }
+        debugLogger.error('USER_CREATION_MANDATORY_FAILED', registrationRequest.email, { 
+          error: userCreateError,
+          registrationId: registrationRequest.id 
+        })
+        
+        // User creation is MANDATORY for approval to succeed
+        const errorUrl = `${getAppUrl()}/approval-result?type=error&title=User Account Creation Failed&message=Failed to create user account during approval process&details=System error occurred. Please try again or contact support.`
+        return NextResponse.redirect(errorUrl, 302)
       }
+      
+      userRecord = createdUserRecord
+      debugLogger.info('USER_CREATION_SUCCESS', registrationRequest.email, {
+        userId: userRecord?.id,
+        passwordSet: userRecord?.password_set
+      })
+
+      // Generate magic link for password setup
+      const { magicLink: generatedMagicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(
+        registrationRequest.email
+      )
+
+      if (linkSuccess && generatedMagicLink) {
+        magicLink = generatedMagicLink
+        debugLogger.magicLinkGenerate(registrationRequest.email, true, { hasLink: true })
+      } else {
+        debugLogger.magicLinkGenerate(registrationRequest.email, false, { error: linkError })
+        console.error('Failed to generate magic link:', linkError)
+        // Continue without magic link - user can request it later
+      }
+      
     } catch (authError) {
+      // Import debug logger in catch block too
+      const { debugLogger } = await import('@/lib/debug-logger')
+      
+      debugLogger.error('AUTH_USER_CREATION_EXCEPTION', registrationRequest.email, {
+        error: authError instanceof Error ? authError.message : authError,
+        registrationId: registrationRequest.id
+      })
+      
       console.error('Auth user creation error:', authError)
-      // Continue with email but log the issue
+      
+      // User creation failure should stop the approval process
+      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=System Error&message=Failed to create user account&details=A system error occurred during approval. Please contact support.`
+      return NextResponse.redirect(errorUrl, 302)
     }
 
     // Send approval email to the user

@@ -26,6 +26,11 @@ export const supabaseAdmin = createClient(
  * Create a new user account without password for first-time setup
  */
 export async function createUserForApprovedRegistration(email: string, fullName: string) {
+  const { debugLogger, createOperationTracker } = await import('@/lib/debug-logger')
+  const tracker = createOperationTracker('CREATE_USER_FOR_APPROVED_REGISTRATION', email)
+  
+  debugLogger.authUserCreateStart(email, fullName)
+
   try {
     // Create auth user without password
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -38,58 +43,139 @@ export async function createUserForApprovedRegistration(email: string, fullName:
     })
 
     if (authError) {
-      console.error('Error creating auth user:', authError)
+      debugLogger.authUserCreateResult(email, false, { error: authError })
       throw authError
     }
 
     if (!authUser.user) {
-      throw new Error('Failed to create user - no user returned')
+      const error = 'Failed to create user - no user returned'
+      debugLogger.authUserCreateResult(email, false, { error })
+      throw new Error(error)
     }
 
-    // Manually insert into users table to ensure it's populated correctly
-    // (in case the trigger function doesn't work or there's a timing issue)
-    const { error: userInsertError } = await supabaseAdmin
+    debugLogger.authUserCreateResult(email, true, { 
+      userId: authUser.user.id,
+      userEmail: authUser.user.email 
+    })
+
+    // Wait a moment for trigger to fire
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Check if user record was created by trigger
+    debugLogger.usersTableInsertStart(email, authUser.user.id)
+    
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .insert({
-        id: authUser.user.id,
-        email: email,
-        full_name: fullName,
-        password_set: false,
-        status: 'approved',
-        role: 'director' // Default role for approved registrations
+      .select('*')
+      .eq('id', authUser.user.id)
+      .single()
+
+    if (existingUser) {
+      debugLogger.usersTableInsertResult(email, true, { 
+        source: 'trigger',
+        userId: existingUser.id,
+        passwordSet: existingUser.password_set 
       })
-      .select()
+    } else {
+      // Trigger didn't work, manually insert into users table
+      debugLogger.warning('TRIGGER_FAILED', email, 'Users table trigger did not fire, manually inserting')
+      
+      const { data: insertData, error: userInsertError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          id: authUser.user.id,
+          email: email,
+          full_name: fullName,
+          password_set: false,
+          status: 'approved',
+          role: 'director' // Default role for approved registrations
+        })
+        .select()
+        .single()
 
-    if (userInsertError) {
-      // If user already exists (due to trigger), just update the password_set flag
-      if (userInsertError.code === '23505') { // Unique constraint violation
-        const { error: updateError } = await supabaseAdmin
-          .from('users')
-          .update({ 
-            password_set: false,
-            status: 'approved',
-            role: 'director'
-          })
-          .eq('id', authUser.user.id)
+      if (userInsertError) {
+        // If user already exists (race condition), try to update
+        if (userInsertError.code === '23505') { // Unique constraint violation
+          debugLogger.warning('RACE_CONDITION_DETECTED', email, 'User record exists, updating instead')
+          
+          const { data: updateData, error: updateError } = await supabaseAdmin
+            .from('users')
+            .update({ 
+              password_set: false,
+              status: 'approved',
+              role: 'director',
+              full_name: fullName
+            })
+            .eq('id', authUser.user.id)
+            .select()
+            .single()
 
-        if (updateError) {
-          console.error('Error updating existing user:', updateError)
+          if (updateError) {
+            debugLogger.usersTableInsertResult(email, false, { error: updateError })
+            throw new Error(`Failed to update existing user record: ${updateError.message}`)
+          } else {
+            debugLogger.usersTableInsertResult(email, true, { 
+              source: 'manual_update',
+              data: updateData 
+            })
+          }
         } else {
-          console.log(`✅ Updated existing user record for ${email}`)
+          debugLogger.usersTableInsertResult(email, false, { error: userInsertError })
+          throw new Error(`Failed to insert user record: ${userInsertError.message}`)
         }
       } else {
-        console.error('Error inserting user record:', userInsertError)
+        debugLogger.usersTableInsertResult(email, true, { 
+          source: 'manual_insert',
+          data: insertData 
+        })
       }
-    } else {
-      console.log(`✅ Created user record for ${email}`)
     }
 
-    console.log(`✅ Created auth user for ${email}`)
-    return { user: authUser.user, success: true }
+    // Final verification - ensure user record exists
+    const { data: finalUser, error: finalError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', authUser.user.id)
+      .single()
+
+    if (finalError || !finalUser) {
+      const error = `User record verification failed: ${finalError?.message || 'User not found'}`
+      debugLogger.error('USER_VERIFICATION_FAILED', email, { error, userId: authUser.user.id })
+      throw new Error(error)
+    }
+
+    debugLogger.info('USER_VERIFICATION_SUCCESS', email, {
+      userId: finalUser.id,
+      email: finalUser.email,
+      passwordSet: finalUser.password_set,
+      status: finalUser.status,
+      role: finalUser.role
+    })
+
+    tracker.success({ 
+      userId: authUser.user.id,
+      usersTableRecord: !!finalUser 
+    })
+    
+    return { 
+      user: authUser.user, 
+      success: true,
+      userRecord: finalUser
+    }
 
   } catch (error) {
-    console.error('Failed to create user for approved registration:', error)
-    return { user: null, success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    debugLogger.error('CREATE_USER_FAILED', email, {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    
+    tracker.error(error)
+    return { 
+      user: null, 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userRecord: null
+    }
   }
 }
 
