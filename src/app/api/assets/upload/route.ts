@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const category = formData.get('category') as string || 'general'
     const folderPath = formData.get('folderPath') as string || '/'
     const tagsString = formData.get('tags') as string
-    const tags = tagsString ? tagsString.split(',').map(tag => tag.trim()).filter(Boolean) : []
+    const tags = tagsString ? tagsString.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []
 
     // Validate file
     if (!file) {
@@ -334,7 +334,7 @@ export async function PUT(request: NextRequest) {
                                 bulkSettings.folderPath || '/'
           const fileTagsString = formData.get(`tags_${actualIndex}`) as string || 
                                 bulkSettings.tags || ''
-          const fileTags = fileTagsString ? fileTagsString.split(',').map(tag => tag.trim()).filter(Boolean) : []
+          const fileTags = fileTagsString ? fileTagsString.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []
 
           // Validate file
           if (file.size > MAX_FILE_SIZE) {

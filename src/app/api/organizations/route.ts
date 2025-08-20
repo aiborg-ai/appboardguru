@@ -84,7 +84,7 @@ function validateCreateOrganizationData(data: any): { isValid: boolean; errors: 
       description: data.description?.trim(),
       website: data.website?.trim(),
       industry: data.industry?.trim(),
-      organizationSize: data.organizationSize
+      organization_size: data.organizationSize
     }
   }
 }
@@ -124,7 +124,7 @@ async function handleCreateOrganization(request: NextRequest) {
   }
 
   try {
-    const result = await createOrganization(sanitizedData, body.createdBy, deviceInfo)
+    const result = await createOrganization(sanitizedData, body.createdBy)
 
     if (!result.success) {
       return createErrorResponse(result.error || 'Failed to create organization', 400)
@@ -255,11 +255,11 @@ async function handleUpdateOrganization(request: NextRequest) {
     if (body.organizationSize && !['startup', 'small', 'medium', 'large', 'enterprise'].includes(body.organizationSize)) {
       return createValidationErrorResponse(['Invalid organization size'])
     }
-    updateData.organizationSize = body.organizationSize
+    updateData.organization_size = body.organizationSize
   }
 
   if (body.logoUrl !== undefined) {
-    updateData.logoUrl = body.logoUrl?.trim()
+    updateData.logo_url = body.logoUrl?.trim()
   }
 
   try {

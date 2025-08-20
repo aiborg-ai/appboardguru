@@ -101,9 +101,9 @@ export async function GET(request: NextRequest) {
     const transformedAssets = assets?.map(asset => ({
       ...asset,
       isOwner: asset.owner_id === user.id,
-      sharedWith: asset.asset_shares?.filter(share => 
+      sharedWith: asset.asset_shares?.filter((share: any) => 
         share.shared_with_user_id !== user.id
-      ).map(share => ({
+      ).map((share: any) => ({
         userId: share.shared_with_user_id,
         userName: share.users?.name || '',
         permission: share.permission_level

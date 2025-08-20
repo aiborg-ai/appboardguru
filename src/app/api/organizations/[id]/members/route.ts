@@ -115,9 +115,8 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
         const updateResult = await updateMemberRole(
           organizationId,
           body.targetUserId,
-          body.newRole,
-          body.userId,
-          deviceInfo
+          { role: body.newRole },
+          body.userId
         )
 
         if (!updateResult.success) {
@@ -135,9 +134,7 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
         const removeResult = await removeMember(
           organizationId,
           body.targetUserId,
-          body.userId,
-          body.reason,
-          deviceInfo
+          body.userId
         )
 
         if (!removeResult.success) {
@@ -155,8 +152,7 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
         const transferResult = await transferOwnership(
           organizationId,
           body.targetUserId,
-          body.userId,
-          deviceInfo
+          body.userId
         )
 
         if (!transferResult.success) {
@@ -165,8 +161,8 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
 
         const transferResponse = createSuccessResponse(
           { 
-            newOwner: transferResult.newOwner,
-            previousOwner: transferResult.previousOwner
+            targetUserId: body.targetUserId,
+            previousOwnerId: body.userId
           },
           'Ownership transferred successfully'
         )

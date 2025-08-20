@@ -66,7 +66,7 @@ export async function GET(
 
     // Check if user has access to this asset
     const isOwner = asset.owner_id === user.id
-    const hasSharedAccess = asset.asset_shares?.some(share => 
+    const hasSharedAccess = asset.asset_shares?.some((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -96,7 +96,7 @@ export async function GET(
     const transformedAsset = {
       ...asset,
       isOwner,
-      sharedWith: asset.asset_shares?.map(share => ({
+      sharedWith: asset.asset_shares?.map((share: any) => ({
         id: share.id,
         userId: share.shared_with_user_id,
         userName: share.users?.name || '',
@@ -107,7 +107,7 @@ export async function GET(
         isActive: share.is_active,
         sharedAt: share.created_at
       })) || [],
-      comments: asset.asset_comments?.map(comment => ({
+      comments: asset.asset_comments?.map((comment: any) => ({
         id: comment.id,
         text: comment.comment_text,
         createdAt: comment.created_at,
@@ -175,7 +175,7 @@ export async function PUT(
     }
 
     const isOwner = asset.owner_id === user.id
-    const hasEditAccess = asset.asset_shares?.some(share => 
+    const hasEditAccess = asset.asset_shares?.some((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       ['edit', 'admin'].includes(share.permission_level) &&

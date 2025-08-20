@@ -64,7 +64,7 @@ export async function POST(
     }
 
     const isOwner = asset.owner_id === user.id
-    const hasAdminAccess = asset.asset_shares?.some(share => 
+    const hasAdminAccess = asset.asset_shares?.some((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       share.permission_level === 'admin' &&
@@ -142,7 +142,7 @@ export async function POST(
     }
 
     // Transform response data
-    const shareResults = shares?.map(share => ({
+    const shareResults = shares?.map((share: any) => ({
       id: share.id,
       assetId: share.asset_id,
       sharedWithUserId: share.shared_with_user_id,
@@ -213,7 +213,7 @@ export async function GET(
     }
 
     const isOwner = asset.owner_id === user.id
-    const hasAccess = isOwner || asset.asset_shares?.some(share => 
+    const hasAccess = isOwner || asset.asset_shares?.some((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -240,7 +240,7 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch sharing information' }, { status: 500 })
     }
 
-    const transformedShares = shares?.map(share => ({
+    const transformedShares = shares?.map((share: any) => ({
       id: share.id,
       sharedWithUser: {
         id: share.shared_with_user?.id,
@@ -324,7 +324,7 @@ export async function DELETE(
     }
 
     const isOwner = asset.owner_id === user.id
-    const hasAdminAccess = asset.asset_shares?.some(share => 
+    const hasAdminAccess = asset.asset_shares?.some((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       share.permission_level === 'admin' &&

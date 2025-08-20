@@ -402,6 +402,9 @@ async function handleUpdateInvitation(request: NextRequest) {
       return addSecurityHeaders(response)
     }
 
+    // This should never be reached due to validation above, but TypeScript requires it
+    return createErrorResponse('Invalid action', 400)
+
   } catch (error) {
     console.error('Error updating invitation:', error)
     return createErrorResponse('Internal server error', 500)

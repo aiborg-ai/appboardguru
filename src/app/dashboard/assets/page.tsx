@@ -6,6 +6,9 @@ import { FileUploadDropzone } from '@/components/assets/FileUploadDropzone'
 import { AssetGrid } from '@/components/assets/AssetGrid'
 import { AssetList } from '@/components/assets/AssetList'
 import { AssetShareModal } from '@/components/assets/AssetShareModal'
+import { useOrganization } from '@/contexts/OrganizationContext'
+import { Loader2, Building2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Folder,
   Upload,
@@ -96,8 +99,9 @@ const mockAssets: Asset[] = [
 ]
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>(mockAssets)
-  const [filteredAssets, setFilteredAssets] = useState<Asset[]>(mockAssets)
+  const { currentOrganization, isLoadingOrganizations } = useOrganization()
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [showUpload, setShowUpload] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
@@ -107,6 +111,71 @@ export default function AssetsPage() {
   const [selectedFolder, setSelectedFolder] = useState('all')
   const [sortBy, setSortBy] = useState<SortOption>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [isLoadingAssets, setIsLoadingAssets] = useState(true)
+  const [assetsError, setAssetsError] = useState<string | null>(null)
+
+  // Fetch assets for current organization
+  useEffect(() => {
+    if (!currentOrganization) {
+      setAssets([])
+      setIsLoadingAssets(false)
+      return
+    }
+
+    const fetchAssets = async () => {
+      setIsLoadingAssets(true)
+      setAssetsError(null)
+      
+      try {
+        const response = await fetch('/api/assets', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            // Transform API response to match component Asset interface
+            const transformedAssets = data.assets.map((asset: any) => ({
+              id: asset.id,
+              title: asset.title,
+              fileName: asset.fileName || asset.file_name,
+              fileType: asset.fileType || asset.file_type,
+              fileSize: asset.fileSize || asset.file_size,
+              category: asset.category || 'uncategorized',
+              folder: '/uploads', // Default folder
+              tags: asset.tags || [],
+              thumbnail: asset.thumbnailUrl || asset.thumbnail_url,
+              createdAt: asset.createdAt || asset.created_at,
+              updatedAt: asset.updatedAt || asset.updated_at,
+              owner: {
+                id: asset.owner?.id || asset.owner_id,
+                name: asset.owner?.email?.split('@')[0] || 'Unknown',
+                email: asset.owner?.email || 'unknown@email.com'
+              },
+              sharedWith: [],
+              downloadCount: asset.downloadCount || 0,
+              viewCount: asset.viewCount || 0,
+              isShared: false
+            }))
+            setAssets(transformedAssets)
+          } else {
+            setAssetsError(data.error || 'Failed to load assets')
+          }
+        } else {
+          setAssetsError('Failed to load assets')
+        }
+      } catch (error) {
+        console.error('Error fetching assets:', error)
+        setAssetsError('Error loading assets')
+      } finally {
+        setIsLoadingAssets(false)
+      }
+    }
+
+    fetchAssets()
+  }, [currentOrganization])
 
   // Filter and search logic
   useEffect(() => {
@@ -210,7 +279,16 @@ export default function AssetsPage() {
             <Folder className="h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Assets</h1>
-              <p className="text-gray-600">Manage and share your documents</p>
+              <div className="flex items-center space-x-2">
+                {currentOrganization ? (
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <Building2 className="h-4 w-4" />
+                    <span>{currentOrganization.name}</span>
+                  </div>
+                ) : (
+                  <p className="text-gray-600">Select an organization to view assets</p>
+                )}
+              </div>
             </div>
           </div>
           
@@ -218,36 +296,69 @@ export default function AssetsPage() {
             <Button
               variant="outline"
               onClick={() => setShowUpload(!showUpload)}
+              disabled={!currentOrganization}
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload Files
             </Button>
-            <Button>
+            <Button disabled={!currentOrganization}>
               <Plus className="h-4 w-4 mr-2" />
               New Folder
             </Button>
           </div>
         </div>
 
-        {/* Upload Section */}
-        {showUpload && (
-          <Card className="mb-6 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Upload Documents</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowUpload(false)}
-              >
-                ✕
-              </Button>
-            </div>
-            <FileUploadDropzone onUploadComplete={handleUploadComplete} />
+        {/* Organization Selection Message */}
+        {!currentOrganization && !isLoadingOrganizations && (
+          <Alert className="mb-6">
+            <Building2 className="h-4 w-4" />
+            <AlertDescription>
+              Please select an organization from the sidebar to view and manage assets.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading State */}
+        {(isLoadingOrganizations || isLoadingAssets) && (
+          <Card className="p-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">
+              {isLoadingOrganizations ? 'Loading organizations...' : 'Loading assets...'}
+            </p>
           </Card>
         )}
 
-        {/* Filters and Search */}
-        <Card className="mb-6 p-4">
+        {/* Error State */}
+        {assetsError && (
+          <Alert className="mb-6 border-red-200 bg-red-50">
+            <AlertDescription className="text-red-800">
+              {assetsError}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Show content only when organization is selected and not loading */}
+        {currentOrganization && !isLoadingOrganizations && !isLoadingAssets && (
+          <>
+            {/* Upload Section */}
+            {showUpload && (
+              <Card className="mb-6 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Upload Documents</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowUpload(false)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <FileUploadDropzone onUploadComplete={handleUploadComplete} />
+              </Card>
+            )}
+
+            {/* Filters and Search */}
+            <Card className="mb-6 p-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -384,20 +495,22 @@ export default function AssetsPage() {
               )}
             </>
           )}
-        </div>
-
-        {/* Assets Summary */}
-        {filteredAssets.length > 0 && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                Showing {filteredAssets.length} of {assets.length} assets
-              </span>
-              <span>
-                Total size: {(filteredAssets.reduce((acc, asset) => acc + asset.fileSize, 0) / (1024 * 1024)).toFixed(1)} MB
-              </span>
             </div>
-          </Card>
+
+            {/* Assets Summary */}
+            {filteredAssets.length > 0 && (
+              <Card className="p-4">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>
+                    Showing {filteredAssets.length} of {assets.length} assets
+                  </span>
+                  <span>
+                    Total size: {(filteredAssets.reduce((acc, asset) => acc + asset.fileSize, 0) / (1024 * 1024)).toFixed(1)} MB
+                  </span>
+                </div>
+              </Card>
+            )}
+          </>
         )}
 
         {/* Share Modal */}

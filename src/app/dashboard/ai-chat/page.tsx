@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { EnhancedAIChat } from '@/components/ai/EnhancedAIChat'
 import { ScopeSelector, type ChatScope } from '@/components/ai/ScopeSelector'
+import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   MessageSquare,
   Brain,
@@ -15,10 +16,12 @@ import {
   Target,
   Users,
   FileText,
-  Calendar
+  Calendar,
+  Building2
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const defaultScope: ChatScope = {
   id: 'global',
@@ -28,6 +31,7 @@ const defaultScope: ChatScope = {
 }
 
 export default function AIChatPage() {
+  const { currentOrganization, isLoadingOrganizations } = useOrganization()
   const [selectedScope, setSelectedScope] = useState<ChatScope>(defaultScope)
   const [showFullPageChat, setShowFullPageChat] = useState(false)
 
@@ -112,7 +116,16 @@ export default function AIChatPage() {
                 <Brain className="h-6 w-6" />
                 <div>
                   <h1 className="text-lg font-semibold">BoardGuru AI Assistant</h1>
-                  <p className="text-sm text-blue-100">Full-screen chat interface</p>
+                  <div className="flex items-center space-x-2">
+                    {currentOrganization ? (
+                      <div className="flex items-center space-x-2 text-blue-100">
+                        <Building2 className="h-4 w-4" />
+                        <span className="text-sm">{currentOrganization.name}</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-blue-100">No organization selected</p>
+                    )}
+                  </div>
                 </div>
               </div>
               <Button
@@ -158,18 +171,38 @@ export default function AIChatPage() {
             <MessageSquare className="h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">AI Assistant</h1>
-              <p className="text-gray-600">Intelligent support for governance and board management</p>
+              <div className="flex items-center space-x-2">
+                {currentOrganization ? (
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <Building2 className="h-4 w-4" />
+                    <span>{currentOrganization.name}</span>
+                  </div>
+                ) : (
+                  <p className="text-gray-600">Select an organization for context-aware assistance</p>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <Button
               onClick={() => setShowFullPageChat(true)}
               variant="outline"
+              disabled={!currentOrganization}
             >
               Full Screen
             </Button>
           </div>
         </div>
+
+        {/* Organization Selection Message */}
+        {!currentOrganization && !isLoadingOrganizations && (
+          <Alert className="mb-6">
+            <Building2 className="h-4 w-4" />
+            <AlertDescription>
+              Please select an organization from the sidebar to enable context-aware AI assistance. The AI will have access to your organization's data and documents.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
