@@ -45,28 +45,48 @@ export default function SignInPage() {
       })
 
       if (authError) {
-        // Check if this is a user who needs to set their password first
-        if (authError.message.includes('Invalid login credentials') || 
-            authError.message.includes('Email not confirmed') ||
-            authError.message.includes('Invalid password')) {
-          
-          // Check if user exists and needs password setup
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('status, password_set, email')
+        // Always check if this user needs password setup when login fails
+        console.log('Auth error:', authError.message)
+        
+        // Check if user exists and needs password setup
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('status, password_set, email')
+          .eq('email', data.email)
+          .single()
+
+        console.log('User data check:', { userData, userError })
+
+        // If user exists in users table and needs password setup
+        if (userData && userData.status === 'approved' && userData.password_set === false) {
+          setError('')
+          setMagicLinkEmail(data.email)
+          setMagicLinkMessage('✨ This account needs password setup. Your account is approved but you need to set up your password first.')
+          setShowMagicLinkForm(true)
+          return
+        }
+
+        // If user not found in users table, check registration_requests as fallback
+        if (!userData || userError) {
+          const { data: regData, error: regError } = await supabase
+            .from('registration_requests')
+            .select('status, email, full_name')
             .eq('email', data.email)
             .single()
 
-          if (userData && userData.status === 'approved' && !userData.password_set) {
-            // User exists, is approved, but hasn't set password
+          console.log('Registration data check:', { regData, regError })
+
+          if (regData && regData.status === 'approved') {
+            // User has approved registration but no user account yet
             setError('')
             setMagicLinkEmail(data.email)
-            setMagicLinkMessage('✨ This account needs password setup. Click below to get your setup link.')
+            setMagicLinkMessage('✨ Your registration is approved! You need to set up your password to access your account.')
             setShowMagicLinkForm(true)
             return
           }
         }
         
+        // If not a password setup case, show the original error
         throw new Error(authError.message)
       }
 
@@ -316,19 +336,35 @@ export default function SignInPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-3">
-              Don't have an account?{' '}
-              <Link href="/" className="font-medium text-primary-600 hover:text-primary-500">
-                Request access
+          <div className="text-center space-y-4">
+            {/* Prominent First Time User Button */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800 mb-3">
+                <strong>First time signing in?</strong> If you've been approved but haven't set up your password yet:
+              </p>
+              <button
+                onClick={() => setShowMagicLinkForm(true)}
+                className="btn-primary py-2 px-4 text-sm font-medium"
+              >
+                🔐 Get Password Setup Link
+              </button>
+            </div>
+
+            {/* Regular Account Actions */}
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                Don't have an account?{' '}
+                <Link href="/" className="font-medium text-primary-600 hover:text-primary-500">
+                  Request access
+                </Link>
+              </p>
+              <Link 
+                href="/auth/forgot-password" 
+                className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+              >
+                Forgot password?
               </Link>
-            </p>
-            <button
-              onClick={() => setShowMagicLinkForm(true)}
-              className="text-sm text-primary-600 hover:text-primary-500 font-medium"
-            >
-              First time user? Get password setup link
-            </button>
+            </div>
           </div>
         )}
 

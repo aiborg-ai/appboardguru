@@ -46,6 +46,44 @@ export async function createUserForApprovedRegistration(email: string, fullName:
       throw new Error('Failed to create user - no user returned')
     }
 
+    // Manually insert into users table to ensure it's populated correctly
+    // (in case the trigger function doesn't work or there's a timing issue)
+    const { error: userInsertError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        id: authUser.user.id,
+        email: email,
+        full_name: fullName,
+        password_set: false,
+        status: 'approved',
+        role: 'director' // Default role for approved registrations
+      })
+      .select()
+
+    if (userInsertError) {
+      // If user already exists (due to trigger), just update the password_set flag
+      if (userInsertError.code === '23505') { // Unique constraint violation
+        const { error: updateError } = await supabaseAdmin
+          .from('users')
+          .update({ 
+            password_set: false,
+            status: 'approved',
+            role: 'director'
+          })
+          .eq('id', authUser.user.id)
+
+        if (updateError) {
+          console.error('Error updating existing user:', updateError)
+        } else {
+          console.log(`✅ Updated existing user record for ${email}`)
+        }
+      } else {
+        console.error('Error inserting user record:', userInsertError)
+      }
+    } else {
+      console.log(`✅ Created user record for ${email}`)
+    }
+
     console.log(`✅ Created auth user for ${email}`)
     return { user: authUser.user, success: true }
 
