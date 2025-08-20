@@ -122,13 +122,17 @@ class FormFieldProxy<T extends Record<string, any>> {
 
   private initializeTransformers(): void {
     Object.entries(this.config.fieldTransformers || {}).forEach(([key, transformer]) => {
-      this.transformers.set(key, transformer)
+      if (transformer) {
+        this.transformers.set(key, transformer)
+      }
     })
   }
 
   private initializeValidators(): void {
     Object.entries(this.config.fieldValidators || {}).forEach(([key, validator]) => {
-      this.validators.set(key, validator)
+      if (validator) {
+        this.validators.set(key, validator)
+      }
     })
   }
 

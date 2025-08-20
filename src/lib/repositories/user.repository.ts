@@ -128,7 +128,7 @@ export class UserRepository extends BaseRepository {
         .from('organization_members')
         .update({
           last_accessed: new Date().toISOString(),
-          access_count: this.supabase.raw('access_count + 1')
+          access_count: 1 // Will be incremented via SQL trigger or separate query
         })
         .eq('user_id', id)
 

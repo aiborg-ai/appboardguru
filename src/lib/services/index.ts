@@ -5,10 +5,8 @@ export { NotificationService } from './notification.service'
 
 // Legacy service exports (keep existing services working)
 export * from './email-templates'
-export * from './invitations'
-export * from './membership'
-export * from './organization'
-export * from './permissions'
+// Note: invitations, organization, membership, and permissions have conflicting OrganizationRole type exports
+// These should be imported directly from their respective modules when needed
 
 // Service factory for dependency injection
 import { SupabaseClient } from '@supabase/supabase-js'

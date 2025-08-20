@@ -61,7 +61,7 @@ export interface FieldProps {
 }
 
 export interface FormProps {
-  ref: React.RefObject<HTMLFormElement>
+  ref: React.RefObject<HTMLFormElement | null>
   onSubmit: (event: React.FormEvent) => void
   noValidate: boolean
 }

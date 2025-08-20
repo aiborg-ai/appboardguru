@@ -1,13 +1,13 @@
 import { Database } from '../database'
 
-// Base vault types from database
-export type Vault = Database['public']['Tables']['vaults']['Row']
-export type VaultInsert = Database['public']['Tables']['vaults']['Insert']
-export type VaultUpdate = Database['public']['Tables']['vaults']['Update']
+// Base vault types from database (using board_packs as vault equivalent)
+export type Vault = Database['public']['Tables']['board_packs']['Row']
+export type VaultInsert = Database['public']['Tables']['board_packs']['Insert']
+export type VaultUpdate = Database['public']['Tables']['board_packs']['Update']
 
-export type VaultMember = Database['public']['Tables']['vault_members']['Row']
-export type VaultInvitation = Database['public']['Tables']['vault_invitations']['Row']
-export type VaultAsset = Database['public']['Tables']['vault_assets']['Row']
+export type VaultMember = Database['public']['Tables']['board_pack_permissions']['Row']
+export type VaultInvitation = Database['public']['Tables']['organization_invitations']['Row']
+export type VaultAsset = Database['public']['Tables']['board_packs']['Row']
 
 // Extended types
 export interface VaultWithDetails extends Vault {

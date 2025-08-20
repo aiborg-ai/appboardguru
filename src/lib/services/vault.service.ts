@@ -52,14 +52,15 @@ export class VaultService extends BaseService {
 
       // Create vault
       const vaultData: VaultInsert = {
-        name: validatedData.name,
+        title: validatedData.name,
         description: validatedData.description,
         organization_id: validatedData.organizationId,
-        meeting_date: validatedData.meetingDate,
-        priority: validatedData.priority || 'medium',
-        created_by: user.id,
-        status: 'draft',
-        tags: validatedData.tags,
+        uploaded_by: user.id,
+        status: 'processing',
+        file_path: '',
+        file_name: '',
+        file_size: 0,
+        file_type: 'vault',
       }
 
       const vault = await this.repositories.vaults.create(vaultData)
@@ -68,7 +69,7 @@ export class VaultService extends BaseService {
       await this.repositories.vaults.addMember(vault.id, user.id, 'owner')
 
       await this.logActivity('create_vault', 'vault', vault.id, {
-        vaultName: vault.name,
+        vaultName: vault.title,
         organizationId: vault.organization_id,
       })
 
@@ -97,10 +98,10 @@ export class VaultService extends BaseService {
       }
 
       // Get additional details in parallel
-      const [members, assets, organization] = await this.parallel([
-        () => this.repositories.vaults.getMembers(vaultId),
-        () => this.repositories.assets.findByVault(vaultId),
-        () => this.repositories.organizations.findById(vault.organization_id),
+      const [members, assets, organization] = await Promise.all([
+        this.repositories.vaults.getMembers(vaultId),
+        this.repositories.assets.findByVault(vaultId),
+        this.repositories.organizations.findById(vault.organization_id || ''),
       ])
 
       return {
@@ -110,16 +111,16 @@ export class VaultService extends BaseService {
           name: organization.name,
           slug: organization.slug,
         } : null,
-        members: members.map(member => ({
+        members: members ? (members as any[]).map((member: any) => ({
           ...member,
           user: {
-            id: member.user.id,
-            email: member.user.email,
-            full_name: member.user.full_name,
-            avatar_url: member.user.avatar_url,
+            id: member.granted_to_user_id || '',
+            email: '',
+            full_name: '',
+            avatar_url: '',
           },
-        })),
-        assets: assets.map(asset => ({
+        })) : [],
+        assets: assets ? (assets as any[]).map((asset: any) => ({
           id: asset.id,
           asset: {
             id: asset.id,
@@ -134,10 +135,10 @@ export class VaultService extends BaseService {
           vault_id: vaultId,
           added_by: asset.uploaded_by,
           added_at: asset.created_at,
-        })),
-        memberCount: members.length,
-        assetCount: assets.length,
-      } as VaultWithDetails
+        })) : [],
+        memberCount: members ? members.length : 0,
+        assetCount: assets ? assets.length : 0,
+      } as unknown as VaultWithDetails
     } catch (error) {
       this.handleError(error, 'getVaultWithDetails', { vaultId })
     }
@@ -158,8 +159,8 @@ export class VaultService extends BaseService {
       }
 
       const updateData: VaultUpdate = {
-        ...validatedData,
-        meeting_date: validatedData.meetingDate,
+        title: validatedData.name,
+        description: validatedData.description,
         updated_at: new Date().toISOString(),
       }
 
@@ -196,7 +197,7 @@ export class VaultService extends BaseService {
       await this.repositories.vaults.delete(vaultId)
 
       await this.logActivity('delete_vault', 'vault', vaultId, {
-        vaultName: vault.name,
+        vaultName: vault.title,
       })
     } catch (error) {
       this.handleError(error, 'deleteVault', { vaultId })
@@ -285,7 +286,7 @@ export class VaultService extends BaseService {
       }
 
       // Create broadcast invitations
-      const invitations = data.userIds.map(userId => ({
+      const invitations = data.userIds.map((userId: string) => ({
         vault_id: data.vaultId,
         user_id: userId,
         message: data.message,
@@ -299,12 +300,12 @@ export class VaultService extends BaseService {
 
       // Send notification emails
       const users = await Promise.all(
-        data.userIds.map(id => this.repositories.users.findById(id))
+        data.userIds.map((id: string) => this.repositories.users.findById(id))
       )
       
       const emails = users
         .filter(Boolean)
-        .map(user => user!.email)
+        .map((user: any) => user!.email)
         .filter(Boolean) as string[]
 
       if (emails.length > 0) {

@@ -32,7 +32,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             error && "border-red-500 focus-visible:ring-red-500",
             className
           )}
-          {...fieldProps}
+          {...(fieldProps as any)}
           {...props}
         />
         {error && (
@@ -74,7 +74,7 @@ export const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaPr
             error && "border-red-500 focus-visible:ring-red-500",
             className
           )}
-          {...fieldProps}
+          {...(fieldProps as any)}
           {...props}
         />
         {error && (
@@ -117,7 +117,7 @@ export const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
             error && "border-red-500 focus-visible:ring-red-500",
             className
           )}
-          {...fieldProps}
+          {...(fieldProps as any)}
           {...props}
         >
           {children}

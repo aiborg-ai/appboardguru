@@ -40,7 +40,7 @@ export class NotificationService extends BaseService {
     }
 
     try {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: emailConfig.smtp.host,
         port: emailConfig.smtp.port,
         secure: emailConfig.smtp.secure,
@@ -98,7 +98,7 @@ export class NotificationService extends BaseService {
       console.error('Failed to send email:', error)
       await this.logActivity('email_failed', 'notification', undefined, {
         to,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         category,
       })
       return false

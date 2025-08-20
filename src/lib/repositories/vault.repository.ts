@@ -1,16 +1,16 @@
 import { BaseRepository } from './base.repository'
 import type { Database } from '@/types/database'
 
-type Vault = Database['public']['Tables']['vaults']['Row']
-type VaultInsert = Database['public']['Tables']['vaults']['Insert']
-type VaultUpdate = Database['public']['Tables']['vaults']['Update']
-type VaultMember = Database['public']['Tables']['vault_members']['Row']
+type Vault = Database['public']['Tables']['board_packs']['Row']
+type VaultInsert = Database['public']['Tables']['board_packs']['Insert'] 
+type VaultUpdate = Database['public']['Tables']['board_packs']['Update']
+type VaultMember = Database['public']['Tables']['board_pack_permissions']['Row']
 
 export class VaultRepository extends BaseRepository {
   async findById(id: string): Promise<Vault | null> {
     try {
       const { data, error } = await this.supabase
-        .from('vaults')
+        .from('board_packs')
         .select('*')
         .eq('id', id)
         .single()
@@ -28,22 +28,23 @@ export class VaultRepository extends BaseRepository {
   async findByOrganization(organizationId: string, userId?: string): Promise<Vault[]> {
     try {
       let query = this.supabase
-        .from('vaults')
+        .from('board_packs')
         .select(`
           *,
           organization:organizations(*),
-          vault_members(
+          board_pack_permissions(
             id,
-            user_id,
-            role,
-            permissions,
-            joined_at
+            granted_to_user_id,
+            granted_to_role,
+            can_view,
+            can_download,
+            granted_at
           )
         `)
         .eq('organization_id', organizationId)
 
       if (userId) {
-        query = query.or(`status.eq.published,vault_members.user_id.eq.${userId}`)
+        query = query.or(`status.eq.published,board_pack_permissions.granted_to_user_id.eq.${userId}`)
       }
 
       const { data, error } = await query.order('created_at', { ascending: false })
@@ -61,20 +62,20 @@ export class VaultRepository extends BaseRepository {
   async findByUser(userId: string): Promise<Vault[]> {
     try {
       const { data, error } = await this.supabase
-        .from('vaults')
+        .from('board_packs')
         .select(`
           *,
           organization:organizations(*),
-          vault_members!inner(
+          board_pack_permissions!inner(
             id,
-            user_id,
-            role,
-            permissions,
-            joined_at
+            granted_to_user_id,
+            granted_to_role,
+            can_view,
+            granted_at
           )
         `)
-        .eq('vault_members.user_id', userId)
-        .order('vault_members.joined_at', { ascending: false })
+        .eq('board_pack_permissions.granted_to_user_id', userId)
+        .order('board_pack_permissions.granted_at', { ascending: false })
 
       if (error) {
         this.handleError(error, 'findByUser')
@@ -89,7 +90,7 @@ export class VaultRepository extends BaseRepository {
   async create(vault: VaultInsert): Promise<Vault> {
     try {
       const { data, error } = await this.supabase
-        .from('vaults')
+        .from('board_packs')
         .insert(vault)
         .select()
         .single()
@@ -107,7 +108,7 @@ export class VaultRepository extends BaseRepository {
   async update(id: string, updates: VaultUpdate): Promise<Vault> {
     try {
       const { data, error } = await this.supabase
-        .from('vaults')
+        .from('board_packs')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
@@ -129,7 +130,7 @@ export class VaultRepository extends BaseRepository {
   async delete(id: string): Promise<void> {
     try {
       const { error } = await this.supabase
-        .from('vaults')
+        .from('board_packs')
         .delete()
         .eq('id', id)
 
@@ -144,12 +145,14 @@ export class VaultRepository extends BaseRepository {
   async addMember(vaultId: string, userId: string, role: string = 'member'): Promise<VaultMember> {
     try {
       const { data, error } = await this.supabase
-        .from('vault_members')
+        .from('board_pack_permissions')
         .insert({
-          vault_id: vaultId,
-          user_id: userId,
-          role,
-          joined_at: new Date().toISOString()
+          board_pack_id: vaultId,
+          granted_to_user_id: userId,
+          granted_to_role: role as 'admin' | 'member' | 'viewer',
+          granted_by: 'system', // This should be set to actual user
+          granted_at: new Date().toISOString(),
+          organization_id: 'default' // This should be set properly
         })
         .select()
         .single()
@@ -167,10 +170,10 @@ export class VaultRepository extends BaseRepository {
   async removeMember(vaultId: string, userId: string): Promise<void> {
     try {
       const { error } = await this.supabase
-        .from('vault_members')
+        .from('board_pack_permissions')
         .delete()
-        .eq('vault_id', vaultId)
-        .eq('user_id', userId)
+        .eq('board_pack_id', vaultId)
+        .eq('granted_to_user_id', userId)
 
       if (error) {
         this.handleError(error, 'removeMember')
@@ -183,12 +186,12 @@ export class VaultRepository extends BaseRepository {
   async getMembers(vaultId: string): Promise<VaultMember[]> {
     try {
       const { data, error } = await this.supabase
-        .from('vault_members')
+        .from('board_pack_permissions')
         .select(`
           *,
           user:users(*)
         `)
-        .eq('vault_id', vaultId)
+        .eq('board_pack_id', vaultId)
 
       if (error) {
         this.handleError(error, 'getMembers')
@@ -203,10 +206,10 @@ export class VaultRepository extends BaseRepository {
   async hasAccess(vaultId: string, userId: string): Promise<boolean> {
     try {
       const { data, error } = await this.supabase
-        .from('vault_members')
+        .from('board_pack_permissions')
         .select('id')
-        .eq('vault_id', vaultId)
-        .eq('user_id', userId)
+        .eq('board_pack_id', vaultId)
+        .eq('granted_to_user_id', userId)
         .single()
 
       if (error && error.code !== 'PGRST116') {

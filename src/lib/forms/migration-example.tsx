@@ -200,7 +200,7 @@ function AdvancedFormExample() {
       },
       isUrgent: {
         validation: {
-          custom: (value: any) => true // Always valid for boolean
+          custom: (value: any) => undefined // Always valid for boolean
         },
         transform: (value: string) => value === 'true'
       }
@@ -246,7 +246,7 @@ function AdvancedFormExample() {
           step="0.01"
           min="1000"
           max="1000000"
-          {...formActions.getFieldProps('budget')}
+          {...(formActions.getFieldProps('budget') as any)}
           id="budget"
         />
         {formState.errors.budget && (
@@ -259,7 +259,7 @@ function AdvancedFormExample() {
         <label htmlFor="deadline">Deadline</label>
         <input
           type="date"
-          {...formActions.getFieldProps('deadline')}
+          {...(formActions.getFieldProps('deadline') as any)}
           id="deadline"
         />
         {formState.errors.deadline && (
@@ -372,7 +372,7 @@ function CustomHookExample() {
         type="number"
         min="0"
         max="100"
-        {...formActions.getFieldProps('score')}
+        {...(formActions.getFieldProps('score') as any)}
       />
 
       <button type="submit">Submit</button>
