@@ -200,7 +200,7 @@ export async function POST(
 
     // Check download permissions
     const isOwner = asset.owner_id === user.id
-    const hasDownloadAccess = isOwner || asset.asset_shares?.some(share => 
+    const hasDownloadAccess = isOwner || asset.asset_shares?.some((share: any) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       ['download', 'edit', 'admin'].includes(share.permission_level) &&
