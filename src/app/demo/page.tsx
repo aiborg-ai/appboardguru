@@ -332,14 +332,25 @@ export default function DemoPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Demo Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-          <div className="flex items-center">
-            <Shield className="h-5 w-5 text-blue-600 mr-3" />
-            <div>
-              <h3 className="text-sm font-semibold text-blue-900">Demo Environment</h3>
-              <p className="text-sm text-blue-700">
-                This is a demonstration of BoardGuru's features. No real data is processed or stored.
-                To access the full platform, please complete the registration process.
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Shield className="h-5 w-5 text-blue-600 mr-3" />
+              <div>
+                <h3 className="text-sm font-semibold text-blue-900">Demo Environment</h3>
+                <p className="text-sm text-blue-700">
+                  This is a demonstration of BoardGuru's features. No real data is processed or stored.
+                  To access the full platform, please complete the registration process.
+                </p>
+              </div>
+            </div>
+            <div className="flex-shrink-0 ml-4">
+              <a
+                href="/demo/dashboard"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                New Dashboard
+              </a>
             </div>
           </div>
         </div>
