@@ -121,29 +121,29 @@ export async function GET(request: NextRequest) {
 
     // Transform the data for frontend consumption
     const transformedVaults = vaults?.map(vault => ({
-      id: vault.id,
-      name: vault.name,
-      description: vault.description,
-      meetingDate: vault.meeting_date,
-      location: vault.location,
-      status: vault.status,
-      priority: vault.priority,
-      createdAt: vault.created_at,
-      updatedAt: vault.updated_at,
-      expiresAt: vault.expires_at,
-      memberCount: vault.member_count,
-      assetCount: vault.asset_count,
-      totalSizeBytes: vault.total_size_bytes,
-      lastActivityAt: vault.last_activity_at,
-      tags: vault.tags,
-      category: vault.category,
-      organization: vault.organization,
-      createdBy: vault.created_by_user,
-      userRole: vault.vault_members?.[0]?.role,
-      userJoinedAt: vault.vault_members?.[0]?.joined_at,
-      settings: vault.settings,
-      isPublic: vault.is_public,
-      requiresInvitation: vault.requires_invitation
+      id: (vault as any).id,
+      name: (vault as any).name,
+      description: (vault as any).description,
+      meetingDate: (vault as any).meeting_date,
+      location: (vault as any).location,
+      status: (vault as any).status,
+      priority: (vault as any).priority,
+      createdAt: (vault as any).created_at,
+      updatedAt: (vault as any).updated_at,
+      expiresAt: (vault as any).expires_at,
+      memberCount: (vault as any).member_count,
+      assetCount: (vault as any).asset_count,
+      totalSizeBytes: (vault as any).total_size_bytes,
+      lastActivityAt: (vault as any).last_activity_at,
+      tags: (vault as any).tags,
+      category: (vault as any).category,
+      organization: (vault as any).organization,
+      createdBy: (vault as any).created_by_user,
+      userRole: (vault as any).vault_members?.[0]?.role,
+      userJoinedAt: (vault as any).vault_members?.[0]?.joined_at,
+      settings: (vault as any).settings,
+      isPublic: (vault as any).is_public,
+      requiresInvitation: (vault as any).requires_invitation
     }))
 
     return NextResponse.json({
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only owners, admins, and members can create vaults
-    if (!['owner', 'admin', 'member'].includes(membership.role)) {
+    if (!['owner', 'admin', 'member'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to create vaults' 
       }, { status: 403 })
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
     const { error: memberError } = await supabase
       .from('vault_members')
       .insert({
-        vault_id: vault.id,
+        vault_id: (vault as any).id,
         user_id: user.id,
         organization_id: body.organizationId,
         role: 'owner',
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
     if (memberError) {
       console.error('Vault member creation error:', memberError)
       // Clean up the vault if member creation fails
-      await supabase.from('vaults').delete().eq('id', vault.id)
+      await supabase.from('vaults').delete().eq('id', (vault as any).id)
       return NextResponse.json({ 
         error: 'Failed to set up vault permissions' 
       }, { status: 500 })
@@ -284,13 +284,13 @@ export async function POST(request: NextRequest) {
     await supabase
       .from('vault_activity_log')
       .insert({
-        vault_id: vault.id,
+        vault_id: (vault as any).id,
         organization_id: body.organizationId,
         activity_type: 'vault_created',
         performed_by_user_id: user.id,
         activity_details: {
-          vault_name: vault.name,
-          vault_category: vault.category,
+          vault_name: (vault as any).name,
+          vault_category: (vault as any).category,
           created_via: 'api'
         },
         ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -299,27 +299,27 @@ export async function POST(request: NextRequest) {
 
     // Transform response
     const transformedVault = {
-      id: vault.id,
-      name: vault.name,
-      description: vault.description,
-      meetingDate: vault.meeting_date,
-      location: vault.location,
-      status: vault.status,
-      priority: vault.priority,
-      createdAt: vault.created_at,
-      updatedAt: vault.updated_at,
-      expiresAt: vault.expires_at,
+      id: (vault as any).id,
+      name: (vault as any).name,
+      description: (vault as any).description,
+      meetingDate: (vault as any).meeting_date,
+      location: (vault as any).location,
+      status: (vault as any).status,
+      priority: (vault as any).priority,
+      createdAt: (vault as any).created_at,
+      updatedAt: (vault as any).updated_at,
+      expiresAt: (vault as any).expires_at,
       memberCount: 1, // Just the creator
       assetCount: 0,
       totalSizeBytes: 0,
-      lastActivityAt: vault.last_activity_at,
-      tags: vault.tags,
-      category: vault.category,
-      organization: vault.organization,
+      lastActivityAt: (vault as any).last_activity_at,
+      tags: (vault as any).tags,
+      category: (vault as any).category,
+      organization: (vault as any).organization,
       userRole: 'owner',
-      settings: vault.settings,
-      isPublic: vault.is_public,
-      requiresInvitation: vault.requires_invitation
+      settings: (vault as any).settings,
+      isPublic: (vault as any).is_public,
+      requiresInvitation: (vault as any).requires_invitation
     }
 
     return NextResponse.json({

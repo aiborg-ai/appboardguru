@@ -513,7 +513,7 @@ export default function AssetsPage() {
           </>
         )}
 
-        {/* Share Modal */}
+        {/* Share Modal - Outside organization wrapper */}
         {showShareModal && selectedAsset && (
           <AssetShareModal
             asset={selectedAsset}

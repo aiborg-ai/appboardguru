@@ -3,23 +3,56 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // Disable React strict mode to reduce development warnings
   reactStrictMode: false,
-  // Custom webpack configuration to disable overlays
+  
+  // Disable development overlays completely
+  devIndicators: {
+    buildActivity: false,
+  },
+  
+  // Configure compiler options to disable overlay
+  compiler: {
+    removeConsole: false,
+  },
+  
+  // Disable all development overlays and warnings
+  experimental: {
+    // Disable overlay completely
+    optimizePackageImports: [],
+  },
+  
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
-      // Disable source maps and devtool
+      // Completely disable devtool and source maps
       config.devtool = false
       
-      // Remove React Refresh plugin to disable overlays
+      // Remove hot reload and error overlay plugins
       config.plugins = config.plugins.filter(plugin => {
-        return !plugin.constructor || plugin.constructor.name !== 'ReactRefreshWebpackPlugin'
+        const pluginName = plugin.constructor?.name || ''
+        return !pluginName.includes('ReactRefresh') && 
+               !pluginName.includes('HotModule') &&
+               !pluginName.includes('ErrorOverlay')
       })
       
-      // Disable webpack-hot-middleware overlay
-      config.infrastructureLogging = {
-        level: 'error'
+      // Disable all webpack dev server overlays
+      if (config.devServer) {
+        config.devServer.client = {
+          overlay: false,
+          logging: 'none',
+          progress: false
+        }
       }
+      
+      // Keep development mode but suppress warnings
+      config.mode = 'development'
+      
+      // Disable infrastructure logging
+      config.infrastructureLogging = {
+        level: 'none'
+      }
+      
+      // Disable stats logging
+      config.stats = 'none'
     }
     return config
   }

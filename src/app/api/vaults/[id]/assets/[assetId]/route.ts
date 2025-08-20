@@ -94,7 +94,7 @@ export async function GET(
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: membership.organization_id,
+        organization_id: (membership as any).organization_id,
         activity_type: 'asset_viewed',
         performed_by_user_id: user.id,
         affected_asset_id: assetId,
@@ -120,20 +120,20 @@ export async function GET(
       visibility: (vaultAsset as any).visibility,
       downloadPermissions: (vaultAsset as any).download_permissions,
       asset: {
-        id: (vaultAsset as any).(asset as any).id,
-        title: (vaultAsset as any).(asset as any).title,
-        description: (vaultAsset as any).(asset as any).description,
-        fileName: (vaultAsset as any).(asset as any).file_name,
-        originalFileName: (vaultAsset as any).(asset as any).original_file_name,
-        fileSize: (vaultAsset as any).(asset as any).file_size,
-        fileType: (vaultAsset as any).(asset as any).file_type,
-        mimeType: (vaultAsset as any).(asset as any).mime_type,
-        category: (vaultAsset as any).(asset as any).category,
-        tags: (vaultAsset as any).(asset as any).tags,
-        thumbnailUrl: (vaultAsset as any).(asset as any).thumbnail_url,
-        createdAt: (vaultAsset as any).(asset as any).created_at,
-        updatedAt: (vaultAsset as any).(asset as any).updated_at,
-        owner: (vaultAsset as any).(asset as any).owner
+        id: (vaultAsset as any).asset.id,
+        title: (vaultAsset as any).asset.title,
+        description: (vaultAsset as any).asset.description,
+        fileName: (vaultAsset as any).asset.file_name,
+        originalFileName: (vaultAsset as any).asset.original_file_name,
+        fileSize: (vaultAsset as any).asset.file_size,
+        fileType: (vaultAsset as any).asset.file_type,
+        mimeType: (vaultAsset as any).asset.mime_type,
+        category: (vaultAsset as any).asset.category,
+        tags: (vaultAsset as any).asset.tags,
+        thumbnailUrl: (vaultAsset as any).asset.thumbnail_url,
+        createdAt: (vaultAsset as any).asset.created_at,
+        updatedAt: (vaultAsset as any).asset.updated_at,
+        owner: (vaultAsset as any).asset.owner
       },
       addedBy: (vaultAsset as any).added_by
     }
@@ -197,7 +197,7 @@ export async function PUT(
     }
 
     // Only contributors and above can update asset settings
-    if (!['owner', 'admin', 'moderator', 'contributor'].includes(membership.role)) {
+    if (!['owner', 'admin', 'moderator', 'contributor'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to update vault asset settings' 
       }, { status: 403 })
@@ -254,12 +254,12 @@ export async function PUT(
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: membership.organization_id,
+        organization_id: (membership as any).organization_id,
         activity_type: 'asset_updated',
         performed_by_user_id: user.id,
         affected_asset_id: assetId,
         activity_details: {
-          asset_title: updatedAsset.asset.title,
+          asset_title: (updatedAsset as any).asset.title,
           updated_fields: Object.keys(updates),
           previous_values: {
             folder_path: existingAsset.folder_path,
@@ -341,7 +341,7 @@ export async function DELETE(
     }
 
     // Only moderators and above can remove assets from vaults
-    if (!['owner', 'admin', 'moderator'].includes(membership.role)) {
+    if (!['owner', 'admin', 'moderator'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to remove assets from vault' 
       }, { status: 403 })
@@ -378,13 +378,13 @@ export async function DELETE(
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: membership.organization_id,
+        organization_id: (membership as any).organization_id,
         activity_type: 'asset_removed',
         performed_by_user_id: user.id,
         affected_asset_id: assetId,
         activity_details: {
           asset_title: (vaultAsset as any).asset.title,
-          asset_file_name: (vaultAsset as any).(asset as any).file_name,
+          asset_file_name: (vaultAsset as any).asset.file_name,
           folder_path: (vaultAsset as any).folder_path,
           removal_reason: 'manual_removal'
         },

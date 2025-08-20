@@ -80,14 +80,14 @@ export async function POST(
     }
 
     // Only owners, admins, and moderators can invite users
-    if (!['owner', 'admin', 'moderator'].includes(membership.role)) {
+    if (!['owner', 'admin', 'moderator'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to invite users to this vault' 
       }, { status: 403 })
     }
 
     // Check if vault is in a state that allows invitations
-    if (!['draft', 'active'].includes(membership.vault.status)) {
+    if (!['draft', 'active'].includes((membership as any).vault.status)) {
       return NextResponse.json({ 
         error: 'Cannot send invitations to archived or cancelled vaults' 
       }, { status: 400 })
@@ -151,7 +151,7 @@ export async function POST(
             vault_id: vaultId,
             invited_user_id: userId,
             invited_by_user_id: user.id,
-            organization_id: membership.organization_id,
+            organization_id: (membership as any).organization_id,
             permission_level: body.permissionLevel || 'viewer',
             personal_message: body.personalMessage || null,
             expires_at: body.expiresAt ? new Date(body.expiresAt).toISOString() : 
@@ -183,14 +183,14 @@ export async function POST(
             .from('vault_activity_log')
             .insert({
               vault_id: vaultId,
-              organization_id: membership.organization_id,
+              organization_id: (membership as any).organization_id,
               activity_type: 'member_invited',
               performed_by_user_id: user.id,
               affected_user_id: userId,
               activity_details: {
-                invitation_id: invitation.id,
+                invitation_id: (invitation as any).id,
                 permission_level: body.permissionLevel || 'viewer',
-                expires_at: invitation.expires_at,
+                expires_at: (invitation as any).expires_at,
                 invitation_method: 'bulk_invite_api'
               },
               ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -200,15 +200,15 @@ export async function POST(
           results.successful.push({
             userId,
             email: targetUser.email,
-            invitationId: invitation.id,
-            invitationToken: invitation.invitation_token,
-            expiresAt: invitation.expires_at
+            invitationId: (invitation as any).id,
+            invitationToken: (invitation as any).invitation_token,
+            expiresAt: (invitation as any).expires_at
           })
 
           // TODO: Send email notification if requested
           if (body.sendNotification !== false) {
             // Email sending logic will be implemented separately
-            console.log(`TODO: Send invitation email to ${targetUser.email} for vault ${membership.vault.name}`)
+            console.log(`TODO: Send invitation email to ${targetUser.email} for vault ${(membership as any).vault.name}`)
           }
 
         } catch (error) {
@@ -271,7 +271,7 @@ export async function POST(
               vault_id: vaultId,
               invited_user_id: userId,
               invited_by_user_id: user.id,
-              organization_id: membership.organization_id,
+              organization_id: (membership as any).organization_id,
               permission_level: body.permissionLevel || 'viewer',
               personal_message: body.personalMessage || null,
               expires_at: body.expiresAt ? new Date(body.expiresAt).toISOString() : 
@@ -292,9 +292,9 @@ export async function POST(
             results.successful.push({
               email,
               userId,
-              invitationId: invitation.id,
-              invitationToken: invitation.invitation_token,
-              expiresAt: invitation.expires_at
+              invitationId: (invitation as any).id,
+              invitationToken: (invitation as any).invitation_token,
+              expiresAt: (invitation as any).expires_at
             })
 
           } else {
@@ -376,7 +376,7 @@ export async function GET(
     }
 
     // Only owners, admins, and moderators can view invitations
-    if (!['owner', 'admin', 'moderator'].includes(membership.role)) {
+    if (!['owner', 'admin', 'moderator'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to view vault invitations' 
       }, { status: 403 })
@@ -405,23 +405,23 @@ export async function GET(
     }
 
     const transformedInvitations = invitations.map(invitation => ({
-      id: invitation.id,
-      permissionLevel: invitation.permission_level,
-      personalMessage: invitation.personal_message,
-      status: invitation.status,
-      createdAt: invitation.created_at,
-      expiresAt: invitation.expires_at,
-      respondedAt: invitation.responded_at,
-      acceptedAt: invitation.accepted_at,
-      attemptCount: invitation.attempt_count,
-      sentVia: invitation.sent_via,
+      id: (invitation as any).id,
+      permissionLevel: (invitation as any).permission_level,
+      personalMessage: (invitation as any).personal_message,
+      status: (invitation as any).status,
+      createdAt: (invitation as any).created_at,
+      expiresAt: (invitation as any).expires_at,
+      respondedAt: (invitation as any).responded_at,
+      acceptedAt: (invitation as any).accepted_at,
+      attemptCount: (invitation as any).attempt_count,
+      sentVia: (invitation as any).sent_via,
       invitedUser: {
-        id: invitation.invited_user.id,
-        email: invitation.invited_user.email
+        id: (invitation as any).invited_user.id,
+        email: (invitation as any).invited_user.email
       },
       invitedBy: {
-        id: invitation.invited_by.id,
-        email: invitation.invited_by.email
+        id: (invitation as any).invited_by.id,
+        email: (invitation as any).invited_by.email
       }
     }))
 
@@ -430,10 +430,10 @@ export async function GET(
       invitations: transformedInvitations,
       summary: {
         total: invitations.length,
-        pending: invitations.filter(i => i.status === 'pending').length,
-        accepted: invitations.filter(i => i.status === 'accepted').length,
-        rejected: invitations.filter(i => i.status === 'rejected').length,
-        expired: invitations.filter(i => i.status === 'expired').length
+        pending: invitations.filter((i: any) => i.status === 'pending').length,
+        accepted: invitations.filter((i: any) => i.status === 'accepted').length,
+        rejected: invitations.filter((i: any) => i.status === 'rejected').length,
+        expired: invitations.filter((i: any) => i.status === 'expired').length
       }
     })
 

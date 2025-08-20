@@ -49,7 +49,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const vaultId = params.id
+    const vaultId = (await params).id
     const { searchParams } = new URL(request.url)
     const folderPath = searchParams.get('folderPath') || undefined
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50
@@ -119,20 +119,20 @@ export async function GET(
       visibility: (vaultAsset as any).visibility,
       downloadPermissions: (vaultAsset as any).download_permissions,
       asset: {
-        id: (vaultAsset as any).(asset as any).id,
-        title: (vaultAsset as any).(asset as any).title,
-        description: (vaultAsset as any).(asset as any).description,
-        fileName: (vaultAsset as any).(asset as any).file_name,
-        originalFileName: (vaultAsset as any).(asset as any).original_file_name,
-        fileSize: (vaultAsset as any).(asset as any).file_size,
-        fileType: (vaultAsset as any).(asset as any).file_type,
-        mimeType: (vaultAsset as any).(asset as any).mime_type,
-        category: (vaultAsset as any).(asset as any).category,
-        tags: (vaultAsset as any).(asset as any).tags,
-        thumbnailUrl: (vaultAsset as any).(asset as any).thumbnail_url,
-        createdAt: (vaultAsset as any).(asset as any).created_at,
-        updatedAt: (vaultAsset as any).(asset as any).updated_at,
-        owner: (vaultAsset as any).(asset as any).owner
+        id: (vaultAsset as any).asset.id,
+        title: (vaultAsset as any).asset.title,
+        description: (vaultAsset as any).asset.description,
+        fileName: (vaultAsset as any).asset.file_name,
+        originalFileName: (vaultAsset as any).asset.original_file_name,
+        fileSize: (vaultAsset as any).asset.file_size,
+        fileType: (vaultAsset as any).asset.file_type,
+        mimeType: (vaultAsset as any).asset.mime_type,
+        category: (vaultAsset as any).asset.category,
+        tags: (vaultAsset as any).asset.tags,
+        thumbnailUrl: (vaultAsset as any).asset.thumbnail_url,
+        createdAt: (vaultAsset as any).asset.created_at,
+        updatedAt: (vaultAsset as any).asset.updated_at,
+        owner: (vaultAsset as any).asset.owner
       },
       addedBy: (vaultAsset as any).added_by
     })) || []
@@ -194,7 +194,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const vaultId = params.id
+    const vaultId = (await params).id
     const body: AddAssetsRequest = await request.json()
 
     if (!body.assetIds || body.assetIds.length === 0) {
@@ -220,7 +220,7 @@ export async function POST(
     }
 
     // Only contributors and above can add assets
-    if (!['owner', 'admin', 'moderator', 'contributor'].includes(membership.role)) {
+    if (!['owner', 'admin', 'moderator', 'contributor'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to add assets to this vault' 
       }, { status: 403 })
@@ -269,7 +269,7 @@ export async function POST(
     const vaultAssetRecords = newAssetIds.map((assetId, index) => ({
       vault_id: vaultId,
       asset_id: assetId,
-      organization_id: membership.organization_id,
+      organization_id: (membership as any).organization_id,
       added_by_user_id: user.id,
       folder_path: body.folderPath || '/',
       display_order: (body.displayOrder || 0) + index,
@@ -296,12 +296,12 @@ export async function POST(
     // Log activity for each asset added
     const activityRecords = vaultAssets?.map(va => ({
       vault_id: vaultId,
-      organization_id: membership.organization_id,
+      organization_id: (membership as any).organization_id,
       activity_type: 'asset_added' as const,
       performed_by_user_id: user.id,
-      affected_asset_id: va.asset.id,
+      affected_asset_id: (va as any).asset.id,
       activity_details: {
-        asset_title: va.asset.title,
+        asset_title: (va as any).asset.title,
         folder_path: va.folder_path,
         is_featured: va.is_featured,
         is_required_reading: va.is_required_reading

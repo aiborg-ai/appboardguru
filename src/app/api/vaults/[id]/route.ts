@@ -183,17 +183,17 @@ export async function GET(
         viewCount: (asset as any).view_count,
         downloadCount: (asset as any).download_count,
         asset: {
-          id: (asset as any).(asset as any).id,
-          title: (asset as any).(asset as any).title,
-          description: (asset as any).(asset as any).description,
-          fileName: (asset as any).(asset as any).file_name,
-          originalFileName: (asset as any).(asset as any).original_file_name,
-          fileSize: (asset as any).(asset as any).file_size,
-          fileType: (asset as any).(asset as any).file_type,
-          mimeType: (asset as any).(asset as any).mime_type,
-          thumbnailUrl: (asset as any).(asset as any).thumbnail_url,
-          createdAt: (asset as any).(asset as any).created_at,
-          owner: (asset as any).(asset as any).owner
+          id: (asset as any).asset.id,
+          title: (asset as any).asset.title,
+          description: (asset as any).asset.description,
+          fileName: (asset as any).asset.file_name,
+          originalFileName: (asset as any).asset.original_file_name,
+          fileSize: (asset as any).asset.file_size,
+          fileType: (asset as any).asset.file_type,
+          mimeType: (asset as any).asset.mime_type,
+          thumbnailUrl: (asset as any).asset.thumbnail_url,
+          createdAt: (asset as any).asset.created_at,
+          owner: (asset as any).asset.owner
         },
         addedBy: (asset as any).added_by
       })) || [],
@@ -293,7 +293,7 @@ export async function PUT(
     }
 
     // Only owners, admins, and moderators can update vaults
-    if (!['owner', 'admin', 'moderator'].includes(membership.role)) {
+    if (!['owner', 'admin', 'moderator'].includes((membership as any).role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to update vault' 
       }, { status: 403 })
@@ -346,7 +346,7 @@ export async function PUT(
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: membership.organization_id,
+        organization_id: (membership as any).organization_id,
         activity_type: 'vault_updated',
         performed_by_user_id: user.id,
         activity_details: {
@@ -381,7 +381,7 @@ export async function PUT(
       settings: updatedVault.settings,
       isPublic: updatedVault.is_public,
       requiresInvitation: updatedVault.requires_invitation,
-      userRole: membership.role
+      userRole: (membership as any).role
     }
 
     return NextResponse.json({
