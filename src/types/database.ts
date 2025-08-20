@@ -823,6 +823,492 @@ export interface Database {
           updated_at?: string
         }
       }
+      meetings: {
+        Row: {
+          id: string
+          organization_id: string
+          created_by: string
+          title: string
+          description: string | null
+          meeting_type: 'agm' | 'board' | 'committee' | 'other'
+          status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed'
+          visibility: 'public' | 'organization' | 'private'
+          scheduled_start: string
+          scheduled_end: string
+          timezone: string
+          location: string | null
+          virtual_meeting_url: string | null
+          is_recurring: boolean
+          recurrence_type: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+          recurrence_interval: number
+          recurrence_end_date: string | null
+          parent_meeting_id: string | null
+          agenda_finalized: boolean
+          invitations_sent: boolean
+          documents_locked: boolean
+          estimated_duration_minutes: number
+          actual_start: string | null
+          actual_end: string | null
+          settings: any
+          tags: string[]
+          category: string | null
+          created_at: string
+          updated_at: string
+          cancelled_at: string | null
+          cancelled_reason: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          created_by: string
+          title: string
+          description?: string | null
+          meeting_type?: 'agm' | 'board' | 'committee' | 'other'
+          status?: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed'
+          visibility?: 'public' | 'organization' | 'private'
+          scheduled_start: string
+          scheduled_end: string
+          timezone?: string
+          location?: string | null
+          virtual_meeting_url?: string | null
+          is_recurring?: boolean
+          recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+          recurrence_interval?: number
+          recurrence_end_date?: string | null
+          parent_meeting_id?: string | null
+          agenda_finalized?: boolean
+          invitations_sent?: boolean
+          documents_locked?: boolean
+          estimated_duration_minutes?: number
+          actual_start?: string | null
+          actual_end?: string | null
+          settings?: any
+          tags?: string[]
+          category?: string | null
+          created_at?: string
+          updated_at?: string
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          created_by?: string
+          title?: string
+          description?: string | null
+          meeting_type?: 'agm' | 'board' | 'committee' | 'other'
+          status?: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed'
+          visibility?: 'public' | 'organization' | 'private'
+          scheduled_start?: string
+          scheduled_end?: string
+          timezone?: string
+          location?: string | null
+          virtual_meeting_url?: string | null
+          is_recurring?: boolean
+          recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+          recurrence_interval?: number
+          recurrence_end_date?: string | null
+          parent_meeting_id?: string | null
+          agenda_finalized?: boolean
+          invitations_sent?: boolean
+          documents_locked?: boolean
+          estimated_duration_minutes?: number
+          actual_start?: string | null
+          actual_end?: string | null
+          settings?: any
+          tags?: string[]
+          category?: string | null
+          created_at?: string
+          updated_at?: string
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+        }
+      }
+      meeting_agenda_items: {
+        Row: {
+          id: string
+          meeting_id: string
+          title: string
+          description: string | null
+          item_type: 'presentation' | 'discussion' | 'decision' | 'information' | 'break'
+          order_index: number
+          estimated_duration_minutes: number
+          presenter_user_id: string | null
+          responsible_user_id: string | null
+          content: string | null
+          objectives: string[]
+          is_confidential: boolean
+          requires_decision: boolean
+          decision_text: string | null
+          decision_made: boolean
+          actual_start: string | null
+          actual_end: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          title: string
+          description?: string | null
+          item_type?: 'presentation' | 'discussion' | 'decision' | 'information' | 'break'
+          order_index?: number
+          estimated_duration_minutes?: number
+          presenter_user_id?: string | null
+          responsible_user_id?: string | null
+          content?: string | null
+          objectives?: string[]
+          is_confidential?: boolean
+          requires_decision?: boolean
+          decision_text?: string | null
+          decision_made?: boolean
+          actual_start?: string | null
+          actual_end?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          title?: string
+          description?: string | null
+          item_type?: 'presentation' | 'discussion' | 'decision' | 'information' | 'break'
+          order_index?: number
+          estimated_duration_minutes?: number
+          presenter_user_id?: string | null
+          responsible_user_id?: string | null
+          content?: string | null
+          objectives?: string[]
+          is_confidential?: boolean
+          requires_decision?: boolean
+          decision_text?: string | null
+          decision_made?: boolean
+          actual_start?: string | null
+          actual_end?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_invitees: {
+        Row: {
+          id: string
+          meeting_id: string
+          user_id: string
+          invited_by: string
+          attendee_role: 'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'
+          is_required: boolean
+          is_organizer: boolean
+          rsvp_status: 'pending' | 'accepted' | 'declined' | 'tentative' | 'no_response'
+          rsvp_timestamp: string | null
+          rsvp_notes: string | null
+          attendance_status: 'not_attended' | 'attended' | 'partially_attended' | 'late' | 'left_early'
+          checked_in_at: string | null
+          checked_out_at: string | null
+          attendance_notes: string | null
+          can_invite_others: boolean
+          can_modify_agenda: boolean
+          can_upload_documents: boolean
+          speaking_time_minutes: number
+          invitation_sent: boolean
+          invitation_sent_at: string | null
+          reminder_count: number
+          last_reminder_sent: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          user_id: string
+          invited_by: string
+          attendee_role?: 'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'
+          is_required?: boolean
+          is_organizer?: boolean
+          rsvp_status?: 'pending' | 'accepted' | 'declined' | 'tentative' | 'no_response'
+          rsvp_timestamp?: string | null
+          rsvp_notes?: string | null
+          attendance_status?: 'not_attended' | 'attended' | 'partially_attended' | 'late' | 'left_early'
+          checked_in_at?: string | null
+          checked_out_at?: string | null
+          attendance_notes?: string | null
+          can_invite_others?: boolean
+          can_modify_agenda?: boolean
+          can_upload_documents?: boolean
+          speaking_time_minutes?: number
+          invitation_sent?: boolean
+          invitation_sent_at?: string | null
+          reminder_count?: number
+          last_reminder_sent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          user_id?: string
+          invited_by?: string
+          attendee_role?: 'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'
+          is_required?: boolean
+          is_organizer?: boolean
+          rsvp_status?: 'pending' | 'accepted' | 'declined' | 'tentative' | 'no_response'
+          rsvp_timestamp?: string | null
+          rsvp_notes?: string | null
+          attendance_status?: 'not_attended' | 'attended' | 'partially_attended' | 'late' | 'left_early'
+          checked_in_at?: string | null
+          checked_out_at?: string | null
+          attendance_notes?: string | null
+          can_invite_others?: boolean
+          can_modify_agenda?: boolean
+          can_upload_documents?: boolean
+          speaking_time_minutes?: number
+          invitation_sent?: boolean
+          invitation_sent_at?: string | null
+          reminder_count?: number
+          last_reminder_sent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_documents: {
+        Row: {
+          id: string
+          meeting_id: string
+          agenda_item_id: string | null
+          uploaded_by: string
+          title: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          mime_type: string
+          category: 'agenda' | 'supporting' | 'presentation' | 'report' | 'minutes' | 'action_items' | 'reference'
+          is_confidential: boolean
+          visibility: Array<'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'>
+          download_count: number
+          version_number: number
+          is_latest_version: boolean
+          previous_version_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          agenda_item_id?: string | null
+          uploaded_by: string
+          title: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          mime_type: string
+          category?: 'agenda' | 'supporting' | 'presentation' | 'report' | 'minutes' | 'action_items' | 'reference'
+          is_confidential?: boolean
+          visibility?: Array<'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'>
+          download_count?: number
+          version_number?: number
+          is_latest_version?: boolean
+          previous_version_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          agenda_item_id?: string | null
+          uploaded_by?: string
+          title?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          mime_type?: string
+          category?: 'agenda' | 'supporting' | 'presentation' | 'report' | 'minutes' | 'action_items' | 'reference'
+          is_confidential?: boolean
+          visibility?: Array<'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'>
+          download_count?: number
+          version_number?: number
+          is_latest_version?: boolean
+          previous_version_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_notifications: {
+        Row: {
+          id: string
+          meeting_id: string
+          recipient_user_id: string
+          notification_type: 'invitation' | 'reminder' | 'agenda_update' | 'document_added' | 'meeting_cancelled' | 'meeting_rescheduled' | 'rsvp_reminder' | 'pre_meeting_task'
+          channel: 'email' | 'push' | 'sms' | 'in_app'
+          status: 'pending' | 'sent' | 'failed' | 'cancelled'
+          subject: string
+          content: string
+          template_name: string | null
+          template_data: any
+          scheduled_send_at: string
+          sent_at: string | null
+          opened_at: string | null
+          clicked_at: string | null
+          response_data: any
+          error_message: string | null
+          retry_count: number
+          max_retries: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          recipient_user_id: string
+          notification_type: 'invitation' | 'reminder' | 'agenda_update' | 'document_added' | 'meeting_cancelled' | 'meeting_rescheduled' | 'rsvp_reminder' | 'pre_meeting_task'
+          channel?: 'email' | 'push' | 'sms' | 'in_app'
+          status?: 'pending' | 'sent' | 'failed' | 'cancelled'
+          subject: string
+          content: string
+          template_name?: string | null
+          template_data?: any
+          scheduled_send_at: string
+          sent_at?: string | null
+          opened_at?: string | null
+          clicked_at?: string | null
+          response_data?: any
+          error_message?: string | null
+          retry_count?: number
+          max_retries?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          recipient_user_id?: string
+          notification_type?: 'invitation' | 'reminder' | 'agenda_update' | 'document_added' | 'meeting_cancelled' | 'meeting_rescheduled' | 'rsvp_reminder' | 'pre_meeting_task'
+          channel?: 'email' | 'push' | 'sms' | 'in_app'
+          status?: 'pending' | 'sent' | 'failed' | 'cancelled'
+          subject?: string
+          content?: string
+          template_name?: string | null
+          template_data?: any
+          scheduled_send_at?: string
+          sent_at?: string | null
+          opened_at?: string | null
+          clicked_at?: string | null
+          response_data?: any
+          error_message?: string | null
+          retry_count?: number
+          max_retries?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_templates: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          meeting_type: 'agm' | 'board' | 'committee' | 'other'
+          template_data: any
+          default_duration_minutes: number
+          default_settings: any
+          organization_id: string | null
+          created_by: string
+          is_public: boolean
+          is_system_template: boolean
+          usage_count: number
+          last_used_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          meeting_type: 'agm' | 'board' | 'committee' | 'other'
+          template_data: any
+          default_duration_minutes?: number
+          default_settings?: any
+          organization_id?: string | null
+          created_by: string
+          is_public?: boolean
+          is_system_template?: boolean
+          usage_count?: number
+          last_used_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          meeting_type?: 'agm' | 'board' | 'committee' | 'other'
+          template_data?: any
+          default_duration_minutes?: number
+          default_settings?: any
+          organization_id?: string | null
+          created_by?: string
+          is_public?: boolean
+          is_system_template?: boolean
+          usage_count?: number
+          last_used_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      meeting_attendance_log: {
+        Row: {
+          id: string
+          meeting_id: string
+          user_id: string
+          joined_at: string
+          left_at: string | null
+          duration_minutes: number | null
+          attendance_method: string
+          connection_quality: string | null
+          spoke_duration_minutes: number
+          questions_asked: number
+          votes_cast: number
+          ip_address: string | null
+          user_agent: string | null
+          device_type: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          user_id: string
+          joined_at: string
+          left_at?: string | null
+          attendance_method?: string
+          connection_quality?: string | null
+          spoke_duration_minutes?: number
+          questions_asked?: number
+          votes_cast?: number
+          ip_address?: string | null
+          user_agent?: string | null
+          device_type?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          user_id?: string
+          joined_at?: string
+          left_at?: string | null
+          attendance_method?: string
+          connection_quality?: string | null
+          spoke_duration_minutes?: number
+          questions_asked?: number
+          votes_cast?: number
+          ip_address?: string | null
+          user_agent?: string | null
+          device_type?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -843,6 +1329,18 @@ export interface Database {
       audit_outcome: 'success' | 'failure' | 'error' | 'blocked'
       plan_type: 'free' | 'professional' | 'enterprise'
       otp_purpose: 'first_login' | 'password_reset'
+      meeting_type: 'agm' | 'board' | 'committee' | 'other'
+      meeting_status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed'
+      meeting_visibility: 'public' | 'organization' | 'private'
+      recurrence_type: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+      agenda_item_type: 'presentation' | 'discussion' | 'decision' | 'information' | 'break'
+      attendee_role: 'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator'
+      rsvp_status: 'pending' | 'accepted' | 'declined' | 'tentative' | 'no_response'
+      attendance_status: 'not_attended' | 'attended' | 'partially_attended' | 'late' | 'left_early'
+      document_category: 'agenda' | 'supporting' | 'presentation' | 'report' | 'minutes' | 'action_items' | 'reference'
+      notification_type: 'invitation' | 'reminder' | 'agenda_update' | 'document_added' | 'meeting_cancelled' | 'meeting_rescheduled' | 'rsvp_reminder' | 'pre_meeting_task'
+      notification_status: 'pending' | 'sent' | 'failed' | 'cancelled'
+      notification_channel: 'email' | 'push' | 'sms' | 'in_app'
     }
   }
 }
