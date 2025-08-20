@@ -216,8 +216,7 @@ export async function updateInvitationAction(
   reason?: string
 ): Promise<ActionResult> {
   try {
-    const cookieStore = await cookies()
-    const supabase = createSupabaseServerClient(cookieStore)
+    const supabase = await createSupabaseServerClient()
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
@@ -295,8 +294,7 @@ export async function bulkInvitationAction(
   invitationIds: string[]
 ): Promise<ActionResult> {
   try {
-    const cookieStore = await cookies()
-    const supabase = createSupabaseServerClient(cookieStore)
+    const supabase = await createSupabaseServerClient()
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
