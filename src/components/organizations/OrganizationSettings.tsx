@@ -177,9 +177,9 @@ export function OrganizationSettings({
       await updateOrganizationMutation.mutateAsync({
         organizationId,
         name: data.name,
-        description: data.description || null,
-        website: data.website || null,
-        industry: data.industry || null,
+        description: data.description || undefined,
+        website: data.website || undefined,
+        industry: data.industry || undefined,
         organizationSize: data.organizationSize,
       })
       

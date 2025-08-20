@@ -242,11 +242,11 @@ export function AddToVaultModal({
                       <div className="flex items-center space-x-3 py-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage 
-                            src={vault.organization.logo_url} 
-                            alt={vault.organization.name}
+                            src={(vault as any).organization?.logo_url} 
+                            alt={(vault as any).organization?.name}
                           />
                           <AvatarFallback className="bg-blue-100 text-blue-700">
-                            {getInitials(vault.organization.name)}
+                            {getInitials((vault as any).organization?.name || 'V')}
                           </AvatarFallback>
                         </Avatar>
                         <div>

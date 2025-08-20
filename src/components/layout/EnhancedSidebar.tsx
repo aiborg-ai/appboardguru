@@ -264,7 +264,7 @@ export default function EnhancedSidebar() {
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-1 mt-1">
-              {item.children.map(child => renderMenuItem(child, level + 1))}
+              {item.children?.map(child => renderMenuItem(child, level + 1))}
             </CollapsibleContent>
           </Collapsible>
         ) : (

@@ -39,7 +39,7 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 // Import the invite modal component we'll create next
-import { InviteMemberModal } from "../InviteMemberModal"
+import { InviteMemberModal } from "@/components/invitations/InviteMemberModal"
 
 interface InvitationsTabProps {
   organizationId: string

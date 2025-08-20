@@ -1,5 +1,8 @@
 'use client'
 
+// Disable static generation for this page since it uses useOrganization context
+export const dynamic = 'force-dynamic'
+
 import React, { useState } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { EnhancedAIChat } from '@/components/ai/EnhancedAIChat'

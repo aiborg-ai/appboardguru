@@ -161,7 +161,7 @@ const ENVIRONMENT_CONFIGS = {
  */
 function getSecurityConfig(): SecurityHeaderConfig {
   const envConfig = ENVIRONMENT_CONFIGS[env.NODE_ENV as keyof typeof ENVIRONMENT_CONFIGS]
-  return envConfig || DEFAULT_SECURITY_CONFIG
+  return (envConfig || DEFAULT_SECURITY_CONFIG) as SecurityHeaderConfig
 }
 
 /**

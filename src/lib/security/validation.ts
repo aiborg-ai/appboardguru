@@ -106,8 +106,16 @@ export const ApiSchemas = {
   registration: z.object({
     fullName: CommonSchemas.name,
     email: CommonSchemas.email,
-    company: CommonSchemas.name.max(200, 'Company name too long'),
-    position: CommonSchemas.name.max(100, 'Position too long'),
+    company: z.string()
+      .min(1, 'Company name is required')
+      .max(200, 'Company name too long')
+      .regex(/^[a-zA-Z\s\-'\.&]+$/, 'Company name contains invalid characters')
+      .transform(name => name.trim()),
+    position: z.string()
+      .min(1, 'Position is required')
+      .max(100, 'Position too long')
+      .regex(/^[a-zA-Z\s\-'\.]+$/, 'Position contains invalid characters')
+      .transform(name => name.trim()),
     message: CommonSchemas.text(1000)
   }),
 
@@ -134,7 +142,11 @@ export const ApiSchemas = {
 
   // Organization creation
   createOrganization: z.object({
-    name: CommonSchemas.name.max(200, 'Organization name too long'),
+    name: z.string()
+      .min(1, 'Organization name is required')
+      .max(200, 'Organization name too long')
+      .regex(/^[a-zA-Z\s\-'\.&]+$/, 'Organization name contains invalid characters')
+      .transform(name => name.trim()),
     slug: CommonSchemas.slug,
     description: CommonSchemas.description,
     website: CommonSchemas.url,
@@ -147,7 +159,12 @@ export const ApiSchemas = {
   updateOrganization: z.object({
     organizationId: CommonSchemas.id,
     userId: CommonSchemas.id,
-    name: CommonSchemas.name.max(200, 'Organization name too long').optional(),
+    name: z.string()
+      .min(1, 'Organization name is required')
+      .max(200, 'Organization name too long')
+      .regex(/^[a-zA-Z\s\-'\.&]+$/, 'Organization name contains invalid characters')
+      .transform(name => name.trim())
+      .optional(),
     description: CommonSchemas.description.optional(),
     website: CommonSchemas.url.optional(),
     industry: CommonSchemas.text(100).optional(),
@@ -197,7 +214,7 @@ export const ApiSchemas = {
       .min(10, 'Description too short')
       .max(2000, 'Description too long'),
     severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-    additionalInfo: z.record(z.unknown()).optional()
+    additionalInfo: z.record(z.string(), z.unknown()).optional()
   }),
 
   // Pagination
@@ -214,7 +231,7 @@ export const ApiSchemas = {
       .min(1, 'Search query required')
       .max(200, 'Search query too long')
       .regex(/^[a-zA-Z0-9\s\-_\.@]+$/, 'Invalid search characters'),
-    filters: z.record(z.string()).optional(),
+    filters: z.record(z.string(), z.string()).optional(),
     organizationId: CommonSchemas.id.optional()
   })
 }
@@ -611,7 +628,7 @@ export async function validateApiInput<T>(
     const result = schema.safeParse(sanitizedData)
 
     if (!result.success) {
-      const errors = result.error.errors.map(err => 
+      const errors = result.error.issues.map(err => 
         `${err.path.join('.')}: ${err.message}`
       )
 

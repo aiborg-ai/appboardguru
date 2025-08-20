@@ -374,15 +374,17 @@ export class ThreatDetectionEngine {
 
       const accessHistory = recentAccess || []
 
+      // Get recent locations for analysis
+      const recentLocations = accessHistory
+        .filter(a => a.geolocation?.lat && a.geolocation?.lon)
+        .map(a => ({
+          lat: a.geolocation.lat,
+          lon: a.geolocation.lon,
+          timestamp: new Date(a.created_at)
+        }))
+
       // Analyze location anomalies
       if (context.location) {
-        const recentLocations = accessHistory
-          .filter(a => a.geolocation?.lat && a.geolocation?.lon)
-          .map(a => ({
-            lat: a.geolocation.lat,
-            lon: a.geolocation.lon,
-            timestamp: new Date(a.created_at)
-          }))
 
         // Check for impossible travel
         if (recentLocations.length > 0) {

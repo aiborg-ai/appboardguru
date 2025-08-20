@@ -576,7 +576,7 @@ export function withAuthGuard<T extends any[]>(
   guard: (request: NextRequest) => Promise<{ success: boolean; error?: string }>
 ) {
   return async (...args: T): Promise<Response> => {
-    const [request] = args as [NextRequest, ...any[]]
+    const [request] = args as unknown as [NextRequest, ...any[]]
     
     const guardResult = await guard(request)
     
