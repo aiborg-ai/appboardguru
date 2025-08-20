@@ -93,17 +93,7 @@ CREATE TABLE IF NOT EXISTS organization_members (
   suspicious_activity_count INTEGER DEFAULT 0,
   
   -- Constraints
-  UNIQUE(organization_id, user_id),
-  
-  CONSTRAINT only_one_owner_per_org CHECK (
-    role != 'owner' OR (
-      SELECT COUNT(*) 
-      FROM organization_members om2 
-      WHERE om2.organization_id = organization_members.organization_id 
-      AND om2.role = 'owner' 
-      AND om2.status = 'active'
-    ) <= 1
-  )
+  UNIQUE(organization_id, user_id)
 );
 
 -- =====================================================
@@ -258,19 +248,40 @@ $$ language 'plpgsql';
 -- 7. INITIAL DATA & CONSTRAINTS
 -- =====================================================
 
--- Ensure at least one owner per organization
+-- Ensure proper organization ownership rules
 CREATE OR REPLACE FUNCTION ensure_organization_owner()
 RETURNS TRIGGER AS $$
+DECLARE
+  owner_count INTEGER;
 BEGIN
-  -- If deleting or changing role from owner, ensure another owner exists
-  IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND OLD.role = 'owner' AND NEW.role != 'owner') THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM organization_members 
-      WHERE organization_id = COALESCE(NEW.organization_id, OLD.organization_id)
+  -- Handle INSERT and UPDATE operations
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    -- If inserting/updating to owner role, check if another owner already exists
+    IF NEW.role = 'owner' AND NEW.status = 'active' THEN
+      SELECT COUNT(*) INTO owner_count
+      FROM organization_members 
+      WHERE organization_id = NEW.organization_id
         AND role = 'owner' 
         AND status = 'active'
-        AND id != COALESCE(NEW.id, OLD.id)
-    ) THEN
+        AND (TG_OP = 'INSERT' OR id != NEW.id);
+      
+      IF owner_count > 0 THEN
+        RAISE EXCEPTION 'Organization can only have one owner. Transfer ownership first.';
+      END IF;
+    END IF;
+  END IF;
+  
+  -- Handle DELETE and UPDATE operations that remove/change owner
+  IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND OLD.role = 'owner' AND (NEW.role != 'owner' OR NEW.status != 'active')) THEN
+    -- Check if this would leave the organization without an owner
+    SELECT COUNT(*) INTO owner_count
+    FROM organization_members 
+    WHERE organization_id = COALESCE(NEW.organization_id, OLD.organization_id)
+      AND role = 'owner' 
+      AND status = 'active'
+      AND id != COALESCE(OLD.id, NEW.id);
+    
+    IF owner_count = 0 THEN
       RAISE EXCEPTION 'Organization must have at least one owner';
     END IF;
   END IF;
@@ -280,7 +291,7 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER ensure_org_owner_trigger
-  BEFORE UPDATE OR DELETE ON organization_members
+  BEFORE INSERT OR UPDATE OR DELETE ON organization_members
   FOR EACH ROW EXECUTE FUNCTION ensure_organization_owner();
 
 -- =====================================================
