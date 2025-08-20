@@ -66,10 +66,11 @@ export default function DemoDashboardPage() {
           {/* Logo */}
           <div className="flex items-center px-4 py-6 border-b border-gray-200">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Zap className="h-5 w-5 text-white" />
-              </div>
-              <span className="ml-3 text-xl font-bold text-gray-900">BoardGuru</span>
+              <img 
+                src="/boardguru-logo.svg" 
+                alt="BoardGuru" 
+                className="h-10 w-auto"
+              />
               <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">DEMO</span>
             </div>
           </div>

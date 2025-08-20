@@ -211,10 +211,11 @@ function SetPasswordPageContent() {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-              <div className="h-10 w-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">BoardGuru</span>
+              <img 
+                src="/boardguru-logo.svg" 
+                alt="BoardGuru" 
+                className="h-12 w-auto"
+              />
             </Link>
           </div>
 
@@ -249,10 +250,11 @@ function SetPasswordPageContent() {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-              <div className="h-10 w-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">BoardGuru</span>
+              <img 
+                src="/boardguru-logo.svg" 
+                alt="BoardGuru" 
+                className="h-12 w-auto"
+              />
             </Link>
           </div>
 
@@ -277,10 +279,11 @@ function SetPasswordPageContent() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-            <div className="h-10 w-10 bg-primary-600 rounded-lg flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">BoardGuru</span>
+            <img 
+              src="/boardguru-logo.svg" 
+              alt="BoardGuru" 
+              className="h-12 w-auto"
+            />
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">Set Your Password</h2>
           <p className="mt-2 text-sm text-gray-600">

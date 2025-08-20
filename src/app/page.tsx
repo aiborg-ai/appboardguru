@@ -51,10 +51,11 @@ export default function HomePage() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xl font-bold text-gray-900">BoardGuru</span>
+                  <img 
+                    src="/boardguru-logo.svg" 
+                    alt="BoardGuru" 
+                    className="h-8 w-auto"
+                  />
                 </div>
               </div>
             </div>
@@ -259,10 +260,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">BoardGuru</span>
+              <img 
+                src="/boardguru-logo.svg" 
+                alt="BoardGuru" 
+                className="h-8 w-auto"
+              />
             </div>
             <p className="text-gray-400 mb-4">
               Enterprise Board Management Platform
