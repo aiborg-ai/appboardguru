@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Shield, FileText, Brain, Users, Lock, BarChart3, CheckCircle, ArrowRight, Menu, X } from 'lucide-react'
-import { RegistrationModal } from '@/components/forms/RegistrationModal'
+import { RegistrationModal } from '@/features/shared/forms/RegistrationModal'
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

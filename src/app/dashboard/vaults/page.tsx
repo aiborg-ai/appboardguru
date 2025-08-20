@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   Package, 
@@ -16,15 +16,15 @@ import {
   Building2,
   FolderOpen
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/features/shared/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Badge } from '@/features/shared/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
 export default function VaultsPage() {

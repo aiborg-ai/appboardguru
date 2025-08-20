@@ -1,7 +1,7 @@
 'use client'
 
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import { EnhancedAIChat } from '@/components/ai/EnhancedAIChat'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { EnhancedAIChat } from '@/features/ai-chat/ai/EnhancedAIChat'
 import { 
   Target,
   Shield,

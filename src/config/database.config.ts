@@ -162,7 +162,7 @@ export const isValidFileSize = (size: number) => {
 }
 
 export const isValidMimeType = (mimeType: string) => {
-  return databaseConfig.storage.allowedMimeTypes.includes(mimeType)
+  return databaseConfig.storage.allowedMimeTypes.includes(mimeType as any)
 }
 
 // Connection health check

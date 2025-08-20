@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validationResult.data;
-    let organizationId: string;
+    let organizationId: string = '';
     let createdOrganization = null;
 
     // Begin transaction-like operations
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
             name: createdOrganization.name,
             slug: createdOrganization.slug,
             website: createdOrganization.website,
-          },
+          } as any,
         });
       }
 

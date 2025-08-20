@@ -23,21 +23,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+} from "@/features/shared/ui/dialog"
+import { Button } from "@/features/shared/ui/button"
+import { Input } from "@/features/shared/ui/input"
+import { Textarea } from "@/features/shared/ui/textarea"
+import { Label } from "@/features/shared/ui/label"
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/components/ui/use-toast"
+} from "@/features/shared/ui/select"
+import { Badge } from "@/features/shared/ui/badge"
+import { Separator } from "@/features/shared/ui/separator"
+import { useToast } from "@/features/shared/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { 
   useLightweightForm, 
@@ -361,7 +361,6 @@ export function OptimizedInviteMemberModal({
           <div className="space-y-2">
             <Label htmlFor="expiresIn">Invitation Expires</Label>
             <select
-              {...formActions.getFieldProps('expiresIn')}
               disabled={isLoading}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               name="expiresIn"

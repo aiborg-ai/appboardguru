@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Button } from '@/features/shared/ui/button';
+import { Input } from '@/features/shared/ui/input';
+import { Badge } from '@/features/shared/ui/badge';
+import { Checkbox } from '@/features/shared/ui/checkbox';
+import { Label } from '@/features/shared/ui/label';
 import { 
   FileText, 
   Search, 

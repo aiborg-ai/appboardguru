@@ -24,10 +24,10 @@ import {
   canTransferOwnership,
   availableRoles
 } from "@/hooks/useMembers"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
+import { Button } from "@/features/shared/ui/button"
+import { Badge } from "@/features/shared/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/features/shared/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/features/shared/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -44,15 +44,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/features/shared/ui/dialog"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
+} from "@/features/shared/ui/select"
+import { useToast } from "@/features/shared/ui/use-toast"
 import { cn } from "@/lib/utils"
 
 interface MembersTabProps {

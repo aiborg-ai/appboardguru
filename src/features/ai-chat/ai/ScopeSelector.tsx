@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { ChevronDown, Globe, Building, Calendar, FileText, Users, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/features/shared/ui/button'
 
 export type ChatScope = {
   id: string

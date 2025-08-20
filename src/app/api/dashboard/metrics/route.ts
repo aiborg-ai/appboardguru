@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         count: secureFilesCount || 0,
         change: changes.files_change,
         label: changes.files_change > 0 ? `+${changes.files_change}` : changes.files_change === 0 ? 'Stable' : `${changes.files_change}`,
-        formatted: secureFilesCount > 1000 ? `${(secureFilesCount / 1000).toFixed(1)}k` : secureFilesCount?.toString() || '0'
+        formatted: (secureFilesCount || 0) > 1000 ? `${((secureFilesCount || 0) / 1000).toFixed(1)}k` : (secureFilesCount || 0).toString()
       },
       active_users: {
         count: activeUsersCount || 0,

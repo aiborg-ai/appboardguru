@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import { AISettingsPanel } from '@/components/settings/AISettingsPanel'
-import { ActivityLogsTab } from '@/components/settings/ActivityLogsTab'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { AISettingsPanel } from '@/features/dashboard/settings/AISettingsPanel'
+import { ActivityLogsTab } from '@/features/dashboard/settings/ActivityLogsTab'
 import { 
   Settings, 
   Brain, 

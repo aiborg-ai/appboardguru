@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/features/shared/ui/use-toast'
 import { createInvitationsAction, updateInvitationAction, bulkInvitationAction } from '@/lib/actions/invitation-actions'
 
 // Modern types for React 19
@@ -138,7 +138,7 @@ export function useCreateModernInvitations(organizationId: string) {
           modernInvitationKeys.list(organizationId),
           (old: any[] = []) => {
             const withoutOptimistic = old.filter(inv => !inv.optimistic)
-            return [...result.data, ...withoutOptimistic]
+            return [...(result.data || []), ...withoutOptimistic]
           }
         )
 

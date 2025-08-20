@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ResponsePage } from '@/components/ui/ResponsePage'
+import { ResponsePage } from '@/features/shared/ui/ResponsePage'
 
 interface ResultData {
   type: 'success' | 'error' | 'warning'

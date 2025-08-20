@@ -18,20 +18,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/features/shared/ui/dialog'
+import { Button } from '@/features/shared/ui/button'
+import { Input } from '@/features/shared/ui/input'
+import { Label } from '@/features/shared/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+} from '@/features/shared/ui/select'
+import { Checkbox } from '@/features/shared/ui/checkbox'
+import { Badge } from '@/features/shared/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useOrganization } from '@/contexts/OrganizationContext'
 

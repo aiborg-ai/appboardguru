@@ -15,7 +15,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/features/shared/ui/button'
 import { ScopeSelector, type ChatScope } from './ScopeSelector'
 
 interface ChatMessage {

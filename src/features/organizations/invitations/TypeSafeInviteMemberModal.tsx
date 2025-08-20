@@ -30,13 +30,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/components/ui/use-toast"
+} from "@/features/shared/ui/dialog"
+import { Button } from "@/features/shared/ui/button"
+import { Input } from "@/features/shared/ui/input"
+import { Label } from "@/features/shared/ui/label"
+import { Badge } from "@/features/shared/ui/badge"
+import { Separator } from "@/features/shared/ui/separator"
+import { useToast } from "@/features/shared/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { 
   useLightweightForm, 
@@ -149,7 +149,7 @@ const formBridgeConfig: FormBridgeConfig<TypeSafeFormData> = {
     }
   },
   typeAdapters: {
-    expiresIn: expiresInAdapter,
+    expiresIn: expiresInAdapter as any,
     personalMessage: personalMessageAdapter
   },
   metadataExtractors: {
@@ -236,11 +236,11 @@ function useTypeSafeForm<T extends Record<string, any>>(
       }
     } as any,
     validateOnBlur: true,
-    onSubmit: async (data: T) => {
+    onSubmit: (async (data: T) => {
       // Apply final transformations before submission
       const transformedData = formBridge.getProxy()
       return transformedData
-    }
+    }) as any
   })
 
   // Enhanced field props getter with type safety
@@ -388,7 +388,7 @@ export function TypeSafeInviteMemberModal<
         results.push(result)
       }
 
-      onSuccess?.(results as TInvitationData[])
+      onSuccess?.(results as unknown as TInvitationData[])
       handleClose()
       
       toast({
@@ -408,7 +408,7 @@ export function TypeSafeInviteMemberModal<
   const removeInvitation = React.useCallback((index: number) => {
     if (invitations.length > 1) {
       invitationActions.remove(index)
-      setInvitationErrors(prev => prev.filter((_, i) => i !== index))
+      // setInvitationErrors(prev => prev.filter((_, i) => i !== index))
     }
   }, [invitations.length, invitationActions])
 
@@ -417,7 +417,7 @@ export function TypeSafeInviteMemberModal<
       formActions.reset()
       invitationActions.clear()
       invitationActions.append({ email: '', role: 'member' } as TInvitationData)
-      setInvitationErrors([])
+      // setInvitationErrors([])
       onClose()
     }
   }, [isSubmitting, createInvitationMutation.isPending, formActions, invitationActions, onClose])

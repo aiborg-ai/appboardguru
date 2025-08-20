@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/features/shared/ui/use-toast';
 
 interface AnnotationData {
   id: string;

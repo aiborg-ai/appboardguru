@@ -17,18 +17,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/features/shared/ui/dialog"
+import { Button } from "@/features/shared/ui/button"
+import { Input } from "@/features/shared/ui/input"
+import { Textarea } from "@/features/shared/ui/textarea"
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+} from "@/features/shared/ui/select"
+import { Label } from "@/features/shared/ui/label"
 
 // Form validation schema
 const createOrganizationSchema = z.object({

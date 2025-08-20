@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import CreateVaultWizard, { VaultWizardData } from '@/components/vaults/CreateVaultWizard';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CreateVaultWizard, { VaultWizardData } from '@/features/vaults/CreateVaultWizard';
+import { Button } from '@/features/shared/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Vault, Play, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function VaultWizardDemo() {

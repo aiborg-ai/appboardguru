@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import { CreateOrganizationModal } from '@/components/organizations/CreateOrganizationModal'
-import { OrganizationSettings } from '@/components/organizations/OrganizationSettings'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { CreateOrganizationModal } from '@/features/organizations/CreateOrganizationModal'
+import { OrganizationSettings } from '@/features/organizations/OrganizationSettings'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   Building2, 
@@ -14,15 +14,15 @@ import {
   Calendar,
   MoreVertical
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/features/shared/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Badge } from '@/features/shared/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 
 export default function OrganizationsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)

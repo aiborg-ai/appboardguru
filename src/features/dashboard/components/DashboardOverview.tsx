@@ -1,10 +1,10 @@
 'use client'
 
 import React from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/features/shared/ui/button'
+import { Separator } from '@/features/shared/ui/separator'
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -101,7 +101,7 @@ const DashboardOverview: React.FC = () => {
                 </p>
               </div>
               <div className="text-right">
-                <Badge variant={metrics?.board_packs.change > 0 ? 'default' : 'secondary'} className="text-xs">
+                <Badge variant={((metrics?.board_packs.change || 0) || 0) > 0 ? 'default' : 'secondary'} className="text-xs">
                   {isLoading ? '...' : metrics?.board_packs.label || 'Stable'}
                 </Badge>
               </div>
@@ -123,7 +123,7 @@ const DashboardOverview: React.FC = () => {
                 </p>
               </div>
               <div className="text-right">
-                <Badge variant={metrics?.secure_files.change > 0 ? 'default' : 'secondary'} className="text-xs">
+                <Badge variant={((metrics?.secure_files.change || 0) || 0) > 0 ? 'default' : 'secondary'} className="text-xs">
                   {isLoading ? '...' : metrics?.secure_files.label || 'Stable'}
                 </Badge>
               </div>
@@ -167,7 +167,7 @@ const DashboardOverview: React.FC = () => {
                 </p>
               </div>
               <div className="text-right">
-                <Badge variant={metrics?.ai_insights.change > 0 ? 'default' : 'secondary'} className="text-xs">
+                <Badge variant={(metrics?.ai_insights.change || 0) > 0 ? 'default' : 'secondary'} className="text-xs">
                   {isLoading ? '...' : metrics?.ai_insights.label || 'Stable'}
                 </Badge>
               </div>

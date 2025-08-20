@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   MessageSquare, 
@@ -18,25 +18,25 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/features/shared/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Badge } from '@/features/shared/ui/badge'
+import { Input } from '@/features/shared/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/features/shared/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useToast } from '@/components/ui/use-toast'
+} from '@/features/shared/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+import { useToast } from '@/features/shared/ui/use-toast'
 import { formatDistanceToNow } from 'date-fns'
 
 interface AnnotationData {

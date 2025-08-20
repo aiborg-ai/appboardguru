@@ -24,21 +24,21 @@ import {
 } from "@/hooks/useOrganizations"
 import { useOrganizationMembers } from "@/hooks/useMembers"
 import { useInvitations } from "@/hooks/useInvitations"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/features/shared/ui/tabs"
+import { Button } from "@/features/shared/ui/button"
+import { Input } from "@/features/shared/ui/input"
+import { Textarea } from "@/features/shared/ui/textarea"
+import { Label } from "@/features/shared/ui/label"
+import { Badge } from "@/features/shared/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/features/shared/ui/avatar"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/features/shared/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -47,8 +47,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { useToast } from "@/components/ui/use-toast"
+} from "@/features/shared/ui/dialog"
+import { useToast } from "@/features/shared/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { Database } from "@/types/database"

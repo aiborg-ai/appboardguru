@@ -4,9 +4,9 @@
 export const dynamic = 'force-dynamic'
 
 import React, { useState } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import { EnhancedAIChat } from '@/components/ai/EnhancedAIChat'
-import { ScopeSelector, type ChatScope } from '@/components/ai/ScopeSelector'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { EnhancedAIChat } from '@/features/ai-chat/ai/EnhancedAIChat'
+import { ScopeSelector, type ChatScope } from '@/features/ai-chat/ai/ScopeSelector'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   MessageSquare,
@@ -22,9 +22,9 @@ import {
   Calendar,
   Building2
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card } from '@/features/shared/ui/card'
+import { Button } from '@/features/shared/ui/button'
+import { Alert, AlertDescription } from '@/features/shared/ui/alert'
 
 const defaultScope: ChatScope = {
   id: 'global',

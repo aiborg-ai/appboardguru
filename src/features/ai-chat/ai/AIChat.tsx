@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader, MessageSquare, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/features/shared/ui/button'
 import { chatAPI, useChatSession } from '@/lib/api/openrouter-client'
 import type { ChatMessage, ChatRequest, ChatResponse } from '@/types/openrouter'
 

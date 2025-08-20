@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardLayout from '@/components/layout/DashboardLayout'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { FileText } from 'lucide-react'
 
 export default function InstrumentsPage() {

@@ -4,14 +4,14 @@
 export const dynamic = 'force-dynamic'
 
 import React, { useState, useEffect } from 'react'
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import { FileUploadDropzone } from '@/components/assets/FileUploadDropzone'
-import { AssetGrid } from '@/components/assets/AssetGrid'
-import { AssetList } from '@/components/assets/AssetList'
-import { AssetShareModal } from '@/components/assets/AssetShareModal'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { FileUploadDropzone } from '@/features/assets/FileUploadDropzone'
+import { AssetGrid } from '@/features/assets/AssetGrid'
+import { AssetList } from '@/features/assets/AssetList'
+import { AssetShareModal } from '@/features/assets/AssetShareModal'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { Loader2, Building2 } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription } from '@/features/shared/ui/alert'
 import { 
   Folder,
   Upload,
@@ -27,9 +27,9 @@ import {
   SortAsc,
   Settings
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
+import { Button } from '@/features/shared/ui/button'
+import { Input } from '@/features/shared/ui/input'
+import { Card } from '@/features/shared/ui/card'
 
 type ViewMode = 'grid' | 'list' | 'details'
 type SortOption = 'name' | 'date' | 'size' | 'type'

@@ -10,6 +10,11 @@ export { databaseConfig } from './database.config'
 export { emailConfig } from './email.config'
 export { aiConfig } from './ai.config'
 
+import { appConfig } from './app.config'
+import { databaseConfig } from './database.config'
+import { emailConfig } from './email.config'
+import { aiConfig } from './ai.config'
+
 // Configuration validation helper
 export const validateConfigurations = () => {
   const errors: string[] = []

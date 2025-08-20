@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import CreateVaultWizard, { VaultWizardData } from '@/components/vaults/CreateVaultWizard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Button } from '@/features/shared/ui/button';
+import CreateVaultWizard, { VaultWizardData } from '@/features/vaults/CreateVaultWizard';
 import { 
   Vault,
   Plus,

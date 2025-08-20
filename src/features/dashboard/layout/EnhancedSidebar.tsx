@@ -35,13 +35,13 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useOrganization } from '@/contexts/OrganizationContext'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/features/shared/ui/button'
 import { 
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger
-} from '@/components/ui/collapsible'
+} from '@/features/shared/ui/collapsible'
 import { cn } from '@/lib/utils'
 
 interface MenuItem {

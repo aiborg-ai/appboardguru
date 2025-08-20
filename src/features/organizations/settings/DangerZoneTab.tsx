@@ -11,11 +11,11 @@ import {
   ExternalLink
 } from "lucide-react"
 import { useDeleteOrganization } from "@/hooks/useOrganizations"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
+import { Button } from "@/features/shared/ui/button"
+import { Input } from "@/features/shared/ui/input"
+import { Label } from "@/features/shared/ui/label"
+import { Checkbox } from "@/features/shared/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -23,15 +23,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/features/shared/ui/dialog"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useToast } from "@/components/ui/use-toast"
+} from "@/features/shared/ui/select"
+import { useToast } from "@/features/shared/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { Database } from "@/types/database"
 

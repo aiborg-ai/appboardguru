@@ -1,6 +1,6 @@
 'use client'
 
-import { ChatScope } from '@/components/ai/ScopeSelector'
+import { ChatScope } from '@/features/ai-chat/ai/ScopeSelector'
 
 export interface ChatMessage {
   id: string

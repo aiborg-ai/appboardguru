@@ -14,10 +14,10 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import { Button } from '@/features/shared/ui/button'
+import { Card } from '@/features/shared/ui/card'
+import { Input } from '@/features/shared/ui/input'
+import { Select } from '@/features/shared/ui/select'
 import { enhancedOpenRouterClient, type AISettings } from '@/lib/api/enhanced-openrouter-client'
 
 const AI_MODELS = [
