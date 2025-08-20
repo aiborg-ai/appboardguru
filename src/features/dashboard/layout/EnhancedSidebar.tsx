@@ -72,6 +72,12 @@ const baseMenuItems: MenuItem[] = [
     href: '/dashboard/vaults'
   },
   {
+    id: 'meetings',
+    label: 'Meetings',
+    icon: Calendar,
+    href: '/dashboard/meetings'
+  },
+  {
     id: 'instruments',
     label: 'Instruments',
     icon: FileText,
