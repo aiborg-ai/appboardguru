@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 import { 
-  getOrganizationMembers,
   updateMemberRole,
   removeMember,
   transferOwnership
 } from '@/lib/services/membership'
+import { getOrganizationMembers } from '@/lib/services/organization'
 import { RateLimiter } from '@/lib/security'
 import {
   createSuccessResponse,
@@ -34,7 +34,7 @@ function getDeviceInfo(request: NextRequest) {
 /**
  * GET /api/organizations/[id]/members - Get organization members
  */
-async function handleGetMembers(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleGetMembers(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const deviceInfo = getDeviceInfo(request)
   
   // Rate limiting
@@ -49,7 +49,7 @@ async function handleGetMembers(request: NextRequest, { params }: { params: { id
     return createValidationErrorResponse(['User ID is required'])
   }
 
-  const organizationId = params.id
+  const organizationId = (await params).id
 
   try {
     const result = await getOrganizationMembers(organizationId, userId)
@@ -76,7 +76,7 @@ async function handleGetMembers(request: NextRequest, { params }: { params: { id
 /**
  * PATCH /api/organizations/[id]/members - Update member role or remove member
  */
-async function handleUpdateMember(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleUpdateMember(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const deviceInfo = getDeviceInfo(request)
   
   // Rate limiting
@@ -91,7 +91,7 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: { 
     return createErrorResponse('Invalid JSON in request body', 400)
   }
 
-  const organizationId = params.id
+  const organizationId = (await params).id
 
   if (!body.action || !['updateRole', 'removeMember', 'transferOwnership'].includes(body.action)) {
     return createValidationErrorResponse(['Action must be one of: updateRole, removeMember, transferOwnership'])

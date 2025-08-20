@@ -182,3 +182,98 @@ RangeError: Maximum call stack size exceeded
  GET /dashboard/assets 200 in 206ms
  GET /sw.js 404 in 34ms
  GET /sw.js 404 in 24ms
+ ○ Compiling / ...
+ ✓ Compiled / in 916ms (1042 modules)
+ GET / 200 in 1177ms
+ ✓ Compiled /_not-found in 138ms (597 modules)
+ GET /sw.js 404 in 264ms
+ GET / 200 in 112ms
+ GET /sw.js 404 in 36ms
+ GET /sw.js 404 in 55ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.4.7
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.34:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1363ms
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Error: Cannot find module './lib/disable-overlays.js'
+Require stack:
+- /home/vik/appboardguru/next.config.js
+    at config.entry (next.config.js:30:46) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.4.7
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.34:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1398ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 714ms (177 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 3.2s (543 modules)
+ GET /sw.js 404 in 3520ms
+ ✓ Compiled in 447ms (230 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 1029ms (763 modules)
+ GET / 200 in 1296ms
+ GET /sw.js 404 in 46ms
+ GET /sw.js 404 in 53ms
+   Reload env: .env.local
+ ✓ Compiled in 300ms (940 modules)
+ ✓ Compiled in 243ms (328 modules)
+[?25h

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -31,7 +31,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const assetId = params.id
+    const { id: assetId } = await params
     const body = await request.json()
     const { userIds, permission, message, expiresAt, notifyUsers } = body
 
@@ -168,7 +168,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -195,7 +195,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const assetId = params.id
+    const { id: assetId } = await params
 
     // Check if user has access to view sharing information
     const { data: asset, error: fetchError } = await supabase
@@ -270,7 +270,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -297,7 +297,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const assetId = params.id
+    const { id: assetId } = await params
     const { searchParams } = new URL(request.url)
     const shareId = searchParams.get('shareId')
     const userId = searchParams.get('userId')

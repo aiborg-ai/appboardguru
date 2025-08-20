@@ -1,0 +1,26 @@
+/* Hide all Next.js error overlays */
+nextjs-portal,
+[data-nextjs-dialog-overlay],
+[data-nextjs-dialog],
+[data-nextjs-toast],
+.__next-error-overlay,
+.__next-build-watcher,
+[id*="nextjs"],
+[class*="nextjs"],
+[data-nextjs*=""],
+div[style*="position: fixed"][style*="z-index"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide any error boundary overlays */
+[role="dialog"][aria-modal="true"] {
+  display: none !important;
+}
+
+/* Hide React error overlays */
+div[style*="position: fixed"][style*="top: 0"][style*="left: 0"][style*="width: 100%"][style*="height: 100%"] {
+  display: none !important;
+}

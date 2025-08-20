@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { 
   createOrganization,
-  getUserOrganizations,
+  listUserOrganizations,
   updateOrganization,
   deleteOrganization,
   getOrganization,
@@ -178,7 +178,7 @@ async function handleGetOrganizations(request: NextRequest) {
       return addSecurityHeaders(response)
     } else {
       // Get user's organizations
-      const result = await getUserOrganizations(userId)
+      const result = await listUserOrganizations(userId)
 
       if (!result.success) {
         return createErrorResponse(result.error || 'Failed to list organizations', 400)
