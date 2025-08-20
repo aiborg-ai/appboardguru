@@ -13,6 +13,7 @@ const envSchema = z.object({
   // Application URLs
   APP_URL: z.string().url().optional(),
   NEXTAUTH_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   VERCEL_URL: z.string().optional(),
   
   // Database Configuration
