@@ -185,7 +185,7 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
 /**
  * Route handlers
  */
-async function handleMembers(request: NextRequest, context: { params: { id: string } }) {
+async function handleMembers(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const allowedMethods = ['GET', 'PATCH']
   if (!validateRequestMethod(request, allowedMethods)) {
     return createErrorResponse('Method not allowed', 405)
@@ -207,8 +207,8 @@ async function handleMembers(request: NextRequest, context: { params: { id: stri
 }
 
 // Export route handlers
-export const GET = (request: NextRequest, context: { params: { id: string } }) =>
+export const GET = (request: NextRequest, context: { params: Promise<{ id: string }> }) =>
   withErrorHandling(() => handleMembers(request, context))()
 
-export const PATCH = (request: NextRequest, context: { params: { id: string } }) =>
+export const PATCH = (request: NextRequest, context: { params: Promise<{ id: string }> }) =>
   withErrorHandling(() => handleMembers(request, context))()
