@@ -35,7 +35,6 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useOrganization } from '@/contexts/OrganizationContext'
-import { OrganizationSelector } from '@/components/organizations/OrganizationSelector'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
@@ -65,6 +64,12 @@ const baseMenuItems: MenuItem[] = [
     label: 'Organizations',
     icon: Building2,
     href: '/dashboard/organizations'
+  },
+  {
+    id: 'vaults',
+    label: 'Vaults',
+    icon: Package,
+    href: '/dashboard/vaults'
   },
   {
     id: 'instruments',
@@ -130,6 +135,12 @@ const baseMenuItems: MenuItem[] = [
         label: 'Peer Benchmarking',
         icon: BarChart3,
         href: '/dashboard/benchmarking'
+      },
+      {
+        id: 'annotations',
+        label: 'Annotations',
+        icon: MessageSquare,
+        href: '/dashboard/annotations'
       }
     ]
   }
@@ -231,10 +242,6 @@ export default function EnhancedSidebar() {
     window.location.href = '/auth/signin'
   }
 
-  const handleOrganizationChange = (org: any) => {
-    selectOrganization(org)
-  }
-
   const handleVaultSelect = (vault: any) => {
     selectVault(vault)
     // Navigate to vault page
@@ -316,15 +323,6 @@ export default function EnhancedSidebar() {
           </CollapsibleTrigger>
           
           <CollapsibleContent className="space-y-2 mt-1">
-            {/* Organization Selector */}
-            <div className="ml-4 mr-2">
-              <OrganizationSelector
-                selectedOrganizationId={currentOrganization?.id}
-                onOrganizationChange={handleOrganizationChange}
-                className="w-full"
-              />
-            </div>
-
             {/* Current Organization's Vaults */}
             {currentOrganization && (
               <div className="ml-4 space-y-1">
