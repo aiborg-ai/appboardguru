@@ -108,33 +108,33 @@ export async function GET(
 
     // Transform response data
     const transformedAssets = vaultAssets?.map(vaultAsset => ({
-      id: vaultAsset.id,
-      folderPath: vaultAsset.folder_path,
-      displayOrder: vaultAsset.display_order,
-      isFeatured: vaultAsset.is_featured,
-      isRequiredReading: vaultAsset.is_required_reading,
-      addedAt: vaultAsset.added_at,
-      viewCount: vaultAsset.view_count,
-      downloadCount: vaultAsset.download_count,
-      visibility: vaultAsset.visibility,
-      downloadPermissions: vaultAsset.download_permissions,
+      id: (vaultAsset as any).id,
+      folderPath: (vaultAsset as any).folder_path,
+      displayOrder: (vaultAsset as any).display_order,
+      isFeatured: (vaultAsset as any).is_featured,
+      isRequiredReading: (vaultAsset as any).is_required_reading,
+      addedAt: (vaultAsset as any).added_at,
+      viewCount: (vaultAsset as any).view_count,
+      downloadCount: (vaultAsset as any).download_count,
+      visibility: (vaultAsset as any).visibility,
+      downloadPermissions: (vaultAsset as any).download_permissions,
       asset: {
-        id: vaultAsset.asset.id,
-        title: vaultAsset.asset.title,
-        description: vaultAsset.asset.description,
-        fileName: vaultAsset.asset.file_name,
-        originalFileName: vaultAsset.asset.original_file_name,
-        fileSize: vaultAsset.asset.file_size,
-        fileType: vaultAsset.asset.file_type,
-        mimeType: vaultAsset.asset.mime_type,
-        category: vaultAsset.asset.category,
-        tags: vaultAsset.asset.tags,
-        thumbnailUrl: vaultAsset.asset.thumbnail_url,
-        createdAt: vaultAsset.asset.created_at,
-        updatedAt: vaultAsset.asset.updated_at,
-        owner: vaultAsset.asset.owner
+        id: (vaultAsset as any).(asset as any).id,
+        title: (vaultAsset as any).(asset as any).title,
+        description: (vaultAsset as any).(asset as any).description,
+        fileName: (vaultAsset as any).(asset as any).file_name,
+        originalFileName: (vaultAsset as any).(asset as any).original_file_name,
+        fileSize: (vaultAsset as any).(asset as any).file_size,
+        fileType: (vaultAsset as any).(asset as any).file_type,
+        mimeType: (vaultAsset as any).(asset as any).mime_type,
+        category: (vaultAsset as any).(asset as any).category,
+        tags: (vaultAsset as any).(asset as any).tags,
+        thumbnailUrl: (vaultAsset as any).(asset as any).thumbnail_url,
+        createdAt: (vaultAsset as any).(asset as any).created_at,
+        updatedAt: (vaultAsset as any).(asset as any).updated_at,
+        owner: (vaultAsset as any).(asset as any).owner
       },
-      addedBy: vaultAsset.added_by
+      addedBy: (vaultAsset as any).added_by
     })) || []
 
     // Get folder structure

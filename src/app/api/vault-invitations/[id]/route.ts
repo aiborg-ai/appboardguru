@@ -54,7 +54,7 @@ export async function POST(
         id, vault_id, invited_user_id, organization_id, 
         permission_level, status, expires_at,
         vault:vaults!inner(
-          id, name, status as vault_status,
+          id, name, status,
           organization:organizations!vaults_organization_id_fkey(id, name)
         ),
         invited_by:auth.users!vault_invitations_invited_by_user_id_fkey(
@@ -72,13 +72,13 @@ export async function POST(
     }
 
     // Check invitation status and expiry
-    if (invitation.status !== 'pending') {
+    if ((invitation as any).status !== 'pending') {
       return NextResponse.json({ 
-        error: `Invitation has already been ${invitation.status}` 
+        error: `Invitation has already been ${(invitation as any).status}` 
       }, { status: 400 })
     }
 
-    if (new Date() > new Date(invitation.expires_at)) {
+    if (new Date() > new Date((invitation as any).expires_at)) {
       // Mark as expired
       await supabase
         .from('vault_invitations')
@@ -94,7 +94,7 @@ export async function POST(
     }
 
     // Check if vault is still accepting new members
-    if (!['draft', 'active'].includes(invitation.vault.vault_status)) {
+    if (!['draft', 'active'].includes((invitation as any).vault.status)) {
       return NextResponse.json({ 
         error: 'Vault is no longer accepting new members' 
       }, { status: 400 })
@@ -109,7 +109,7 @@ export async function POST(
       const { data: existingMember } = await supabase
         .from('vault_members')
         .select('id, status')
-        .eq('vault_id', invitation.vault_id)
+        .eq('vault_id', (invitation as any).vault_id)
         .eq('user_id', user.id)
         .single()
 
@@ -136,12 +136,12 @@ export async function POST(
       const { error: memberError } = await supabase
         .from('vault_members')
         .insert({
-          vault_id: invitation.vault_id,
+          vault_id: (invitation as any).vault_id,
           user_id: user.id,
-          organization_id: invitation.organization_id,
-          role: invitation.permission_level === 'admin' ? 'admin' : 
-                invitation.permission_level === 'moderator' ? 'moderator' :
-                invitation.permission_level === 'contributor' ? 'contributor' : 'viewer',
+          organization_id: (invitation as any).organization_id,
+          role: (invitation as any).permission_level === 'admin' ? 'admin' : 
+                (invitation as any).permission_level === 'moderator' ? 'moderator' :
+                (invitation as any).permission_level === 'contributor' ? 'contributor' : 'viewer',
           status: 'active',
           invitation_id: invitationId,
           joined_via: 'invitation',
@@ -172,7 +172,7 @@ export async function POST(
         await supabase
           .from('vault_members')
           .delete()
-          .eq('vault_id', invitation.vault_id)
+          .eq('vault_id', (invitation as any).vault_id)
           .eq('user_id', user.id)
           .eq('invitation_id', invitationId)
 
@@ -185,14 +185,14 @@ export async function POST(
       await supabase
         .from('vault_activity_log')
         .insert({
-          vault_id: invitation.vault_id,
-          organization_id: invitation.organization_id,
+          vault_id: (invitation as any).vault_id,
+          organization_id: (invitation as any).organization_id,
           activity_type: 'member_joined',
           performed_by_user_id: user.id,
           activity_details: {
             invitation_id: invitationId,
             joined_via: 'invitation_acceptance',
-            assigned_role: invitation.permission_level,
+            assigned_role: (invitation as any).permission_level,
             response_message: body.message || null
           },
           ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -201,13 +201,13 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        message: `Successfully joined ${invitation.vault.name}`,
+        message: `Successfully joined ${(invitation as any).vault.name}`,
         vault: {
-          id: invitation.vault.id,
-          name: invitation.vault.name,
-          organization: invitation.vault.organization
+          id: (invitation as any).vault.id,
+          name: (invitation as any).vault.name,
+          organization: (invitation as any).vault.organization
         },
-        role: invitation.permission_level
+        role: (invitation as any).permission_level
       })
 
     } else if (body.action === 'reject') {
@@ -231,10 +231,10 @@ export async function POST(
       await supabase
         .from('vault_activity_log')
         .insert({
-          vault_id: invitation.vault_id,
-          organization_id: invitation.organization_id,
+          vault_id: (invitation as any).vault_id,
+          organization_id: (invitation as any).organization_id,
           activity_type: 'member_invited', // Keep as invited but with rejection details
-          performed_by_user_id: invitation.invited_by.id, // Original inviter
+          performed_by_user_id: (invitation as any).invited_by.id, // Original inviter
           affected_user_id: user.id,
           activity_details: {
             invitation_id: invitationId,
@@ -248,11 +248,11 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        message: `Invitation to ${invitation.vault.name} has been rejected`,
+        message: `Invitation to ${(invitation as any).vault.name} has been rejected`,
         vault: {
-          id: invitation.vault.id,
-          name: invitation.vault.name,
-          organization: invitation.vault.organization
+          id: (invitation as any).vault.id,
+          name: (invitation as any).vault.name,
+          organization: (invitation as any).vault.organization
         }
       })
     }
@@ -302,7 +302,7 @@ export async function GET(
         id, permission_level, personal_message, status,
         created_at, expires_at, responded_at, accepted_at,
         vault:vaults!inner(
-          id, name, description, meeting_date, status as vault_status,
+          id, name, description, meeting_date, status,
           priority, category, member_count, asset_count, location,
           organization:organizations!vaults_organization_id_fkey(
             id, name, slug, logo_url, description
@@ -324,37 +324,37 @@ export async function GET(
 
     // Transform response
     const transformedInvitation = {
-      id: invitation.id,
-      permissionLevel: invitation.permission_level,
-      personalMessage: invitation.personal_message,
-      status: invitation.status,
-      createdAt: invitation.created_at,
-      expiresAt: invitation.expires_at,
-      respondedAt: invitation.responded_at,
-      acceptedAt: invitation.accepted_at,
+      id: (invitation as any).id,
+      permissionLevel: (invitation as any).permission_level,
+      personalMessage: (invitation as any).personal_message,
+      status: (invitation as any).status,
+      createdAt: (invitation as any).created_at,
+      expiresAt: (invitation as any).expires_at,
+      respondedAt: (invitation as any).responded_at,
+      acceptedAt: (invitation as any).accepted_at,
       vault: {
-        id: invitation.vault.id,
-        name: invitation.vault.name,
-        description: invitation.vault.description,
-        meetingDate: invitation.vault.meeting_date,
-        location: invitation.vault.location,
-        status: invitation.vault.vault_status,
-        priority: invitation.vault.priority,
-        category: invitation.vault.category,
-        memberCount: invitation.vault.member_count,
-        assetCount: invitation.vault.asset_count,
-        organization: invitation.vault.organization
+        id: (invitation as any).vault.id,
+        name: (invitation as any).vault.name,
+        description: (invitation as any).vault.description,
+        meetingDate: (invitation as any).vault.meeting_date,
+        location: (invitation as any).vault.location,
+        status: (invitation as any).vault.status,
+        priority: (invitation as any).vault.priority,
+        category: (invitation as any).vault.category,
+        memberCount: (invitation as any).vault.member_count,
+        assetCount: (invitation as any).vault.asset_count,
+        organization: (invitation as any).vault.organization
       },
       invitedBy: {
-        id: invitation.invited_by.id,
-        email: invitation.invited_by.email
+        id: (invitation as any).invited_by.id,
+        email: (invitation as any).invited_by.email
       },
       
       // Computed fields
-      isExpired: new Date() > new Date(invitation.expires_at),
-      canRespond: invitation.status === 'pending' && new Date() <= new Date(invitation.expires_at),
+      isExpired: new Date() > new Date((invitation as any).expires_at),
+      canRespond: (invitation as any).status === 'pending' && new Date() <= new Date((invitation as any).expires_at),
       daysUntilExpiry: Math.ceil(
-        (new Date(invitation.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date((invitation as any).expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       )
     }
 

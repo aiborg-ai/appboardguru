@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         created_at, expires_at, responded_at, accepted_at,
         invitation_token,
         vault:vaults!inner(
-          id, name, description, meeting_date, status as vault_status,
+          id, name, description, meeting_date, status,
           priority, category, member_count, asset_count,
           organization:organizations!vaults_organization_id_fkey(
             id, name, slug, logo_url
@@ -74,36 +74,36 @@ export async function GET(request: NextRequest) {
 
     // Transform response data
     const transformedInvitations = invitations?.map(invitation => ({
-      id: invitation.id,
-      permissionLevel: invitation.permission_level,
-      personalMessage: invitation.personal_message,
-      status: invitation.status,
-      createdAt: invitation.created_at,
-      expiresAt: invitation.expires_at,
-      respondedAt: invitation.responded_at,
-      acceptedAt: invitation.accepted_at,
-      invitationToken: invitation.invitation_token,
+      id: (invitation as any).id,
+      permissionLevel: (invitation as any).permission_level,
+      personalMessage: (invitation as any).personal_message,
+      status: (invitation as any).status,
+      createdAt: (invitation as any).created_at,
+      expiresAt: (invitation as any).expires_at,
+      respondedAt: (invitation as any).responded_at,
+      acceptedAt: (invitation as any).accepted_at,
+      invitationToken: (invitation as any).invitation_token,
       vault: {
-        id: invitation.vault.id,
-        name: invitation.vault.name,
-        description: invitation.vault.description,
-        meetingDate: invitation.vault.meeting_date,
-        status: invitation.vault.vault_status,
-        priority: invitation.vault.priority,
-        category: invitation.vault.category,
-        memberCount: invitation.vault.member_count,
-        assetCount: invitation.vault.asset_count,
-        organization: invitation.vault.organization
+        id: (invitation as any).vault.id,
+        name: (invitation as any).vault.name,
+        description: (invitation as any).vault.description,
+        meetingDate: (invitation as any).vault.meeting_date,
+        status: (invitation as any).vault.status,
+        priority: (invitation as any).vault.priority,
+        category: (invitation as any).vault.category,
+        memberCount: (invitation as any).vault.member_count,
+        assetCount: (invitation as any).vault.asset_count,
+        organization: (invitation as any).vault.organization
       },
       invitedBy: {
-        id: invitation.invited_by.id,
-        email: invitation.invited_by.email
+        id: (invitation as any).invited_by.id,
+        email: (invitation as any).invited_by.email
       },
       
       // Computed fields
-      isExpired: new Date() > new Date(invitation.expires_at),
+      isExpired: new Date() > new Date((invitation as any).expires_at),
       daysUntilExpiry: Math.ceil(
-        (new Date(invitation.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date((invitation as any).expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       )
     })) || []
 

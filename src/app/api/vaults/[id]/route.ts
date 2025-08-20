@@ -80,8 +80,8 @@ export async function GET(
     }
 
     // Check if user has access to this vault
-    const userMembership = vault.vault_members?.find(
-      (member: any) => member.user.id === user.id && member.status === 'active'
+    const userMembership = (vault as any).vault_members?.find(
+      (member: any) => (member as any).user.id === user.id && (member as any).status === 'active'
     )
 
     if (!userMembership) {
@@ -130,29 +130,29 @@ export async function GET(
 
     // Transform response data
     const transformedVault = {
-      id: vault.id,
-      name: vault.name,
-      description: vault.description,
-      meetingDate: vault.meeting_date,
-      location: vault.location,
-      status: vault.status,
-      priority: vault.priority,
-      createdAt: vault.created_at,
-      updatedAt: vault.updated_at,
-      expiresAt: vault.expires_at,
-      archivedAt: vault.archived_at,
-      memberCount: vault.member_count,
-      assetCount: vault.asset_count,
-      totalSizeBytes: vault.total_size_bytes,
-      lastActivityAt: vault.last_activity_at,
-      tags: vault.tags,
-      category: vault.category,
-      organization: vault.organization,
-      createdBy: vault.created_by_user,
-      settings: vault.settings,
-      isPublic: vault.is_public,
-      requiresInvitation: vault.requires_invitation,
-      accessCode: vault.access_code,
+      id: (vault as any).id,
+      name: (vault as any).name,
+      description: (vault as any).description,
+      meetingDate: (vault as any).meeting_date,
+      location: (vault as any).location,
+      status: (vault as any).status,
+      priority: (vault as any).priority,
+      createdAt: (vault as any).created_at,
+      updatedAt: (vault as any).updated_at,
+      expiresAt: (vault as any).expires_at,
+      archivedAt: (vault as any).archived_at,
+      memberCount: (vault as any).member_count,
+      assetCount: (vault as any).asset_count,
+      totalSizeBytes: (vault as any).total_size_bytes,
+      lastActivityAt: (vault as any).last_activity_at,
+      tags: (vault as any).tags,
+      category: (vault as any).category,
+      organization: (vault as any).organization,
+      createdBy: (vault as any).created_by_user,
+      settings: (vault as any).settings,
+      isPublic: (vault as any).is_public,
+      requiresInvitation: (vault as any).requires_invitation,
+      accessCode: (vault as any).access_code,
       
       // User-specific data
       userRole: userMembership.role,
@@ -160,52 +160,52 @@ export async function GET(
       userLastAccessed: userMembership.last_accessed_at,
       
       // Related data
-      members: vault.vault_members?.map((member: any) => ({
-        id: member.id,
-        role: member.role,
-        status: member.status,
-        joinedAt: member.joined_at,
-        lastAccessedAt: member.last_accessed_at,
-        accessCount: member.access_count,
+      members: (vault as any).vault_members?.map((member: any) => ({
+        id: (member as any).id,
+        role: (member as any).role,
+        status: (member as any).status,
+        joinedAt: (member as any).joined_at,
+        lastAccessedAt: (member as any).last_accessed_at,
+        accessCount: (member as any).access_count,
         user: {
-          id: member.user.id,
-          email: member.user.email
+          id: (member as any).user.id,
+          email: (member as any).user.email
         }
       })) || [],
       
       assets: vaultAssets?.map(asset => ({
-        id: asset.id,
-        folderPath: asset.folder_path,
-        displayOrder: asset.display_order,
-        isFeatured: asset.is_featured,
-        isRequiredReading: asset.is_required_reading,
-        addedAt: asset.added_at,
-        viewCount: asset.view_count,
-        downloadCount: asset.download_count,
+        id: (asset as any).id,
+        folderPath: (asset as any).folder_path,
+        displayOrder: (asset as any).display_order,
+        isFeatured: (asset as any).is_featured,
+        isRequiredReading: (asset as any).is_required_reading,
+        addedAt: (asset as any).added_at,
+        viewCount: (asset as any).view_count,
+        downloadCount: (asset as any).download_count,
         asset: {
-          id: asset.asset.id,
-          title: asset.asset.title,
-          description: asset.asset.description,
-          fileName: asset.asset.file_name,
-          originalFileName: asset.asset.original_file_name,
-          fileSize: asset.asset.file_size,
-          fileType: asset.asset.file_type,
-          mimeType: asset.asset.mime_type,
-          thumbnailUrl: asset.asset.thumbnail_url,
-          createdAt: asset.asset.created_at,
-          owner: asset.asset.owner
+          id: (asset as any).(asset as any).id,
+          title: (asset as any).(asset as any).title,
+          description: (asset as any).(asset as any).description,
+          fileName: (asset as any).(asset as any).file_name,
+          originalFileName: (asset as any).(asset as any).original_file_name,
+          fileSize: (asset as any).(asset as any).file_size,
+          fileType: (asset as any).(asset as any).file_type,
+          mimeType: (asset as any).(asset as any).mime_type,
+          thumbnailUrl: (asset as any).(asset as any).thumbnail_url,
+          createdAt: (asset as any).(asset as any).created_at,
+          owner: (asset as any).(asset as any).owner
         },
-        addedBy: asset.added_by
+        addedBy: (asset as any).added_by
       })) || [],
       
       recentActivity: recentActivity?.map(activity => ({
-        id: activity.id,
-        type: activity.activity_type,
-        description: activity.activity_description,
-        timestamp: activity.timestamp,
-        details: activity.activity_details,
-        riskLevel: activity.risk_level,
-        performedBy: activity.performed_by
+        id: (activity as any).id,
+        type: (activity as any).activity_type,
+        description: (activity as any).activity_description,
+        timestamp: (activity as any).timestamp,
+        details: (activity as any).activity_details,
+        riskLevel: (activity as any).risk_level,
+        performedBy: (activity as any).performed_by
       })) || []
     }
 
@@ -224,7 +224,7 @@ export async function GET(
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: vault.organization_id,
+        organization_id: (vault as any).organization_id,
         activity_type: 'access_granted',
         performed_by_user_id: user.id,
         activity_details: {
@@ -444,17 +444,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Vault not found or access denied' }, { status: 404 })
     }
 
-    const userRole = vault.vault_members?.[0]?.role
+    const userRole = (vault as any).vault_members?.[0]?.role
 
     // Only vault owners or organization owners/admins can delete vaults
-    const canDelete = userRole === 'owner' || vault.created_by === user.id
+    const canDelete = userRole === 'owner' || (vault as any).created_by === user.id
 
     if (!canDelete) {
       // Check if user is org owner/admin
       const { data: orgMembership } = await supabase
         .from('organization_members')
         .select('role')
-        .eq('organization_id', vault.organization_id)
+        .eq('organization_id', (vault as any).organization_id)
         .eq('user_id', user.id)
         .eq('status', 'active')
         .single()
@@ -486,11 +486,11 @@ export async function DELETE(
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: vault.organization_id,
+        organization_id: (vault as any).organization_id,
         activity_type: 'vault_deleted',
         performed_by_user_id: user.id,
         activity_details: {
-          vault_name: vault.name,
+          vault_name: (vault as any).name,
           deletion_type: 'soft_delete',
           deleted_via: 'api'
         },

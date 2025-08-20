@@ -85,9 +85,9 @@ export async function GET(
     await supabase
       .from('vault_assets')
       .update({ 
-        view_count: vaultAsset.view_count + 1 
+        view_count: (vaultAsset as any).view_count + 1 
       })
-      .eq('id', vaultAsset.id)
+      .eq('id', (vaultAsset as any).id)
 
     // Log access activity
     await supabase
@@ -99,8 +99,8 @@ export async function GET(
         performed_by_user_id: user.id,
         affected_asset_id: assetId,
         activity_details: {
-          asset_title: vaultAsset.asset.title,
-          folder_path: vaultAsset.folder_path,
+          asset_title: (vaultAsset as any).asset.title,
+          folder_path: (vaultAsset as any).folder_path,
           view_method: 'api'
         },
         ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -109,33 +109,33 @@ export async function GET(
 
     // Transform response
     const transformedAsset = {
-      id: vaultAsset.id,
-      folderPath: vaultAsset.folder_path,
-      displayOrder: vaultAsset.display_order,
-      isFeatured: vaultAsset.is_featured,
-      isRequiredReading: vaultAsset.is_required_reading,
-      addedAt: vaultAsset.added_at,
-      viewCount: vaultAsset.view_count + 1, // Include the increment
-      downloadCount: vaultAsset.download_count,
-      visibility: vaultAsset.visibility,
-      downloadPermissions: vaultAsset.download_permissions,
+      id: (vaultAsset as any).id,
+      folderPath: (vaultAsset as any).folder_path,
+      displayOrder: (vaultAsset as any).display_order,
+      isFeatured: (vaultAsset as any).is_featured,
+      isRequiredReading: (vaultAsset as any).is_required_reading,
+      addedAt: (vaultAsset as any).added_at,
+      viewCount: (vaultAsset as any).view_count + 1, // Include the increment
+      downloadCount: (vaultAsset as any).download_count,
+      visibility: (vaultAsset as any).visibility,
+      downloadPermissions: (vaultAsset as any).download_permissions,
       asset: {
-        id: vaultAsset.asset.id,
-        title: vaultAsset.asset.title,
-        description: vaultAsset.asset.description,
-        fileName: vaultAsset.asset.file_name,
-        originalFileName: vaultAsset.asset.original_file_name,
-        fileSize: vaultAsset.asset.file_size,
-        fileType: vaultAsset.asset.file_type,
-        mimeType: vaultAsset.asset.mime_type,
-        category: vaultAsset.asset.category,
-        tags: vaultAsset.asset.tags,
-        thumbnailUrl: vaultAsset.asset.thumbnail_url,
-        createdAt: vaultAsset.asset.created_at,
-        updatedAt: vaultAsset.asset.updated_at,
-        owner: vaultAsset.asset.owner
+        id: (vaultAsset as any).(asset as any).id,
+        title: (vaultAsset as any).(asset as any).title,
+        description: (vaultAsset as any).(asset as any).description,
+        fileName: (vaultAsset as any).(asset as any).file_name,
+        originalFileName: (vaultAsset as any).(asset as any).original_file_name,
+        fileSize: (vaultAsset as any).(asset as any).file_size,
+        fileType: (vaultAsset as any).(asset as any).file_type,
+        mimeType: (vaultAsset as any).(asset as any).mime_type,
+        category: (vaultAsset as any).(asset as any).category,
+        tags: (vaultAsset as any).(asset as any).tags,
+        thumbnailUrl: (vaultAsset as any).(asset as any).thumbnail_url,
+        createdAt: (vaultAsset as any).(asset as any).created_at,
+        updatedAt: (vaultAsset as any).(asset as any).updated_at,
+        owner: (vaultAsset as any).(asset as any).owner
       },
-      addedBy: vaultAsset.added_by
+      addedBy: (vaultAsset as any).added_by
     }
 
     return NextResponse.json({
@@ -366,7 +366,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('vault_assets')
       .delete()
-      .eq('id', vaultAsset.id)
+      .eq('id', (vaultAsset as any).id)
 
     if (deleteError) {
       console.error('Vault asset deletion error:', deleteError)
@@ -383,9 +383,9 @@ export async function DELETE(
         performed_by_user_id: user.id,
         affected_asset_id: assetId,
         activity_details: {
-          asset_title: vaultAsset.asset.title,
-          asset_file_name: vaultAsset.asset.file_name,
-          folder_path: vaultAsset.folder_path,
+          asset_title: (vaultAsset as any).asset.title,
+          asset_file_name: (vaultAsset as any).(asset as any).file_name,
+          folder_path: (vaultAsset as any).folder_path,
           removal_reason: 'manual_removal'
         },
         risk_level: 'low',
