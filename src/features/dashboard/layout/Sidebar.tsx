@@ -23,7 +23,9 @@ import {
   CheckCircle2,
   Calendar,
   Zap,
-  Folder as FolderIcon
+  Folder as FolderIcon,
+  Building2,
+  Plus
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -120,6 +122,25 @@ const menuItems: MenuItem[] = [
     label: 'BoardMates',
     icon: Users,
     href: '/dashboard/boardmates'
+  },
+  {
+    id: 'organizations',
+    label: 'Organizations',
+    icon: Building2,
+    children: [
+      {
+        id: 'view-organizations',
+        label: 'My Organizations',
+        icon: Building2,
+        href: '/dashboard/organizations'
+      },
+      {
+        id: 'create-organization',
+        label: 'Create Organization',
+        icon: Plus,
+        href: '/dashboard/organizations/create'
+      }
+    ]
   },
   {
     id: 'ai-assistant',

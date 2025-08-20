@@ -477,6 +477,38 @@ export async function getOrganizationMembers(
 }
 
 /**
+ * Check if organization slug is available
+ */
+export async function checkOrganizationSlugAvailability(
+  slug: string
+): Promise<{ success: boolean; available?: boolean; error?: string }> {
+  try {
+    const { data: existingOrg, error } = await supabaseAdmin
+      .from('organizations')
+      .select('id')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error checking slug availability:', error)
+      return { success: false, error: error.message }
+    }
+
+    // If no organization found with this slug, it's available
+    const available = !existingOrg
+
+    return { success: true, available }
+  } catch (error) {
+    console.error('Unexpected error checking slug availability:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }
+  }
+}
+
+/**
  * Utility function to create audit log entries
  */
 async function createAuditLog(logData: {
