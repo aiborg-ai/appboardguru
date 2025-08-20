@@ -182,7 +182,7 @@ export default function OrganizationsPage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {new Date(org.created_at).toLocaleDateString()}
+                        {new Date((org as any).created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
