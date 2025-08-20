@@ -266,8 +266,7 @@ async function handleUpdateOrganization(request: NextRequest) {
     const result = await updateOrganization(
       body.organizationId,
       updateData,
-      body.userId,
-      deviceInfo
+      body.userId
     )
 
     if (!result.success) {
@@ -308,9 +307,7 @@ async function handleDeleteOrganization(request: NextRequest) {
   try {
     const result = await deleteOrganization(
       organizationId,
-      userId,
-      deleteImmediately,
-      deviceInfo
+      userId
     )
 
     if (!result.success) {
@@ -320,8 +317,7 @@ async function handleDeleteOrganization(request: NextRequest) {
     const response = createSuccessResponse(
       { 
         organizationId, 
-        scheduledDeletion: !deleteImmediately,
-        deletionDate: result.deletionDate
+        scheduledDeletion: !deleteImmediately
       },
       deleteImmediately ? 'Organization deleted immediately' : 'Organization scheduled for deletion'
     )
