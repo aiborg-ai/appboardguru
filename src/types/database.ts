@@ -597,6 +597,232 @@ export interface Database {
           updated_at?: string
         }
       }
+      asset_annotations: {
+        Row: {
+          id: string
+          asset_id: string
+          vault_id: string | null
+          organization_id: string
+          created_by: string
+          created_at: string
+          updated_at: string
+          annotation_type: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
+          content: any
+          page_number: number
+          position: any
+          selected_text: string | null
+          comment_text: string | null
+          color: string
+          opacity: number
+          is_private: boolean
+          is_resolved: boolean
+          resolved_by: string | null
+          resolved_at: string | null
+          is_anchored: boolean
+          anchor_text: string | null
+          metadata: any
+          is_deleted: boolean
+          deleted_at: string | null
+          deleted_by: string | null
+        }
+        Insert: {
+          id?: string
+          asset_id: string
+          vault_id?: string | null
+          organization_id: string
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          annotation_type: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
+          content: any
+          page_number: number
+          position: any
+          selected_text?: string | null
+          comment_text?: string | null
+          color?: string
+          opacity?: number
+          is_private?: boolean
+          is_resolved?: boolean
+          resolved_by?: string | null
+          resolved_at?: string | null
+          is_anchored?: boolean
+          anchor_text?: string | null
+          metadata?: any
+          is_deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+        }
+        Update: {
+          id?: string
+          asset_id?: string
+          vault_id?: string | null
+          organization_id?: string
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          annotation_type?: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
+          content?: any
+          page_number?: number
+          position?: any
+          selected_text?: string | null
+          comment_text?: string | null
+          color?: string
+          opacity?: number
+          is_private?: boolean
+          is_resolved?: boolean
+          resolved_by?: string | null
+          resolved_at?: string | null
+          is_anchored?: boolean
+          anchor_text?: string | null
+          metadata?: any
+          is_deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+        }
+      }
+      annotation_replies: {
+        Row: {
+          id: string
+          annotation_id: string
+          parent_reply_id: string | null
+          reply_text: string
+          created_by: string
+          created_at: string
+          updated_at: string
+          is_edited: boolean
+          edited_at: string | null
+          is_deleted: boolean
+          deleted_at: string | null
+          deleted_by: string | null
+        }
+        Insert: {
+          id?: string
+          annotation_id: string
+          parent_reply_id?: string | null
+          reply_text: string
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          is_edited?: boolean
+          edited_at?: string | null
+          is_deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+        }
+        Update: {
+          id?: string
+          annotation_id?: string
+          parent_reply_id?: string | null
+          reply_text?: string
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          is_edited?: boolean
+          edited_at?: string | null
+          is_deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+        }
+      }
+      annotation_reactions: {
+        Row: {
+          id: string
+          annotation_id: string | null
+          reply_id: string | null
+          user_id: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          annotation_id?: string | null
+          reply_id?: string | null
+          user_id: string
+          emoji: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          annotation_id?: string | null
+          reply_id?: string | null
+          user_id?: string
+          emoji?: string
+          created_at?: string
+        }
+      }
+      annotation_mentions: {
+        Row: {
+          id: string
+          annotation_id: string | null
+          reply_id: string | null
+          mentioned_user_id: string
+          mentioned_by: string
+          created_at: string
+          is_read: boolean
+          read_at: string | null
+        }
+        Insert: {
+          id?: string
+          annotation_id?: string | null
+          reply_id?: string | null
+          mentioned_user_id: string
+          mentioned_by: string
+          created_at?: string
+          is_read?: boolean
+          read_at?: string | null
+        }
+        Update: {
+          id?: string
+          annotation_id?: string | null
+          reply_id?: string | null
+          mentioned_user_id?: string
+          mentioned_by?: string
+          created_at?: string
+          is_read?: boolean
+          read_at?: string | null
+        }
+      }
+      user_annotation_preferences: {
+        Row: {
+          user_id: string
+          default_color: string
+          default_opacity: number
+          show_all_annotations: boolean
+          show_own_only: boolean
+          auto_save_annotations: boolean
+          notify_on_mentions: boolean
+          notify_on_replies: boolean
+          notify_on_new_annotations: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          default_color?: string
+          default_opacity?: number
+          show_all_annotations?: boolean
+          show_own_only?: boolean
+          auto_save_annotations?: boolean
+          notify_on_mentions?: boolean
+          notify_on_replies?: boolean
+          notify_on_new_annotations?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          default_color?: string
+          default_opacity?: number
+          show_all_annotations?: boolean
+          show_own_only?: boolean
+          auto_save_annotations?: boolean
+          notify_on_mentions?: boolean
+          notify_on_replies?: boolean
+          notify_on_new_annotations?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
