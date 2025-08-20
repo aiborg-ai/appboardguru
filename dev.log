@@ -1,0 +1,39 @@
+
+> appboardguru@1.0.2 dev
+> next dev
+
+ ⚠ Warning: Found multiple lockfiles. Selecting /home/vik/package-lock.json.
+   Consider removing the lockfiles at:
+   * /home/vik/appboardguru/package-lock.json
+
+   ▲ Next.js 15.4.7
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.34:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ appDir
+
+ ✓ Starting...
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     Unrecognized key(s) in object: 'appDir' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `devIndicators.buildActivity` is deprecated and no longer configurable. Please remove it from next.config.js.
+ ✓ Ready in 1481ms
+ ○ Compiling /api/send-registration-email ...
+ ✓ Compiled /api/send-registration-email in 2.5s (601 modules)
+✅ SMTP connection verified
+📧 Registration emails sent successfully
+   Admin notification: hirendra.vikram@boardguru.ai
+   User confirmation: test@example.com
+   Registration ID: d090d433-3575-4e4a-9e38-181caef43f24
+ POST /api/send-registration-email 200 in 6524ms
+ ✓ Compiled in 112ms (186 modules)
+ ✓ Compiled in 95ms (186 modules)
+ ✓ Compiled in 83ms (186 modules)
+ ✓ Compiled in 43ms (186 modules)
+ ✓ Compiled in 103ms (186 modules)
+ ✓ Compiled in 91ms (186 modules)
+ ✓ Compiled in 48ms (186 modules)
+ ✓ Compiled in 56ms (186 modules)
+ ✓ Compiled in 49ms (186 modules)
+ ✓ Compiled in 71ms (186 modules)

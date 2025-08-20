@@ -1,0 +1,71 @@
+# Page snapshot
+
+```yaml
+- main:
+  - navigation:
+    - text: BoardGuru
+    - link "Features":
+      - /url: "#features"
+    - link "Security":
+      - /url: "#security"
+    - link "🚀 Live Demo":
+      - /url: /demo
+    - link "Sign In":
+      - /url: /auth/signin
+    - button "Request Access"
+  - heading "The Future of Board Management" [level=1]
+  - paragraph: Secure, AI-powered board pack management with intelligent summarization, interactive analysis, and enterprise-grade security for modern board directors.
+  - link "🚀 Try Live Demo":
+    - /url: /demo
+  - button "Request Full Access"
+  - heading "Enterprise-Grade Board Management" [level=2]
+  - paragraph: Comprehensive platform designed for modern board governance with security, efficiency, and intelligence at its core.
+  - heading "Enterprise Security" [level=3]
+  - paragraph: Bank-grade encryption, role-based access control, and comprehensive audit trails for complete peace of mind.
+  - heading "AI-Powered Analysis" [level=3]
+  - paragraph: Intelligent document summarization with OpenRouter AI integration for efficient board preparation.
+  - heading "Smart Document Management" [level=3]
+  - paragraph: Multi-format support with automated processing, watermarking, and secure export capabilities.
+  - heading "Collaborative Platform" [level=3]
+  - paragraph: Interactive chatbot for board pack analysis and real-time collaboration tools for directors.
+  - heading "Compliance Ready" [level=3]
+  - paragraph: Built-in governance features ensuring regulatory compliance and corporate governance best practices.
+  - heading "Audit & Reporting" [level=3]
+  - paragraph: Comprehensive audit trails and detailed reporting for transparency and accountability.
+  - heading "Security You Can Trust" [level=2]
+  - paragraph: Built with enterprise-grade security from the ground up, ensuring your sensitive board materials are protected with the highest standards.
+  - list:
+    - listitem: End-to-end encryption for all documents
+    - listitem: Role-based access control with granular permissions
+    - listitem: Comprehensive audit trails and compliance reporting
+    - listitem: Secure watermarking and export controls
+    - listitem: Multi-factor authentication and SSO integration
+    - listitem: GDPR and SOC 2 compliance ready
+  - heading "Enterprise Security" [level=3]
+  - paragraph: Bank-grade security infrastructure protecting your most sensitive board materials.
+  - text: 256-bit AES Encryption SOC 2 Compliance Zero Trust Architecture 24/7 Monitoring
+  - heading "Ready to Transform Your Board Management?" [level=2]
+  - paragraph: Join leading organizations already using BoardGuru to streamline their board processes with security and intelligence.
+  - button "Request Access Today"
+  - text: BoardGuru
+  - paragraph: Enterprise Board Management Platform
+  - paragraph: © 2024 BoardGuru. All rights reserved. Built with security and compliance in mind.
+  - heading "Request Access" [level=2]
+  - button
+  - text: Full Name *
+  - textbox "Enter your full name": Hirendra Vikram
+  - text: Email Address *
+  - textbox "Enter your email address": hirendra@gmail.com
+  - text: Company *
+  - textbox "Enter your company name": FIRST HANDS ON AI CIC
+  - text: Position/Title *
+  - textbox "e.g., Board Director, CEO, CFO": gujs
+  - text: Additional Message (Optional)
+  - textbox "Tell us about your board management needs...": gahgsh
+  - heading "Request Failed" [level=4]
+  - paragraph: This email has already been approved. Please sign in or request a password reset link.
+  - button "Cancel"
+  - button "Submit Request"
+  - paragraph: By submitting this request, you agree to our terms of service and privacy policy. We'll review your request and respond within 1-2 business days.
+- alert
+```

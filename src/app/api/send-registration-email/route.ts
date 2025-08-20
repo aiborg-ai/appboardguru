@@ -57,10 +57,29 @@ async function handleRegistrationEmail(request: NextRequest) {
   }
 
   try {
+    // Check if email already has a registration request
+    const { data: existingRequest, error: checkError } = await supabase
+      .from('registration_requests')
+      .select('*')
+      .eq('email', sanitizedData.email)
+      .single()
+
+    if (existingRequest) {
+      // Email already has a registration request
+      if (existingRequest.status === 'pending') {
+        return createErrorResponse('A registration request for this email is already pending review', 409)
+      } else if (existingRequest.status === 'approved') {
+        return createErrorResponse('This email has already been approved. Please sign in or request a password reset link.', 409)
+      } else if (existingRequest.status === 'rejected') {
+        // Allow resubmission after rejection
+        console.log(`Allowing resubmission for previously rejected email: ${sanitizedData.email}`)
+      }
+    }
+
     // Insert registration request into database
     const { data: insertData, error: dbError } = await supabase
       .from('registration_requests')
-      .insert([
+      .upsert([
         {
           email: sanitizedData.email,
           full_name: sanitizedData.fullName,
@@ -74,7 +93,19 @@ async function handleRegistrationEmail(request: NextRequest) {
 
     if (dbError || !insertData || insertData.length === 0) {
       console.error('Database insertion error:', dbError)
-      return createErrorResponse('Failed to create registration request', 500)
+      console.error('Error details:', {
+        code: dbError?.code,
+        message: dbError?.message,
+        details: dbError?.details,
+        hint: dbError?.hint
+      })
+      
+      // Provide more specific error messages
+      if (dbError?.code === '23505') {
+        return createErrorResponse('A registration request for this email already exists', 409)
+      }
+      
+      return createErrorResponse(`Failed to create registration request: ${dbError?.message || 'Unknown database error'}`, 500)
     }
 
     const registrationId = insertData[0].id

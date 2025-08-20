@@ -284,9 +284,28 @@ function SetPasswordPageContent() {
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">Set Your Password</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Welcome {userInfo?.name}! Create a secure password to complete your account setup.
+            Welcome {userInfo?.name}! 
+            {searchParams?.get('source') === 'otp' ? 
+              ' Your sign-in code was verified successfully. Now create a secure password to complete your account setup.' :
+              ' Create a secure password to complete your account setup.'
+            }
           </p>
         </div>
+
+        {/* OTP Success Message */}
+        {searchParams?.get('source') === 'otp' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-green-800">Code Verified Successfully! ✅</h4>
+                <p className="text-sm text-green-600">
+                  Your 6-digit sign-in code has been verified. Complete your setup by creating a secure password below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="card p-8 bg-white shadow-xl">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

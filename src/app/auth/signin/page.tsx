@@ -14,7 +14,13 @@ const signinSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
+const otpSigninSchema = z.object({
+  email: z.string().email('Valid email is required'),
+  otpCode: z.string().regex(/^\d{6}$/, 'OTP code must be exactly 6 digits'),
+})
+
 type SigninFormData = z.infer<typeof signinSchema>
+type OtpSigninFormData = z.infer<typeof otpSigninSchema>
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -24,6 +30,15 @@ export default function SignInPage() {
   const [magicLinkEmail, setMagicLinkEmail] = useState('')
   const [magicLinkLoading, setMagicLinkLoading] = useState(false)
   const [magicLinkMessage, setMagicLinkMessage] = useState('')
+  
+  // OTP mode state
+  const [otpMode, setOtpMode] = useState(false)
+  const [otpEmail, setOtpEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [isResendingOtp, setIsResendingOtp] = useState(false)
+  const [resendMessage, setResendMessage] = useState('')
+  
   const router = useRouter()
 
   const {
@@ -39,6 +54,12 @@ export default function SignInPage() {
     setError('')
 
     try {
+      // First check if user needs OTP mode
+      const needsOtp = await handleEmailCheck(data.email)
+      if (needsOtp) {
+        setIsSubmitting(false)
+        return // User will now see OTP form
+      }
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -131,6 +152,137 @@ export default function SignInPage() {
     }
   }
 
+  // Check if user needs OTP mode
+  const checkUserForOtpMode = async (email: string) => {
+    try {
+      // Check if user exists and needs password setup
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('status, password_set, email')
+        .eq('email', email)
+        .single()
+
+      if (userData && userData.status === 'approved' && userData.password_set === false) {
+        return true
+      }
+
+      // Fallback: check registration_requests for approved status
+      if (!userData || userError) {
+        const { data: regData, error: regError } = await supabase
+          .from('registration_requests')
+          .select('status, email')
+          .eq('email', email)
+          .single()
+
+        if (regData && regData.status === 'approved') {
+          return true
+        }
+      }
+
+      return false
+    } catch (error) {
+      console.error('Error checking OTP mode:', error)
+      return false
+    }
+  }
+
+  // Handle OTP verification
+  const handleOtpVerification = async () => {
+    if (!otpEmail || !otpCode) {
+      setOtpError('Please enter your email and OTP code')
+      return
+    }
+
+    setIsSubmitting(true)
+    setOtpError('')
+
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: otpEmail, 
+          otpCode: otpCode,
+          purpose: 'first_login'
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'OTP verification failed')
+      }
+
+      if (result.success && result.data.verified && result.data.setupLink) {
+        console.log('OTP verified successfully, redirecting to password setup')
+        // Redirect to the password setup link
+        window.location.href = result.data.setupLink
+        return
+      }
+
+      throw new Error('Invalid response from OTP verification')
+    } catch (error) {
+      console.error('OTP verification error:', error)
+      setOtpError(error instanceof Error ? error.message : 'OTP verification failed')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle OTP resend
+  const handleResendOtp = async () => {
+    if (!otpEmail) {
+      setResendMessage('Please enter your email address first')
+      return
+    }
+
+    setIsResendingOtp(true)
+    setResendMessage('')
+
+    try {
+      const response = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: otpEmail, 
+          purpose: 'first_login'
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setResendMessage('✅ New OTP code sent! Check your email inbox.')
+        setOtpCode('') // Clear the current OTP input
+      } else {
+        setResendMessage(`❌ ${result.error || 'Failed to resend OTP'}`)
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error)
+      setResendMessage('❌ Failed to resend OTP. Please try again.')
+    } finally {
+      setIsResendingOtp(false)
+    }
+  }
+
+  // Enhanced email check that switches to OTP mode if needed
+  const handleEmailCheck = async (email: string) => {
+    const needsOtp = await checkUserForOtpMode(email)
+    
+    if (needsOtp) {
+      setOtpEmail(email)
+      setOtpMode(true)
+      setError('')
+      return true
+    }
+    
+    return false
+  }
+
   const handleMagicLinkRequest = async () => {
     if (!magicLinkEmail) {
       setMagicLinkMessage('Please enter your email address')
@@ -192,7 +344,112 @@ export default function SignInPage() {
 
         {/* Sign In Form */}
         <div className="card p-8 bg-white shadow-xl">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {otpMode ? (
+            /* OTP Mode Form */
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Enter Your Sign-In Code</h3>
+                <p className="text-sm text-gray-600">
+                  We sent a 6-digit code to <strong>{otpEmail}</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={otpEmail}
+                  onChange={(e) => setOtpEmail(e.target.value)}
+                  className="input w-full bg-gray-50"
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  6-Digit Code
+                </label>
+                <input
+                  type="text"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="input w-full text-center text-2xl font-mono tracking-wider"
+                  placeholder="000000"
+                  maxLength={6}
+                  disabled={isSubmitting}
+                  autoComplete="one-time-code"
+                />
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Enter the 6-digit code from your email
+                </p>
+              </div>
+
+              {otpError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-medium text-red-800">Verification Failed</h4>
+                      <p className="text-sm text-red-600 mt-1">{otpError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {resendMessage && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 text-center">{resendMessage}</p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleOtpVerification}
+                  disabled={isSubmitting || otpCode.length !== 6}
+                  className="btn-primary w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Verifying...</span>
+                    </div>
+                  ) : (
+                    'Verify & Continue'
+                  )}
+                </button>
+
+                <div className="flex items-center space-x-4">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={isResendingOtp}
+                    className="flex-1 btn-secondary py-2 text-sm disabled:opacity-50"
+                  >
+                    {isResendingOtp ? 'Sending...' : 'Resend Code'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpMode(false)
+                      setOtpEmail('')
+                      setOtpCode('')
+                      setOtpError('')
+                      setResendMessage('')
+                    }}
+                    className="flex-1 btn-secondary py-2 text-sm"
+                  >
+                    Use Password
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Regular Password Form */
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -288,10 +545,11 @@ export default function SignInPage() {
               )}
             </button>
           </form>
+          )}
         </div>
 
-        {/* First Time User Section */}
-        {showMagicLinkForm ? (
+        {/* First Time User Section - Only show if not in OTP mode */}
+        {!otpMode && showMagicLinkForm ? (
           <div className="card p-6 bg-white shadow-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">First Time Access</h3>
             <p className="text-sm text-gray-600 mb-4">
@@ -335,7 +593,7 @@ export default function SignInPage() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : !otpMode ? (
           <div className="text-center space-y-4">
             {/* Prominent First Time User Button */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -364,6 +622,15 @@ export default function SignInPage() {
               >
                 Forgot password?
               </Link>
+            </div>
+          </div>
+        ) : (
+          /* OTP Mode Active - Show different helpful text */
+          <div className="text-center space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm text-green-800">
+                <strong>First-time sign-in detected!</strong> We've switched to secure code verification for your account setup.
+              </p>
             </div>
           </div>
         )}

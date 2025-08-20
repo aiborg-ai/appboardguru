@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { createUserForApprovedRegistration, generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
+import { createOtpCode } from '@/lib/otp'
 import nodemailer from 'nodemailer'
 import { getAppUrl } from '@/config/environment'
 import { env, getSmtpConfig } from '@/config/environment'
@@ -74,8 +75,9 @@ async function handleApprovalRequest(request: NextRequest) {
       return NextResponse.redirect(errorUrl, 302)
     }
 
-    // Create Supabase auth user and generate magic link for password setup
+    // Create Supabase auth user, generate magic link and OTP code for password setup
     let magicLink: string | null = null
+    let otpCode: string | null = null
     let userRecord: any = null
     
     try {
@@ -107,7 +109,24 @@ async function handleApprovalRequest(request: NextRequest) {
         passwordSet: userRecord?.password_set
       })
 
-      // Generate magic link for password setup
+      // Generate OTP code for first-time login (24-hour expiry)
+      const { success: otpSuccess, otpCode: generatedOtpCode, error: otpError } = await createOtpCode(
+        registrationRequest.email,
+        'first_login',
+        24 // 24 hours
+      )
+
+      if (otpSuccess && generatedOtpCode) {
+        otpCode = generatedOtpCode
+        debugLogger.info('OTP_GENERATION_SUCCESS', registrationRequest.email, { hasOtp: true })
+        console.log(`✅ OTP code generated for first-time login: ${registrationRequest.email}`)
+      } else {
+        debugLogger.error('OTP_GENERATION_FAILED', registrationRequest.email, { error: otpError })
+        console.error('Failed to generate OTP code:', otpError)
+        // OTP generation failure should not stop the approval, but user will need magic link
+      }
+
+      // Generate magic link for password setup (fallback option)
       const { magicLink: generatedMagicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(
         registrationRequest.email
       )
@@ -118,7 +137,7 @@ async function handleApprovalRequest(request: NextRequest) {
       } else {
         debugLogger.magicLinkGenerate(registrationRequest.email, false, { error: linkError })
         console.error('Failed to generate magic link:', linkError)
-        // Continue without magic link - user can request it later
+        // Continue - if we have OTP, that's the primary method now
       }
       
     } catch (authError) {
@@ -160,33 +179,74 @@ async function handleApprovalRequest(request: NextRequest) {
               You can now access our enterprise board management platform.
             </p>
             
-            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 24px; margin: 30px 0;">
-              <h3 style="color: #0c4a6e; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Next Steps:</h3>
-              <ol style="color: #0c4a6e; margin: 0; padding-left: 24px; line-height: 1.6;">
-                ${magicLink ? `
-                  <li><strong>Click the secure access link below to set up your password</strong></li>
-                  <li>Create your secure password during first login</li>
-                  <li>Complete your profile setup</li>
-                ` : `
-                  <li>Visit the BoardGuru platform: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">Sign In Here</a></li>
-                  <li>Use your registered email: <strong>${registrationRequest.email}</strong></li>
-                  <li>Create your secure password during first login</li>
-                  <li>Complete your profile setup</li>
-                `}
-              </ol>
-            </div>
+            ${otpCode ? `
+              <!-- OTP Code Section (Primary Method) -->
+              <div style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+                <h3 style="color: #1e40af; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">🔐 Your Sign-In Code</h3>
+                <div style="background: #ffffff; border: 2px dashed #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <p style="color: #374151; font-size: 16px; margin: 0 0 12px 0;">Enter this code when signing in:</p>
+                  <div style="font-size: 36px; font-weight: 900; color: #1e40af; font-family: 'Courier New', monospace; letter-spacing: 8px; margin: 12px 0;">${otpCode}</div>
+                  <p style="color: #6b7280; font-size: 14px; margin: 12px 0 0 0;">Valid for 24 hours</p>
+                </div>
+                <div style="background: #ecfdf5; border: 1px solid #d1fae5; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                  <h4 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Easy Sign-In Steps:</h4>
+                  <ol style="color: #065f46; margin: 0; padding-left: 20px; line-height: 1.6; font-size: 14px; text-align: left;">
+                    <li>Visit: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">BoardGuru Sign In</a></li>
+                    <li>Enter your email: <strong>${registrationRequest.email}</strong></li>
+                    <li>Enter your 6-digit code above</li>
+                    <li>Set up your permanent password</li>
+                    <li>Start using BoardGuru!</li>
+                  </ol>
+                </div>
+              </div>
+            ` : `
+              <!-- Fallback to Magic Link -->
+              <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 24px; margin: 30px 0;">
+                <h3 style="color: #0c4a6e; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Next Steps:</h3>
+                <ol style="color: #0c4a6e; margin: 0; padding-left: 24px; line-height: 1.6;">
+                  ${magicLink ? `
+                    <li><strong>Click the secure access link below to set up your password</strong></li>
+                    <li>Create your secure password during first login</li>
+                    <li>Complete your profile setup</li>
+                  ` : `
+                    <li>Visit the BoardGuru platform: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">Sign In Here</a></li>
+                    <li>Use your registered email: <strong>${registrationRequest.email}</strong></li>
+                    <li>Request a password setup link during first login</li>
+                    <li>Complete your profile setup</li>
+                  `}
+                </ol>
+              </div>
+            `}
             
             <div style="text-align: center; margin: 30px 0;">
-              ${magicLink ? `
+              ${otpCode ? `
+                <!-- Primary CTA for OTP Login -->
+                <a href="${getAppUrl()}/auth/signin" 
+                   style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
+                  🚀 Sign In with Your Code
+                </a>
+                <p style="color: #6b7280; font-size: 12px; margin: 0;">Use the 6-digit code above to sign in</p>
+                ${magicLink ? `
+                  <div style="margin-top: 20px; padding: 16px; background: #f9fafb; border-radius: 8px;">
+                    <p style="color: #6b7280; font-size: 14px; margin: 0 0 12px 0;">Prefer a direct setup link?</p>
+                    <a href="${magicLink}" 
+                       style="color: #059669; text-decoration: none; font-weight: 600; font-size: 14px;">
+                      🔐 Use Magic Link (expires in 1 hour)
+                    </a>
+                  </div>
+                ` : ''}
+              ` : magicLink ? `
+                <!-- Fallback to Magic Link -->
                 <a href="${magicLink}" 
                    style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
                   🔐 Set Up Your Password
                 </a>
                 <p style="color: #6b7280; font-size: 12px; margin: 0;">This secure link expires in 1 hour for your security</p>
               ` : `
+                <!-- No OTP or Magic Link Available -->
                 <a href="${getAppUrl()}/auth/signin" 
                    style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                  Access BoardGuru Now
+                  Sign In Now
                 </a>
               `}
             </div>
