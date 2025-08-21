@@ -141,13 +141,13 @@ export class MLInsightsEngine {
 
       for (const [userId, userActivities] of Object.entries(userGroups)) {
         // Churn prediction model (simplified)
-        const churnRisk = await this.predictChurnRisk(userId, userActivities)
+        const churnRisk = await this.predictChurnRisk(userId, userActivities as any[])
         if (churnRisk.confidence > 0.6) {
           predictions.push(churnRisk)
         }
 
         // Security threat prediction
-        const securityThreat = await this.predictSecurityThreats(userId, userActivities)
+        const securityThreat = await this.predictSecurityThreats(userId, userActivities as any[])
         if (securityThreat.confidence > 0.7) {
           predictions.push(securityThreat)
         }
@@ -620,7 +620,7 @@ export class MLInsightsEngine {
               affectedEntities: [
                 { type: 'user', id: user.user_id, name: 'User' }
               ],
-              baseline: { normalHours: '8am-6pm' },
+              baseline: { normalHours: 10 }, // 10 hours (8am-6pm)
               detected: { afterHoursCount: behavior.unusual_hours_count },
               deviation: behavior.unusual_hours_count,
               confidence: 0.75,
@@ -877,9 +877,9 @@ export class MLInsightsEngine {
 
     return {
       overallHealthScore: healthScore,
-      riskLevel: healthScore < 40 ? 'critical' : 
-                 healthScore < 60 ? 'high' :
-                 healthScore < 80 ? 'medium' : 'low' as const,
+      riskLevel: (healthScore < 40 ? 'critical' : 
+                  healthScore < 60 ? 'high' :
+                  healthScore < 80 ? 'medium' : 'low') as 'low' | 'medium' | 'high' | 'critical',
       keyInsights: keyInsights.slice(0, 5), // Top 5 insights
       urgentActions: urgentActions.slice(0, 3) // Top 3 urgent actions
     }

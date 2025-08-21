@@ -62,8 +62,6 @@ export class PatternRecognitionEngine {
   private predictionModel: PredictionModel
 
   constructor() {
-    this.initializeServices()
-    
     // Initialize ML components
     this.statisticalAnalysis = new StatisticalAnalysis()
     this.timeSeriesAnalysis = new TimeSeriesAnalysis()
@@ -72,8 +70,11 @@ export class PatternRecognitionEngine {
     this.predictionModel = new PredictionModel()
   }
 
-  private async initializeServices() {
-    this.supabase = await createSupabaseServerClient()
+  private async getSupabase() {
+    if (!this.supabase) {
+      this.supabase = await createSupabaseServerClient()
+    }
+    return this.supabase
   }
 
   /**
@@ -190,18 +191,18 @@ export class PatternRecognitionEngine {
     try {
       // If no specific users provided, get all active users in organization
       if (!userIds) {
-        const { data: orgMembers } = await this.supabase
+        const { data: orgMembers } = (await this.getSupabase())
           .from('organization_members')
           .select('user_id')
           .eq('organization_id', organizationId)
           .eq('status', 'active')
 
-        userIds = orgMembers?.map(m => m.user_id) || []
+        userIds = orgMembers?.map((m: any) => m.user_id) || []
       }
 
       const profiles: UserEngagementProfile[] = []
 
-      for (const userId of userIds) {
+      for (const userId of userIds || []) {
         const profile = await this.generateSingleUserProfile(organizationId, userId)
         if (profile) {
           profiles.push(profile)
@@ -314,7 +315,7 @@ export class PatternRecognitionEngine {
       const orgMetrics = await this.getOrganizationMetrics(organizationId)
 
       // Get industry benchmarks
-      const { data: benchmarks } = await this.supabase
+      const { data: benchmarks } = (await this.getSupabase())
         .from('board_benchmarks')
         .select('*')
         .eq('industry', industry)
@@ -349,7 +350,7 @@ export class PatternRecognitionEngine {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - lookbackDays)
 
-    let query = this.supabase
+    let query = (await this.getSupabase())
       .from('user_behavior_metrics')
       .select('*')
       .gte('timestamp', cutoffDate.toISOString())
@@ -552,7 +553,7 @@ export class PatternRecognitionEngine {
     userId?: string
   ): Promise<void> {
     for (const pattern of patterns) {
-      await this.supabase.from('notification_patterns').upsert({
+      (await this.getSupabase()).from('notification_patterns').upsert({
         pattern_id: pattern.patternId,
         pattern_type: pattern.patternType,
         organization_id: organizationId,
@@ -580,7 +581,7 @@ export class PatternRecognitionEngine {
     const storedAnomalies: AnomalyDetectionRow[] = []
 
     for (const anomaly of anomalies) {
-      const { data } = await this.supabase
+      const { data } = (await this.getSupabase())
         .from('anomaly_detections')
         .insert({
           anomaly_id: `anomaly-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -676,7 +677,7 @@ export class PatternRecognitionEngine {
 
     // Example: Get meeting frequency over time
     if (metricType === 'meeting_frequency') {
-      const { data } = await this.supabase
+      const { data } = (await this.getSupabase())
         .from('meetings')
         .select('scheduled_start')
         .eq('organization_id', organizationId)
@@ -685,7 +686,7 @@ export class PatternRecognitionEngine {
 
       // Group by day and count meetings
       const dailyCounts = new Map<string, number>()
-      data?.forEach(meeting => {
+      data?.forEach((meeting: any) => {
         const day = meeting.scheduled_start.split('T')[0]
         dailyCounts.set(day, (dailyCounts.get(day) || 0) + 1)
       })
@@ -704,7 +705,7 @@ export class PatternRecognitionEngine {
     const metrics: Record<string, number> = {}
 
     // Meeting frequency (annual)
-    const { data: meetings } = await this.supabase
+    const { data: meetings } = (await this.getSupabase())
       .from('meetings')
       .select('id')
       .eq('organization_id', organizationId)
@@ -713,7 +714,7 @@ export class PatternRecognitionEngine {
     metrics.meeting_frequency_annual = meetings?.length || 0
 
     // Document volume (monthly average)
-    const { data: documents } = await this.supabase
+    const { data: documents } = (await this.getSupabase())
       .from('board_packs')
       .select('id')
       .eq('organization_id', organizationId)

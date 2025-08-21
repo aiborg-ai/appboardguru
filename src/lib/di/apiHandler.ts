@@ -32,7 +32,7 @@ export class ServiceContainer {
  */
 export function createDIAPIHandler<TInput = any, TOutput = any>(
   config: APIHandlerConfig<TInput>,
-  handler: (req: DIRequest<TInput>) => Promise<TOutput | { data: TOutput; message?: string }>
+  handler: (req: DIRequest<TInput>) => Promise<TOutput | { success: boolean; data: TOutput; message?: string }>
 ) {
   return createAPIHandler(config, async (req: ValidatedRequest<TInput>) => {
     // Create request-scoped container
@@ -83,7 +83,7 @@ export const DIHandlers = {
     },
     async (req) => {
       const result = await handler(req)
-      return { data: result }
+      return { success: true, data: result }
     }
   ),
 
@@ -104,7 +104,7 @@ export const DIHandlers = {
     },
     async (req) => {
       const result = await handler(req)
-      return { data: result }
+      return { success: true, data: result }
     }
   ),
 
@@ -125,7 +125,7 @@ export const DIHandlers = {
     },
     async (req) => {
       const result = await handler(req)
-      return { data: result }
+      return { success: true, data: result }
     }
   ),
 
@@ -144,7 +144,7 @@ export const DIHandlers = {
     },
     async (req) => {
       const result = await handler(req)
-      return { data: result }
+      return { success: true, data: result }
     }
   )
 }

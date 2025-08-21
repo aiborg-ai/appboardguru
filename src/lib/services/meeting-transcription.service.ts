@@ -434,6 +434,7 @@ class MeetingTranscriptionService {
           title: transcription.title,
           date: new Date(transcription.created_at).toDateString(),
           time: new Date(transcription.created_at).toLocaleTimeString(),
+          meetingType: 'regular',
           attendees: transcription.participants.map((p: any) => ({
             name: p.name,
             title: p.title,
@@ -500,7 +501,6 @@ class MeetingTranscriptionService {
           date: analysisResult.nextMeeting.date,
           tentativeAgenda: analysisResult.nextMeeting.tentativeAgenda || []
         } : undefined,
-        appendices: [],
         metadata: {
           generatedAt: new Date().toISOString(),
           generatedBy: 'meeting-transcription-service',

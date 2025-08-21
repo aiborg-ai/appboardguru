@@ -29,7 +29,7 @@ export default function ScreenshotCapture({
         width: window.innerWidth,
         useCORS: true,
         allowTaint: true,
-        background: '#ffffff',
+        backgroundColor: '#ffffff',
         logging: false
       })
 

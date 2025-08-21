@@ -304,8 +304,8 @@ export class PredictionModel {
 
     return {
       type: 'timing_model',
-      hourlyWeights: hourlyWeights.sort((a, b) => b.weight - a.weight),
-      dailyWeights: dailyWeights.sort((a, b) => b.weight - a.weight),
+      hourlyWeights: hourlyWeights.sort((a: any, b: any) => b.weight - a.weight),
+      dailyWeights: dailyWeights.sort((a: any, b: any) => b.weight - a.weight),
       typeSpecificMultiplier: features.typeSpecificEngagement,
       responseTimeProfile: features.responseTimeBuckets
     }

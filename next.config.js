@@ -5,10 +5,6 @@ const nextConfig = {
   },
   reactStrictMode: false,
   
-  // Disable development overlays completely
-  devIndicators: {
-    buildActivity: false,
-  },
   
   // Configure compiler options to disable overlay
   compiler: {

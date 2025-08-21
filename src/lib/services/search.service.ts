@@ -325,11 +325,11 @@ export class SearchService {
           similarity_score: maxSimilarity
         }
       })
-      .filter(row => row.similarity_score >= this.config.similarity_threshold)
-      .sort((a, b) => b.similarity_score - a.similarity_score)
+      .filter((row: any) => row.similarity_score >= this.config.similarity_threshold)
+      .sort((a: any, b: any) => b.similarity_score - a.similarity_score)
       .slice(0, limit)
 
-    return resultsWithSimilarity.map(row => this.transformToSearchResult(row))
+    return resultsWithSimilarity.map((row: any) => this.transformToSearchResult(row))
   }
 
   /**
@@ -454,7 +454,7 @@ export class SearchService {
         results: paginatedResults,
         total_count: uniqueResults.length,
         page: Math.floor(offset / limit) + 1,
-        limit,
+        limit: limit,
         total_pages: Math.ceil(uniqueResults.length / limit),
         search_time_ms: searchTime,
         facets,
@@ -463,11 +463,12 @@ export class SearchService {
 
     } catch (error) {
       console.error('Search error:', error)
+      const { limit = 20 } = request
       return {
         results: [],
         total_count: 0,
         page: 1,
-        limit,
+        limit: limit,
         total_pages: 0,
         search_time_ms: Date.now() - startTime
       }
@@ -549,7 +550,7 @@ export class SearchService {
       const organizations = new Map<string, { count: number; label: string }>()
       const vaults = new Map<string, { count: number; label: string }>()
 
-      data.forEach(asset => {
+      data.forEach((asset: any) => {
         // File types
         fileTypes.set(asset.file_type, (fileTypes.get(asset.file_type) || 0) + 1)
         

@@ -176,8 +176,8 @@ export class ActivitySearchEngine {
         timestamp: activity.created_at,
         user: {
           id: activity.user_id || 'system',
-          name: activity.users?.full_name || 'System',
-          email: activity.users?.email || ''
+          name: Array.isArray(activity.users) ? (activity.users[0] as any)?.full_name || 'System' : (activity.users as any)?.full_name || 'System',
+          email: Array.isArray(activity.users) ? (activity.users[0] as any)?.email || '' : (activity.users as any)?.email || ''
         },
         resource: activity.resource_id ? {
           type: activity.resource_type,
@@ -358,12 +358,12 @@ export class ActivitySearchEngine {
             id: event.id,
             type: 'correlated',
             title: event.event_description,
-            description: `Related activity by ${event.users?.full_name || 'Unknown'}`,
+            description: `Related activity by ${(event.users as any)?.full_name || 'Unknown'}`,
             timestamp: event.created_at,
             user: {
               id: event.user_id || 'system',
-              name: event.users?.full_name || 'System',
-              email: event.users?.email || ''
+              name: (event.users as any)?.full_name || 'System',
+              email: (event.users as any)?.email || ''
             },
             severity: 'medium',
             outcome: 'success',
@@ -445,8 +445,8 @@ export class ActivitySearchEngine {
         query: template.search_query as SearchQuery,
         isPublic: template.is_public,
         usageCount: template.usage_count,
-        lastUsed: template.last_used_at || template.created_at,
-        createdBy: template.users?.full_name || 'Unknown'
+        lastUsed: template.last_used_at || new Date().toISOString(),
+        createdBy: (template.users as any)?.full_name || 'Unknown'
       })) || []
     } catch (error) {
       console.error('Error fetching search templates:', error)
@@ -478,7 +478,7 @@ export class ActivitySearchEngine {
       await supabase
         .from('activity_search_templates')
         .update({
-          usage_count: supabase.raw('usage_count + 1'),
+          usage_count: 1, // Will be incremented via SQL function
           last_used_at: new Date().toISOString()
         })
         .eq('id', templateId)

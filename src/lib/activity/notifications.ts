@@ -462,7 +462,9 @@ export class SmartNotificationEngine {
         .in('role', ['owner', 'admin'])
         .eq('status', 'active')
 
-      const recipients = action.recipients || admins?.map(admin => admin.users.email).filter(Boolean) || []
+      const recipients = action.recipients || admins?.flatMap((admin: any) => 
+        Array.isArray(admin.users) ? admin.users.map((user: any) => user.email) : [admin.users?.email]
+      ).filter(Boolean) || []
 
       if (recipients.length === 0) {
         console.warn('No email recipients found for alert')

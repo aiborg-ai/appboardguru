@@ -266,5 +266,8 @@ export async function matchAsync<T, E, R>(
   }
 }
 
-// Convenience exports
-export { Ok, Err, ResultUtils as Result }
+// Re-export types
+export type { AppError, ErrorCode } from './types'
+
+// Convenience exports 
+export { ResultUtils as Result }

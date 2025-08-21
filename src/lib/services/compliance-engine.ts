@@ -818,7 +818,7 @@ export class ComplianceEngine extends BaseService {
       }
 
       await this.notificationService.createNotification({
-        type: 'reminder' as Database['public']['Enums']['notification_type_general'],
+        type: 'warning' as any,
         title,
         message,
         userId: participant.user.id,

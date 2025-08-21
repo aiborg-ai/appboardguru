@@ -506,10 +506,14 @@ export interface MinutesMetadata {
   generatedBy: string;
   version: string;
   language: string;
-  translationAvailable: string[];
-  confidenceScore: number;
-  processingTime: number;
-  wordCount: number;
+  translationAvailable?: string[];
+  confidenceScore?: number;
+  processingTime?: number;
+  wordCount?: number;
+  duration?: number;
+  participantCount?: number;
+  qualityMetrics?: any;
+  isAutomated?: boolean;
 }
 
 // === Export and Integration Types ===

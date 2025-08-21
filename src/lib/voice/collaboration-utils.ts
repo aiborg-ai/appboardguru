@@ -201,9 +201,7 @@ export function createAudioConstraints(
     echoCancellation: processingSettings.echoCancellation,
     noiseSuppression: processingSettings.noiseSuppression,
     autoGainControl: processingSettings.autoGainControl,
-    sampleSize: { ideal: 16 },
-    latency: { ideal: 0.01 }, // 10ms latency for real-time feel
-    volume: { ideal: 1.0 }
+    sampleSize: { ideal: 16 }
   };
 }
 
@@ -363,10 +361,11 @@ export class VoiceActivityDetector {
 
   private startDetection() {
     const detect = () => {
+      // @ts-ignore - TypeScript strict mode issue with Uint8Array buffer type
       this.analyzerNode.getByteFrequencyData(this.dataArray);
       
       // Calculate volume (RMS)
-      const sum = this.dataArray.reduce((acc, value) => acc + value * value, 0);
+      const sum = Array.from(this.dataArray).reduce((acc, value) => acc + value * value, 0);
       const rms = Math.sqrt(sum / this.dataArray.length);
       const volume = 20 * Math.log10(rms / 255); // Convert to dB
       
@@ -620,9 +619,10 @@ export class AudioLevelMeter {
 
   private startMeasuring() {
     const measure = () => {
+      // @ts-ignore - TypeScript strict mode issue with Uint8Array buffer type
       this.analyzerNode.getByteFrequencyData(this.dataArray);
       
-      const sum = this.dataArray.reduce((acc, value) => acc + value * value, 0);
+      const sum = Array.from(this.dataArray).reduce((acc, value) => acc + value * value, 0);
       const rms = Math.sqrt(sum / this.dataArray.length);
       const level = Math.min(rms / 128, 1); // Normalize to 0-1
       

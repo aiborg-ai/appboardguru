@@ -564,9 +564,9 @@ export class ActivityAnalytics {
 
       // Check various compliance factors
       const [
-        { data: totalEvents },
-        { data: securityEvents },
-        { data: failureEvents },
+        { data: totalEvents, count: totalCount },
+        { data: securityEvents, count: securityCount },
+        { data: failureEvents, count: failureCount },
         { data: auditCoverage }
       ] = await Promise.all([
         // Total events
@@ -604,19 +604,19 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end)
       ])
 
-      const totalCount = totalEvents?.count || 0
-      const securityCount = securityEvents?.count || 0
-      const failureCount = failureEvents?.count || 0
+      const totalEventsCount = totalCount || 0
+      const securityEventsCount = securityCount || 0
+      const failureEventsCount = failureCount || 0
       const coverageCategories = new Set(auditCoverage?.map(e => e.event_category) || [])
 
       // Calculate compliance score (0-100)
       let score = 100
 
       // Deduct for security events
-      score -= Math.min(30, securityCount * 2)
+      score -= Math.min(30, securityEventsCount * 2)
 
       // Deduct for failures
-      score -= Math.min(20, (failureCount / Math.max(1, totalCount)) * 100)
+      score -= Math.min(20, (failureEventsCount / Math.max(1, totalEventsCount)) * 100)
 
       // Deduct for poor audit coverage
       const expectedCategories = ['authentication', 'assets', 'vaults', 'annotations', 'organizations']

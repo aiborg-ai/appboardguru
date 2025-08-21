@@ -420,29 +420,27 @@ export class UserSegmentation {
     ]
   }
 
-  private initializeClusterCenters(k: number): Record<string, number[]> {
-    const centers: Record<string, number[]> = {}
+  private initializeClusterCenters(k: number): Record<string, ClusterCenter> {
+    const centers: Record<string, ClusterCenter> = {}
     
     for (let i = 0; i < k; i++) {
-      centers[`cluster_${i}`] = [
-        Math.random(), // engagement
-        Math.random(), // frequency
-        Math.random(), // response time
-        Math.random(), // consistency
-        Math.random(), // diversity
-        Math.random()  // peak hour spread
-      ]
+      centers[`cluster_${i}`] = {
+        engagement: Math.random(),
+        frequency: Math.random(),
+        responseTime: Math.random(),
+        consistency: Math.random()
+      }
     }
 
     return centers
   }
 
-  private findClosestCluster(userFeatures: number[], centers: Record<string, number[]>): string {
+  private findClosestCluster(userFeatures: number[], centers: Record<string, ClusterCenter>): string {
     let closestCluster = Object.keys(centers)[0]
-    let minDistance = this.euclideanDistance(userFeatures, centers[closestCluster])
+    let minDistance = this.euclideanDistanceToCenter(userFeatures, centers[closestCluster])
 
     for (const [clusterId, center] of Object.entries(centers)) {
-      const distance = this.euclideanDistance(userFeatures, center)
+      const distance = this.euclideanDistanceToCenter(userFeatures, center)
       if (distance < minDistance) {
         minDistance = distance
         closestCluster = clusterId
@@ -458,11 +456,16 @@ export class UserSegmentation {
     )
   }
 
+  private euclideanDistanceToCenter(userFeatures: number[], center: ClusterCenter): number {
+    const centerArray = [center.engagement, center.frequency, center.responseTime, center.consistency]
+    return this.euclideanDistance(userFeatures.slice(0, 4), centerArray)
+  }
+
   private updateClusterCenters(
     clusters: Record<string, string[]>,
     userFeatures: Array<{ userId: string; features: number[] }>
-  ): Record<string, number[]> {
-    const newCenters: Record<string, number[]> = {}
+  ): Record<string, ClusterCenter> {
+    const newCenters: Record<string, ClusterCenter> = {}
 
     for (const [clusterId, userIds] of Object.entries(clusters)) {
       if (userIds.length === 0) continue
@@ -471,21 +474,23 @@ export class UserSegmentation {
         userFeatures.find(u => u.userId === userId)!.features
       )
 
-      // Calculate mean of each feature
-      const featureCount = clusterFeatures[0].length
-      const newCenter = new Array(featureCount).fill(0)
+      // Calculate mean of each feature (first 4 features for ClusterCenter)
+      const sums = { engagement: 0, frequency: 0, responseTime: 0, consistency: 0 }
 
       for (const features of clusterFeatures) {
-        for (let i = 0; i < featureCount; i++) {
-          newCenter[i] += features[i]
-        }
+        sums.engagement += features[0] || 0
+        sums.frequency += features[1] || 0
+        sums.responseTime += features[2] || 0
+        sums.consistency += features[3] || 0
       }
 
-      for (let i = 0; i < featureCount; i++) {
-        newCenter[i] /= clusterFeatures.length
+      const count = clusterFeatures.length
+      newCenters[clusterId] = {
+        engagement: sums.engagement / count,
+        frequency: sums.frequency / count,
+        responseTime: sums.responseTime / count,
+        consistency: sums.consistency / count
       }
-
-      newCenters[clusterId] = newCenter
     }
 
     return newCenters
@@ -517,7 +522,7 @@ export class UserSegmentation {
   private calculateSilhouetteScore(
     userFeatures: Array<{ userId: string; features: number[] }>,
     clusters: Record<string, string[]>,
-    centers: Record<string, number[]>
+    centers: Record<string, ClusterCenter>
   ): number {
     // Simplified silhouette calculation
     let totalScore = 0
@@ -530,13 +535,13 @@ export class UserSegmentation {
         const userFeature = userFeatures.find(u => u.userId === userId)!
         
         // Calculate intra-cluster distance
-        const intraDistance = this.euclideanDistance(userFeature.features, centers[clusterId])
+        const intraDistance = this.euclideanDistanceToCenter(userFeature.features, centers[clusterId])
         
         // Calculate inter-cluster distance (to nearest other cluster)
         let minInterDistance = Infinity
         for (const [otherClusterId, otherCenter] of Object.entries(centers)) {
           if (otherClusterId !== clusterId) {
-            const interDistance = this.euclideanDistance(userFeature.features, otherCenter)
+            const interDistance = this.euclideanDistanceToCenter(userFeature.features, otherCenter)
             minInterDistance = Math.min(minInterDistance, interDistance)
           }
         }

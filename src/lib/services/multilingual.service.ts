@@ -446,7 +446,7 @@ class MultilingualService {
 
     // Process organization terms
     if (orgTerms) {
-      orgTerms.forEach(term => {
+      orgTerms.forEach((term: any) => {
         customTerms[term.term] = {
           id: term.id,
           term: term.term,

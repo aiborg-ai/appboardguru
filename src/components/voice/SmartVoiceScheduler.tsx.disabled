@@ -1,0 +1,973 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { 
+  Calendar,
+  Clock,
+  Users,
+  MapPin,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Brain,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  Settings,
+  MessageSquare,
+  Phone,
+  Video,
+  Globe,
+  Target,
+  TrendingUp,
+  BarChart3
+} from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+
+import {
+  SmartVoiceScheduler as VoiceSchedulerData,
+  SchedulingSession,
+  VoiceSchedulingCommand,
+  MeetingDetails,
+  SchedulingIntent,
+  VoiceInteraction,
+  SchedulingOutcome,
+  AlternativeOption
+} from '@/types/voice-scheduling';
+
+interface SmartVoiceSchedulerProps {
+  userId: string;
+  organizationId: string;
+  className?: string;
+}
+
+interface VoiceState {
+  isListening: boolean;
+  isProcessing: boolean;
+  audioLevel: number;
+  recordingDuration: number;
+  currentCommand: string;
+  lastTranscript: string;
+}
+
+interface SchedulingState {
+  activeSession: SchedulingSession | null;
+  currentIntent: SchedulingIntent | null;
+  pendingMeeting: Partial<MeetingDetails> | null;
+  alternatives: AlternativeOption[];
+  isConfirming: boolean;
+  clarificationNeeded: string[];
+}
+
+export function SmartVoiceScheduler({
+  userId,
+  organizationId,
+  className = ''
+}: SmartVoiceSchedulerProps) {
+  const { toast } = useToast();
+  const [schedulerData, setSchedulerData] = useState<VoiceSchedulerData | null>(null);
+  const [voiceState, setVoiceState] = useState<VoiceState>({
+    isListening: false,
+    isProcessing: false,
+    audioLevel: 0,
+    recordingDuration: 0,
+    currentCommand: '',
+    lastTranscript: ''
+  });
+  const [schedulingState, setSchedulingState] = useState<SchedulingState>({
+    activeSession: null,
+    currentIntent: null,
+    pendingMeeting: null,
+    alternatives: [],
+    isConfirming: false,
+    clarificationNeeded: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Refs for audio handling
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioLevelTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+
+  // Sample voice commands for demonstration
+  const sampleCommands: VoiceSchedulingCommand[] = [
+    {
+      id: 'schedule-meeting',
+      command: 'Schedule a meeting',
+      intent: 'schedule_meeting',
+      parameters: [
+        { name: 'title', type: 'string', required: true, validation: [] },
+        { name: 'participants', type: 'array', required: true, validation: [] },
+        { name: 'datetime', type: 'datetime', required: true, validation: [] },
+        { name: 'duration', type: 'number', required: false, defaultValue: 60, validation: [] }
+      ],
+      examples: [
+        'Schedule a board meeting for tomorrow at 2 PM',
+        'Set up a quarterly review with the finance team',
+        'Book a client presentation for next Friday'
+      ],
+      variations: [
+        'Book a meeting',
+        'Set up a call',
+        'Arrange a conference',
+        'Plan a session'
+      ],
+      confidence: 0.95,
+      usage: {
+        totalUses: 847,
+        successRate: 0.94,
+        averageConfidence: 0.91,
+        commonErrors: [
+          {
+            error: 'Ambiguous time reference',
+            frequency: 23,
+            resolution: 'Ask for specific date and time',
+            prevention: ['Use specific time formats', 'Confirm timezone']
+          }
+        ],
+        improvementTrend: 'improving'
+      },
+      context: {
+        applicableScenarios: ['meeting_planning', 'calendar_management'],
+        prerequisites: ['calendar_access', 'participant_data'],
+        followUpCommands: ['invite-participants', 'set-agenda'],
+        relatedCommands: ['check-availability', 'find-time-slot']
+      },
+      feedback: []
+    },
+    {
+      id: 'check-availability',
+      command: 'Check availability',
+      intent: 'check_availability',
+      parameters: [
+        { name: 'participants', type: 'array', required: true, validation: [] },
+        { name: 'timeframe', type: 'string', required: true, validation: [] }
+      ],
+      examples: [
+        'Check Sarah\'s availability this week',
+        'When is the marketing team free?',
+        'Find open slots for the board members'
+      ],
+      variations: [
+        'When are they free',
+        'What\'s their availability',
+        'Show me open times',
+        'Check calendar'
+      ],
+      confidence: 0.89,
+      usage: {
+        totalUses: 1203,
+        successRate: 0.87,
+        averageConfidence: 0.84,
+        commonErrors: [
+          {
+            error: 'Vague timeframe specification',
+            frequency: 67,
+            resolution: 'Ask for specific time period',
+            prevention: ['Prompt for date range', 'Suggest common timeframes']
+          }
+        ],
+        improvementTrend: 'stable'
+      },
+      context: {
+        applicableScenarios: ['meeting_planning', 'scheduling_coordination'],
+        prerequisites: ['calendar_access'],
+        followUpCommands: ['schedule-meeting', 'suggest-alternatives'],
+        relatedCommands: ['find-time-slot', 'book-resource']
+      },
+      feedback: []
+    },
+    {
+      id: 'reschedule-meeting',
+      command: 'Reschedule meeting',
+      intent: 'reschedule_meeting',
+      parameters: [
+        { name: 'meeting_id', type: 'string', required: true, validation: [] },
+        { name: 'new_datetime', type: 'datetime', required: true, validation: [] }
+      ],
+      examples: [
+        'Move the board meeting to next Tuesday',
+        'Reschedule my 3 PM call to tomorrow',
+        'Change the quarterly review to next week'
+      ],
+      variations: [
+        'Move the meeting',
+        'Change the time',
+        'Shift the schedule',
+        'Update the appointment'
+      ],
+      confidence: 0.92,
+      usage: {
+        totalUses: 456,
+        successRate: 0.91,
+        averageConfidence: 0.88,
+        commonErrors: [
+          {
+            error: 'Meeting identification ambiguity',
+            frequency: 34,
+            resolution: 'Confirm specific meeting details',
+            prevention: ['Show meeting list', 'Use meeting titles']
+          }
+        ],
+        improvementTrend: 'improving'
+      },
+      context: {
+        applicableScenarios: ['schedule_changes', 'conflict_resolution'],
+        prerequisites: ['meeting_exists', 'calendar_access'],
+        followUpCommands: ['notify-participants', 'update-resources'],
+        relatedCommands: ['cancel-meeting', 'check-availability']
+      },
+      feedback: []
+    }
+  ];
+
+  const initializeAudio = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+
+      // Set up MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64Audio = reader.result?.toString().split(',')[1] || '';
+          await processVoiceCommand(base64Audio);
+        };
+        reader.readAsDataURL(audioBlob);
+        audioChunksRef.current = [];
+      };
+
+      // Set up audio level monitoring
+      audioContextRef.current = new AudioContext();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+
+    } catch (error) {
+      console.error('Failed to initialize audio:', error);
+      setError('Failed to access microphone. Please check permissions.');
+    }
+  };
+
+  const startListening = async () => {
+    if (!mediaRecorderRef.current) {
+      await initializeAudio();
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'inactive') {
+      setVoiceState(prev => ({ 
+        ...prev, 
+        isListening: true, 
+        recordingDuration: 0,
+        currentCommand: '',
+        lastTranscript: ''
+      }));
+
+      mediaRecorderRef.current.start();
+
+      // Start recording timer
+      recordingTimerRef.current = setInterval(() => {
+        setVoiceState(prev => ({ 
+          ...prev, 
+          recordingDuration: prev.recordingDuration + 0.1 
+        }));
+      }, 100);
+
+      // Start audio level monitoring
+      audioLevelTimerRef.current = setInterval(() => {
+        updateAudioLevel();
+      }, 100);
+    }
+  };
+
+  const stopListening = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setVoiceState(prev => ({ ...prev, isListening: false, isProcessing: true }));
+
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (audioLevelTimerRef.current) {
+        clearInterval(audioLevelTimerRef.current);
+      }
+    }
+  };
+
+  const updateAudioLevel = () => {
+    if (analyserRef.current) {
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+      setVoiceState(prev => ({ ...prev, audioLevel: (average / 255) * 100 }));
+    }
+  };
+
+  const processVoiceCommand = async (audioData: string) => {
+    try {
+      const response = await fetch('/api/voice/scheduling', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: voiceState.lastTranscript || 'Voice command',
+          audioData,
+          context: {
+            userId,
+            organizationId,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            language: 'en',
+            urgency: 'medium'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process voice command');
+      }
+
+      const result = await response.json();
+      handleSchedulingResponse(result);
+
+    } catch (error) {
+      console.error('Error processing voice command:', error);
+      toast({
+        title: 'Processing Error',
+        description: 'Failed to process your voice command. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setVoiceState(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const handleSchedulingResponse = (response: any) => {
+    if (response.success) {
+      setSchedulingState(prev => ({
+        ...prev,
+        currentIntent: response.intent,
+        alternatives: response.suggestions || [],
+        clarificationNeeded: response.clarifications?.map((c: any) => c.question) || []
+      }));
+
+      // Handle specific intents
+      switch (response.intent) {
+        case 'schedule_meeting':
+          handleScheduleMeeting(response);
+          break;
+        case 'check_availability':
+          handleCheckAvailability(response);
+          break;
+        case 'reschedule_meeting':
+          handleRescheduleMeeting(response);
+          break;
+        default:
+          toast({
+            title: 'Command Recognized',
+            description: response.response,
+          });
+      }
+    } else {
+      toast({
+        title: 'Command Failed',
+        description: response.error || 'Could not process your request',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleScheduleMeeting = (response: any) => {
+    const meetingDetails = response.actions?.find((a: any) => a.type === 'create')?.parameters;
+    
+    if (meetingDetails) {
+      setSchedulingState(prev => ({
+        ...prev,
+        pendingMeeting: meetingDetails,
+        isConfirming: true
+      }));
+
+      toast({
+        title: 'Meeting Ready to Schedule',
+        description: `I've prepared your meeting. Please review the details.`,
+      });
+    } else {
+      toast({
+        title: 'More Information Needed',
+        description: 'I need more details to schedule this meeting.',
+      });
+    }
+  };
+
+  const handleCheckAvailability = (response: any) => {
+    toast({
+      title: 'Availability Check',
+      description: 'Checking participant availability...',
+    });
+    
+    // Simulate availability check
+    setTimeout(() => {
+      toast({
+        title: 'Availability Found',
+        description: 'Found several open time slots for your participants.',
+      });
+    }, 2000);
+  };
+
+  const handleRescheduleMeeting = (response: any) => {
+    toast({
+      title: 'Rescheduling Meeting',
+      description: 'Processing your reschedule request...',
+    });
+    
+    // Simulate rescheduling
+    setTimeout(() => {
+      toast({
+        title: 'Meeting Rescheduled',
+        description: 'Your meeting has been moved successfully.',
+      });
+    }, 1500);
+  };
+
+  const confirmMeeting = async () => {
+    if (!schedulingState.pendingMeeting) return;
+
+    try {
+      // Simulate meeting creation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: 'Meeting Scheduled',
+        description: 'Your meeting has been successfully created and invitations sent.',
+      });
+
+      setSchedulingState(prev => ({
+        ...prev,
+        pendingMeeting: null,
+        isConfirming: false
+      }));
+    } catch (error) {
+      toast({
+        title: 'Scheduling Failed',
+        description: 'Failed to create the meeting. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const fetchSchedulerData = async () => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock data for demonstration
+      setSchedulerData({
+        userId,
+        organizationId,
+        aiSchedulingEngine: {
+          modelVersion: '2.1.0',
+          capabilities: [
+            { 
+              capability: 'multi_participant_coordination', 
+              enabled: true, 
+              confidenceLevel: 0.91, 
+              accuracy: 89.3,
+              lastUpdated: new Date().toISOString(),
+              dependencies: ['calendar_integration']
+            },
+            { 
+              capability: 'timezone_conversion', 
+              enabled: true, 
+              confidenceLevel: 0.98, 
+              accuracy: 97.8,
+              lastUpdated: new Date().toISOString(),
+              dependencies: []
+            },
+            { 
+              capability: 'natural_language_understanding', 
+              enabled: true, 
+              confidenceLevel: 0.87, 
+              accuracy: 84.2,
+              lastUpdated: new Date().toISOString(),
+              dependencies: ['nlp_processor']
+            }
+          ],
+          learningAlgorithms: [],
+          contextualUnderstanding: {} as any,
+          naturalLanguageProcessor: {} as any,
+          decisionMaking: {} as any,
+          performanceMetrics: {} as any,
+          adaptationSettings: {} as any
+        },
+        voiceCommands: sampleCommands,
+        schedulingHistory: [],
+        preferences: {} as any,
+        integrations: [],
+        conflictResolution: {} as any,
+        intelligentSuggestions: {} as any,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      setError('Failed to load scheduler data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSchedulerData();
+    
+    return () => {
+      // Cleanup timers and audio
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (audioLevelTimerRef.current) clearInterval(audioLevelTimerRef.current);
+    };
+  }, [userId, organizationId]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Brain className="h-8 w-8 animate-pulse mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading Smart Voice Scheduler...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className={`space-y-6 ${className}`}>
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Smart Voice Scheduler</h1>
+          <p className="text-gray-600 mt-1">
+            AI-powered meeting coordination with natural voice commands
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Badge variant="outline" className="px-3 py-1">
+            <Brain className="h-4 w-4 mr-1" />
+            AI-Enhanced
+          </Badge>
+          <Button variant="outline" onClick={fetchSchedulerData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Voice Interface */}
+      <Card className="border-2 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Mic className="h-5 w-5 text-blue-600" />
+            <span>Voice Command Center</span>
+          </CardTitle>
+          <CardDescription>
+            Speak naturally to schedule meetings, check availability, and manage your calendar
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Voice Controls */}
+          <div className="flex items-center justify-center space-x-4">
+            {!voiceState.isListening && !voiceState.isProcessing ? (
+              <Button 
+                onClick={startListening}
+                className="px-8 py-4 text-lg"
+                size="lg"
+              >
+                <Mic className="h-6 w-6 mr-2" />
+                Start Voice Command
+              </Button>
+            ) : voiceState.isListening ? (
+              <Button 
+                onClick={stopListening}
+                variant="destructive"
+                className="px-8 py-4 text-lg"
+                size="lg"
+              >
+                <MicOff className="h-6 w-6 mr-2" />
+                Stop ({formatDuration(voiceState.recordingDuration)})
+              </Button>
+            ) : (
+              <Button 
+                disabled
+                className="px-8 py-4 text-lg"
+                size="lg"
+              >
+                <RefreshCw className="h-6 w-6 mr-2 animate-spin" />
+                Processing...
+              </Button>
+            )}
+          </div>
+
+          {/* Audio Level Indicator */}
+          {voiceState.isListening && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Audio Level</span>
+                <span>{Math.round(voiceState.audioLevel)}%</span>
+              </div>
+              <Progress value={voiceState.audioLevel} className="h-2" />
+            </div>
+          )}
+
+          {/* Sample Commands */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {sampleCommands.slice(0, 3).map((command) => (
+              <Card key={command.id} className="border border-gray-200">
+                <CardContent className="p-4">
+                  <h4 className="font-medium text-sm mb-2">{command.command}</h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    {command.examples[0]}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <Badge variant="outline" className="text-xs">
+                      {Math.round(command.confidence * 100)}% confident
+                    </Badge>
+                    <span className="text-xs text-green-600">
+                      {Math.round(command.usage.successRate * 100)}% success
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pending Meeting Confirmation */}
+      {schedulingState.isConfirming && schedulingState.pendingMeeting && (
+        <Card className="border-2 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span>Confirm Meeting Details</span>
+            </CardTitle>
+            <CardDescription>
+              Please review the meeting details before scheduling
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Meeting Title</label>
+                <p className="text-sm text-gray-900 mt-1">
+                  {schedulingState.pendingMeeting.title || 'Untitled Meeting'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Duration</label>
+                <p className="text-sm text-gray-900 mt-1">
+                  60 minutes
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Date & Time</label>
+                <p className="text-sm text-gray-900 mt-1">
+                  Tomorrow at 2:00 PM
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Participants</label>
+                <p className="text-sm text-gray-900 mt-1">
+                  3 attendees
+                </p>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="flex justify-end space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setSchedulingState(prev => ({ ...prev, isConfirming: false }))}
+              >
+                Cancel
+              </Button>
+              <Button onClick={confirmMeeting}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Meeting
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Capabilities Dashboard */}
+      <Tabs defaultValue="capabilities" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="capabilities">AI Capabilities</TabsTrigger>
+          <TabsTrigger value="commands">Voice Commands</TabsTrigger>
+          <TabsTrigger value="analytics">Performance</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="capabilities" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {schedulerData?.aiSchedulingEngine.capabilities.map((capability) => (
+              <Card key={capability.capability}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium capitalize flex items-center justify-between">
+                    {capability.capability.replace(/_/g, ' ')}
+                    <Badge variant={capability.enabled ? 'default' : 'secondary'}>
+                      {capability.enabled ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Accuracy</span>
+                      <span>{capability.accuracy}%</span>
+                    </div>
+                    <Progress value={capability.accuracy} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Confidence</span>
+                      <span>{Math.round(capability.confidenceLevel * 100)}%</span>
+                    </div>
+                    <Progress value={capability.confidenceLevel * 100} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="commands" className="space-y-6">
+          <div className="space-y-4">
+            {sampleCommands.map((command) => (
+              <Card key={command.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="capitalize">{command.command}</CardTitle>
+                      <CardDescription>{command.intent.replace(/_/g, ' ')}</CardDescription>
+                    </div>
+                    <Badge variant="outline">
+                      {Math.round(command.confidence * 100)}% confidence
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Example Commands</h4>
+                    <div className="space-y-1">
+                      {command.examples.map((example, index) => (
+                        <p key={index} className="text-sm text-gray-600 italic">
+                          "{example}"
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-600">
+                        {Math.round(command.usage.successRate * 100)}%
+                      </div>
+                      <div className="text-xs text-gray-600">Success Rate</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-blue-600">
+                        {command.usage.totalUses}
+                      </div>
+                      <div className="text-xs text-gray-600">Total Uses</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-purple-600">
+                        {Math.round(command.usage.averageConfidence * 100)}%
+                      </div>
+                      <div className="text-xs text-gray-600">Avg Confidence</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Voice Commands</CardTitle>
+                <MessageSquare className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,247</div>
+                <p className="text-xs text-muted-foreground">
+                  +12% from last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                <Target className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">91.7%</div>
+                <p className="text-xs text-muted-foreground">
+                  +2.3% from last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Meetings Scheduled</CardTitle>
+                <Calendar className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">384</div>
+                <p className="text-xs text-muted-foreground">
+                  +18% from last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Time Saved</CardTitle>
+                <TrendingUp className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">47h</div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Trends</CardTitle>
+              <CardDescription>Voice command success rates and usage patterns</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 flex items-center justify-center border border-gray-200 rounded-lg">
+                <p className="text-gray-500">Performance chart would be rendered here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <SchedulerSettings />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// Settings component
+function SchedulerSettings() {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Voice Recognition Settings</CardTitle>
+          <CardDescription>Configure voice processing and recognition parameters</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium">Noise Suppression</label>
+              <p className="text-xs text-gray-600">Reduce background noise during voice commands</p>
+            </div>
+            <Badge>Enabled</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium">Auto Gain Control</label>
+              <p className="text-xs text-gray-600">Automatically adjust microphone sensitivity</p>
+            </div>
+            <Badge>Enabled</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium">Echo Cancellation</label>
+              <p className="text-xs text-gray-600">Eliminate audio feedback and echoes</p>
+            </div>
+            <Badge>Enabled</Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Learning Settings</CardTitle>
+          <CardDescription>Control how the AI learns from your scheduling patterns</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium">Adaptive Learning</label>
+              <p className="text-xs text-gray-600">Learn from your scheduling preferences</p>
+            </div>
+            <Badge variant="outline">Active</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium">Pattern Recognition</label>
+              <p className="text-xs text-gray-600">Detect recurring meeting patterns</p>
+            </div>
+            <Badge variant="outline">Active</Badge>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default SmartVoiceScheduler;

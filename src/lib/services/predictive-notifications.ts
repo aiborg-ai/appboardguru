@@ -60,12 +60,22 @@ export class PredictiveNotificationService {
   private modelVersion: string = '1.0.0'
 
   constructor() {
-    this.initializeServices()
+    // Services will be lazily initialized
   }
 
-  private async initializeServices() {
-    this.supabase = await createSupabaseServerClient()
-    this.notificationService = new NotificationService(this.supabase)
+  private async getSupabase() {
+    if (!this.supabase) {
+      this.supabase = await createSupabaseServerClient()
+    }
+    return this.supabase
+  }
+
+  private async getNotificationService() {
+    if (!this.notificationService) {
+      const supabase = await this.getSupabase()
+      this.notificationService = new NotificationService(supabase)
+    }
+    return this.notificationService
   }
 
   /**
@@ -154,7 +164,7 @@ export class PredictiveNotificationService {
       const scheduledTime = new Date(now.getTime() + 5 * 60 * 1000) // 5 minutes from now
 
       // Get predictions ready to be sent
-      const { data: readyPredictions } = await this.supabase
+      const { data: readyPredictions } = (await this.getSupabase())
         .from('predicted_notifications')
         .select('*')
         .eq('is_sent', false)
@@ -369,9 +379,9 @@ export class PredictiveNotificationService {
                           outcome.dismissed ? 'dismissed' : 
                           'ignored'
 
-      const predictionAccuracy = await this.calculatePredictionAccuracy(predictionId, outcome)
+      const predictionAccuracy: number = await this.calculatePredictionAccuracy(predictionId, outcome)
 
-      await this.supabase
+      await (await this.getSupabase())
         .from('predicted_notifications')
         .update({
           actual_sent_at: new Date().toISOString(),
@@ -418,7 +428,7 @@ export class PredictiveNotificationService {
       const weekEnd = new Date(weekStart)
       weekEnd.setDate(weekEnd.getDate() + 7)
 
-      let query = this.supabase
+      let query = (await this.getSupabase())
         .from('predicted_notifications')
         .select('*')
         .gte('created_at', weekStart.toISOString())
@@ -489,7 +499,7 @@ export class PredictiveNotificationService {
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
 
-    let query = this.supabase
+    let query = (await this.getSupabase())
       .from('user_behavior_metrics')
       .select('*')
       .eq('user_id', userId)
@@ -578,7 +588,7 @@ export class PredictiveNotificationService {
   }
 
   private async storePrediction(prediction: PredictedNotificationInsert): Promise<PredictedNotification> {
-    const { data, error } = await this.supabase
+    const { data, error } = (await this.getSupabase())
       .from('predicted_notifications')
       .insert(prediction)
       .select()
@@ -594,10 +604,10 @@ export class PredictiveNotificationService {
 
   private async sendPredictedNotification(prediction: PredictedNotification): Promise<boolean> {
     try {
-      const originalRequest = prediction.prediction_data.original_request
+      const originalRequest: SmartNotificationRequest = prediction.prediction_data.original_request
 
       // Create standard notification
-      await this.notificationService.createNotification({
+      await (await this.getNotificationService()).createNotification({
         type: originalRequest.type as any,
         title: originalRequest.title,
         message: originalRequest.message,
@@ -619,7 +629,7 @@ export class PredictiveNotificationService {
   }
 
   private async updatePredictionSent(predictionId: string, success: boolean): Promise<void> {
-    await this.supabase
+    await (await this.getSupabase())
       .from('predicted_notifications')
       .update({
         actual_sent_at: new Date().toISOString(),
@@ -632,7 +642,7 @@ export class PredictiveNotificationService {
 
   private async calculatePredictionAccuracy(predictionId: string, outcome: any): Promise<number> {
     // Get the prediction
-    const { data: prediction } = await this.supabase
+    const { data: prediction } = (await this.getSupabase())
       .from('predicted_notifications')
       .select('*')
       .eq('prediction_id', predictionId)
@@ -650,7 +660,7 @@ export class PredictiveNotificationService {
   }
 
   private async logUserBehavior(predictionId: string, outcome: any): Promise<void> {
-    const { data: prediction } = await this.supabase
+    const { data: prediction } = (await this.getSupabase())
       .from('predicted_notifications')
       .select('*')
       .eq('prediction_id', predictionId)
@@ -658,7 +668,7 @@ export class PredictiveNotificationService {
 
     if (!prediction) return
 
-    await this.supabase
+    await (await this.getSupabase())
       .from('user_behavior_metrics')
       .insert({
         user_id: prediction.user_id,

@@ -31,12 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/features/shared/ui/dropdown-menu'
-import { ViewToggle, useViewPreferences } from '@/features/shared/components/views/ViewToggle'
-import { ItemCard } from '@/features/shared/components/views/ItemCard'
-import { ItemList } from '@/features/shared/components/views/ItemList'
-import { ItemDetails } from '@/features/shared/components/views/ItemDetails'
-import { EmptyState } from '@/features/shared/components/views/EmptyState'
-import { FilterBar } from '@/features/shared/components/views/FilterBar'
+import ViewToggle, { useViewPreferences } from '@/features/shared/components/views/ViewToggle'
+import ItemCard from '@/features/shared/components/views/ItemCard'
+import ItemList from '@/features/shared/components/views/ItemList'
+import ItemDetails from '@/features/shared/components/views/ItemDetails'
+import EmptyState from '@/features/shared/components/views/EmptyState'
+import FilterBar from '@/features/shared/components/views/FilterBar'
 import { cn } from '@/lib/utils'
 
 type ViewMode = 'card' | 'list' | 'details'

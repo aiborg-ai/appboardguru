@@ -147,7 +147,11 @@ export class RiskScoreCalculator {
       'blocked': 2.0,
       'failure': 2.5,
       'error': 2.0,
-      'success': 1.0
+      'success': 1.0,
+      'cancelled': 1.5,
+      'warning': 1.8,
+      'timeout': 2.2,
+      'partial_success': 1.3
     },
     // Time-based factors
     timeOfDay: {

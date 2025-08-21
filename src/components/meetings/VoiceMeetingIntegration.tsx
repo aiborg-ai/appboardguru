@@ -168,7 +168,7 @@ export function VoiceMeetingIntegration({
               organization: a.organization,
               status: (a.status as 'present' | 'absent' | 'late' | 'early_departure') || 'present',
               joinTime: a.joinTime,
-              departTime: a.departTime
+              departTime: (a as any).departTime
             })),
             chairperson: minutes.header.chairperson,
             secretary: minutes.header.secretary
@@ -198,7 +198,11 @@ export function VoiceMeetingIntegration({
             duration: 0,
             transcript: undefined
           })),
-          actionItems: minutes.actionItems,
+          actionItems: minutes.actionItems.map(item => ({
+            ...item,
+            priority: (item.priority as 'high' | 'medium' | 'low') || 'medium',
+            updatedAt: item.createdAt || new Date().toISOString()
+          })),
           decisions: [],
           nextMeeting: minutes.nextMeeting ? {
             date: minutes.nextMeeting.date,
@@ -212,9 +216,9 @@ export function VoiceMeetingIntegration({
             generatedBy: 'meeting-transcription-service',
             version: '1.0',
             language: 'en',
-            duration: minutes.metadata.duration,
-            wordCount: minutes.metadata.wordCount,
-            participantCount: minutes.metadata.participantCount,
+            duration: minutes.metadata.duration || 0,
+            wordCount: minutes.metadata.wordCount || 0,
+            participantCount: minutes.metadata.participantCount || 0,
             qualityMetrics: undefined,
             processingTime: undefined,
             isAutomated: true
@@ -292,7 +296,14 @@ export function VoiceMeetingIntegration({
           time: minutes.header.time,
           location: minutes.header.location,
           meetingType: minutes.header.meetingType,
-          attendees: minutes.header.attendees.map(a => a.name),
+          attendees: minutes.header.attendees.map(a => ({ 
+            name: a.name, 
+            title: a.title, 
+            organization: a.organization,
+            status: (a.status as 'present' | 'absent' | 'late' | 'early_departure') || 'present',
+            joinTime: a.joinTime,
+            departTime: (a as any).departTime
+          })),
           chairperson: minutes.header.chairperson,
           secretary: minutes.header.secretary
         },
@@ -321,7 +332,11 @@ export function VoiceMeetingIntegration({
           duration: 0,
           transcript: undefined
         })),
-        actionItems: minutes.actionItems,
+        actionItems: minutes.actionItems.map(item => ({
+          ...item,
+          priority: (item.priority as 'high' | 'medium' | 'low') || 'medium',
+          updatedAt: item.createdAt || new Date().toISOString()
+        })),
         decisions: [],
         nextMeeting: minutes.nextMeeting ? {
           date: minutes.nextMeeting.date,
@@ -335,9 +350,9 @@ export function VoiceMeetingIntegration({
           generatedBy: 'meeting-transcription-service',
           version: '1.0',
           language: 'en',
-          duration: minutes.metadata.duration,
-          wordCount: minutes.metadata.wordCount,
-          participantCount: minutes.metadata.participantCount,
+          duration: minutes.metadata.duration || 0,
+          wordCount: minutes.metadata.wordCount || 0,
+          participantCount: minutes.metadata.participantCount || 0,
           qualityMetrics: undefined,
           processingTime: undefined,
           isAutomated: true

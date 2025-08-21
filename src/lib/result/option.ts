@@ -180,4 +180,4 @@ export async function matchOptionAsync<T, R>(
 }
 
 // Convenience exports
-export { Some, None, OptionUtils as Option }
+export { OptionUtils as Option }

@@ -3,10 +3,10 @@
  * API handlers that work with Result<T, E> pattern
  */
 
-import { Result, AppError, match } from './result'
-import { createEnhancedAPIHandler } from '@/lib/middleware/apiHandler'
-import { APIHandlerConfig } from '@/lib/api/createAPIHandler'
-import { DIRequest, useServices } from '@/lib/middleware/apiHandler'
+import { AppError, match } from './result'
+import type { Result } from './types'
+import { createAPIHandler, APIHandlerConfig, ValidatedRequest } from '@/lib/api/createAPIHandler'
+import { DIRequest, createDIAPIHandler } from '@/lib/di/apiHandler'
 
 // Result-based handler type
 export type ResultHandler<TInput, TOutput> = (
@@ -20,18 +20,19 @@ export function createResultAPIHandler<TInput = any, TOutput = any>(
   config: APIHandlerConfig<TInput>,
   handler: ResultHandler<TInput, TOutput>
 ) {
-  return createEnhancedAPIHandler(config, async (req: DIRequest<TInput>) => {
+  return createDIAPIHandler(config, async (req: DIRequest<TInput>) => {
     const result = await handler(req)
     
     return match(result, {
-      ok: (data) => ({ data }),
-      err: (error) => {
+      ok: (data) => ({ success: true, data }),
+      err: (error: unknown) => {
         // Convert AppError to API response error
+        const appError = error as AppError;
         throw new APIError(
-          getHTTPStatusFromError(error),
-          error.code,
-          error.message,
-          error.details
+          getHTTPStatusFromError(appError),
+          appError.code,
+          appError.message,
+          appError.details
         )
       }
     })

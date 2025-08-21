@@ -656,7 +656,7 @@ export class ComplianceEngine {
    * Get compliance requirements for specific standards
    */
   private static getComplianceRequirements(reportType: ComplianceReport['reportType']): any[] {
-    const requirements = {
+    const requirements: Record<string, any[]> = {
       SOC2: [
         {
           id: 'CC6.1',
@@ -728,7 +728,32 @@ export class ComplianceEngine {
           description: 'Technology controls to protect PHI',
           category: 'technical'
         }
-      ]
+      ],
+      SOX: [
+        {
+          id: 'SOX.302',
+          name: 'Corporate Responsibility',
+          description: 'CEO and CFO certification of financial statements',
+          category: 'financial'
+        }
+      ],
+      ISO27001: [
+        {
+          id: 'A.5.1',
+          name: 'Information Security Policies',
+          description: 'Set of policies for information security',
+          category: 'policy'
+        }
+      ],
+      CCPA: [
+        {
+          id: 'CCPA.1798',
+          name: 'Consumer Rights',
+          description: 'Right to know about personal information collected',
+          category: 'privacy'
+        }
+      ],
+      custom: []
     }
 
     return requirements[reportType] || []
