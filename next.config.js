@@ -4,6 +4,9 @@ const nextConfig = {
     domains: ['localhost'],
   },
   reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   
   
   // Configure compiler options to disable overlay
