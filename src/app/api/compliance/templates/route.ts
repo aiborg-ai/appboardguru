@@ -100,18 +100,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare template data
+    const priority: 'low' | 'medium' | 'high' | 'critical' = body.priority && ['low', 'medium', 'high', 'critical'].includes(body.priority) 
+      ? body.priority as 'low' | 'medium' | 'high' | 'critical' 
+      : 'medium'
+    
     const templateData = {
       name: body.name,
       description: body.description || null,
       regulation_type: body.regulation_type,
       category: body.category || 'general',
       frequency: body.frequency || 'annual',
-      priority: body.priority || 'medium',
-      workflow_steps: body.workflow_steps ? JSON.stringify(body.workflow_steps) : '[]',
+      priority,
+      workflow_steps: body.workflow_steps || { steps: [] },
       requirements: body.requirements || null,
       required_roles: body.required_roles || null,
-      reminder_schedule: body.reminder_schedule ? JSON.stringify(body.reminder_schedule) : null,
-      escalation_rules: body.escalation_rules ? JSON.stringify(body.escalation_rules) : null,
+      reminder_schedule: body.reminder_schedule || null,
+      escalation_rules: body.escalation_rules || null,
       is_active: body.is_active !== false,
       is_system_template: false, // User-created templates are not system templates
       version: body.version || 1

@@ -4,7 +4,7 @@ import {
   MeetingPreparation as ImportedMeetingPreparation, 
   MeetingDetails as ImportedMeetingDetails, 
   MeetingAttendee as ImportedMeetingAttendee, 
-  AgendaAnalysis, 
+  AgendaAnalysis as ImportedAgendaAnalysis, 
   DocumentPackage, 
   StakeholderPreparation, 
   MeetingRiskAssessment, 
@@ -48,7 +48,7 @@ export interface AgendaPreparationResponse {
 export interface MeetingPreparation {
   meetingId: string;
   meetingDetails: MeetingDetails;
-  agendaAnalysis: AgendaAnalysis;
+  agendaAnalysis: ImportedAgendaAnalysis;
   documentPackage: DocumentPackage;
   stakeholderPreparation: StakeholderPreparation;
   riskAssessment: MeetingRiskAssessment;
@@ -753,7 +753,7 @@ async function fetchAttendeeProfiles(supabase: SupabaseClient, attendees: Meetin
   }));
 }
 
-async function analyzeAgenda(meeting: Meeting, context: MeetingContext): Promise<AgendaAnalysis> {
+async function analyzeAgenda(meeting: Meeting, context: MeetingContext): Promise<ImportedAgendaAnalysis> {
   const agendaItems = meeting.agenda_items as unknown[] || [];
   const totalItems = agendaItems.length;
   
@@ -1058,7 +1058,7 @@ function createDefaultComplianceReview(): ComplianceReview {
 async function generateDiscussionGuides(
   meeting: Meeting,
   context: MeetingContext,
-  agendaAnalysis: AgendaAnalysis
+  agendaAnalysis: ImportedAgendaAnalysis
 ): Promise<DiscussionGuide[]> {
   return agendaAnalysis.itemBreakdown.map(item => ({
     agendaItemId: item.id,
@@ -1083,7 +1083,7 @@ async function generateDiscussionGuides(
 async function identifyDecisionPoints(
   meeting: Meeting,
   context: MeetingContext,
-  agendaAnalysis: AgendaAnalysis
+  agendaAnalysis: ImportedAgendaAnalysis
 ): Promise<DecisionPoint[]> {
   const decisionItems = agendaAnalysis.itemBreakdown.filter(item => item.type === 'decision');
   
@@ -1171,7 +1171,7 @@ async function generateContextualInsights(meeting: Meeting, context: MeetingCont
 
 async function createPreparationTimeline(
   meeting: Meeting,
-  agendaAnalysis: AgendaAnalysis,
+  agendaAnalysis: ImportedAgendaAnalysis,
   documentPackage: DocumentPackage
 ): Promise<PreparationTimeline> {
   const meetingDate = new Date(meeting.meeting_date);

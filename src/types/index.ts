@@ -15,6 +15,9 @@ export * from './navigation'
 // Feature Types
 export * from './boardmates'
 
+// Entity Types
+export * from './entities/compliance.types'
+
 // Hook Types
 export * from './hooks'
 

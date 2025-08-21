@@ -299,7 +299,7 @@ async function handleEnrollment(
 
       decryptedTemplate.enrollmentData.enrollmentComplete = enrollmentComplete;
       decryptedTemplate.enrollmentData.qualityScore = Math.round(
-        sessions.reduce((sum: number, s: any) => sum + s.qualityScore, 0) / sessions.length
+        sessions.reduce((sum: number, s) => sum + s.qualityScore, 0) / sessions.length
       );
 
       // Re-encrypt and save
