@@ -27,6 +27,7 @@ import {
   ORGANIZATION_SIZES,
   OrganizationSize
 } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 
 interface OrganizationSetupStepProps {
   data: OrganizationWizardData;
@@ -37,6 +38,10 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  
+  // Fetch dynamic dropdown options
+  const { options: industryOptions, loading: industriesLoading } = useDropdownOptions('industry');
+  const { options: sizeOptions, loading: sizesLoading } = useDropdownOptions('organization_size');
 
   // Check slug availability when it changes
   useEffect(() => {
@@ -213,17 +218,31 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                   <Label htmlFor="org-industry">Industry *</Label>
                   <Select 
                     value={data.organizationDetails.industry} 
-                    onValueChange={(value) => handleFieldChange('industry', value)}
+                    onValueChange={(value) => {
+                      console.log('Industry selected:', value)
+                      handleFieldChange('industry', value)
+                    }}
+                    disabled={industriesLoading}
                   >
                     <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select industry" />
+                      <SelectValue placeholder={industriesLoading ? "Loading industries..." : "Select industry"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {INDUSTRIES.map(industry => (
-                        <SelectItem key={industry} value={industry.toLowerCase()}>
-                          {industry}
-                        </SelectItem>
-                      ))}
+                      {industriesLoading ? (
+                        <SelectItem value="" disabled>Loading...</SelectItem>
+                      ) : industryOptions.length > 0 ? (
+                        industryOptions.map(industry => (
+                          <SelectItem key={industry.value} value={industry.value}>
+                            {industry.label}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        INDUSTRIES.map(industry => (
+                          <SelectItem key={industry} value={industry.toLowerCase().replace(/ & /g, '_and_').replace(/ /g, '_')}>
+                            {industry}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -233,19 +252,33 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                   <Select 
                     value={data.organizationDetails.organizationSize} 
                     onValueChange={(value) => handleFieldChange('organizationSize', value)}
+                    disabled={sizesLoading}
                   >
                     <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select size" />
+                      <SelectValue placeholder={sizesLoading ? "Loading sizes..." : "Select size"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {ORGANIZATION_SIZES.map(size => (
-                        <SelectItem key={size.value} value={size.value}>
-                          <div className="flex flex-col">
-                            <span>{size.label}</span>
-                            <span className="text-xs text-gray-500">{size.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {sizesLoading ? (
+                        <SelectItem value="" disabled>Loading...</SelectItem>
+                      ) : sizeOptions.length > 0 ? (
+                        sizeOptions.map(size => (
+                          <SelectItem key={size.value} value={size.value}>
+                            <div className="flex flex-col">
+                              <span>{size.label}</span>
+                              <span className="text-xs text-gray-500">{size.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        ORGANIZATION_SIZES.map(size => (
+                          <SelectItem key={size.value} value={size.value}>
+                            <div className="flex flex-col">
+                              <span>{size.label}</span>
+                              <span className="text-xs text-gray-500">{size.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -319,7 +352,9 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                     </h4>
                     {data.organizationDetails.industry && (
                       <Badge variant="secondary" className="text-xs mt-1">
-                        {data.organizationDetails.industry}
+                        {industryOptions.find(i => i.value === data.organizationDetails.industry)?.label || 
+                         INDUSTRIES.find(i => i.toLowerCase().replace(/ & /g, '_and_').replace(/ /g, '_') === data.organizationDetails.industry) || 
+                         data.organizationDetails.industry}
                       </Badge>
                     )}
                     {data.organizationDetails.description && (
@@ -344,7 +379,8 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <Users className="w-4 h-4" />
                       <span>
-                        {ORGANIZATION_SIZES.find(s => s.value === data.organizationDetails.organizationSize)?.label}
+                        {sizeOptions.find(s => s.value === data.organizationDetails.organizationSize)?.label ||
+                         ORGANIZATION_SIZES.find(s => s.value === data.organizationDetails.organizationSize)?.label}
                       </span>
                     </div>
                   )}

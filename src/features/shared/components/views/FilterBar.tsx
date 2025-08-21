@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Badge } from '@/features/shared/ui/badge';
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton';
 import { 
   Search,
   Filter,
@@ -160,19 +161,28 @@ export default function FilterBar({
                     placeholder={searchPlaceholder}
                     value={searchValue}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-20"
                     disabled={loading}
                   />
-                  {searchValue && (
-                    <Button
-                      variant="ghost"
+                  <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                    <VoiceInputButton
+                      onTranscription={(text) => onSearchChange(searchValue + (searchValue ? ' ' : '') + text)}
+                      disabled={loading}
                       size="sm"
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                      onClick={() => onSearchChange('')}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                    />
+                    {searchValue && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => onSearchChange('')}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 

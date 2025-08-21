@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader, MessageSquare, X } from 'lucide-react'
 import { Button } from '@/features/shared/ui/button'
 import { chatAPI, useChatSession } from '@/lib/api/openrouter-client'
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import type { ChatMessage, ChatRequest, ChatResponse } from '@/types/openrouter'
 
 interface AIChatProps {
@@ -182,6 +183,12 @@ export function AIChat({ documentContext, className = '' }: AIChatProps) {
             className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={2}
             disabled={isLoading}
+          />
+          <VoiceInputButton
+            onTranscription={(text) => setInputMessage(prev => prev + (prev ? ' ' : '') + text)}
+            disabled={isLoading}
+            size="sm"
+            className="self-end"
           />
           <Button
             onClick={handleSendMessage}

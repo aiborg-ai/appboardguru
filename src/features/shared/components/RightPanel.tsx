@@ -193,6 +193,11 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   const [contextScope, setContextScope] = useState<ContextScope>('boardguru');
   const [chatMessage, setChatMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_MESSAGES);
+
+  // Debug context scope changes
+  React.useEffect(() => {
+    console.log('Context scope changed to:', contextScope);
+  }, [contextScope]);
   
   // Logs state
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOG_ENTRIES);
@@ -205,15 +210,23 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     )];
     
     if (currentOrganization) {
-      availableScopes.push(CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'organization')!);
+      const orgScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'organization');
+      if (orgScope) availableScopes.push(orgScope);
     }
     
     if (currentVault) {
-      availableScopes.push(CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'vault')!);
+      const vaultScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'vault');
+      if (vaultScope) availableScopes.push(vaultScope);
     }
     
     // Asset scope would be available when viewing a specific asset
-    // availableScopes.push(CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'asset')!);
+    // const assetScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'asset');
+    // if (assetScope) availableScopes.push(assetScope);
+    
+    console.log('Available scopes:', availableScopes.map(s => s.id), {
+      currentOrganization: !!currentOrganization,
+      currentVault: !!currentVault
+    });
     
     return availableScopes;
   };
@@ -451,12 +464,28 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                   {/* Context Scope Selector */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-gray-700">Context Scope</label>
-                    <DropdownMenu>
+                    {/* Debug buttons */}
+                    <div className="flex gap-1 mb-2">
+                      <button 
+                        onClick={() => setContextScope('general')}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded"
+                      >
+                        Gen
+                      </button>
+                      <button 
+                        onClick={() => setContextScope('boardguru')}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded"
+                      >
+                        BG
+                      </button>
+                    </div>
+                    <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
                           className="w-full justify-between text-xs h-8"
+                          onClick={() => console.log('Dropdown trigger clicked')}
                         >
                           <div className="flex items-center space-x-2">
                             {React.createElement(
@@ -468,7 +497,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                           <ChevronDown className="h-3 w-3 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-64" align="start">
+                      <DropdownMenuContent className="w-64" align="start" side="bottom" sideOffset={4}>
                         {getAvailableScopes().map((scopeOption) => {
                           const Icon = scopeOption.icon;
                           const isDisabled = 
@@ -479,9 +508,14 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                           return (
                             <DropdownMenuItem
                               key={scopeOption.id}
-                              onClick={() => !isDisabled && setContextScope(scopeOption.id)}
+                              onSelect={() => {
+                                console.log('Dropdown item selected:', scopeOption.id, 'isDisabled:', isDisabled);
+                                if (!isDisabled) {
+                                  setContextScope(scopeOption.id);
+                                }
+                              }}
                               disabled={isDisabled}
-                              className="flex flex-col items-start space-y-1 p-3"
+                              className="cursor-pointer"
                             >
                               <div className="flex items-center space-x-2 w-full">
                                 <Icon className="h-4 w-4" />

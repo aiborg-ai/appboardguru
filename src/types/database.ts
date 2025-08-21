@@ -1312,6 +1312,82 @@ export interface Database {
           created_at?: string
         }
       }
+      dropdown_option_categories: {
+        Row: {
+          id: string
+          name: string
+          label: string
+          description: string | null
+          is_active: boolean
+          is_system: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          label: string
+          description?: string | null
+          is_active?: boolean
+          is_system?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          label?: string
+          description?: string | null
+          is_active?: boolean
+          is_system?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      dropdown_options: {
+        Row: {
+          id: string
+          category_id: string
+          value: string
+          label: string
+          description: string | null
+          is_active: boolean
+          is_system: boolean
+          sort_order: number
+          metadata: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          category_id: string
+          value: string
+          label: string
+          description?: string | null
+          is_active?: boolean
+          is_system?: boolean
+          sort_order?: number
+          metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          category_id?: string
+          value?: string
+          label?: string
+          description?: string | null
+          is_active?: boolean
+          is_system?: boolean
+          sort_order?: number
+          metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
