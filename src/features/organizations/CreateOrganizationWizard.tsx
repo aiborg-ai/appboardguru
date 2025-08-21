@@ -2,9 +2,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+// import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
-import { Badge } from '@/features/shared/ui/badge';
 import { Progress } from '@/features/shared/ui/progress';
 import { 
   ChevronLeft, 
@@ -14,15 +13,12 @@ import {
   Users, 
   Settings,
   Rocket,
-  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   OrganizationWizardStep, 
   OrganizationWizardData,
-  OrganizationSize,
   CreateOrganizationRequest,
-  ORGANIZATION_SIZES,
   DEFAULT_ASSET_CATEGORIES
 } from './types';
 
@@ -57,7 +53,7 @@ const STEPS = [
 interface CreateOrganizationWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (data: CreateOrganizationRequest) => Promise<void>;
+  onComplete: (_data: CreateOrganizationRequest) => Promise<void>;
   className?: string;
 }
 
@@ -375,7 +371,7 @@ function StepContent({
 }: { 
   step: OrganizationWizardStep; 
   data: OrganizationWizardData; 
-  onUpdate: (updates: Partial<OrganizationWizardData>) => void;
+  onUpdate: (_updates: Partial<OrganizationWizardData>) => void;
 }) {
   switch (step) {
     case 'setup':

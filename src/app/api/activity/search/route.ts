@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     const action = url.searchParams.get('action')
 
     switch (action) {
-      case 'templates':
+      case 'templates': {
         const { data: customTemplates } = await supabase
           .from('activity_search_templates')
           .select('*')
@@ -203,8 +203,9 @@ export async function GET(request: NextRequest) {
             ...(customTemplates || [])
           ]
         })
+      }
 
-      case 'suggestions':
+      case 'suggestions': {
         const suggestions = await ActivitySearchEngine.getSearchSuggestions(
           user.organization_id,
           url.searchParams.get('query') || ''
@@ -214,6 +215,7 @@ export async function GET(request: NextRequest) {
           success: true,
           suggestions
         })
+      }
 
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

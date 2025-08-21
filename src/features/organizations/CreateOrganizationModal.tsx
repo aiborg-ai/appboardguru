@@ -4,11 +4,11 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Building2, X, Loader2 } from "lucide-react"
+import { Building2, Loader2 } from "lucide-react"
 import {
   useCreateOrganization,
   generateSlug,
-  organizationValidation
+  // organizationValidation
 } from "@/hooks/useOrganizations"
 import {
   Dialog,
@@ -63,7 +63,7 @@ type CreateOrganizationFormData = z.infer<typeof createOrganizationSchema>
 interface CreateOrganizationModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess?: (organization: any) => void
+  onSuccess?: (_organization: any) => void
 }
 
 const organizationSizes = [
@@ -129,9 +129,9 @@ export function CreateOrganizationModal({
     }
   }, [watchedName, slugManuallyModified, setValue, trigger])
 
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSlugChange = (e: React.ChangeEvent<Element>) => {
     setSlugManuallyModified(true)
-    const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    const slug = (e.target as any).value.toLowerCase().replace(/[^a-z0-9-]/g, '')
     setValue('slug', slug)
     trigger('slug')
   }
@@ -149,7 +149,7 @@ export function CreateOrganizationModal({
 
       onSuccess?.(result)
       handleClose()
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation
     }
   }

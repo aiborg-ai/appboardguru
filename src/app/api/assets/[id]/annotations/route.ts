@@ -39,10 +39,10 @@ const createAnnotationSchema = z.object({
   is_private: z.boolean().default(false),
 });
 
-const updateAnnotationSchema = createAnnotationSchema.partial().omit({
-  asset_id: true,
-  organization_id: true,
-});
+// const updateAnnotationSchema = createAnnotationSchema.partial().omit({
+//   asset_id: true,
+//   organization_id: true,
+// });
 
 /**
  * GET /api/assets/[id]/annotations

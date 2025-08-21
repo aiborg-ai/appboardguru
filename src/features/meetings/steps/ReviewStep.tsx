@@ -2,19 +2,14 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
 import { Textarea } from '@/features/shared/ui/textarea';
 import { Label } from '@/features/shared/ui/label';
 import { Badge } from '@/features/shared/ui/badge';
 import { Switch } from '@/features/shared/ui/switch';
 import { 
   Calendar,
-  Clock,
   Users,
   FileText,
-  MapPin,
-  Video,
-  Mail,
   Bell,
   Settings,
   CheckCircle,
@@ -27,7 +22,7 @@ import type { MeetingWizardData, AttendeeRole } from '../CreateMeetingWizard';
 
 interface ReviewStepProps {
   data: MeetingWizardData;
-  onUpdate: (updates: Partial<MeetingWizardData>) => void;
+  onUpdate: (_updates: Partial<MeetingWizardData>) => void;
 }
 
 const ATTENDEE_ROLE_LABELS: Record<AttendeeRole, string> = {

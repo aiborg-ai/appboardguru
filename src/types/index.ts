@@ -4,22 +4,112 @@
  */
 
 // Dashboard Types
-export * from './dashboard'
-export * from './data-visualization'
+export type {
+  DashboardLayoutProps,
+  DashboardPageProps,
+  SidebarProps,
+  DashboardMetrics,
+  DashboardActivity,
+  StatCardProps,
+  QuickAction,
+  QuickActionsProps,
+  ActivityFeedProps,
+  FilterOption,
+  DataTableProps,
+  TableColumn,
+  SearchAndFilterProps,
+  StatusType,
+  ViewMode
+} from './dashboard'
 
-// Component Types
-export * from './ui-components'
-export * from './form-components'
-export * from './navigation'
+export type {
+  ChartType,
+  ChartDataPoint,
+  ChartSeries,
+  ChartConfig,
+  BaseChartProps,
+  LineChartProps,
+  BarChartProps,
+  PieChartProps,
+  AreaChartProps,
+  ScatterChartProps,
+  GaugeChartProps,
+  HeatmapProps,
+  FunnelChartProps,
+  RadarChartProps,
+  KPIMetric,
+  KPICardProps,
+  DashboardWidget,
+  DashboardLayout,
+  DataQuery,
+  ChartInteraction
+} from './data-visualization'
+
+// Component Types - avoid conflicting exports
+export type {
+  NavigationItem,
+  NavigationProps,
+  BreadcrumbItem,
+  BreadcrumbProps
+} from './navigation'
 
 // Feature Types
-export * from './boardmates'
+export type {
+  BoardMateProfile,
+  BoardMatesProps,
+  AssociationManagerProps
+} from './boardmates'
 
 // Entity Types
-export * from './entities/compliance.types'
+export type {
+  ComplianceRequirement,
+  ComplianceStatus,
+  ComplianceReport
+} from './entities/compliance.types'
 
 // Hook Types
-export * from './hooks'
+export type {
+  UseAsyncReturn,
+  UseFormReturn,
+  UseModalReturn
+} from './hooks'
+
+// Database and Core Types
+export type {
+  UserId,
+  OrganizationId,
+  AssetId,
+  VaultId,
+  BoardId,
+  NotificationId,
+  TemplateId,
+  EventId,
+  UserRole,
+  UserStatus,
+  OrganizationSize,
+  MemberRole,
+  MemberStatus,
+  InvitationStatus,
+  MeetingType,
+  MeetingStatus
+} from './database'
+
+// Meetings Types
+export type {
+  MeetingResolution,
+  MeetingActionable,
+  MeetingWithResolutionsAndActionables,
+  ActionableWithUpdates,
+  ResolutionWithVotes,
+  ResolutionType,
+  ResolutionStatus,
+  VotingMethod,
+  ActionablePriority,
+  ActionableStatus,
+  ActionableCategory,
+  CreateResolutionRequest,
+  UpdateResolutionRequest
+} from './meetings'
 
 // Type Utilities
 export type Prettify<T> = {

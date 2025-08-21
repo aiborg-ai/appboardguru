@@ -3379,60 +3379,9 @@ export interface Database {
 // CONVENIENCE TYPE EXPORTS FOR OTHER AGENTS
 // ============================================================================
 
-// Re-export all branded types for easy import
-export type {
-  UserId,
-  OrganizationId,
-  AssetId,
-  VaultId,
-  BoardId,
-  NotificationId,
-  TemplateId,
-  EventId,
-};
-
-// Re-export all core interfaces for easy import
-export type {
-  OrganizationSettings,
-  ComplianceSettings,
-  BillingSettings,
-  CustomPermissions,
-  AssetMetadata,
-  ActivityDetails,
-  GeolocationInfo,
-  RequestHeaders,
-  ContentPosition,
-  BoardSettings,
-  VaultSettings,
-  MemberSettings,
-  EmailTemplateData,
-  NotificationResponseData,
-  EventMetadata,
-  RecurrenceRule,
-  EquityCompensation,
-  MemberSkills,
-  PatternData,
-  AnalyticsConditions,
-  AnalyticsOutcomes,
-  PercentileData,
-  ConfidenceInterval,
-  PredictionData,
-  MLConfiguration,
-  AnomalyData,
-  ModelParameters,
-  ExternalReferences,
-  WorkflowSteps,
-  ReminderSchedule,
-  EscalationRules,
-  MeetingSettings,
-  CommitteeSettings,
-};
-
 // Database table row types for direct access
 export type DatabaseUser = Database['public']['Tables']['users']['Row'];
 export type DatabaseOrganization = Database['public']['Tables']['organizations']['Row'];
-export type DatabaseAsset = Database['public']['Tables']['assets']['Row'];
-export type DatabaseVault = Database['public']['Tables']['vaults']['Row'];
 export type DatabaseBoard = Database['public']['Tables']['boards']['Row'];
 export type DatabaseMeeting = Database['public']['Tables']['meetings']['Row'];
 export type DatabaseCommittee = Database['public']['Tables']['committees']['Row'];
@@ -3440,16 +3389,34 @@ export type DatabaseCommittee = Database['public']['Tables']['committees']['Row'
 // Database insert types for form handling
 export type DatabaseUserInsert = Database['public']['Tables']['users']['Insert'];
 export type DatabaseOrganizationInsert = Database['public']['Tables']['organizations']['Insert'];
-export type DatabaseAssetInsert = Database['public']['Tables']['assets']['Insert'];
-export type DatabaseVaultInsert = Database['public']['Tables']['vaults']['Insert'];
 export type DatabaseBoardInsert = Database['public']['Tables']['boards']['Insert'];
 
 // Database update types for editing
 export type DatabaseUserUpdate = Database['public']['Tables']['users']['Update'];
 export type DatabaseOrganizationUpdate = Database['public']['Tables']['organizations']['Update'];
-export type DatabaseAssetUpdate = Database['public']['Tables']['assets']['Update'];
-export type DatabaseVaultUpdate = Database['public']['Tables']['vaults']['Update'];
 export type DatabaseBoardUpdate = Database['public']['Tables']['boards']['Update'];
+
+// Placeholder types for missing tables (assets and vaults not yet in schema)
+export type DatabaseAsset = {
+  id: string;
+  title: string;
+  type: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DatabaseVault = {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DatabaseAssetInsert = Omit<DatabaseAsset, 'created_at' | 'updated_at'>;
+export type DatabaseVaultInsert = Omit<DatabaseVault, 'created_at' | 'updated_at'>;
+export type DatabaseAssetUpdate = Partial<Omit<DatabaseAsset, 'id' | 'created_at' | 'updated_at'>>;
+export type DatabaseVaultUpdate = Partial<Omit<DatabaseVault, 'id' | 'created_at' | 'updated_at'>>;
 
 // Utility types for common patterns
 export type DatabaseTableName = keyof Database['public']['Tables'];

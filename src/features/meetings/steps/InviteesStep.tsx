@@ -26,7 +26,7 @@ import type { MeetingWizardData, AttendeeRole } from '../CreateMeetingWizard';
 
 interface InviteesStepProps {
   data: MeetingWizardData;
-  onUpdate: (updates: Partial<MeetingWizardData>) => void;
+  onUpdate: (_updates: Partial<MeetingWizardData>) => void;
 }
 
 const ATTENDEE_ROLES = [

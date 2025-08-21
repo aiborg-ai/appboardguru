@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ComplianceEngine } from '@/lib/services/compliance-engine'
-import type { AcknowledgeNotificationRequest } from '@/types'
+import type { AcknowledgeNotificationRequest } from '@/types/entities/compliance.types'
 
 export async function POST(request: NextRequest) {
   try {

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Label } from '@/features/shared/ui/label';
 import { Switch } from '@/features/shared/ui/switch';
@@ -10,17 +9,15 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Video,
   Repeat,
   Globe,
   AlertCircle
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { MeetingWizardData } from '../CreateMeetingWizard';
 
 interface CalendarStepProps {
   data: MeetingWizardData;
-  onUpdate: (updates: Partial<MeetingWizardData>) => void;
+  onUpdate: (_updates: Partial<MeetingWizardData>) => void;
 }
 
 const TIMEZONES = [

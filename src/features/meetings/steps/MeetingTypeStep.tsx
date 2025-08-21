@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Textarea } from '@/features/shared/ui/textarea';
 import { Label } from '@/features/shared/ui/label';
@@ -12,7 +11,6 @@ import {
   Building2, 
   FileText,
   Settings,
-  Calendar,
   Crown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,7 +18,7 @@ import type { MeetingWizardData, MeetingType } from '../CreateMeetingWizard';
 
 interface MeetingTypeStepProps {
   data: MeetingWizardData;
-  onUpdate: (updates: Partial<MeetingWizardData>) => void;
+  onUpdate: (_updates: Partial<MeetingWizardData>) => void;
 }
 
 const MEETING_TYPES = [

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/c
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Textarea } from '@/features/shared/ui/textarea';
-import { Label } from '@/features/shared/ui/label';
 import { Badge } from '@/features/shared/ui/badge';
 import { 
   Plus,
@@ -15,7 +14,6 @@ import {
   GripVertical,
   Trash2,
   Edit3,
-  Eye,
   Lock,
   Presentation,
   MessageSquare,
@@ -28,7 +26,7 @@ import type { MeetingWizardData } from '../CreateMeetingWizard';
 
 interface AgendaStepProps {
   data: MeetingWizardData;
-  onUpdate: (updates: Partial<MeetingWizardData>) => void;
+  onUpdate: (_updates: Partial<MeetingWizardData>) => void;
 }
 
 const AGENDA_ITEM_TYPES = [
@@ -39,13 +37,6 @@ const AGENDA_ITEM_TYPES = [
   { value: 'break', label: 'Break', icon: Coffee, color: 'bg-orange-500' },
 ] as const;
 
-const DOCUMENT_CATEGORIES = [
-  { value: 'agenda', label: 'Agenda' },
-  { value: 'supporting', label: 'Supporting Documents' },
-  { value: 'presentation', label: 'Presentation' },
-  { value: 'report', label: 'Report' },
-  { value: 'reference', label: 'Reference Material' },
-] as const;
 
 // Default agenda templates based on meeting type
 const getDefaultAgenda = (meetingType: string) => {
@@ -156,27 +147,28 @@ export default function AgendaStep({ data, onUpdate }: AgendaStepProps) {
     onUpdate({ agendaItems: updatedItems });
   };
 
-  const handleMoveItem = (itemId: string, direction: 'up' | 'down') => {
-    const currentIndex = data.agendaItems.findIndex(item => item.id === itemId);
-    if (currentIndex === -1) return;
+  // Commented out unused function - keeping for future implementation
+  // const handleMoveItem = (itemId: string, direction: 'up' | 'down') => {
+  //   const currentIndex = data.agendaItems.findIndex(item => item.id === itemId);
+  //   if (currentIndex === -1) return;
 
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= data.agendaItems.length) return;
+  //   const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+  //   if (newIndex < 0 || newIndex >= data.agendaItems.length) return;
 
-    const updatedItems = [...data.agendaItems];
-    [updatedItems[currentIndex], updatedItems[newIndex]] = 
-    [updatedItems[newIndex]!, updatedItems[currentIndex]!];
+  //   const updatedItems = [...data.agendaItems];
+  //   [updatedItems[currentIndex], updatedItems[newIndex]] = 
+  //   [updatedItems[newIndex]!, updatedItems[currentIndex]!];
     
-    // Update order indices
-    updatedItems.forEach((item, index) => {
-      item.order = index;
-    });
+  //   // Update order indices
+  //   updatedItems.forEach((item, index) => {
+  //     item.order = index;
+  //   });
 
-    onUpdate({ agendaItems: updatedItems });
-  };
+  //   onUpdate({ agendaItems: updatedItems });
+  // };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
+  const handleFileUpload = (event: React.ChangeEvent<Element>) => {
+    const files = Array.from((event.target as any).files || []);
     const newDocuments = files.map(file => ({
       id: `doc-${Date.now()}-${Math.random()}`,
       name: file.name,
