@@ -541,6 +541,8 @@ export default function BoardMatesPage() {
           onUpdate={handleAssociationUpdate}
         />
       )}
+        </div>
+      </div>
     </div>
   );
 }
