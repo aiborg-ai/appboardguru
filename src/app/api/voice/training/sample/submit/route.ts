@@ -396,7 +396,7 @@ function getNextSample(currentPhrase: string): string | null {
 
   const currentIndex = phrases.indexOf(currentPhrase);
   if (currentIndex >= 0 && currentIndex < phrases.length - 1) {
-    return phrases[currentIndex + 1];
+    return phrases[currentIndex + 1] || null;
   }
   
   return null;

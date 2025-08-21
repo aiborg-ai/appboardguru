@@ -3,7 +3,7 @@
  * Uses ML models to generate smart, personalized notifications with optimal timing
  */
 
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { databaseService, type DatabaseClient } from './database.service'
 import { Database } from '@/types/database'
 import { NotificationService } from './notification.service'
 import { patternRecognitionEngine } from './pattern-recognition'
@@ -55,7 +55,7 @@ export interface NotificationOptimization {
 }
 
 export class PredictiveNotificationService {
-  private supabase: any
+  private supabase: DatabaseClient | null = null
   private notificationService!: NotificationService
   private modelVersion: string = '1.0.0'
 
@@ -63,9 +63,9 @@ export class PredictiveNotificationService {
     // Services will be lazily initialized
   }
 
-  private async getSupabase() {
+  private async getSupabase(): Promise<DatabaseClient> {
     if (!this.supabase) {
-      this.supabase = await createSupabaseServerClient()
+      this.supabase = await databaseService.getClient()
     }
     return this.supabase
   }
@@ -381,7 +381,8 @@ export class PredictiveNotificationService {
 
       const predictionAccuracy: number = await this.calculatePredictionAccuracy(predictionId, outcome)
 
-      await (await this.getSupabase())
+      const supabase = await this.getSupabase()
+      await supabase
         .from('predicted_notifications')
         .update({
           actual_sent_at: new Date().toISOString(),
@@ -452,14 +453,14 @@ export class PredictiveNotificationService {
         }
       }
 
-      const sentPredictions = predictions.filter((p: any) => p.is_sent)
-      const successfulPredictions = predictions.filter((p: any) => p.is_successful)
+      const sentPredictions = predictions.filter((p) => p.is_sent)
+      const successfulPredictions = predictions.filter((p) => p.is_successful)
       const accuracies = predictions
-        .filter((p: any) => p.prediction_accuracy !== null)
-        .map((p: any) => p.prediction_accuracy)
+        .filter((p): p is PredictedNotification & { prediction_accuracy: number } => p.prediction_accuracy !== null)
+        .map((p) => p.prediction_accuracy)
 
       const averageAccuracy = accuracies.length > 0
-        ? accuracies.reduce((sum: any, acc: any) => sum + acc, 0) / accuracies.length
+        ? accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length
         : 0
 
       const engagementRate = sentPredictions.length > 0
@@ -607,7 +608,8 @@ export class PredictiveNotificationService {
       const originalRequest: SmartNotificationRequest = prediction.prediction_data.original_request
 
       // Create standard notification
-      await (await this.getNotificationService()).createNotification({
+      const notificationService = await this.getNotificationService()
+      await notificationService.createNotification({
         type: originalRequest.type as any,
         title: originalRequest.title,
         message: originalRequest.message,
@@ -629,7 +631,8 @@ export class PredictiveNotificationService {
   }
 
   private async updatePredictionSent(predictionId: string, success: boolean): Promise<void> {
-    await (await this.getSupabase())
+    const supabase = await this.getSupabase()
+    await supabase
       .from('predicted_notifications')
       .update({
         actual_sent_at: new Date().toISOString(),
@@ -668,7 +671,8 @@ export class PredictiveNotificationService {
 
     if (!prediction) return
 
-    await (await this.getSupabase())
+    const supabase = await this.getSupabase()
+    await supabase
       .from('user_behavior_metrics')
       .insert({
         user_id: prediction.user_id,

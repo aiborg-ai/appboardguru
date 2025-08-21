@@ -257,6 +257,9 @@ export async function POST(
       })
     }
 
+    // This should never be reached due to validation above, but TypeScript requires it
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+
   } catch (error) {
     console.error('Vault invitation response API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -563,7 +563,7 @@ export async function POST(request: NextRequest) {
     const response: AgendaPreparationResponse = {
       success: true,
       preparation,
-      voiceBriefing,
+      ...(voiceBriefing && { voiceBriefing }),
       recommendations,
       alerts
     };

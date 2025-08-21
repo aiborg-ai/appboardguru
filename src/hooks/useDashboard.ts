@@ -3,6 +3,62 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+// Type-safe metadata for insights and activities
+interface InsightMetadata {
+  readonly source?: string;
+  readonly confidence?: number;
+  readonly relatedResources?: readonly string[];
+  readonly metrics?: Record<string, number>;
+  readonly recommendations?: readonly string[];
+  readonly trends?: {
+    readonly direction: 'up' | 'down' | 'stable';
+    readonly percentage: number;
+    readonly timeframe: string;
+  };
+  readonly [key: string]: unknown; // For extensibility
+}
+
+interface ActivityMetadata {
+  readonly userAgent?: string;
+  readonly ipAddress?: string;
+  readonly deviceType?: 'desktop' | 'mobile' | 'tablet';
+  readonly location?: {
+    readonly country?: string;
+    readonly city?: string;
+    readonly timezone?: string;
+  };
+  readonly previousValue?: unknown;
+  readonly newValue?: unknown;
+  readonly changes?: Record<string, { from: unknown; to: unknown }>;
+  readonly context?: Record<string, unknown>;
+  readonly [key: string]: unknown; // For extensibility
+}
+
+// Type-safe pagination structure
+interface DashboardPagination {
+  readonly limit: number;
+  readonly offset: number;
+  readonly total: number;
+  readonly hasMore: boolean;
+  readonly currentPage: number;
+  readonly totalPages: number;
+}
+
+// Type-safe insights summary
+interface InsightsSummary {
+  readonly totalInsights: number;
+  readonly criticalCount: number;
+  readonly warningCount: number;
+  readonly infoCount: number;
+  readonly actionRequiredCount: number;
+  readonly resolvedCount: number;
+  readonly categories: Record<string, number>;
+  readonly trends: {
+    readonly daily: readonly { date: string; count: number }[];
+    readonly weekly: readonly { week: string; count: number }[];
+  };
+}
+
 // Types for dashboard data
 export interface DashboardMetrics {
   board_packs: {
@@ -55,18 +111,18 @@ export interface DashboardRecommendation {
 }
 
 export interface DashboardInsight {
-  id: string
-  type: 'analysis' | 'alert' | 'opportunity'
-  category: string
-  title: string
-  description: string
-  status: 'positive' | 'neutral' | 'warning' | 'critical' | 'opportunity'
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  action_required: boolean
-  action_url?: string
-  timeAgo: string
-  metadata: any
-  created_at: string
+  readonly id: string
+  readonly type: 'analysis' | 'alert' | 'opportunity'
+  readonly category: string
+  readonly title: string
+  readonly description: string
+  readonly status: 'positive' | 'neutral' | 'warning' | 'critical' | 'opportunity'
+  readonly severity: 'low' | 'medium' | 'high' | 'critical'
+  readonly action_required: boolean
+  readonly action_url?: string
+  readonly timeAgo: string
+  readonly metadata: InsightMetadata
+  readonly created_at: string
 }
 
 // API functions
@@ -81,7 +137,7 @@ async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
 
 async function fetchDashboardActivity(limit = 10, offset = 0): Promise<{
   activities: DashboardActivity[]
-  pagination: any
+  pagination: DashboardPagination
 }> {
   const response = await fetch(`/api/dashboard/activity?limit=${limit}&offset=${offset}`)
   if (!response.ok) {
@@ -106,7 +162,7 @@ async function fetchDashboardRecommendations(limit = 5, type?: string): Promise<
 
 async function fetchDashboardInsights(limit = 10, type?: string): Promise<{
   insights: DashboardInsight[]
-  summary: any
+  summary: InsightsSummary
 }> {
   const params = new URLSearchParams({ limit: limit.toString() })
   if (type) params.set('type', type)
@@ -124,7 +180,7 @@ async function logActivity(activity: {
   description?: string
   resource_type?: string
   resource_id?: string
-  metadata?: any
+  metadata?: ActivityMetadata
 }): Promise<void> {
   const response = await fetch('/api/dashboard/activity', {
     method: 'POST',
@@ -245,7 +301,7 @@ export function useDashboard() {
     description?: string
     resource_type?: string
     resource_id?: string
-    metadata?: any
+    metadata?: ActivityMetadata
   }) => {
     logActivityMutation.mutate(activity)
   }, [logActivityMutation])

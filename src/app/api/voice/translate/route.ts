@@ -165,7 +165,9 @@ export async function POST(request: NextRequest) {
         if (body.includeAudio) {
           const audioResult = await generateAudio(translationResult.text, targetLang);
           if (audioResult.success) {
-            translations[targetLang].audioUrl = audioResult.audioUrl || undefined;
+            if (audioResult.audioUrl) {
+              translations[targetLang].audioUrl = audioResult.audioUrl;
+            }
           }
         }
       }
@@ -253,12 +255,12 @@ export async function POST(request: NextRequest) {
 
     const response: TranslationResponse = {
       success: true,
-      sessionId,
       translations,
-      detectedLanguage,
-      speakerId: body.speakerId,
       timestamp: Date.now(),
-      originalText
+      originalText,
+      ...(sessionId && { sessionId }),
+      ...(detectedLanguage && { detectedLanguage }),
+      ...(body.speakerId && { speakerId: body.speakerId })
     };
 
     return NextResponse.json(response);

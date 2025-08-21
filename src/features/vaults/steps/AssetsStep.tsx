@@ -300,7 +300,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {filteredAssets.map((asset) => {
-              const FileIcon = getFileIcon(asset.file_type);
+              const FileIconComponent = getFileIcon(asset.file_type);
               const selected = isAssetSelected(asset.id);
               
               return (
@@ -336,7 +336,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
                           "w-10 h-10 rounded-lg flex items-center justify-center",
                           getFileTypeColor(asset.file_type)
                         )}>
-                          <FileIcon className="w-5 h-5" />
+                          <FileIconComponent className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-gray-900 truncate">
@@ -427,7 +427,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {data.selectedAssets.map((asset) => {
-              const FileIcon = getFileIcon(asset.file_type);
+              const FileIconComponent = getFileIcon(asset.file_type);
               return (
                 <div 
                   key={asset.id}
@@ -437,7 +437,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
                     "w-8 h-8 rounded flex items-center justify-center",
                     getFileTypeColor(asset.file_type)
                   )}>
-                    <FileIcon className="w-4 h-4" />
+                    <FileIconComponent className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">

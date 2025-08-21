@@ -38,13 +38,20 @@ export async function GET(request: NextRequest) {
       : undefined
 
     // Get calendar entries
-    const result = await complianceEngine.getCalendarEntries(orgMember.organization_id, {
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      status,
-      regulationType: regulationType || undefined,
-      includeRecurring
-    })
+    const filterOptions: {
+      startDate?: string
+      endDate?: string
+      status?: ("active" | "in_progress" | "scheduled" | "completed" | "cancelled" | "postponed" | "overdue")[]
+      regulationType?: string
+      includeRecurring?: boolean
+    } = { includeRecurring }
+    
+    if (startDate) filterOptions.startDate = startDate
+    if (endDate) filterOptions.endDate = endDate
+    if (status) filterOptions.status = status
+    if (regulationType) filterOptions.regulationType = regulationType
+    
+    const result = await complianceEngine.getCalendarEntries(orgMember.organization_id, filterOptions)
 
     return NextResponse.json(result)
 

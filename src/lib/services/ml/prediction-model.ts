@@ -80,13 +80,13 @@ export class PredictionModel {
    * Predict engagement level for a notification
    */
   async predictEngagement(
-    behaviorData: any[],
-    userProfile: any,
+    behaviorData: readonly UserBehaviorData[],
+    userProfile: UserProfileData,
     notificationContext: {
-      type: string
-      timing: Date
-      content?: string
-      priority?: string
+      readonly type: string
+      readonly timing: Date
+      readonly content?: string
+      readonly priority?: string
     }
   ): Promise<EngagementPrediction> {
     if (behaviorData.length < 5) {
@@ -391,10 +391,18 @@ export class PredictionModel {
     candidates.sort((a, b) => b.score - a.score)
     const best = candidates[0]
 
+    if (!best) {
+      return {
+        recommendedTime: new Date(),
+        confidence: 0,
+        reasoning: 'No suitable time found'
+      }
+    }
+
     // Calculate confidence based on score distribution
     const topScores = candidates.slice(0, 5).map(c => c.score)
     const confidence = topScores.length > 1 
-      ? Math.min((best.score - topScores[1]) / best.score, 0.95)
+      ? Math.min((best.score - (topScores[1] ?? 0)) / best.score, 0.95)
       : 0.5
 
     return {

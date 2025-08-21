@@ -133,12 +133,12 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
     const annotation: VoiceAnnotation = {
       id: annotationId,
       sessionId: sessionId || 'standalone',
-      documentId,
+      documentId: documentId || '',
       authorId: userId,
       authorName: userData?.full_name || 'Unknown User',
       type,
       content,
-      position,
+      position: position || { x: 0, y: 0, width: 0, height: 0 },
       timestamp: new Date().toISOString(),
       duration,
       status: 'active',
@@ -146,10 +146,10 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
       tags,
       priority,
       metadata: {
-        documentTitle: await getDocumentTitle(documentId),
-        pageTitle: position?.page ? `Page ${position.page}` : undefined,
-        contextBefore: await getContextBefore(documentId, position),
-        contextAfter: await getContextAfter(documentId, position),
+        documentTitle: (await getDocumentTitle(documentId)) || 'Untitled Document',
+        pageTitle: position?.page ? `Page ${position.page}` : 'Unknown Page',
+        contextBefore: (await getContextBefore(documentId, position)) || '',
+        contextAfter: (await getContextAfter(documentId, position)) || '',
         relatedAnnotations: await findRelatedAnnotations(content.keywords, documentId)
       }
     };
@@ -188,8 +188,8 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
     const response: VoiceAnnotationResponse = {
       success: true,
       annotation,
-      transcript: transcriptionResult.transcript,
-      confidence: transcriptionResult.confidence,
+      ...(transcriptionResult.transcript && { transcript: transcriptionResult.transcript }),
+      ...(transcriptionResult.confidence !== undefined && { confidence: transcriptionResult.confidence }),
       actions: workflowActions
     };
 
@@ -628,7 +628,7 @@ async function transcribeAudioData(audioData: string): Promise<{
 
 function base64ToBlob(base64: string, mimeType: string): Blob {
   // Remove data URL prefix if present
-  const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+  const base64Data = base64.includes(',') ? (base64.split(',')[1] || '') : base64;
   
   const byteCharacters = atob(base64Data);
   const byteNumbers = new Array(byteCharacters.length);

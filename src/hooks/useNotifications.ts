@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { Database } from '@/types/database'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 type Notification = Database['public']['Tables']['notifications']['Row']
 type NotificationInsert = Database['public']['Tables']['notifications']['Insert']
+
+// Type-safe Supabase notification payload
+type NotificationPayload = RealtimePostgresChangesPayload<Notification>
 
 interface NotificationsResponse {
   notifications: Notification[]
@@ -268,7 +272,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
   useEffect(() => {
     if (!autoRefresh) return
 
-    const handleNotificationUpdate = (payload: any) => {
+    const handleNotificationUpdate = (payload: NotificationPayload) => {
       const notification = payload.new as Notification
       const eventType = payload.eventType
 

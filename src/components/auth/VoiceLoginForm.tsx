@@ -107,7 +107,7 @@ export default function VoiceLoginForm({
       setLoginState(prev => ({
         ...prev,
         hasVoiceProfile: result.success && result.profile?.enrollmentComplete,
-        userEmail: user.email,
+        userEmail: user.email || '',
         isLoading: false,
         mode: result.success && result.profile?.enrollmentComplete ? 'select' : 'voice_enroll'
       }));
@@ -387,7 +387,7 @@ export default function VoiceLoginForm({
         onSubmit={handleTraditionalLogin}
         onBack={() => setLoginState(prev => ({ ...prev, mode: 'select' }))}
         isLoading={loginState.isLoading}
-        error={loginState.error}
+        {...(loginState.error && { error: loginState.error })}
       />
     );
   };

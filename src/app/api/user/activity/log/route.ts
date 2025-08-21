@@ -8,7 +8,8 @@ import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { 
   UserActivityLogger,
-  getRequestContext
+  getRequestContext,
+  type UserActivityEvent
 } from '@/lib/services/activity-logger'
 import { 
   createSuccessResponse,
@@ -67,11 +68,21 @@ async function handleLogActivity(request: NextRequest) {
     // Get request context (IP, User Agent)
     const requestContext = getRequestContext(request)
 
+    // Prepare activity event with proper type handling
+    const activityEvent: UserActivityEvent = {
+      userId: validated.userId,
+      activityType: validated.activityType,
+      title: validated.title,
+      ...requestContext,
+      ...(validated.organizationId && { organizationId: validated.organizationId }),
+      ...(validated.description && { description: validated.description }),
+      ...(validated.resourceType && { resourceType: validated.resourceType }),
+      ...(validated.resourceId && { resourceId: validated.resourceId }),
+      ...(validated.metadata && { metadata: validated.metadata })
+    }
+
     // Log the activity
-    const correlationId = await UserActivityLogger.logActivity({
-      ...validated,
-      ...requestContext
-    })
+    const correlationId = await UserActivityLogger.logActivity(activityEvent)
 
     console.log(`✅ Activity logged for user ${validated.userId}: ${validated.title}`)
 

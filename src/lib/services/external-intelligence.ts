@@ -6,6 +6,8 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { Database } from '@/types/database'
 import axios from 'axios'
+import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { nanoid } from 'nanoid'
 
 type IntelligenceSource = Database['public']['Tables']['intelligence_sources']['Row']
@@ -57,21 +59,29 @@ export interface EconomicIndicator {
   significance: 'high' | 'medium' | 'low'
 }
 
+// Type-safe intelligence data based on alert type
+type IntelligenceAlertData = 
+  | { type: 'market'; symbols: readonly string[]; trends: readonly { symbol: string; direction: 'up' | 'down'; magnitude: number }[]; timeframe: string }
+  | { type: 'news'; articles: readonly string[]; sentiment: 'positive' | 'negative' | 'neutral'; topics: readonly string[] }
+  | { type: 'regulatory'; regulations: readonly string[]; deadline: Date; compliance: readonly string[] }
+  | { type: 'economic'; indicators: readonly string[]; forecast: 'positive' | 'negative' | 'stable'; impact: number }
+  | Record<string, unknown>;
+
 export interface IntelligenceAlert {
-  id: string
-  type: 'market' | 'news' | 'regulatory' | 'economic'
-  title: string
-  description: string
-  severity: 'info' | 'warning' | 'critical'
-  relevantOrganizations: string[]
-  actionRequired: boolean
-  data: any
-  createdAt: Date
+  readonly id: string
+  readonly type: 'market' | 'news' | 'regulatory' | 'economic'
+  readonly title: string
+  readonly description: string
+  readonly severity: 'info' | 'warning' | 'critical'
+  readonly relevantOrganizations: readonly string[]
+  readonly actionRequired: boolean
+  readonly data: IntelligenceAlertData
+  readonly createdAt: Date
 }
 
 export class ExternalIntelligenceService {
-  private supabase: any
-  private httpClient: any
+  private supabase: SupabaseClient<Database> | null = null
+  private httpClient: AxiosInstance
   private rateLimiter: Map<string, { count: number; resetTime: number }> = new Map()
 
   constructor() {
@@ -95,7 +105,7 @@ export class ExternalIntelligenceService {
     })
 
     // Add request interceptor for rate limiting
-    this.httpClient.interceptors.request.use(async (config: any) => {
+    this.httpClient.interceptors.request.use(async (config: AxiosRequestConfig) => {
       await this.checkRateLimit(config.url || '')
       return config
     })
@@ -257,7 +267,7 @@ export class ExternalIntelligenceService {
         this.fetchEconomicIndicators()
       ])
 
-      const insights: any[] = []
+      const insights: IntelligenceAlert[] = []
 
       // Analyze market trends for insights
       if (marketData.length > 0) {
@@ -547,7 +557,7 @@ export class ExternalIntelligenceService {
     }
   }
 
-  private analyzeMarketTrends(marketData: MarketData[]): any[] {
+  private analyzeMarketTrends(marketData: readonly MarketData[]): IntelligenceAlert[] {
     const insights = []
 
     // Check for significant movements
@@ -567,7 +577,7 @@ export class ExternalIntelligenceService {
     return insights
   }
 
-  private analyzeNewsForInsights(newsItems: NewsItem[]): any[] {
+  private analyzeNewsForInsights(newsItems: readonly NewsItem[]): IntelligenceAlert[] {
     const insights = []
 
     // Check for high-impact governance news
@@ -591,7 +601,7 @@ export class ExternalIntelligenceService {
     return insights
   }
 
-  private analyzeEconomicIndicators(economicData: EconomicIndicator[]): any[] {
+  private analyzeEconomicIndicators(economicData: readonly EconomicIndicator[]): IntelligenceAlert[] {
     const insights = []
 
     // Check for significant economic changes
@@ -614,7 +624,7 @@ export class ExternalIntelligenceService {
     return insights
   }
 
-  private async storeInsight(insight: any, organizationIds?: string[]): Promise<IntelligenceInsight | null> {
+  private async storeInsight(insight: IntelligenceAlert, organizationIds?: readonly string[]): Promise<IntelligenceInsight | null> {
     try {
       const { data } = (await this.getSupabase())
         .from('intelligence_insights')

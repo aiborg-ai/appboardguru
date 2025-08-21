@@ -413,7 +413,7 @@ export default function OrganizationsPage() {
                       key={org.id}
                       id={org.id}
                       title={org.name}
-                      description={org.description}
+                      description={org.description || 'No description available'}
                       icon={Building2}
                       iconColor="text-blue-600"
                       badges={[

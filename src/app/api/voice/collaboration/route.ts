@@ -110,7 +110,7 @@ async function createSession(params: CreateVoiceSessionRequest): Promise<NextRes
       id: sessionId,
       organizationId,
       name: params.name,
-      description: params.description,
+      ...(params.description && { description: params.description }),
       hostUserId: userId,
       participants: [],
       status: 'scheduled',
@@ -124,7 +124,7 @@ async function createSession(params: CreateVoiceSessionRequest): Promise<NextRes
         relatedDocuments: [],
         tags: [],
         purpose: `${params.collaborationType} session`,
-        expectedDuration: params.expectedDuration
+        expectedDuration: params.expectedDuration || 30
       },
       createdAt: new Date().toISOString()
     };

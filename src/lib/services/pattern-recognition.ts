@@ -5,6 +5,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { Database } from '@/types/database'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ML Algorithm Implementations
 import { StatisticalAnalysis } from './ml/statistical-analysis'
@@ -17,15 +18,24 @@ type UserBehaviorMetric = Database['public']['Tables']['user_behavior_metrics'][
 type NotificationPattern = Database['public']['Tables']['notification_patterns']['Row']
 type AnomalyDetectionRow = Database['public']['Tables']['anomaly_detections']['Row']
 
+// Type-safe pattern parameters based on pattern type
+type PatternParameters = 
+  | { type: 'timing'; optimalHours: readonly number[]; timezone: string; weekdays: readonly number[] }
+  | { type: 'engagement'; avgResponseTime: number; peakDays: readonly string[]; channels: readonly string[] }
+  | { type: 'content'; preferredTypes: readonly string[]; sentiment: 'positive' | 'negative' | 'neutral'; topics: readonly string[] }
+  | { type: 'frequency'; optimalFrequency: number; maxDaily: number; quietHours: readonly number[] }
+  | { type: 'sequence'; patterns: readonly string[]; triggers: readonly string[]; outcomes: readonly string[] }
+  | Record<string, unknown>;
+
 export interface PatternAnalysisResult {
-  patternId: string
-  patternType: 'timing' | 'engagement' | 'content' | 'frequency' | 'sequence'
-  confidence: number
-  description: string
-  parameters: Record<string, any>
-  recommendations: string[]
-  affectedUsers: string[]
-  potentialActions: PotentialAction[]
+  readonly patternId: string
+  readonly patternType: 'timing' | 'engagement' | 'content' | 'frequency' | 'sequence'
+  readonly confidence: number
+  readonly description: string
+  readonly parameters: PatternParameters
+  readonly recommendations: readonly string[]
+  readonly affectedUsers: readonly string[]
+  readonly potentialActions: readonly PotentialAction[]
 }
 
 export interface PotentialAction {
@@ -35,10 +45,19 @@ export interface PotentialAction {
   confidence: number
 }
 
+// Type-safe metadata for time series data
+interface TimeSeriesMetadata {
+  readonly source?: string;
+  readonly tags?: readonly string[];
+  readonly quality?: 'high' | 'medium' | 'low';
+  readonly processed?: boolean;
+  readonly [key: string]: unknown;
+}
+
 export interface TimeSeriesData {
-  timestamp: Date
-  value: number
-  metadata?: Record<string, any>
+  readonly timestamp: Date
+  readonly value: number
+  readonly metadata?: TimeSeriesMetadata
 }
 
 export interface UserEngagementProfile {
@@ -54,7 +73,7 @@ export interface UserEngagementProfile {
 }
 
 export class PatternRecognitionEngine {
-  private supabase: any
+  private supabase: SupabaseClient<Database> | null = null
   private statisticalAnalysis: StatisticalAnalysis
   private timeSeriesAnalysis: TimeSeriesAnalysis
   private anomalyDetection: AnomalyDetection
@@ -197,7 +216,7 @@ export class PatternRecognitionEngine {
           .eq('organization_id', organizationId)
           .eq('status', 'active')
 
-        userIds = orgMembers?.map((m: any) => m.user_id) || []
+        userIds = orgMembers?.map((m) => m.user_id) || []
       }
 
       const profiles: UserEngagementProfile[] = []
@@ -574,7 +593,7 @@ export class PatternRecognitionEngine {
   }
 
   private async storeAnomalies(
-    anomalies: any[],
+    anomalies: AnomalyDetectionRow[],
     organizationId?: string,
     userId?: string
   ): Promise<AnomalyDetectionRow[]> {
@@ -686,7 +705,7 @@ export class PatternRecognitionEngine {
 
       // Group by day and count meetings
       const dailyCounts = new Map<string, number>()
-      data?.forEach((meeting: any) => {
+      data?.forEach((meeting: { id: string; start_time: string; end_time: string; participants?: unknown }) => {
         const day = meeting.scheduled_start.split('T')[0]
         dailyCounts.set(day, (dailyCounts.get(day) || 0) + 1)
       })

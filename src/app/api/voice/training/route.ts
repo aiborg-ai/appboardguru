@@ -247,7 +247,7 @@ async function generateTrainingSystemData(
     {
       id: `session-${userId}-001`,
       userId,
-      profileId: trainingProfiles[0].id,
+      profileId: trainingProfiles[0]?.id || 'default-profile',
       sessionType: 'initial_enrollment',
       configuration: {
         modelType: 'speech_recognition',
@@ -972,7 +972,7 @@ async function generateTrainingSystemData(
     userId,
     organizationId,
     trainingProfiles,
-    activeModel: trainingProfiles[0].id,
+    activeModel: trainingProfiles[0]?.id || 'default-model',
     trainingHistory,
     adaptationEngine,
     performanceMetrics,

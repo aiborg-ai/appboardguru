@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // If digital signature, add IP to signature data
     if (body.digital_signature) {
       body.digital_signature.ip_address = clientIp
-      body.digital_signature.user_agent = request.headers.get('user-agent') || undefined
+      body.digital_signature.user_agent = request.headers.get('user-agent') || ''
     }
 
     // Acknowledge the notification

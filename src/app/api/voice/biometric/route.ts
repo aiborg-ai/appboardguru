@@ -255,7 +255,7 @@ async function handleEnrollment(
             qualityScore,
             signalToNoiseRatio: voiceCharacteristics.voiceQualityMetrics.harmonicToNoiseRatio,
             recordedAt: new Date().toISOString(),
-            deviceInfo
+            ...(deviceInfo && { deviceInfo })
           }],
           qualityScore,
           templateVersion: '1.0',
@@ -636,7 +636,9 @@ async function handleEmotionAnalysis(
     // Perform emotion analysis
     const emotionResult = await EmotionAnalyzer.analyzeEmotion(voiceCharacteristics);
     emotionResult.userId = user.id;
-    emotionResult.sessionId = sessionId;
+    if (sessionId) {
+      emotionResult.sessionId = sessionId;
+    }
 
     // Store emotion analysis if requested
     if (analysisType === 'comprehensive') {

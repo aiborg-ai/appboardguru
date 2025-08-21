@@ -229,13 +229,13 @@ function extractOrganizationContext(request: NextRequest): {
   
   // Extract from API routes like /api/organizations/[id]
   const apiOrgMatch = pathname.match(/^\/api\/organizations\/([^\/]+)/)
-  if (apiOrgMatch) {
+  if (apiOrgMatch && apiOrgMatch[1]) {
     return { organizationId: apiOrgMatch[1] }
   }
   
   // Extract from dashboard routes like /dashboard/[orgSlug]
   const dashboardOrgMatch = pathname.match(/^\/dashboard\/([^\/]+)/)
-  if (dashboardOrgMatch && dashboardOrgMatch[1] !== 'settings') {
+  if (dashboardOrgMatch && dashboardOrgMatch[1] && dashboardOrgMatch[1] !== 'settings') {
     return { organizationSlug: dashboardOrgMatch[1] }
   }
   

@@ -858,14 +858,28 @@ async function generateAnalytics(
   };
 }
 
-function generateDailyUsagePattern(timeRange: any) {
-  const days = [];
+function generateDailyUsagePattern(timeRange: any): Array<{
+  date: string;
+  totalMinutes: number;
+  sessionsCount: number;
+  peakHour: number;
+  primaryFeatures: string[];
+}> {
+  const days: Array<{
+    date: string;
+    totalMinutes: number;
+    sessionsCount: number;
+    peakHour: number;
+    primaryFeatures: string[];
+  }> = [];
+  
   const startDate = new Date(timeRange?.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
   const endDate = new Date(timeRange?.endDate || new Date());
 
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0] || d.toISOString().substring(0, 10)
     days.push({
-      date: d.toISOString().split('T')[0],
+      date: dateStr,
       totalMinutes: Math.floor(Math.random() * 120) + 30, // 30-150 minutes
       sessionsCount: Math.floor(Math.random() * 10) + 1, // 1-10 sessions
       peakHour: Math.floor(Math.random() * 8) + 9, // 9-17 (business hours)

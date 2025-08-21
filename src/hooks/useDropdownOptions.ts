@@ -2,13 +2,30 @@
 
 import { useState, useEffect } from 'react'
 
+// Type-safe metadata for dropdown options
+interface DropdownMetadata {
+  readonly icon?: string
+  readonly color?: string
+  readonly category?: string
+  readonly employeeRange?: {
+    readonly min: number
+    readonly max: number | 'unlimited'
+  }
+  readonly description?: string
+  readonly isDefault?: boolean
+  readonly isDeprecated?: boolean
+  readonly sortWeight?: number
+  readonly tags?: readonly string[]
+  readonly [key: string]: unknown // For extensibility with strict typing
+}
+
 interface DropdownOption {
-  id: string
-  value: string
-  label: string
-  description?: string
-  sort_order: number
-  metadata?: any
+  readonly id: string
+  readonly value: string
+  readonly label: string
+  readonly description?: string
+  readonly sort_order: number
+  readonly metadata?: DropdownMetadata
 }
 
 export function useDropdownOptions(category: string) {

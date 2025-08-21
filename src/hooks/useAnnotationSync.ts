@@ -3,45 +3,98 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { useToast } from '@/features/shared/ui/use-toast';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
+// Type-safe annotation content based on annotation type
+type AnnotationContent = 
+  | { type: 'text'; text: string; formatting?: Record<string, unknown> }
+  | { type: 'highlight'; selection: { start: number; end: number; text: string } }
+  | { type: 'comment'; comment: string; attachments?: readonly string[] }
+  | { type: 'note'; note: string; tags?: readonly string[] }
+  | { type: 'drawing'; paths: readonly unknown[]; strokeWidth?: number }
+  | Record<string, unknown>; // Fallback for extensibility
+
+// Type-safe position data for annotations
+interface AnnotationPosition {
+  readonly x: number;
+  readonly y: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly page?: number;
+  readonly boundingRect?: {
+    readonly top: number;
+    readonly left: number;
+    readonly right: number;
+    readonly bottom: number;
+  };
+  readonly rects?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  }[];
+}
 
 interface AnnotationData {
-  id: string;
-  asset_id: string;
-  vault_id?: string;
-  organization_id: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  annotation_type: string;
-  content: any;
-  page_number: number;
-  position: any;
-  selected_text?: string;
-  comment_text?: string;
-  color: string;
-  opacity: number;
-  is_private: boolean;
-  is_resolved: boolean;
-  is_deleted: boolean;
-  user?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
+  readonly id: string;
+  readonly asset_id: string;
+  readonly vault_id?: string;
+  readonly organization_id: string;
+  readonly created_by: string;
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly annotation_type: string;
+  readonly content: AnnotationContent;
+  readonly page_number: number;
+  readonly position: AnnotationPosition | null;
+  readonly selected_text?: string;
+  readonly comment_text?: string;
+  readonly color: string;
+  readonly opacity: number;
+  readonly is_private: boolean;
+  readonly is_resolved: boolean;
+  readonly is_deleted: boolean;
+  readonly user?: {
+    readonly id: string;
+    readonly full_name: string;
+    readonly avatar_url?: string;
   };
-  replies_count?: number;
+  readonly replies_count?: number;
 }
 
 interface AnnotationReply {
-  id: string;
-  annotation_id: string;
-  reply_text: string;
-  created_by: string;
-  created_at: string;
-  user?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
+  readonly id: string;
+  readonly annotation_id: string;
+  readonly reply_text: string;
+  readonly created_by: string;
+  readonly created_at: string;
+  readonly user?: {
+    readonly id: string;
+    readonly full_name: string;
+    readonly avatar_url?: string;
   };
+}
+
+// Type-safe Supabase payload types
+type AnnotationPayload = RealtimePostgresChangesPayload<AnnotationData>;
+type ReplyPayload = RealtimePostgresChangesPayload<AnnotationReply>;
+
+// Type-safe user presence data
+interface UserPresenceData {
+  readonly user_id: string;
+  readonly user_name: string;
+  readonly last_seen: string;
+  readonly avatar_url?: string;
+  readonly status?: 'online' | 'away' | 'offline';
+}
+
+// Type-safe presence event payloads
+interface PresenceJoinPayload {
+  readonly newPresences: readonly UserPresenceData[];
+}
+
+interface PresenceLeavePayload {
+  readonly leftPresences: readonly UserPresenceData[];
 }
 
 interface UseAnnotationSyncProps {
@@ -50,7 +103,7 @@ interface UseAnnotationSyncProps {
   currentUserId: string;
   onAnnotationChange?: (annotation: AnnotationData, action: 'created' | 'updated' | 'deleted') => void;
   onReplyChange?: (reply: AnnotationReply, action: 'created' | 'updated' | 'deleted') => void;
-  onUserPresence?: (users: Array<{ user_id: string; user_name: string; last_seen: string }>) => void;
+  onUserPresence?: (users: UserPresenceData[]) => void;
 }
 
 export function useAnnotationSync({
@@ -63,7 +116,7 @@ export function useAnnotationSync({
 }: UseAnnotationSyncProps) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const [activeUsers, setActiveUsers] = useState<Array<{ user_id: string; user_name: string; last_seen: string }>>([]);
+  const [activeUsers, setActiveUsers] = useState<UserPresenceData[]>([]);
   
   const supabase = createSupabaseBrowserClient();
 
@@ -87,9 +140,9 @@ export function useAnnotationSync({
 
   // Set up real-time subscriptions
   useEffect(() => {
-    let annotationChannel: any;
-    let replyChannel: any;
-    let presenceChannel: any;
+    let annotationChannel: RealtimeChannel | null = null;
+    let replyChannel: RealtimeChannel | null = null;
+    let presenceChannel: RealtimeChannel | null = null;
 
     const setupSubscriptions = async () => {
       try {
@@ -104,13 +157,13 @@ export function useAnnotationSync({
               table: 'asset_annotations',
               filter: `asset_id=eq.${assetId}`,
             },
-            async (payload) => {
-              if (payload.new && (payload.new as any).created_by !== currentUserId) {
+            async (payload: AnnotationPayload) => {
+              if (payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the annotation
                 const { data: userInfo } = await supabase
                   .from('users')
                   .select('id, full_name, avatar_url')
-                  .eq('id', (payload.new as any).created_by)
+                  .eq('id', payload.new.created_by)
                   .single();
 
                 const annotationData: AnnotationData = {
@@ -146,13 +199,13 @@ export function useAnnotationSync({
               table: 'annotation_replies',
               filter: `annotation_id=in.(${assetId})`, // This would need to be adjusted to filter by asset's annotations
             },
-            async (payload) => {
-              if (payload.new && (payload.new as any).created_by !== currentUserId) {
+            async (payload: ReplyPayload) => {
+              if (payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the reply
                 const { data: userInfo } = await supabase
                   .from('users')
                   .select('id, full_name, avatar_url')
-                  .eq('id', (payload.new as any).created_by)
+                  .eq('id', payload.new.created_by)
                   .single();
 
                 const replyData: AnnotationReply = {
@@ -181,17 +234,17 @@ export function useAnnotationSync({
         presenceChannel = supabase
           .channel(`presence_${assetId}`)
           .on('presence', { event: 'sync' }, () => {
-            const state = presenceChannel.presenceState();
-            const users = Object.values(state).flat() as Array<{ user_id: string; user_name: string; last_seen: string }>;
+            const state = presenceChannel?.presenceState();
+            const users = Object.values(state || {}).flat() as UserPresenceData[];
             setActiveUsers(users);
             onUserPresence?.(users);
           })
-          .on('presence', { event: 'join' }, ({ newPresences }: any) => {
-            const newUsers = newPresences as Array<{ user_id: string; user_name: string; last_seen: string }>;
+          .on('presence', { event: 'join' }, ({ newPresences }: PresenceJoinPayload) => {
+            const newUsers = newPresences;
             setActiveUsers(prev => [...prev, ...newUsers]);
           })
-          .on('presence', { event: 'leave' }, ({ leftPresences }: any) => {
-            const leftUsers = leftPresences as Array<{ user_id: string; user_name: string; last_seen: string }>;
+          .on('presence', { event: 'leave' }, ({ leftPresences }: PresenceLeavePayload) => {
+            const leftUsers = leftPresences;
             setActiveUsers(prev => prev.filter(user => 
               !leftUsers.some(leftUser => leftUser.user_id === user.user_id)
             ));

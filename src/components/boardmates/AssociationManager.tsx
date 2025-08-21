@@ -420,7 +420,7 @@ export default function AssociationManager({
                             
                             {isSelected && (
                               <Select
-                                value={currentRole}
+                                value={currentRole || ''}
                                 onValueChange={(value) => handleBoardRoleChange(board.id, value)}
                               >
                                 <SelectTrigger className="w-48">
@@ -492,7 +492,7 @@ export default function AssociationManager({
                             
                             {isSelected && (
                               <Select
-                                value={currentRole}
+                                {...(currentRole && { value: currentRole })}
                                 onValueChange={(value) => {
                                   const newMap = new Map(currentCommittees);
                                   newMap.set(committee.id, value);
@@ -570,7 +570,7 @@ export default function AssociationManager({
                             
                             {isSelected && (
                               <Select
-                                value={currentRole}
+                                {...(currentRole && { value: currentRole })}
                                 onValueChange={(value) => {
                                   const newMap = new Map(currentVaults);
                                   newMap.set(vault.id, value);

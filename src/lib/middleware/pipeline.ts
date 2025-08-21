@@ -87,7 +87,9 @@ export class MiddlewarePipeline {
         return
       }
       
-      const { middleware } = applicableMiddleware[currentIndex++]
+      const middlewareItem = applicableMiddleware[currentIndex++]
+      if (!middlewareItem) return;
+      const { middleware } = middlewareItem
       await middleware(context, next)
     }
     

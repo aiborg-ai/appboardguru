@@ -131,7 +131,7 @@ export function extractLinkedInInfo(url: string): {
       const username = urlObj.pathname.split('/in/')[1]?.split('/')[0];
       return {
         type: 'personal',
-        username: username || undefined
+        ...(username && { username })
       };
     }
     
@@ -139,7 +139,7 @@ export function extractLinkedInInfo(url: string): {
       const companyName = urlObj.pathname.split('/company/')[1]?.split('/')[0];
       return {
         type: 'company',
-        companyName: companyName?.replace(/-/g, ' ') || undefined
+        ...(companyName && { companyName: companyName.replace(/-/g, ' ') })
       };
     }
     

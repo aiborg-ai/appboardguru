@@ -106,7 +106,7 @@ export function VoiceMeetingIntegration({
           title: meetingTitle,
           participants: participants.map(p => ({
             name: p.name,
-            email: p.email
+            ...(p.email && { email: p.email })
           })),
           expectedLanguages: autoTranslate ? ['en', ...targetLanguages] : ['en']
         }
@@ -164,10 +164,10 @@ export function VoiceMeetingIntegration({
             meetingType: minutes.header.meetingType,
             attendees: minutes.header.attendees.map(a => ({ 
               name: a.name, 
-              title: a.title, 
-              organization: a.organization,
+              ...(a.title && { title: a.title }),
+              ...(a.organization && { organization: a.organization }),
               status: (a.status as 'present' | 'absent' | 'late' | 'early_departure') || 'present',
-              joinTime: a.joinTime,
+              ...(a.joinTime && { joinTime: a.joinTime }),
               departTime: (a as any).departTime
             })),
             chairperson: minutes.header.chairperson,
@@ -176,27 +176,19 @@ export function VoiceMeetingIntegration({
           agenda: minutes.agenda,
           discussions: minutes.discussions.map(d => ({
             id: `discussion_${Date.now()}_${Math.random()}`,
-            agendaItemId: undefined,
             topic: d.topic,
-            presenter: undefined,
             keyPoints: d.keyPoints,
             decisions: d.decisions.map(decision => ({
               id: decision.id,
               text: decision.text,
-              description: undefined,
               context: decision.context,
-              rationale: undefined,
-              votingResults: decision.votingResults,
+              ...(decision.votingResults && { votingResults: decision.votingResults }),
               finalDecision: decision.finalDecision,
-              implementationPlan: undefined,
-              reviewDate: undefined,
-              impact: undefined,
               createdAt: decision.createdAt,
               modifiedAt: decision.createdAt
             })),
             actionItems: [],
-            duration: 0,
-            transcript: undefined
+            duration: 0
           })),
           actionItems: minutes.actionItems.map(item => ({
             ...item,
@@ -219,8 +211,6 @@ export function VoiceMeetingIntegration({
             duration: minutes.metadata.duration || 0,
             wordCount: minutes.metadata.wordCount || 0,
             participantCount: minutes.metadata.participantCount || 0,
-            qualityMetrics: undefined,
-            processingTime: undefined,
             isAutomated: true
           }
         };
@@ -276,12 +266,9 @@ export function VoiceMeetingIntegration({
       setDecisions(minutes.discussions.flatMap(d => d.decisions.map(decision => ({
         id: decision.id,
         text: decision.text,
-        description: undefined,
         context: decision.context,
-        rationale: undefined,
         votingResults: decision.votingResults,
         finalDecision: decision.finalDecision,
-        implementationPlan: undefined,
         reviewDate: undefined,
         impact: undefined,
         createdAt: decision.createdAt,
@@ -298,10 +285,10 @@ export function VoiceMeetingIntegration({
           meetingType: minutes.header.meetingType,
           attendees: minutes.header.attendees.map(a => ({ 
             name: a.name, 
-            title: a.title, 
-            organization: a.organization,
+            ...(a.title && { title: a.title }),
+            ...(a.organization && { organization: a.organization }),
             status: (a.status as 'present' | 'absent' | 'late' | 'early_departure') || 'present',
-            joinTime: a.joinTime,
+            ...(a.joinTime && { joinTime: a.joinTime }),
             departTime: (a as any).departTime
           })),
           chairperson: minutes.header.chairperson,
@@ -310,27 +297,19 @@ export function VoiceMeetingIntegration({
         agenda: minutes.agenda,
         discussions: minutes.discussions.map(d => ({
           id: `discussion_${Date.now()}_${Math.random()}`,
-          agendaItemId: undefined,
           topic: d.topic,
-          presenter: undefined,
           keyPoints: d.keyPoints,
           decisions: d.decisions.map(decision => ({
             id: decision.id,
             text: decision.text,
-            description: undefined,
             context: decision.context,
-            rationale: undefined,
-            votingResults: decision.votingResults,
+            ...(decision.votingResults && { votingResults: decision.votingResults }),
             finalDecision: decision.finalDecision,
-            implementationPlan: undefined,
-            reviewDate: undefined,
-            impact: undefined,
             createdAt: decision.createdAt,
             modifiedAt: decision.createdAt
           })),
           actionItems: [],
-          duration: 0,
-          transcript: undefined
+          duration: 0
         })),
         actionItems: minutes.actionItems.map(item => ({
           ...item,
@@ -353,8 +332,6 @@ export function VoiceMeetingIntegration({
           duration: minutes.metadata.duration || 0,
           wordCount: minutes.metadata.wordCount || 0,
           participantCount: minutes.metadata.participantCount || 0,
-          qualityMetrics: undefined,
-          processingTime: undefined,
           isAutomated: true
         }
       };

@@ -7,28 +7,43 @@ import { StatisticalAnalysis } from './statistical-analysis'
 
 export type UserSegment = 'highly_engaged' | 'moderate' | 'low_engagement' | 'sporadic'
 
+// Type-safe user behavior data structure
+export interface UserBehaviorData {
+  readonly timestamp: Date;
+  readonly action: string;
+  readonly duration?: number;
+  readonly engagement_score?: number;
+  readonly response_time?: number;
+  readonly success?: boolean;
+  readonly context?: {
+    readonly device?: string;
+    readonly location?: string;
+    readonly source?: string;
+  };
+}
+
 export interface UserSegmentProfile {
-  segment: UserSegment
-  characteristics: string[]
-  score: number
-  confidence: number
-  recommendations: string[]
+  readonly segment: UserSegment
+  readonly characteristics: readonly string[]
+  readonly score: number
+  readonly confidence: number
+  readonly recommendations: readonly string[]
 }
 
 export interface ClusterCenter {
-  engagement: number
-  frequency: number
-  responseTime: number
-  consistency: number
+  readonly engagement: number
+  readonly frequency: number
+  readonly responseTime: number
+  readonly consistency: number
 }
 
 export interface SegmentationFeatures {
-  avgEngagement: number
-  activityFrequency: number
-  avgResponseTime: number
-  consistencyScore: number
-  diversityScore: number
-  peakHourSpread: number
+  readonly avgEngagement: number
+  readonly activityFrequency: number
+  readonly avgResponseTime: number
+  readonly consistencyScore: number
+  readonly diversityScore: number
+  readonly peakHourSpread: number
 }
 
 export class UserSegmentation {
@@ -41,7 +56,7 @@ export class UserSegmentation {
   /**
    * Segment user based on behavior data
    */
-  segmentUser(behaviorData: any[]): UserSegment {
+  segmentUser(behaviorData: readonly UserBehaviorData[]): UserSegment {
     if (behaviorData.length === 0) {
       return 'low_engagement'
     }
@@ -55,7 +70,7 @@ export class UserSegmentation {
   /**
    * Get detailed user segment profile
    */
-  getUserSegmentProfile(behaviorData: any[]): UserSegmentProfile {
+  getUserSegmentProfile(behaviorData: readonly UserBehaviorData[]): UserSegmentProfile {
     if (behaviorData.length === 0) {
       return {
         segment: 'low_engagement',
@@ -148,7 +163,7 @@ export class UserSegmentation {
   /**
    * Extract behavioral features from user data
    */
-  private extractUserFeatures(behaviorData: any[]): SegmentationFeatures {
+  private extractUserFeatures(behaviorData: readonly UserBehaviorData[]): SegmentationFeatures {
     if (behaviorData.length === 0) {
       return {
         avgEngagement: 0,
@@ -559,7 +574,7 @@ export class UserSegmentation {
 
   // Feature calculation helpers
 
-  private calculateDaySpan(behaviorData: any[]): number {
+  private calculateDaySpan(behaviorData: readonly UserBehaviorData[]): number {
     if (behaviorData.length === 0) return 0
 
     const timestamps = behaviorData.map(d => new Date(d.timestamp).getTime())
@@ -569,7 +584,7 @@ export class UserSegmentation {
     return (maxTime - minTime) / (1000 * 60 * 60 * 24)
   }
 
-  private calculateConsistencyScore(behaviorData: any[]): number {
+  private calculateConsistencyScore(behaviorData: readonly UserBehaviorData[]): number {
     if (behaviorData.length < 7) return 0 // Need at least a week of data
 
     // Group by day of week and calculate variance
@@ -586,14 +601,14 @@ export class UserSegmentation {
     return Math.max(0, 1 - coefficientOfVariation)
   }
 
-  private calculateDiversityScore(behaviorData: any[]): number {
+  private calculateDiversityScore(behaviorData: readonly UserBehaviorData[]): number {
     const actionTypes = new Set(behaviorData.map(d => d.action_type))
     const maxExpectedTypes = 10 // Assume max 10 different action types
 
     return Math.min(actionTypes.size / maxExpectedTypes, 1)
   }
 
-  private calculatePeakHourSpread(behaviorData: any[]): number {
+  private calculatePeakHourSpread(behaviorData: readonly UserBehaviorData[]): number {
     if (behaviorData.length === 0) return 0
 
     const hourCounts = Array(24).fill(0)

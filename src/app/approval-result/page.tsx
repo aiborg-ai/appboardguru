@@ -26,28 +26,27 @@ function ApprovalResultContent() {
     const type = searchParams.get('type') as 'success' | 'error' | 'warning' || 'error'
     const title = searchParams.get('title') || 'Unknown Result'
     const message = searchParams.get('message') || 'An unknown result occurred'
-    const details = searchParams.get('details') || undefined
+    const details = searchParams.get('details') ?? undefined
     
     // Parse additional info from URL params
-    const additionalInfo = {
-      name: searchParams.get('name') || undefined,
-      email: searchParams.get('email') || undefined,
-      company: searchParams.get('company') || undefined,
-      position: searchParams.get('position') || undefined,
-    }
-
-    // Remove undefined values
-    Object.keys(additionalInfo).forEach(key => 
-      additionalInfo[key as keyof typeof additionalInfo] === undefined && 
-      delete additionalInfo[key as keyof typeof additionalInfo]
-    )
+    const additionalInfo: { email?: string; name?: string; company?: string; position?: string } = {}
+    
+    const name = searchParams.get('name')
+    const email = searchParams.get('email')
+    const company = searchParams.get('company')
+    const position = searchParams.get('position')
+    
+    if (name) additionalInfo.name = name
+    if (email) additionalInfo.email = email
+    if (company) additionalInfo.company = company
+    if (position) additionalInfo.position = position
 
     setResultData({
       type,
       title,
       message,
-      details,
-      additionalInfo: Object.keys(additionalInfo).length > 0 ? additionalInfo : undefined
+      ...(details && { details }),
+      ...(Object.keys(additionalInfo).length > 0 && { additionalInfo })
     })
   }, [searchParams])
 
@@ -64,8 +63,8 @@ function ApprovalResultContent() {
       type={resultData.type}
       title={resultData.title}
       message={resultData.message}
-      details={resultData.details}
-      additionalInfo={resultData.additionalInfo}
+      {...(resultData.details && { details: resultData.details })}
+      {...(resultData.additionalInfo && { additionalInfo: resultData.additionalInfo })}
       showBackButton={true}
       backUrl="/"
     />

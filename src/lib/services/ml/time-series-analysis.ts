@@ -80,7 +80,7 @@ export class TimeSeriesAnalysis {
     significance: number
   } {
     const n = data.length
-    const startTime = data[0].timestamp.getTime()
+    const startTime = data[0]?.timestamp.getTime() ?? Date.now()
     
     // Convert timestamps to relative days
     const x = data.map(d => (d.timestamp.getTime() - startTime) / (1000 * 60 * 60 * 24))
@@ -89,7 +89,7 @@ export class TimeSeriesAnalysis {
     // Calculate sums for linear regression
     const sumX = x.reduce((sum, val) => sum + val, 0)
     const sumY = y.reduce((sum, val) => sum + val, 0)
-    const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0)
+    const sumXY = x.reduce((sum, val, i) => sum + val * (y[i] ?? 0), 0)
     const sumXX = x.reduce((sum, val) => sum + val * val, 0)
     const sumYY = y.reduce((sum, val) => sum + val * val, 0)
 
@@ -101,7 +101,7 @@ export class TimeSeriesAnalysis {
     const meanY = sumY / n
     const totalSumSquares = y.reduce((sum, val) => sum + Math.pow(val - meanY, 2), 0)
     const residualSumSquares = y.reduce((sum, val, i) => {
-      const predicted = slope * x[i] + intercept
+      const predicted = slope * (x[i] ?? 0) + intercept
       return sum + Math.pow(val - predicted, 2)
     }, 0)
     
@@ -183,8 +183,8 @@ export class TimeSeriesAnalysis {
     let variance2 = 0
 
     for (let i = 0; i < n; i++) {
-      const dev1 = values[i] - mean1
-      const dev2 = values[i + lag] - mean2
+      const dev1 = (values[i] ?? 0) - mean1
+      const dev2 = (values[i + lag] ?? 0) - mean2
       
       covariance += dev1 * dev2
       variance1 += dev1 * dev1

@@ -120,7 +120,6 @@ export class VoiceContextManager {
     const session: VoiceSession = {
       sessionId,
       userId,
-      organizationId,
       startedAt: now,
       lastActivity: now,
       context: {
@@ -136,6 +135,11 @@ export class VoiceContextManager {
       },
       conversationHistory: []
     };
+
+    // Add organizationId only if it exists
+    if (organizationId) {
+      session.organizationId = organizationId;
+    }
 
     return session;
   }
@@ -158,11 +162,19 @@ export class VoiceContextManager {
       id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
       role,
       content,
-      timestamp: new Date(),
-      commandType,
-      parameters,
-      confidence
+      timestamp: new Date()
     };
+
+    // Add optional fields only if they have values
+    if (commandType) {
+      message.commandType = commandType;
+    }
+    if (parameters) {
+      message.parameters = parameters;
+    }
+    if (confidence !== undefined) {
+      message.confidence = confidence;
+    }
 
     session.conversationHistory.push(message);
     
@@ -261,7 +273,7 @@ export class VoiceContextManager {
     if (workflow.currentStep > workflow.totalSteps) {
       // Workflow complete
       const completedWorkflow = workflow;
-      session.activeWorkflow = undefined;
+      delete session.activeWorkflow;
       await this.executeCompleteWorkflow(sessionId, completedWorkflow);
       return null;
     }

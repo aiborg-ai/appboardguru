@@ -63,7 +63,9 @@ export function VoiceInputButton({
         const reader = new FileReader();
         reader.onloadend = async () => {
           const base64Audio = (reader.result as string).split(',')[1];
-          await transcribeAudio(base64Audio, getAudioFormat(mediaRecorder.mimeType));
+          if (base64Audio) {
+            await transcribeAudio(base64Audio, getAudioFormat(mediaRecorder.mimeType));
+          }
         };
         reader.readAsDataURL(audioBlob);
 

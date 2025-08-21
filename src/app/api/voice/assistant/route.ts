@@ -239,20 +239,25 @@ export async function POST(request: NextRequest) {
 
     // Update session with new conversation entry
     if (userInput) {
-      await updateSessionHistory(supabase, session.id, {
+      const historyEntry: any = {
         type: body.audioData ? 'user_voice' : 'user_text',
         content: userInput,
-        emotion: emotion?.dominantEmotion,
-        stressLevel: emotion?.stressLevel,
-        urgencyLevel: emotion?.urgencyLevel,
         confidence: transcriptionConfidence,
-        intent: response.response.intent
-      });
+        ...(emotion?.dominantEmotion && { emotion: emotion.dominantEmotion }),
+        ...(emotion?.stressLevel !== undefined && { stressLevel: emotion.stressLevel }),
+        ...(emotion?.urgencyLevel !== undefined && { urgencyLevel: emotion.urgencyLevel }),
+      };
+      
+      if (response.response.intent) {
+        historyEntry.intent = response.response.intent;
+      }
+      
+      await updateSessionHistory(supabase, session.id, historyEntry);
 
       await updateSessionHistory(supabase, session.id, {
         type: response.response.audioUrl ? 'assistant_voice' : 'assistant_text',
         content: response.response.text,
-        audioUrl: response.response.audioUrl,
+        ...(response.response.audioUrl && { audioUrl: response.response.audioUrl }),
         confidence: response.response.confidence
       });
     }
@@ -473,7 +478,7 @@ async function processQuery(
     },
     proactiveInsights,
     recommendations,
-    analytics: boardAnalytics,
+    ...(boardAnalytics && { analytics: boardAnalytics }),
     followUpSuggestions: aiResponse.suggestions || []
   };
 }

@@ -397,7 +397,7 @@ async function handleCreateBoardMate(request: NextRequest) {
         email: boardMate.email,
         role: boardMate.board_role
       },
-      invitation: invitationResult.invitation,
+      ...(invitationResult.invitation && { invitation: invitationResult.invitation }),
       emailSent: invitationResult.emailSent || false
     }
 

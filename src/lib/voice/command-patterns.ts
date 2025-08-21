@@ -447,7 +447,7 @@ function parseMeetingDateTime(dateStr?: string, timeStr?: string): { startDate: 
   if (timeStr) {
     const timeMatch = timeStr.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm|AM|PM)?/);
     if (timeMatch) {
-      let hours = parseInt(timeMatch[1]);
+      let hours = parseInt(timeMatch[1]!);
       const minutes = parseInt(timeMatch[2] || '0');
       const ampm = timeMatch[3]?.toLowerCase();
 

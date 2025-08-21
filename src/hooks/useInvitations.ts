@@ -5,6 +5,7 @@ import { apiClient, ApiError } from '@/lib/api/client'
 import { useToast } from '@/features/shared/ui/use-toast'
 import { Database } from '@/types/database'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
+import type { OrganizationAPI, BoardMateAPI } from '@/types/api'
 
 // Types
 type Invitation = Database['public']['Tables']['organization_invitations']['Row']
@@ -92,12 +93,12 @@ async function revokeInvitation(data: { invitationId: string; userId: string; re
 
 async function acceptInvitation(token: string): Promise<{ 
   invitation: InvitationWithDetails
-  organization: any
-  member: any 
+  organization: OrganizationAPI.Organization
+  member: BoardMateAPI.BoardMate 
 }> {
   const response = await apiClient.post<{
     success: boolean
-    data: { invitation: InvitationWithDetails; organization: any; member: any }
+    data: { invitation: InvitationWithDetails; organization: OrganizationAPI.Organization; member: BoardMateAPI.BoardMate }
     message: string
   }>('/api/invitations/accept', { token })
   
@@ -116,7 +117,7 @@ async function rejectInvitation(token: string, reason?: string): Promise<{ invit
 
 async function validateInvitation(token: string): Promise<{
   invitation: InvitationWithDetails
-  organization: any
+  organization: OrganizationAPI.Organization
   isValid: boolean
   canAccept: boolean
   errorMessage?: string
@@ -125,7 +126,7 @@ async function validateInvitation(token: string): Promise<{
     success: boolean
     data: {
       invitation: InvitationWithDetails
-      organization: any
+      organization: OrganizationAPI.Organization
       isValid: boolean
       canAccept: boolean
       errorMessage?: string

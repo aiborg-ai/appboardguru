@@ -28,13 +28,15 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const includeInactive = searchParams.get('include_inactive') === 'true'
-    const regulationType = searchParams.get('regulation_type') || undefined
+    const regulationType = searchParams.get('regulation_type') ?? undefined
 
     // Get templates using compliance engine
-    const result = await complianceEngine.getTemplates(orgMember.organization_id, {
-      includeInactive,
-      regulationType
-    })
+    const filterOptions: { includeInactive?: boolean; regulationType?: string } = { includeInactive }
+    if (regulationType) {
+      filterOptions.regulationType = regulationType
+    }
+    
+    const result = await complianceEngine.getTemplates(orgMember.organization_id, filterOptions)
 
     return NextResponse.json(result)
 

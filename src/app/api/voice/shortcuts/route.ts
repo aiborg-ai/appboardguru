@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       createdAt: new Date(record.created_at),
       updatedAt: new Date(record.timestamp),
       useCount: record.engagement_score || 0,
-      lastUsed: record.context.last_used ? new Date(record.context.last_used) : undefined,
+      ...(record.context.last_used && { lastUsed: new Date(record.context.last_used) }),
       isActive: record.context.is_active !== false
     }));
 

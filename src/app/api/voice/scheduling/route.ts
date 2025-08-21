@@ -238,7 +238,7 @@ function extractEntities(command: string, intent: SchedulingIntent): any[] {
   // Extract participant entities
   const participantPattern = /\bwith\s+([\w\s,]+?)(?:\s+(?:at|on|in|\.|$))/;
   const participantMatch = lowercaseCommand.match(participantPattern);
-  if (participantMatch) {
+  if (participantMatch?.[1]) {
     entities.push({
       type: 'participants',
       value: participantMatch[1].trim(),
@@ -265,10 +265,10 @@ function extractEntities(command: string, intent: SchedulingIntent): any[] {
   // Extract location entities
   const locationPattern = /\b(?:in|at)\s+([\w\s]+?)(?:\s+(?:at|on|with|\.|$))/;
   const locationMatch = lowercaseCommand.match(locationPattern);
-  if (locationMatch) {
+  if (locationMatch?.[1]) {
     entities.push({
       type: 'location',
-      value: locationMatch[1].trim(),
+      value: locationMatch[1]?.trim() || '',
       confidence: 0.7,
       source: 'speech',
       validated: false

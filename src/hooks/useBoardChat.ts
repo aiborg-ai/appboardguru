@@ -77,11 +77,19 @@ export interface CreateConversationData {
   is_private?: boolean
 }
 
+// Type-safe cache data structures
+interface ConversationsData {
+  readonly conversations: ChatConversation[];
+  readonly total_unread: number;
+}
+
+interface MessagesData {
+  readonly messages: ChatMessage[];
+  readonly has_more: boolean;
+}
+
 // API functions
-async function fetchConversations(): Promise<{
-  conversations: ChatConversation[]
-  total_unread: number
-}> {
+async function fetchConversations(): Promise<ConversationsData> {
   const response = await fetch('/api/boardchat/conversations')
   if (!response.ok) {
     throw new Error('Failed to fetch conversations')
@@ -94,10 +102,7 @@ async function fetchMessages(
   limit = 50,
   before?: string,
   after?: string
-): Promise<{
-  messages: ChatMessage[]
-  has_more: boolean
-}> {
+): Promise<MessagesData> {
   const params = new URLSearchParams({ limit: limit.toString() })
   if (before) params.set('before', before)
   if (after) params.set('after', after)
@@ -196,9 +201,9 @@ export function useBoardChat() {
       // Add message to local cache immediately
       queryClient.setQueryData(
         ['boardchat', 'messages', variables.conversationId],
-        (old: any) => ({
-          ...old,
-          messages: [...(old?.messages || []), result.message]
+        (old: MessagesData | undefined) => ({
+          messages: [...(old?.messages || []), result.message],
+          has_more: old?.has_more || false
         })
       )
       
@@ -229,13 +234,13 @@ export function useBoardChat() {
       // Update conversation unread count
       queryClient.setQueryData(
         ['boardchat', 'conversations'],
-        (old: any) => ({
-          ...old,
+        (old: ConversationsData | undefined) => ({
           conversations: old?.conversations?.map((conv: ChatConversation) =>
             conv.id === variables.conversationId
               ? { ...conv, unread_count: 0 }
               : conv
-          ) || []
+          ) || [],
+          total_unread: Math.max(0, (old?.total_unread || 0) - 1)
         })
       )
     }

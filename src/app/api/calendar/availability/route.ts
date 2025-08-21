@@ -115,8 +115,8 @@ export async function POST(request: NextRequest) {
     const startTime = validatedData.start_time.split(':').map(Number)
     const endTime = validatedData.end_time.split(':').map(Number)
     
-    const startMinutes = startTime[0] * 60 + startTime[1]
-    const endMinutes = endTime[0] * 60 + endTime[1]
+    const startMinutes = (startTime[0] ?? 0) * 60 + (startTime[1] ?? 0)
+    const endMinutes = (endTime[0] ?? 0) * 60 + (endTime[1] ?? 0)
     
     if (startMinutes >= endMinutes) {
       return NextResponse.json({ 

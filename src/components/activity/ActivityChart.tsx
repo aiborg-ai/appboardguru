@@ -309,11 +309,11 @@ export function ActivityChart({
           {/* X-axis labels */}
           {data.length > 0 && (
             <div className="flex justify-between text-xs text-muted-foreground px-2">
-              <span>{formatTime(data[0]?.timestamp)}</span>
+              <span>{formatTime(data[0]?.timestamp || '')}</span>
               {data.length > 2 && (
-                <span>{formatTime(data[Math.floor(data.length / 2)]?.timestamp)}</span>
+                <span>{formatTime(data[Math.floor(data.length / 2)]?.timestamp || '')}</span>
               )}
-              <span>{formatTime(data[data.length - 1]?.timestamp)}</span>
+              <span>{formatTime(data[data.length - 1]?.timestamp || '')}</span>
             </div>
           )}
         </div>

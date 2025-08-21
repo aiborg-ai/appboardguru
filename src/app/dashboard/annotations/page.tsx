@@ -110,8 +110,7 @@ export default function AnnotationsPage() {
             is_private: false,
             user: {
               id: 'user1',
-              full_name: 'John Doe',
-              avatar_url: undefined
+              full_name: 'John Doe'
             },
             replies_count: 2
           },
@@ -135,8 +134,7 @@ export default function AnnotationsPage() {
             is_private: false,
             user: {
               id: 'user2',
-              full_name: 'Jane Smith',
-              avatar_url: undefined
+              full_name: 'Jane Smith'
             },
             replies_count: 0
           },
@@ -160,8 +158,7 @@ export default function AnnotationsPage() {
             is_private: true,
             user: {
               id: 'user3',
-              full_name: 'Mike Johnson',
-              avatar_url: undefined
+              full_name: 'Mike Johnson'
             },
             replies_count: 1
           }

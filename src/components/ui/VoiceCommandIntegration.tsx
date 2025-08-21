@@ -240,7 +240,7 @@ export function VoiceCommandIntegration({
               onCommandConfirmed={handleCommandConfirmed}
               context={{
                 ...context,
-                organizationId
+                ...(organizationId && { organizationId })
               }}
               disabled={!isEnabled}
               sessionId={sessionId}
@@ -332,7 +332,7 @@ export function VoiceCommandIntegration({
           <TabsContent value="shortcuts">
             <VoiceShortcutsManager
               userId={userId}
-              organizationId={organizationId}
+              {...(organizationId && { organizationId })}
               onShortcutUsed={(shortcut) => {
                 const activity: VoiceActivity = {
                   id: `shortcut_${Date.now()}`,

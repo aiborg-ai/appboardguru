@@ -19,12 +19,33 @@ interface CreateInvitationsPayload {
 }
 
 interface OptimisticInvitation {
-  id: string
-  email: string
-  role: 'admin' | 'member' | 'viewer'
-  status: 'pending' | 'sending'
-  createdAt: string
-  optimistic?: boolean
+  readonly id: string
+  readonly email: string
+  readonly role: 'admin' | 'member' | 'viewer'
+  readonly status: 'pending' | 'sending'
+  readonly createdAt: string
+  readonly optimistic?: boolean
+}
+
+// Type-safe optimistic action types
+type OptimisticAction = 
+  | { readonly type: 'add-optimistic'; readonly payload: { readonly invitations: readonly InvitationData[] } }
+  | { readonly type: 'remove-optimistic'; readonly payload: Record<string, never> }
+  | { readonly type: 'update-status'; readonly payload: { readonly id: string; readonly status: 'pending' | 'sending' } };
+
+// Type-safe invitation list for React Query cache
+type InvitationList = readonly OptimisticInvitation[];
+
+// Type-safe form state actions for useOptimistic
+type FormStateAction = 
+  | { readonly type: 'add' }
+  | { readonly type: 'remove'; readonly index: number }
+  | { readonly type: 'update'; readonly index: number; readonly field: 'email' | 'role'; readonly value: string }
+  | { readonly type: 'reset' };
+
+// Type-safe form state
+interface InvitationFormState {
+  readonly invitations: readonly { readonly email: string; readonly role: 'admin' | 'member' | 'viewer' }[];
 }
 
 // Query keys following React Query v5 best practices
@@ -51,7 +72,7 @@ export function useCreateModernInvitations(organizationId: string) {
   // React 19: useOptimistic for instant UI updates
   const [optimisticInvitations, setOptimisticInvitations] = React.useOptimistic(
     [] as OptimisticInvitation[],
-    (state: OptimisticInvitation[], action: { type: string; payload: any }) => {
+    (state: OptimisticInvitation[], action: OptimisticAction) => {
       switch (action.type) {
         case 'add-optimistic':
           return [
@@ -105,7 +126,7 @@ export function useCreateModernInvitations(organizationId: string) {
       // Optimistically update the cache
       queryClient.setQueryData(
         modernInvitationKeys.list(organizationId),
-        (old: any[] = []) => [
+        (old: InvitationList = []) => [
           ...variables.invitations.map((inv, index) => ({
             id: `temp-${Date.now()}-${index}`,
             email: inv.email,
@@ -118,7 +139,7 @@ export function useCreateModernInvitations(organizationId: string) {
             optimistic: true,
           })),
           ...old
-        ]
+        ] as InvitationList
       )
 
       // Update optimistic state
@@ -136,9 +157,9 @@ export function useCreateModernInvitations(organizationId: string) {
         // Replace optimistic data with real data
         queryClient.setQueryData(
           modernInvitationKeys.list(organizationId),
-          (old: any[] = []) => {
-            const withoutOptimistic = old.filter(inv => !inv.optimistic)
-            return [...(result.data || []), ...withoutOptimistic]
+          (old: InvitationList = []) => {
+            const withoutOptimistic = old.filter(inv => !inv.optimistic);
+            return [...(result.data || []), ...withoutOptimistic] as InvitationList;
           }
         )
 
@@ -176,9 +197,10 @@ export function useCreateModernInvitations(organizationId: string) {
       })
     },
     // React Query v5: Enhanced retry logic
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: Error | unknown) => {
       // Don't retry validation errors
-      if (error?.message?.includes('validation') || error?.message?.includes('permission')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage?.includes('validation') || errorMessage?.includes('permission')) {
         return false
       }
       // Retry network errors up to 2 times
@@ -226,15 +248,15 @@ export function useInvitationOperations(organizationId: string) {
       // Optimistic update
       queryClient.setQueryData(
         modernInvitationKeys.list(organizationId),
-        (old: any[] = []) => {
+        (old: InvitationList = []) => {
           if (action === 'revoke') {
-            return old.filter(inv => inv.id !== invitationId)
+            return old.filter(inv => inv.id !== invitationId) as InvitationList;
           } else {
             return old.map(inv => 
               inv.id === invitationId 
-                ? { ...inv, status: 'pending', updatedAt: new Date().toISOString() }
+                ? { ...inv, status: 'pending' as const, updatedAt: new Date().toISOString() }
                 : inv
-            )
+            ) as InvitationList;
           }
         }
       )
@@ -247,9 +269,9 @@ export function useInvitationOperations(organizationId: string) {
         if (result.data && action === 'resend') {
           queryClient.setQueryData(
             modernInvitationKeys.list(organizationId),
-            (old: any[] = []) => old.map(inv => 
+            (old: InvitationList = []) => old.map(inv => 
               inv.id === invitationId ? { ...inv, ...result.data } : inv
-            )
+            ) as InvitationList
           )
         }
 
@@ -357,8 +379,9 @@ export function useModernInvitations(organizationId?: string, userId?: string) {
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     // React Query v5: Enhanced error retry
-    retry: (failureCount, error: any) => {
-      if (error?.status === 403 || error?.status === 404) {
+    retry: (failureCount, error: Error | unknown) => {
+      const errorStatus = (error as { status?: number })?.status;
+      if (errorStatus === 403 || errorStatus === 404) {
         return false
       }
       return failureCount < 3
@@ -372,8 +395,8 @@ export function useModernInvitations(organizationId?: string, userId?: string) {
  */
 export function useInvitationFormState() {
   const [optimisticState, setOptimisticState] = React.useOptimistic(
-    { invitations: [{ email: '', role: 'member' as const }] },
-    (state: any, action: any) => {
+    { invitations: [{ email: '', role: 'member' as const }] } as InvitationFormState,
+    (state: InvitationFormState, action: FormStateAction) => {
       switch (action.type) {
         case 'add':
           return {
@@ -383,12 +406,12 @@ export function useInvitationFormState() {
         case 'remove':
           return {
             ...state,
-            invitations: state.invitations.filter((_: any, i: number) => i !== action.index)
+            invitations: state.invitations.filter((_, i: number) => i !== action.index)
           }
         case 'update':
           return {
             ...state,
-            invitations: state.invitations.map((inv: any, i: number) => 
+            invitations: state.invitations.map((inv, i: number) => 
               i === action.index 
                 ? { ...inv, [action.field]: action.value }
                 : inv
@@ -402,7 +425,7 @@ export function useInvitationFormState() {
     }
   )
 
-  const dispatch = React.useCallback((action: any) => {
+  const dispatch = React.useCallback((action: FormStateAction) => {
     React.startTransition(() => {
       setOptimisticState(action)
     })

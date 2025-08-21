@@ -81,10 +81,15 @@ export async function POST(request: NextRequest) {
       const searchStartTime = Date.now()
       
       try {
+        const contextId = context.organizationId || context.vaultId || context.assetId
+        if (!contextId) {
+          throw new Error('No valid context ID found for search')
+        }
+
         const searchRequest = {
           query: message,
           context_scope: context.scope,
-          context_id: context.organizationId || context.vaultId || context.assetId,
+          context_id: contextId as string, // TypeScript check - contextId is guaranteed to be string after null check
           limit: maxReferences * 2, // Get more results for better filtering
           search_type: 'hybrid' as const
         }
@@ -180,9 +185,20 @@ export async function POST(request: NextRequest) {
     const response: EnhancedChatResponse = {
       success: true,
       message: aiMessage,
-      references: includeReferences ? references : undefined,
+      references: includeReferences ? references : {
+        assets: [],
+        websites: [],
+        vaults: [],
+        meetings: [],
+        reports: []
+      },
       suggestions,
-      search_metadata: includeReferences ? searchMetadata : undefined,
+      search_metadata: includeReferences ? searchMetadata : {
+        query_processed: message,
+        search_time_ms: 0,
+        total_results_found: 0,
+        context_used: context.scope
+      },
       usage: {
         prompt_tokens: aiResponse.usage?.prompt_tokens || 0,
         completion_tokens: aiResponse.usage?.completion_tokens || 0,

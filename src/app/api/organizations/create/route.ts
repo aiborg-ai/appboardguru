@@ -215,7 +215,7 @@ async function handleCreateOrganizationWizard(request: NextRequest) {
       name: sanitizedData.organizationDetails.name,
       slug: sanitizedData.organizationDetails.slug,
       description: sanitizedData.organizationDetails.description,
-      logo_url: sanitizedData.organizationDetails.logoUrl,
+      logo_url: sanitizedData.organizationDetails.logoUrl || '',
       website: sanitizedData.organizationDetails.website,
       industry: sanitizedData.organizationDetails.industry,
       organization_size: sanitizedData.organizationDetails.organizationSize,

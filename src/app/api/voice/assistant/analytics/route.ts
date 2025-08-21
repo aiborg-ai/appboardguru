@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
     const response: BoardAnalyticsResponse = {
       success: true,
       analytics,
-      voiceSummary,
+      ...(voiceSummary && { voiceSummary }),
       recommendations,
       alerts
     };

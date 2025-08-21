@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { AISettingsPanel } from '@/features/dashboard/settings/AISettingsPanel'
 import { ActivityLogsTab } from '@/features/dashboard/settings/ActivityLogsTab'
+import { FYITab } from '@/features/dashboard/settings/FYITab'
+import { SecurityActivityPanel } from '@/features/dashboard/settings/SecurityActivityPanel'
 import { 
   Settings, 
   Brain, 
@@ -43,7 +45,7 @@ export default function SettingsPage() {
         )
       
       case 'security':
-        return <ActivityLogsTab />
+        return <SecurityActivityPanel />
       
       case 'notifications':
         return (

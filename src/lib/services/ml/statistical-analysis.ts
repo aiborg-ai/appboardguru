@@ -3,21 +3,32 @@
  * Implements core statistical algorithms for behavioral analysis
  */
 
+// Type-safe statistical parameters based on analysis type
+type StatisticalParameters = 
+  | { type: 'descriptive'; mean: number; median: number; stdDev: number; outliers: number }
+  | { type: 'correlation'; coefficient: number; pValue: number; significance: 'low' | 'medium' | 'high' }
+  | { type: 'trend'; direction: 'up' | 'down' | 'stable'; slope: number; r2: number }
+  | { type: 'distribution'; shape: 'normal' | 'skewed' | 'bimodal'; kurtosis: number }
+  | Record<string, unknown>;
+
 export interface StatisticalResult {
-  confidence: number
-  description: string
-  parameters: Record<string, any>
-  recommendations: string[]
+  readonly confidence: number
+  readonly description: string
+  readonly parameters: StatisticalParameters
+  readonly recommendations: readonly string[]
 }
 
 export interface TimeGroupData {
-  [key: string]: {
-    count: number
-    totalEngagement: number
-    averageResponseTime: number
-    actions: string[]
+  readonly [key: string]: {
+    readonly count: number
+    readonly totalEngagement: number
+    readonly averageResponseTime: number
+    readonly actions: readonly string[]
   }
 }
+
+// Import user behavior data type
+import type { UserBehaviorData } from './user-segmentation';
 
 export class StatisticalAnalysis {
   
@@ -45,8 +56,8 @@ export class StatisticalAnalysis {
       mean,
       median: this.getPercentile(sorted, 50),
       stdDev,
-      min: sorted[0],
-      max: sorted[sorted.length - 1],
+      min: sorted[0] ?? 0,
+      max: sorted[sorted.length - 1] ?? 0,
       percentiles: {
         p25: this.getPercentile(sorted, 25),
         p50: this.getPercentile(sorted, 50),
@@ -67,17 +78,19 @@ export class StatisticalAnalysis {
     const upper = Math.ceil(index)
     
     if (lower === upper) {
-      return sortedValues[lower]
+      return sortedValues[lower] ?? 0
     }
     
     const weight = index - lower
-    return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight
+    const lowerValue = sortedValues[lower] ?? 0
+    const upperValue = sortedValues[upper] ?? 0
+    return lowerValue * (1 - weight) + upperValue * weight
   }
 
   /**
    * Group behavior data by hour of day
    */
-  groupByTimeOfDay(behaviorData: any[]): TimeGroupData {
+  groupByTimeOfDay(behaviorData: readonly UserBehaviorData[]): TimeGroupData {
     const hourlyData: TimeGroupData = {}
 
     behaviorData.forEach(data => {
@@ -102,8 +115,10 @@ export class StatisticalAnalysis {
     // Calculate averages
     Object.keys(hourlyData).forEach(hour => {
       const data = hourlyData[hour]
-      data.averageResponseTime = data.averageResponseTime / data.count
-      data.totalEngagement = data.totalEngagement / data.count
+      if (data && data.count > 0) {
+        data.averageResponseTime = data.averageResponseTime / data.count
+        data.totalEngagement = data.totalEngagement / data.count
+      }
     })
 
     return hourlyData
@@ -112,7 +127,7 @@ export class StatisticalAnalysis {
   /**
    * Group behavior data by day of week
    */
-  groupByDayOfWeek(behaviorData: any[]): TimeGroupData {
+  groupByDayOfWeek(behaviorData: readonly UserBehaviorData[]): TimeGroupData {
     const dailyData: TimeGroupData = {}
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -120,26 +135,31 @@ export class StatisticalAnalysis {
       const dayOfWeek = new Date(data.timestamp).getDay()
       const dayKey = dayNames[dayOfWeek]
 
-      if (!dailyData[dayKey]) {
-        dailyData[dayKey] = {
-          count: 0,
-          totalEngagement: 0,
-          averageResponseTime: 0,
-          actions: []
+      if (dayKey) {
+        if (!dailyData[dayKey]) {
+          dailyData[dayKey] = {
+            count: 0,
+            totalEngagement: 0,
+            averageResponseTime: 0,
+            actions: []
+          }
         }
-      }
 
-      dailyData[dayKey].count++
-      dailyData[dayKey].totalEngagement += data.engagement_score || 0
-      dailyData[dayKey].averageResponseTime += data.response_time_ms || 0
-      dailyData[dayKey].actions.push(data.action_type)
+        const dayData = dailyData[dayKey]!
+        dayData.count++
+        dayData.totalEngagement += data.engagement_score || 0
+        dayData.averageResponseTime += data.response_time_ms || 0
+        dayData.actions.push(data.action_type)
+      }
     })
 
     // Calculate averages
     Object.keys(dailyData).forEach(day => {
       const data = dailyData[day]
-      data.averageResponseTime = data.averageResponseTime / data.count
-      data.totalEngagement = data.totalEngagement / data.count
+      if (data && data.count > 0) {
+        data.averageResponseTime = data.averageResponseTime / data.count
+        data.totalEngagement = data.totalEngagement / data.count
+      }
     })
 
     return dailyData
@@ -154,7 +174,7 @@ export class StatisticalAnalysis {
     variance: number
   } {
     const hours = Object.keys(hourlyData).sort()
-    const engagementScores = hours.map(hour => hourlyData[hour].totalEngagement)
+    const engagementScores = hours.map(hour => hourlyData[hour]?.totalEngagement ?? 0)
     
     if (engagementScores.length === 0) {
       return { hours: [], confidence: 0, variance: 0 }
@@ -163,7 +183,7 @@ export class StatisticalAnalysis {
     const stats = this.calculateDescriptiveStats(engagementScores)
     const threshold = stats.mean + (stats.stdDev * 0.5) // Above mean + 0.5 std dev
 
-    const peakHours = hours.filter(hour => hourlyData[hour].totalEngagement > threshold)
+    const peakHours = hours.filter(hour => (hourlyData[hour]?.totalEngagement ?? 0) > threshold)
     
     // Calculate confidence based on how distinct the peaks are
     const confidence = Math.min(stats.stdDev / stats.mean, 1) // Higher variance = higher confidence in peaks
@@ -184,11 +204,11 @@ export class StatisticalAnalysis {
 
     const workDayEngagement = workDays
       .filter(day => dailyData[day])
-      .map(day => dailyData[day].totalEngagement)
+      .map(day => dailyData[day]!.totalEngagement)
     
     const weekendEngagement = weekendDays
       .filter(day => dailyData[day])
-      .map(day => dailyData[day].totalEngagement)
+      .map(day => dailyData[day]!.totalEngagement)
 
     if (workDayEngagement.length === 0 && weekendEngagement.length === 0) {
       return {
@@ -245,7 +265,7 @@ export class StatisticalAnalysis {
   /**
    * Analyze response time patterns
    */
-  analyzeResponseTimes(behaviorData: any[]): StatisticalResult {
+  analyzeResponseTimes(behaviorData: readonly UserBehaviorData[]): StatisticalResult {
     const responseTimes = behaviorData
       .filter(data => data.response_time_ms && data.response_time_ms > 0)
       .map(data => data.response_time_ms)
@@ -314,7 +334,7 @@ export class StatisticalAnalysis {
   /**
    * Analyze engagement score trends over time
    */
-  analyzeEngagementTrends(behaviorData: any[]): StatisticalResult {
+  analyzeEngagementTrends(behaviorData: readonly UserBehaviorData[]): StatisticalResult {
     const engagementData = behaviorData
       .filter(data => data.engagement_score !== null && data.engagement_score !== undefined)
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
@@ -395,7 +415,7 @@ export class StatisticalAnalysis {
   /**
    * Analyze content engagement patterns
    */
-  analyzeContentEngagement(behaviorData: any[]): StatisticalResult {
+  analyzeContentEngagement(behaviorData: readonly UserBehaviorData[]): StatisticalResult {
     // Group by action type (which indicates content type)
     const contentGroups: Record<string, number[]> = {}
     
@@ -404,7 +424,7 @@ export class StatisticalAnalysis {
         if (!contentGroups[data.action_type]) {
           contentGroups[data.action_type] = []
         }
-        contentGroups[data.action_type].push(data.engagement_score)
+        contentGroups[data.action_type]?.push(data.engagement_score)
       }
     })
 
@@ -421,7 +441,9 @@ export class StatisticalAnalysis {
     const contentEngagement: Record<string, number> = {}
     Object.keys(contentGroups).forEach(contentType => {
       const scores = contentGroups[contentType]
-      contentEngagement[contentType] = scores.reduce((sum, score) => sum + score, 0) / scores.length
+      if (scores && scores.length > 0) {
+        contentEngagement[contentType] = scores.reduce((sum, score) => sum + score, 0) / scores.length
+      }
     })
 
     // Sort content types by engagement
@@ -430,20 +452,23 @@ export class StatisticalAnalysis {
 
     const bestContent = sortedContent[0]
     const worstContent = sortedContent[sortedContent.length - 1]
-    const engagementRange = bestContent[1] - worstContent[1]
+    const engagementRange = (bestContent?.[1] ?? 0) - (worstContent?.[1] ?? 0)
     const avgEngagement = Object.values(contentEngagement).reduce((sum, val) => sum + val, 0) / Object.keys(contentEngagement).length
 
     const confidence = avgEngagement > 0 ? Math.min(engagementRange / avgEngagement, 1) : 0
 
-    let description = `Best performing content: ${bestContent[0]} (${(bestContent[1] * 100).toFixed(1)}% engagement)`
-    if (sortedContent.length > 1) {
+    let description = bestContent ? `Best performing content: ${bestContent[0]} (${(bestContent[1] * 100).toFixed(1)}% engagement)` : 'No engagement data available'
+    if (sortedContent.length > 1 && worstContent) {
       description += `, Worst: ${worstContent[0]} (${(worstContent[1] * 100).toFixed(1)}% engagement)`
     }
 
-    const recommendations: string[] = [
-      `Prioritize ${bestContent[0]} type content for better engagement`,
-      `Consider reducing or improving ${worstContent[0]} type content`
-    ]
+    const recommendations: string[] = []
+    if (bestContent) {
+      recommendations.push(`Prioritize ${bestContent[0]} type content for better engagement`)
+    }
+    if (worstContent && sortedContent.length > 1) {
+      recommendations.push(`Consider reducing or improving ${worstContent[0]} type content`)
+    }
 
     if (sortedContent.length > 2) {
       const topHalf = sortedContent.slice(0, Math.ceil(sortedContent.length / 2))
@@ -467,7 +492,7 @@ export class StatisticalAnalysis {
   /**
    * Analyze optimal notification frequency
    */
-  analyzeOptimalFrequency(behaviorData: any[]): StatisticalResult {
+  analyzeOptimalFrequency(behaviorData: readonly UserBehaviorData[]): StatisticalResult {
     // Group notifications by day to analyze frequency
     const dailyCounts: Record<string, number> = {}
     const dailyEngagement: Record<string, number[]> = {}
@@ -475,14 +500,16 @@ export class StatisticalAnalysis {
     behaviorData.forEach(data => {
       const day = new Date(data.timestamp).toISOString().split('T')[0]
       
-      if (!dailyCounts[day]) {
-        dailyCounts[day] = 0
-        dailyEngagement[day] = []
-      }
-      
-      dailyCounts[day]++
-      if (data.engagement_score !== null) {
-        dailyEngagement[day].push(data.engagement_score)
+      if (day) {
+        if (!dailyCounts[day]) {
+          dailyCounts[day] = 0
+          dailyEngagement[day] = []
+        }
+        
+        dailyCounts[day]++
+        if (data.engagement_score !== null) {
+          dailyEngagement[day].push(data.engagement_score)
+        }
       }
     })
 
@@ -590,7 +617,7 @@ export class StatisticalAnalysis {
   /**
    * Find user's preferred notification times
    */
-  findUserPreferredTimes(behaviorData: any[]): number[] {
+  findUserPreferredTimes(behaviorData: readonly UserBehaviorData[]): readonly number[] {
     const hourlyActivity = this.groupByTimeOfDay(behaviorData)
     const hours = Object.keys(hourlyActivity).map(h => parseInt(h))
     
@@ -611,7 +638,7 @@ export class StatisticalAnalysis {
   /**
    * Analyze user's response patterns
    */
-  analyzeUserResponsePatterns(behaviorData: any[]): {
+  analyzeUserResponsePatterns(behaviorData: readonly UserBehaviorData[]): {
     averageResponseTime: number
     peakEngagementDays: string[]
     preferredNotificationTypes: string[]
@@ -663,7 +690,7 @@ export class StatisticalAnalysis {
    */
   compareAgainstBenchmarks(
     orgMetrics: Record<string, number>,
-    benchmarks: any[]
+    benchmarks: readonly { metric: string; value: number; category: string }[]
   ): {
     metrics: Array<{
       metricType: string

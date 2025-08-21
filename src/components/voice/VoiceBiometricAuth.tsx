@@ -154,7 +154,7 @@ export default function VoiceBiometricAuth({
 
     // Set initial phrase for enrollment
     if (mode === 'enrollment') {
-      setCurrentPhrase(ENROLLMENT_PHRASES[0]);
+      setCurrentPhrase(ENROLLMENT_PHRASES[0] || '');
     }
 
     // Auto-start if requested

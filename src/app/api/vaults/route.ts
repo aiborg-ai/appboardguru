@@ -62,13 +62,22 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const queryParams: VaultQueryParams = {
-      organizationId: searchParams.get('organizationId') || undefined,
       status: searchParams.get('status') as VaultStatus || undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50,
       offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0,
-      search: searchParams.get('search') || undefined,
       sortBy: searchParams.get('sortBy') as any || 'updated_at',
       sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc'
+    }
+    
+    // Add optional fields only if they have values
+    const organizationId = searchParams.get('organizationId')
+    if (organizationId) {
+      queryParams.organizationId = organizationId
+    }
+    
+    const search = searchParams.get('search')
+    if (search) {
+      queryParams.search = search
     }
 
     // Build query

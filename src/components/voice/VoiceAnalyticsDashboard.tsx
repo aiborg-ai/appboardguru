@@ -303,7 +303,7 @@ export function VoiceAnalyticsDashboard({
                           <div className="mt-2">
                             <span className="text-xs text-gray-500">Top Recommendation:</span>
                             <p className="text-xs text-gray-700 mt-1">
-                              {insight.recommendations[0].description}
+                              {insight.recommendations[0]?.description}
                             </p>
                           </div>
                         )}

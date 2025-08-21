@@ -149,6 +149,9 @@ export function optimizeSpatialPositions(positions: SpatialPosition[]): SpatialP
       const pos1 = optimized[i];
       const pos2 = optimized[j];
       
+      // Null check for positions
+      if (!pos1 || !pos2) continue;
+      
       const dx = pos2.x - pos1.x;
       const dy = pos2.y - pos1.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -158,10 +161,10 @@ export function optimizeSpatialPositions(positions: SpatialPosition[]): SpatialP
         const pushDistance = (minDistance - distance) / 2;
         const angle = Math.atan2(dy, dx);
         
-        optimized[i].x -= Math.cos(angle) * pushDistance;
-        optimized[i].y -= Math.sin(angle) * pushDistance;
-        optimized[j].x += Math.cos(angle) * pushDistance;
-        optimized[j].y += Math.sin(angle) * pushDistance;
+        optimized[i]!.x -= Math.cos(angle) * pushDistance;
+        optimized[i]!.y -= Math.sin(angle) * pushDistance;
+        optimized[j]!.x += Math.cos(angle) * pushDistance;
+        optimized[j]!.y += Math.sin(angle) * pushDistance;
       }
     }
   }
@@ -513,7 +516,7 @@ export function createPositionTransition(
       z: fromPosition.z + (toPosition.z - fromPosition.z) * easeProgress,
       orientation: fromPosition.orientation + 
         (toPosition.orientation - fromPosition.orientation) * easeProgress,
-      zone: progress > 0.5 ? toPosition.zone : fromPosition.zone
+      zone: progress > 0.5 ? (toPosition.zone || fromPosition.zone || 'center') : (fromPosition.zone || 'center')
     };
     
     callback(currentPosition);
@@ -556,7 +559,7 @@ export function analyzeAudioQuality(
   let clipCount = 0;
   
   for (let i = 0; i < length; i++) {
-    const sample = Math.abs(channelData[i]);
+    const sample = Math.abs(channelData[i] ?? 0);
     sumSquares += sample * sample;
     peak = Math.max(peak, sample);
     
@@ -572,7 +575,8 @@ export function analyzeAudioQuality(
   const sortedSamples = Array.from(channelData)
     .map(Math.abs)
     .sort((a, b) => a - b);
-  const noiseFloor = sortedSamples[Math.floor(length * 0.1)];
+  const noiseFloorIndex = Math.floor(length * 0.1);
+  const noiseFloor = sortedSamples[noiseFloorIndex] ?? 0.001;
   
   const signalToNoiseRatio = 20 * Math.log10(rms / Math.max(noiseFloor, 0.001));
   const dynamicRange = 20 * Math.log10(peak / Math.max(rms, 0.001));

@@ -291,8 +291,12 @@ export class VoiceProcessor {
       // Formant frequency matching (weight: 30%)
       let formantScore = 0;
       for (let i = 0; i < Math.min(template.formantFrequencies.length, sample.formantFrequencies.length); i++) {
-        const diff = Math.abs(template.formantFrequencies[i] - sample.formantFrequencies[i]);
-        const maxDiff = Math.max(template.formantFrequencies[i], sample.formantFrequencies[i]) * 0.15;
+        const templateFormant = template.formantFrequencies[i];
+        const sampleFormant = sample.formantFrequencies[i];
+        if (templateFormant === undefined || sampleFormant === undefined) continue;
+        
+        const diff = Math.abs(templateFormant - sampleFormant);
+        const maxDiff = Math.max(templateFormant, sampleFormant) * 0.15;
         formantScore += Math.max(0, 1 - (diff / maxDiff));
       }
       details.formants = formantScore / template.formantFrequencies.length;
@@ -300,8 +304,12 @@ export class VoiceProcessor {
       // MFCC matching (weight: 25%)
       let mfccScore = 0;
       for (let i = 0; i < Math.min(template.mfccCoefficients.length, sample.mfccCoefficients.length); i++) {
-        const cosineSim = (template.mfccCoefficients[i] * sample.mfccCoefficients[i]) /
-          (Math.sqrt(template.mfccCoefficients[i] ** 2) * Math.sqrt(sample.mfccCoefficients[i] ** 2));
+        const templateCoeff = template.mfccCoefficients[i];
+        const sampleCoeff = sample.mfccCoefficients[i];
+        if (templateCoeff === undefined || sampleCoeff === undefined) continue;
+        
+        const cosineSim = (templateCoeff * sampleCoeff) /
+          (Math.sqrt(templateCoeff ** 2) * Math.sqrt(sampleCoeff ** 2));
         mfccScore += cosineSim;
       }
       details.mfcc = (mfccScore / template.mfccCoefficients.length + 1) / 2; // Normalize to 0-1
@@ -567,7 +575,9 @@ export class AntiSpoofingDetector {
     // Check for perfect formant alignment (suspicious)
     const formantVariance = voiceCharacteristics.formantFrequencies.reduce((sum, freq, idx, arr) => {
       if (idx === 0) return 0;
-      return sum + Math.abs(freq - arr[idx - 1]);
+      const prevFreq = arr[idx - 1];
+      if (prevFreq === undefined) return sum;
+      return sum + Math.abs(freq - prevFreq);
     }, 0) / (voiceCharacteristics.formantFrequencies.length - 1);
 
     if (formantVariance < 100) {
@@ -657,9 +667,14 @@ export class BiometricUtils {
 
       // Validate base64 encoding
       try {
-        Buffer.from(parts[0], 'base64');
-        Buffer.from(parts[1], 'base64');
-        Buffer.from(parts[2], 'base64');
+        const part0 = parts[0];
+        const part1 = parts[1];
+        const part2 = parts[2];
+        if (!part0 || !part1 || !part2) return false;
+        
+        Buffer.from(part0, 'base64');
+        Buffer.from(part1, 'base64');
+        Buffer.from(part2, 'base64');
       } catch {
         return false;
       }

@@ -128,10 +128,10 @@ export async function POST(request: NextRequest) {
       description,
       userEmail: user.email!,
       userName: user.user_metadata?.full_name || user.email!.split('@')[0],
-      screenshot: screenshot || undefined,
+      screenshot: screenshot ?? '',
       timestamp,
-      userAgent,
-      url: referer
+      userAgent: userAgent ?? '',
+      url: referer ?? ''
     }
 
     // Initialize notification service
