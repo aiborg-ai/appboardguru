@@ -31,12 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/features/shared/ui/dropdown-menu'
-import { ViewToggle } from '@/features/shared/components/views/ViewToggle'
-import { ItemCard } from '@/features/shared/components/views/ItemCard'
-import { ItemList } from '@/features/shared/components/views/ItemList'
-import { ItemDetails } from '@/features/shared/components/views/ItemDetails'
-import { EmptyState } from '@/features/shared/components/views/EmptyState'
-import { FilterBar } from '@/features/shared/components/views/FilterBar'
+import ViewToggle from '@/features/shared/components/views/ViewToggle'
+import ItemCard from '@/features/shared/components/views/ItemCard'
+import ItemList from '@/features/shared/components/views/ItemList'
+import ItemDetails from '@/features/shared/components/views/ItemDetails'
+import EmptyState from '@/features/shared/components/views/EmptyState'
+import FilterBar from '@/features/shared/components/views/FilterBar'
 import { useViewPreferences } from '@/features/shared/components/views/ViewToggle'
 import { cn } from '@/lib/utils'
 
@@ -135,8 +135,8 @@ export default function VaultsPage() {
           bValue = b.priority
           break
         case 'lastActivity':
-          aValue = new Date(a.lastActivityAt || a.createdAt)
-          bValue = new Date(b.lastActivityAt || b.createdAt)
+          aValue = new Date(a.lastActivityAt || '1970-01-01')
+          bValue = new Date(b.lastActivityAt || '1970-01-01')
           break
         case 'members':
           aValue = a.memberCount || 0
@@ -163,6 +163,7 @@ export default function VaultsPage() {
     {
       key: 'status',
       label: 'Status',
+      type: 'multiselect' as const,
       options: [
         { value: 'active', label: 'Active' },
         { value: 'draft', label: 'Draft' },
@@ -176,6 +177,7 @@ export default function VaultsPage() {
     {
       key: 'priority',
       label: 'Priority',
+      type: 'multiselect' as const,
       options: [
         { value: 'urgent', label: 'Urgent' },
         { value: 'high', label: 'High' },
@@ -203,6 +205,7 @@ export default function VaultsPage() {
     return (
       <ItemCard
         key={vault.id}
+        id={vault.id}
         title={vault.name}
         subtitle={vault.description}
         icon={StatusIcon}
@@ -290,61 +293,6 @@ export default function VaultsPage() {
     )
   }
 
-  const renderVaultList = (vault: any) => {
-    const StatusIcon = getVaultStatusIcon(vault.status)
-    const isSelected = currentVault?.id === vault.id
-    
-    return (
-      <ItemList
-        key={vault.id}
-        title={vault.name}
-        subtitle={vault.description}
-        icon={StatusIcon}
-        iconColor={getVaultStatusColor(vault.status)}
-        isSelected={isSelected}
-        onClick={() => handleVaultSelect(vault)}
-        metadata={[
-          { label: 'Status', value: vault.status },
-          { label: 'Priority', value: vault.priority },
-          { label: 'Members', value: vault.memberCount || 0 },
-          { label: 'Assets', value: vault.assetCount || 0 },
-          { label: 'Last Activity', value: vault.lastActivityAt ? new Date(vault.lastActivityAt).toLocaleDateString() : 'Never' }
-        ]}
-        badges={[
-          {
-            text: vault.status,
-            variant: vault.status === 'active' ? 'success' : 
-                    vault.status === 'draft' ? 'secondary' :
-                    vault.status === 'archived' ? 'secondary' : 'destructive'
-          },
-          ...(vault.priority !== 'medium' ? [{
-            text: vault.priority,
-            variant: vault.priority === 'urgent' ? 'destructive' :
-                    vault.priority === 'high' ? 'warning' : 'secondary'
-          }] : []),
-          ...(isSelected ? [{ text: 'Current', variant: 'outline' }] : [])
-        ]}
-        actions={[
-          {
-            label: 'Open Vault',
-            icon: FolderOpen,
-            onClick: (e) => {
-              e.stopPropagation()
-              window.location.href = `/dashboard/vaults/${vault.id}`
-            }
-          },
-          {
-            label: 'Settings',
-            icon: Settings,
-            onClick: (e) => {
-              e.stopPropagation()
-              window.location.href = `/dashboard/vaults/${vault.id}/settings`
-            }
-          }
-        ]}
-      />
-    )
-  }
 
   if (isLoadingVaults) {
     return (
@@ -422,35 +370,38 @@ export default function VaultsPage() {
                     : 'Select an organization first, then create your first vault to get started')
                 : "Try adjusting your search or filters to find the vaults you're looking for"
             }
-            action={
+            actions={
               vaults.length === 0 ? (
-                currentOrganization ? (
-                  <Link href="/dashboard/vaults/create">
-                    <Button className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Create Vault
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/dashboard/organizations">
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      Go to Organizations
-                    </Button>
-                  </Link>
-                )
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
+                currentOrganization ? [
+                  {
+                    id: 'create-vault',
+                    label: 'Create Vault',
+                    icon: Plus,
+                    onClick: () => window.location.href = '/dashboard/vaults/create',
+                    primary: true
+                  }
+                ] : [
+                  {
+                    id: 'go-to-organizations',
+                    label: 'Go to Organizations',
+                    icon: Building2,
+                    onClick: () => window.location.href = '/dashboard/organizations',
+                    variant: 'outline' as const
+                  }
+                ]
+              ) : [
+                {
+                  id: 'clear-filters',
+                  label: 'Clear Filters',
+                  icon: AlertTriangle,
+                  onClick: () => {
                     setSearchQuery('')
                     setStatusFilter([])
                     setPriorityFilter([])
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              )
+                  },
+                  variant: 'outline' as const
+                }
+              ]
             }
           />
         ) : (
@@ -509,9 +460,12 @@ export default function VaultsPage() {
                 <div className="lg:col-span-2">
                   <ItemDetails
                     item={selectedVault || (currentVault && filteredAndSortedVaults.find(v => v.id === currentVault.id)) || filteredAndSortedVaults[0]}
+                    isOpen={true}
+                    onClose={() => setSelectedVault(null)}
                     title="Vault Details"
                     icon={Package}
-                    renderContent={(vault) => (
+                  >
+                    {(vault) => (
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-4">
@@ -614,11 +568,43 @@ export default function VaultsPage() {
                   ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
                   : "space-y-2"
               )}>
-                {filteredAndSortedVaults.map((vault) => 
-                  viewMode === 'card' 
-                    ? renderVaultCard(vault)
-                    : renderVaultList(vault)
-                )}
+                {viewMode === 'card' 
+                  ? filteredAndSortedVaults.map((vault) => renderVaultCard(vault))
+                  : (
+                    <ItemList
+                      items={filteredAndSortedVaults}
+                      columns={[
+                        { key: 'name', label: 'Name', sortable: true },
+                        { key: 'description', label: 'Description' },
+                        { key: 'status', label: 'Status', sortable: true },
+                        { key: 'priority', label: 'Priority', sortable: true },
+                        { key: 'memberCount', label: 'Members', sortable: true },
+                        { key: 'assetCount', label: 'Assets', sortable: true },
+                        { key: 'lastActivityAt', label: 'Last Activity', sortable: true }
+                      ]}
+                      actions={[
+                        {
+                          id: 'open',
+                          label: 'Open Vault',
+                          icon: FolderOpen,
+                          onClick: (vault) => {
+                            window.location.href = `/dashboard/vaults/${vault.id}`
+                          }
+                        },
+                        {
+                          id: 'settings',
+                          label: 'Settings',
+                          icon: Settings,
+                          onClick: (vault) => {
+                            window.location.href = `/dashboard/vaults/${vault.id}/settings`
+                          }
+                        }
+                      ]}
+                      onItemClick={handleVaultSelect}
+                      selectedIds={currentVault ? [currentVault.id] : []}
+                    />
+                  )
+                }
               </div>
             )}
           </>

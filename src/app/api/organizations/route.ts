@@ -1,12 +1,9 @@
-import { createAPIHandler } from '@/lib/api/createAPIHandler'
-import { OrganizationService } from '@/domains/organizations'
+import { DIHandlers, useServices } from '@/lib/di/apiHandler'
 import type { 
   CreateOrganizationDTO, 
   UpdateOrganizationDTO, 
   OrganizationListFilters 
 } from '@/domains/organizations'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 
 // Validation schemas
@@ -50,137 +47,98 @@ const OrganizationListFiltersSchema = z.object({
   sort_order: z.enum(['asc', 'desc']).optional()
 })
 
-// Helper function to create Supabase client
-async function createSupabase() {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        }
-      }
-    }
-  )
-}
 
 /**
  * POST /api/organizations - Create a new organization
  */
-export const POST = createAPIHandler({
-  validation: { body: CreateOrganizationSchema },
-  authenticate: true,
-  rateLimit: { requests: 5, window: '1h' }, // 5 per hour
-  featureFlag: 'USE_NEW_API_LAYER'
-}, async (req) => {
-  const supabase = await createSupabase()
-  const organizationService = new OrganizationService(supabase)
-  
-  const organization = await organizationService.create(req.validatedBody!, req.user!.id)
-  
-  return {
-    data: organization,
-    message: 'Organization created successfully'
+export const POST = DIHandlers.post(
+  CreateOrganizationSchema,
+  {
+    rateLimit: { requests: 5, window: '1h' }, // 5 per hour
+    featureFlag: 'USE_NEW_API_LAYER'
+  },
+  async (req) => {
+    const { organizationService } = useServices(req)
+    
+    const organization = await organizationService.create(req.validatedBody!, req.user!.id)
+    
+    return organization
   }
-})
+)
 
 /**
  * GET /api/organizations - List user's organizations or get single organization
  */
-export const GET = createAPIHandler({
-  validation: { query: OrganizationListFiltersSchema },
-  authenticate: true,
-  rateLimit: { requests: 30, window: '1m' }, // 30 per minute
-  cache: { ttl: 300 }, // 5 minutes
-  featureFlag: 'USE_NEW_API_LAYER'
-}, async (req) => {
-  const supabase = await createSupabase()
-  const organizationService = new OrganizationService(supabase)
-  
-  const { searchParams } = new URL(req.url)
-  const organizationId = searchParams.get('id')
-  
-  if (organizationId) {
-    // Get single organization
-    const organization = await organizationService.getById(organizationId, req.user!.id)
+export const GET = DIHandlers.get(
+  {
+    validation: { query: OrganizationListFiltersSchema },
+    rateLimit: { requests: 30, window: '1m' }, // 30 per minute
+    cache: { ttl: 300 }, // 5 minutes
+    featureFlag: 'USE_NEW_API_LAYER'
+  },
+  async (req) => {
+    const { organizationService } = useServices(req)
     
-    return {
-      data: organization,
-      message: 'Organization retrieved successfully'
-    }
-  } else {
-    // List user's organizations with filters
-    const result = await organizationService.listForUser(req.user!.id)
+    const { searchParams } = new URL(req.url)
+    const organizationId = searchParams.get('id')
     
-    return {
-      data: result,
-      message: 'Organizations retrieved successfully'
+    if (organizationId) {
+      // Get single organization
+      return await organizationService.getById(organizationId, req.user!.id)
+    } else {
+      // List user's organizations with filters
+      return await organizationService.listForUser(req.user!.id)
     }
   }
-})
+)
 
 /**
  * PUT /api/organizations - Update organization
  */
-export const PUT = createAPIHandler({
-  validation: { body: UpdateOrganizationSchema.extend({
-    organizationId: z.string().uuid('Organization ID must be a valid UUID')
-  }) },
-  authenticate: true,
-  rateLimit: { requests: 10, window: '1h' }, // 10 per hour
-  featureFlag: 'USE_NEW_API_LAYER'
-}, async (req) => {
-  const supabase = await createSupabase()
-  const organizationService = new OrganizationService(supabase)
-  
-  const { organizationId, ...updateData } = req.validatedBody!
-  const organization = await organizationService.update(organizationId, updateData, req.user!.id)
-  
-  return {
-    data: organization,
-    message: 'Organization updated successfully'
-  }
+const UpdateOrganizationWithIdSchema = UpdateOrganizationSchema.extend({
+  organizationId: z.string().uuid('Organization ID must be a valid UUID')
 })
+
+export const PUT = DIHandlers.put(
+  UpdateOrganizationWithIdSchema,
+  {
+    rateLimit: { requests: 10, window: '1h' }, // 10 per hour
+    featureFlag: 'USE_NEW_API_LAYER'
+  },
+  async (req) => {
+    const { organizationService } = useServices(req)
+    
+    const { organizationId, ...updateData } = req.validatedBody!
+    
+    return await organizationService.update(organizationId, updateData, req.user!.id)
+  }
+)
 
 /**
  * DELETE /api/organizations - Delete organization
  */
-const DeleteOrganizationSchema = z.object({
-  organizationId: z.string().uuid('Organization ID must be a valid UUID'),
-  immediate: z.boolean().optional()
-})
-
-export const DELETE = createAPIHandler({
-  validation: { query: DeleteOrganizationSchema },
-  authenticate: true,
-  rateLimit: { requests: 5, window: '1h' }, // 5 per hour
-  featureFlag: 'USE_NEW_API_LAYER'
-}, async (req) => {
-  const supabase = await createSupabase()
-  const organizationService = new OrganizationService(supabase)
-  
-  const { searchParams } = new URL(req.url)
-  const organizationId = searchParams.get('id')
-  const immediate = searchParams.get('immediate') === 'true'
-  
-  if (!organizationId) {
-    throw new Error('Organization ID is required')
-  }
-  
-  await organizationService.delete(organizationId, req.user!.id, immediate)
-  
-  return {
-    data: { 
+export const DELETE = DIHandlers.delete(
+  {
+    rateLimit: { requests: 5, window: '1h' }, // 5 per hour
+    featureFlag: 'USE_NEW_API_LAYER'
+  },
+  async (req) => {
+    const { organizationService } = useServices(req)
+    
+    const { searchParams } = new URL(req.url)
+    const organizationId = searchParams.get('id')
+    const immediate = searchParams.get('immediate') === 'true'
+    
+    if (!organizationId) {
+      throw new Error('Organization ID is required')
+    }
+    
+    await organizationService.delete(organizationId, req.user!.id, immediate)
+    
+    return { 
       organizationId, 
-      scheduledDeletion: !immediate
-    },
-    message: immediate ? 'Organization deleted immediately' : 'Organization scheduled for deletion'
+      scheduledDeletion: !immediate,
+      message: immediate ? 'Organization deleted immediately' : 'Organization scheduled for deletion'
+    }
   }
-})
+)
