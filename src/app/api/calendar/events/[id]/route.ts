@@ -39,7 +39,6 @@ export async function GET(
         *,
         attendees:calendar_attendees(*),
         reminders:calendar_reminders(*),
-        meeting:meetings(*),
         created_by_user:users!calendar_events_created_by_fkey(id, full_name, email)
       `)
       .eq('id', resolvedParams.id)

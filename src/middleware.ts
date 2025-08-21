@@ -452,18 +452,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * Configure middleware to run on specific paths
+ * Configure middleware to run on specific paths - temporarily disabled
  */
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    // Temporarily disable middleware to debug the app
+    // '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 }
 
@@ -485,7 +479,7 @@ export function cleanupRateLimits(): void {
   }
 }
 
-// Run cleanup every 5 minutes
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupRateLimits, 5 * 60 * 1000)
-}
+// Run cleanup every 5 minutes - disabled for edge runtime compatibility
+// if (typeof setInterval !== 'undefined') {
+//   setInterval(cleanupRateLimits, 5 * 60 * 1000)
+// }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
@@ -25,16 +25,22 @@ import {
   Building2,
   Folder,
   FileIcon,
-  ChevronDown
+  ChevronDown,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from '@/features/shared/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useEnhancedChatSession } from '@/lib/api/enhanced-openrouter-client';
+import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat } from '@/features/ai-chat/ai/ScopeSelector';
 
 interface RightPanelProps {
   className?: string;
@@ -50,20 +56,35 @@ type PanelTab = 'ai-chat' | 'logs';
 
 type ContextScope = 'general' | 'boardguru' | 'organization' | 'vault' | 'asset';
 
-interface ContextScopeOption {
-  id: ContextScope;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
 }
 
-interface ChatMessage {
+interface Vault {
   id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  status?: 'sending' | 'sent' | 'error';
-  contextScope?: ContextScope;
+  name: string;
+  description?: string;
+  organization_id: string;
+}
+
+interface Asset {
+  id: string;
+  title: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
+interface SelectedContext {
+  organizationId?: string;
+  organizationName?: string;
+  vaultId?: string;
+  vaultName?: string;
+  assetId?: string;
+  assetName?: string;
 }
 
 interface LogEntry {
@@ -75,29 +96,6 @@ interface LogEntry {
   details?: any;
 }
 
-const MOCK_CHAT_MESSAGES: ChatMessage[] = [
-  {
-    id: '1',
-    content: 'Hello! How can I help you with BoardGuru today?',
-    role: 'assistant',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000),
-    status: 'sent'
-  },
-  {
-    id: '2',
-    content: 'Can you help me analyze the Q4 financial report?',
-    role: 'user',
-    timestamp: new Date(Date.now() - 4 * 60 * 1000),
-    status: 'sent'
-  },
-  {
-    id: '3',
-    content: 'I\'d be happy to help you analyze the Q4 financial report. Could you please upload the document or let me know which specific metrics you\'d like me to focus on?',
-    role: 'assistant',
-    timestamp: new Date(Date.now() - 3 * 60 * 1000),
-    status: 'sent'
-  }
-];
 
 const MOCK_LOG_ENTRIES: LogEntry[] = [
   {
@@ -141,38 +139,6 @@ const LOG_LEVEL_CONFIG = {
   debug: { color: 'text-gray-600 bg-gray-50', label: 'DEBUG' }
 };
 
-const CONTEXT_SCOPE_OPTIONS: ContextScopeOption[] = [
-  {
-    id: 'general',
-    label: 'General',
-    description: 'Full access to all information and online resources',
-    icon: Globe
-  },
-  {
-    id: 'boardguru',
-    label: 'BoardGuru',
-    description: 'Limited to BoardGuru platform knowledge and features',
-    icon: Bot
-  },
-  {
-    id: 'organization',
-    label: 'Organization',
-    description: 'Scoped to current organization data and context',
-    icon: Building2
-  },
-  {
-    id: 'vault',
-    label: 'Current Vault',
-    description: 'Limited to selected vault content and assets',
-    icon: Folder
-  },
-  {
-    id: 'asset',
-    label: 'Current Asset',
-    description: 'Focused on specific asset analysis and insights',
-    icon: FileIcon
-  }
-];
 
 export default function RightPanel({ className, externalControl }: RightPanelProps) {
   // Organization context
@@ -191,42 +157,111 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   
   // AI Chat state
   const [contextScope, setContextScope] = useState<ContextScope>('boardguru');
+  const [selectedContext, setSelectedContext] = useState<SelectedContext>({});
   const [chatMessage, setChatMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_MESSAGES);
+  const { messages, isLoading, error, sendMessage, clearMessages } = useEnhancedChatSession('right-panel-chat');
+  
+  // Available data for selection
+  const [availableVaults, setAvailableVaults] = useState<Vault[]>([]);
+  const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
+  const [isLoadingVaults, setIsLoadingVaults] = useState(false);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
 
   // Debug context scope changes
   React.useEffect(() => {
-    console.log('Context scope changed to:', contextScope);
-  }, [contextScope]);
+    console.log('Context scope changed to:', contextScope, 'Selected context:', selectedContext);
+  }, [contextScope, selectedContext]);
+  
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const savedScope = localStorage.getItem('ai-chat-context-scope');
+    const savedContext = localStorage.getItem('ai-chat-selected-context');
+    
+    if (savedScope && ['general', 'boardguru', 'organization', 'vault', 'asset'].includes(savedScope)) {
+      setContextScope(savedScope as ContextScope);
+    }
+    
+    if (savedContext) {
+      try {
+        const parsed = JSON.parse(savedContext);
+        setSelectedContext(parsed);
+      } catch (e) {
+        console.error('Failed to parse saved context:', e);
+      }
+    }
+  }, []);
+  
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('ai-chat-context-scope', contextScope);
+    localStorage.setItem('ai-chat-selected-context', JSON.stringify(selectedContext));
+  }, [contextScope, selectedContext]);
   
   // Logs state
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOG_ENTRIES);
   const [logFilter, setLogFilter] = useState<string>('all');
 
+  // Fetch vaults for a specific organization
+  const fetchVaultsForOrganization = useCallback(async (orgId: string) => {
+    setIsLoadingVaults(true);
+    try {
+      const response = await fetch(`/api/vaults?organizationId=${orgId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableVaults(data.vaults || []);
+      } else {
+        console.error('Failed to fetch vaults');
+        setAvailableVaults([]);
+      }
+    } catch (error) {
+      console.error('Error fetching vaults:', error);
+      setAvailableVaults([]);
+    } finally {
+      setIsLoadingVaults(false);
+    }
+  }, []);
+  
+  // Fetch assets for a specific vault
+  const fetchAssetsForVault = useCallback(async (vaultId: string) => {
+    setIsLoadingAssets(true);
+    try {
+      const response = await fetch(`/api/vaults/${vaultId}/assets`);
+      if (response.ok) {
+        const data = await response.json();
+        const transformedAssets = data.assets?.map((va: any) => ({
+          id: va.asset.id,
+          title: va.asset.title,
+          fileName: va.asset.fileName,
+          fileType: va.asset.fileType,
+          fileSize: va.asset.fileSize
+        })) || [];
+        setAvailableAssets(transformedAssets);
+      } else {
+        console.error('Failed to fetch assets');
+        setAvailableAssets([]);
+      }
+    } catch (error) {
+      console.error('Error fetching assets:', error);
+      setAvailableAssets([]);
+    } finally {
+      setIsLoadingAssets(false);
+    }
+  }, []);
+  
   // Helper functions
   const getAvailableScopes = (): ContextScopeOption[] => {
     const availableScopes = [...CONTEXT_SCOPE_OPTIONS.filter(scope => 
       scope.id === 'general' || scope.id === 'boardguru'
     )];
     
-    if (currentOrganization) {
-      const orgScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'organization');
-      if (orgScope) availableScopes.push(orgScope);
-    }
+    // Always show organization and vault options
+    const orgScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'organization');
+    const vaultScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'vault');
+    const assetScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'asset');
     
-    if (currentVault) {
-      const vaultScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'vault');
-      if (vaultScope) availableScopes.push(vaultScope);
-    }
-    
-    // Asset scope would be available when viewing a specific asset
-    // const assetScope = CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'asset');
-    // if (assetScope) availableScopes.push(assetScope);
-    
-    console.log('Available scopes:', availableScopes.map(s => s.id), {
-      currentOrganization: !!currentOrganization,
-      currentVault: !!currentVault
-    });
+    if (orgScope) availableScopes.push(orgScope);
+    if (vaultScope) availableScopes.push(vaultScope);
+    if (assetScope) availableScopes.push(assetScope);
     
     return availableScopes;
   };
@@ -237,71 +272,80 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     
     switch (scope) {
       case 'organization':
-        return currentOrganization ? `${currentOrganization.name}` : 'Organization';
+        return selectedContext.organizationName || 'Select Organization';
       case 'vault':
-        return currentVault ? `Vault: ${currentVault.name}` : 'Current Vault';
+        return selectedContext.vaultName || 'Select Vault';
       case 'asset':
-        return 'Current Asset'; // Would show asset name when available
+        return selectedContext.assetName || 'Select Asset';
       default:
         return baseOption.label;
     }
   };
+  
+  const getCurrentContextHierarchy = (): string[] => {
+    const hierarchy: string[] = [];
+    if (selectedContext.organizationName) hierarchy.push(selectedContext.organizationName);
+    if (selectedContext.vaultName) hierarchy.push(selectedContext.vaultName);
+    if (selectedContext.assetName) hierarchy.push(selectedContext.assetName);
+    return hierarchy;
+  };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!chatMessage.trim()) return;
 
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      content: chatMessage,
-      role: 'user',
-      timestamp: new Date(),
-      status: 'sending',
-      contextScope
-    };
+    const chatScope = mapContextScopeToChat(contextScope, {
+      organizationName: selectedContext.organizationName,
+      organizationId: selectedContext.organizationId,
+      vaultName: selectedContext.vaultName,
+      vaultId: selectedContext.vaultId,
+      assetName: selectedContext.assetName,
+      assetId: selectedContext.assetId
+    });
 
-    setMessages(prev => [...prev, newMessage]);
-    setChatMessage('');
-
-    // Simulate AI response based on context scope
-    setTimeout(() => {
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === newMessage.id ? { ...msg, status: 'sent' } : msg
-        )
-      );
-
-      let aiResponseContent = '';
-      switch (contextScope) {
-        case 'general':
-          aiResponseContent = 'I have access to all information and online resources to help you with that query.';
-          break;
-        case 'boardguru':
-          aiResponseContent = 'I\'ll help you with BoardGuru-specific features and functionality.';
-          break;
-        case 'organization':
-          aiResponseContent = `I\'ll focus on information related to ${currentOrganization?.name || 'your organization'} to answer your question.`;
-          break;
-        case 'vault':
-          aiResponseContent = `I\'ll analyze the content and assets in the "${currentVault?.name || 'current vault'}" to provide insights.`;
-          break;
-        case 'asset':
-          aiResponseContent = 'I\'ll provide detailed analysis of the current asset you\'re viewing.';
-          break;
-        default:
-          aiResponseContent = 'I understand you need help with that. Let me analyze the information and provide you with insights.';
-      }
-
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: aiResponseContent,
-        role: 'assistant',
-        timestamp: new Date(),
-        status: 'sent',
-        contextScope
-      };
-
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    try {
+      await sendMessage(chatMessage, chatScope, {
+        includeWebSearch: contextScope === 'general'
+      });
+      setChatMessage('');
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    }
+  };
+  
+  const handleScopeChange = (newScope: ContextScope) => {
+    setContextScope(newScope);
+    // Clear selected context when changing scope
+    setSelectedContext({});
+    setAvailableVaults([]);
+    setAvailableAssets([]);
+  };
+  
+  const handleContextSelection = (type: 'organization' | 'vault' | 'asset', selection: any) => {
+    const newContext = { ...selectedContext };
+    
+    if (type === 'organization') {
+      newContext.organizationId = selection.id;
+      newContext.organizationName = selection.name;
+      // Clear vault and asset when organization changes
+      delete newContext.vaultId;
+      delete newContext.vaultName;
+      delete newContext.assetId;
+      delete newContext.assetName;
+      setAvailableAssets([]);
+      fetchVaultsForOrganization(selection.id);
+    } else if (type === 'vault') {
+      newContext.vaultId = selection.id;
+      newContext.vaultName = selection.name;
+      // Clear asset when vault changes
+      delete newContext.assetId;
+      delete newContext.assetName;
+      fetchAssetsForVault(selection.id);
+    } else if (type === 'asset') {
+      newContext.assetId = selection.id;
+      newContext.assetName = selection.title;
+    }
+    
+    setSelectedContext(newContext);
   };
 
   const formatTime = (date: Date) => {
@@ -464,28 +508,20 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                   {/* Context Scope Selector */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-gray-700">Context Scope</label>
-                    {/* Debug buttons */}
-                    <div className="flex gap-1 mb-2">
-                      <button 
-                        onClick={() => setContextScope('general')}
-                        className="text-xs bg-gray-200 px-2 py-1 rounded"
-                      >
-                        Gen
-                      </button>
-                      <button 
-                        onClick={() => setContextScope('boardguru')}
-                        className="text-xs bg-gray-200 px-2 py-1 rounded"
-                      >
-                        BG
-                      </button>
-                    </div>
+                    
+                    {/* Context hierarchy breadcrumb */}
+                    {getCurrentContextHierarchy().length > 0 && (
+                      <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                        {getCurrentContextHierarchy().join(' → ')}
+                      </div>
+                    )}
+                    
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
                           className="w-full justify-between text-xs h-8"
-                          onClick={() => console.log('Dropdown trigger clicked')}
                         >
                           <div className="flex items-center space-x-2">
                             {React.createElement(
@@ -497,40 +533,22 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                           <ChevronDown className="h-3 w-3 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-64" align="start" side="bottom" sideOffset={4}>
-                        {getAvailableScopes().map((scopeOption) => {
+                      <DropdownMenuContent className="w-80" align="start" side="bottom" sideOffset={4}>
+                        {/* Basic scopes */}
+                        <DropdownMenuLabel>Basic Scopes</DropdownMenuLabel>
+                        {getAvailableScopes().filter(s => s.id === 'general' || s.id === 'boardguru').map((scopeOption) => {
                           const Icon = scopeOption.icon;
-                          const isDisabled = 
-                            (scopeOption.id === 'organization' && !currentOrganization) ||
-                            (scopeOption.id === 'vault' && !currentVault) ||
-                            (scopeOption.id === 'asset' && false); // Would check for current asset
-                          
                           return (
                             <DropdownMenuItem
                               key={scopeOption.id}
-                              onSelect={() => {
-                                console.log('Dropdown item selected:', scopeOption.id, 'isDisabled:', isDisabled);
-                                if (!isDisabled) {
-                                  setContextScope(scopeOption.id);
-                                }
-                              }}
-                              disabled={isDisabled}
+                              onSelect={() => handleScopeChange(scopeOption.id as ContextScope)}
                               className="cursor-pointer"
                             >
                               <div className="flex items-center space-x-2 w-full">
                                 <Icon className="h-4 w-4" />
                                 <div className="flex-1">
-                                  <div className="text-sm font-medium">
-                                    {scopeOption.id === 'organization' && currentOrganization 
-                                      ? currentOrganization.name
-                                      : scopeOption.id === 'vault' && currentVault
-                                      ? `Vault: ${currentVault.name}`
-                                      : scopeOption.label
-                                    }
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {scopeOption.description}
-                                  </div>
+                                  <div className="text-sm font-medium">{scopeOption.label}</div>
+                                  <div className="text-xs text-gray-500">{scopeOption.description}</div>
                                 </div>
                                 {contextScope === scopeOption.id && (
                                   <div className="w-2 h-2 bg-blue-500 rounded-full" />
@@ -539,6 +557,232 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                             </DropdownMenuItem>
                           );
                         })}
+                        
+                        <DropdownMenuSeparator />
+                        
+                        {/* Organization scope */}
+                        <DropdownMenuLabel>Organization Context</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onSelect={() => handleScopeChange('organization')}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center space-x-2 w-full">
+                            <Building2 className="h-4 w-4" />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">Organization</div>
+                              <div className="text-xs text-gray-500">Select a specific organization</div>
+                            </div>
+                            {contextScope === 'organization' && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                        
+                        {/* Show organization selection if in organization mode */}
+                        {contextScope === 'organization' && organizations.length > 0 && (
+                          <div className="pl-6 space-y-1">
+                            {organizations.map((org: any) => (
+                              <DropdownMenuItem
+                                key={org.id}
+                                onSelect={() => handleContextSelection('organization', org)}
+                                className={cn(
+                                  "cursor-pointer text-xs",
+                                  selectedContext.organizationId === org.id && "bg-blue-50"
+                                )}
+                              >
+                                {org.name}
+                                {selectedContext.organizationId === org.id && (
+                                  <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full" />
+                                )}
+                              </DropdownMenuItem>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <DropdownMenuSeparator />
+                        
+                        {/* Vault scope */}
+                        <DropdownMenuLabel>Vault Context</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onSelect={() => handleScopeChange('vault')}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center space-x-2 w-full">
+                            <Folder className="h-4 w-4" />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">Vault</div>
+                              <div className="text-xs text-gray-500">Select a specific vault</div>
+                            </div>
+                            {contextScope === 'vault' && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                        
+                        {/* Show vault selection if in vault mode */}
+                        {contextScope === 'vault' && (
+                          <div className="pl-6 space-y-1">
+                            {/* Organization selection for vaults */}
+                            {!selectedContext.organizationId && (
+                              <div className="text-xs text-gray-500 p-2">First select an organization:</div>
+                            )}
+                            {!selectedContext.organizationId && organizations.map((org: any) => (
+                              <DropdownMenuItem
+                                key={org.id}
+                                onSelect={() => handleContextSelection('organization', org)}
+                                className="cursor-pointer text-xs"
+                              >
+                                <Building2 className="h-3 w-3 mr-2" />
+                                {org.name}
+                              </DropdownMenuItem>
+                            ))}
+                            
+                            {/* Vault selection */}
+                            {selectedContext.organizationId && (
+                              <>
+                                {isLoadingVaults && (
+                                  <div className="flex items-center text-xs text-gray-500 p-2">
+                                    <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                                    Loading vaults...
+                                  </div>
+                                )}
+                                {!isLoadingVaults && availableVaults.length === 0 && (
+                                  <div className="text-xs text-gray-500 p-2">No vaults found</div>
+                                )}
+                                {availableVaults.map((vault) => (
+                                  <DropdownMenuItem
+                                    key={vault.id}
+                                    onSelect={() => handleContextSelection('vault', vault)}
+                                    className={cn(
+                                      "cursor-pointer text-xs",
+                                      selectedContext.vaultId === vault.id && "bg-blue-50"
+                                    )}
+                                  >
+                                    <Folder className="h-3 w-3 mr-2" />
+                                    {vault.name}
+                                    {selectedContext.vaultId === vault.id && (
+                                      <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        
+                        <DropdownMenuSeparator />
+                        
+                        {/* Asset scope */}
+                        <DropdownMenuLabel>Asset Context</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onSelect={() => handleScopeChange('asset')}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center space-x-2 w-full">
+                            <FileIcon className="h-4 w-4" />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">Asset</div>
+                              <div className="text-xs text-gray-500">Select a specific asset</div>
+                            </div>
+                            {contextScope === 'asset' && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                        
+                        {/* Show asset selection if in asset mode */}
+                        {contextScope === 'asset' && (
+                          <div className="pl-6 space-y-1 max-h-32 overflow-y-auto">
+                            {/* Organization and vault selection for assets */}
+                            {!selectedContext.organizationId && (
+                              <div className="text-xs text-gray-500 p-2">First select an organization:</div>
+                            )}
+                            {!selectedContext.organizationId && organizations.map((org: any) => (
+                              <DropdownMenuItem
+                                key={org.id}
+                                onSelect={() => handleContextSelection('organization', org)}
+                                className="cursor-pointer text-xs"
+                              >
+                                <Building2 className="h-3 w-3 mr-2" />
+                                {org.name}
+                              </DropdownMenuItem>
+                            ))}
+                            
+                            {selectedContext.organizationId && !selectedContext.vaultId && (
+                              <>
+                                <div className="text-xs text-gray-500 p-2">Then select a vault:</div>
+                                {isLoadingVaults && (
+                                  <div className="flex items-center text-xs text-gray-500 p-2">
+                                    <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                                    Loading vaults...
+                                  </div>
+                                )}
+                                {availableVaults.map((vault) => (
+                                  <DropdownMenuItem
+                                    key={vault.id}
+                                    onSelect={() => handleContextSelection('vault', vault)}
+                                    className="cursor-pointer text-xs"
+                                  >
+                                    <Folder className="h-3 w-3 mr-2" />
+                                    {vault.name}
+                                  </DropdownMenuItem>
+                                ))}
+                              </>
+                            )}
+                            
+                            {/* Asset selection */}
+                            {selectedContext.vaultId && (
+                              <>
+                                {isLoadingAssets && (
+                                  <div className="flex items-center text-xs text-gray-500 p-2">
+                                    <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                                    Loading assets...
+                                  </div>
+                                )}
+                                {!isLoadingAssets && availableAssets.length === 0 && (
+                                  <div className="text-xs text-gray-500 p-2">No assets found</div>
+                                )}
+                                {availableAssets.map((asset) => (
+                                  <DropdownMenuItem
+                                    key={asset.id}
+                                    onSelect={() => handleContextSelection('asset', asset)}
+                                    className={cn(
+                                      "cursor-pointer text-xs",
+                                      selectedContext.assetId === asset.id && "bg-blue-50"
+                                    )}
+                                  >
+                                    <FileIcon className="h-3 w-3 mr-2" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="truncate">{asset.title}</div>
+                                      <div className="text-xs text-gray-400">{asset.fileName}</div>
+                                    </div>
+                                    {selectedContext.assetId === asset.id && (
+                                      <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Clear selection option */}
+                        {(selectedContext.organizationId || selectedContext.vaultId || selectedContext.assetId) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setSelectedContext({});
+                                setAvailableVaults([]);
+                                setAvailableAssets([]);
+                              }}
+                              className="cursor-pointer text-red-600"
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Clear Selection
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -563,33 +807,59 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                         )}
                       >
                         {/* Context scope indicator for messages */}
-                        {message.contextScope && message.contextScope !== 'boardguru' && (
+                        {message.scope && message.scope.type !== 'global' && (
                           <div className={cn(
                             "flex items-center space-x-1 text-xs mb-2 pb-1 border-b",
                             message.role === 'user' 
                               ? "text-blue-100 border-blue-400" 
                               : "text-gray-500 border-gray-300"
                           )}>
-                            {React.createElement(
-                              CONTEXT_SCOPE_OPTIONS.find(o => o.id === message.contextScope)?.icon || Bot,
-                              { className: "h-3 w-3" }
-                            )}
-                            <span>{getContextScopeLabel(message.contextScope)}</span>
+                            <Bot className="h-3 w-3" />
+                            <span>{message.scope.label}</span>
                           </div>
                         )}
-                        <p>{message.content}</p>
+                        <p className="whitespace-pre-wrap">{message.content}</p>
                         <div className={cn(
                           "text-xs mt-1 flex items-center justify-between",
                           message.role === 'user' ? "text-blue-100" : "text-gray-500"
                         )}>
                           <span>{formatTime(message.timestamp)}</span>
-                          {message.status === 'sending' && (
-                            <div className="w-2 h-2 bg-current rounded-full animate-pulse" />
+                          {message.isWebSearch && (
+                            <Globe className="h-3 w-3" />
                           )}
                         </div>
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Loading indicator */}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 text-gray-900 rounded-lg px-3 py-2 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>AI is thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Error display */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                      <p className="font-medium">Error:</p>
+                      <p>{error}</p>
+                    </div>
+                  )}
+                  
+                  {/* Welcome message when no messages */}
+                  {messages.length === 0 && (
+                    <div className="text-center text-gray-500 text-sm py-8">
+                      <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p>Hello! I'm your AI assistant.</p>
+                      <p>Ask me anything about BoardGuru or your organization.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Chat Input */}
@@ -599,19 +869,38 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                       type="text"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                       placeholder="Ask me anything..."
-                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isLoading}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     />
                     <Button
                       onClick={handleSendMessage}
-                      disabled={!chatMessage.trim()}
+                      disabled={!chatMessage.trim() || isLoading}
                       size="sm"
                       className="px-3"
                     >
-                      <Send className="h-3 w-3" />
+                      {isLoading ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Send className="h-3 w-3" />
+                      )}
                     </Button>
                   </div>
+                  
+                  {/* Clear messages button */}
+                  {messages.length > 0 && (
+                    <div className="flex justify-center mt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearMessages}
+                        className="text-xs text-gray-500 hover:text-gray-700"
+                      >
+                        Clear conversation
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

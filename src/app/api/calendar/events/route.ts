@@ -19,7 +19,7 @@ const createEventSchema = z.object({
   virtual_meeting_url: z.string().url().optional(),
   is_recurring: z.boolean().default(false),
   recurrence_rule: z.any().optional(),
-  organization_id: z.string().uuid().optional(),
+  organization_id: z.string().optional(),
   attendees: z.array(z.object({
     email: z.string().email(),
     role: z.enum(['organizer', 'presenter', 'participant', 'optional']).default('participant')
@@ -51,8 +51,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         attendees:calendar_attendees(*),
-        reminders:calendar_reminders(*),
-        meeting:meetings(*)
+        reminders:calendar_reminders(*)
       `)
 
     // Date range filter

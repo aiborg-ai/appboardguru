@@ -179,234 +179,355 @@ export default function BoardMatesPage() {
   ).length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="h-8 w-8 text-blue-600" />
-            BoardMates
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage your board members, directors, and key stakeholders
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1 border rounded-md p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className="p-2"
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="p-2"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          <Link href="/dashboard/boardmates/create">
-            <Button className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Add BoardMate</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Active</p>
-                <p className="text-2xl font-bold">{activeCount}</p>
+    <div className="min-h-screen bg-gray-50/30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <h1 className="text-3xl font-bold text-gray-900">BoardMates</h1>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600">Pending</p>
-                <p className="text-2xl font-bold">{pendingCount}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Executive</p>
-                <p className="text-2xl font-bold">{executiveCount}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Directors</p>
-                <p className="text-2xl font-bold">{directorCount}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search BoardMates by name, email, designation..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              <p className="text-gray-600">
+                Manage your board members, directors, and key stakeholders
+              </p>
             </div>
             
-            <div className="flex gap-2">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending_activation">Pending</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-white border rounded-lg p-1 shadow-sm">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    "px-3 py-1.5 text-sm",
+                    viewMode === 'grid' ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
+                  )}
+                >
+                  <Grid className="h-4 w-4 mr-1" />
+                  Grid
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    "px-3 py-1.5 text-sm",
+                    viewMode === 'list' ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
+                  )}
+                >
+                  <List className="h-4 w-4 mr-1" />
+                  List
+                </Button>
+              </div>
               
-              <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="chairman">Chairman</SelectItem>
-                  <SelectItem value="vice_chairman">Vice Chairman</SelectItem>
-                  <SelectItem value="ceo">CEO</SelectItem>
-                  <SelectItem value="cfo">CFO</SelectItem>
-                  <SelectItem value="cto">CTO</SelectItem>
-                  <SelectItem value="independent_director">Independent Director</SelectItem>
-                  <SelectItem value="executive_director">Executive Director</SelectItem>
-                  <SelectItem value="board_member">Board Member</SelectItem>
-                </SelectContent>
-              </Select>
+              <Link href="/dashboard/boardmates/create">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add BoardMate
+                </Button>
+              </Link>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Content */}
-      {error ? (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
-            <h3 className="text-lg font-medium text-red-900 mb-2">
-              Failed to load BoardMates
-            </h3>
-            <p className="text-red-700 mb-4">{error}</p>
-            <Button onClick={loadBoardmates} variant="outline">
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      ) : isLoading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Active Members</p>
+                    <p className="text-3xl font-bold text-gray-900">{activeCount}</p>
+                    <p className="text-xs text-green-600 mt-1 flex items-center">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Currently active
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* BoardMates Cards */}
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredBoardMates.map((boardmate) => (
-                <BoardMateCard
-                  key={boardmate.id}
-                  boardmate={boardmate}
-                  onEdit={handleEdit}
-                  onMessage={handleMessage}
-                  onManageAssociations={handleManageAssociations}
-                />
+            
+            <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Pending</p>
+                    <p className="text-3xl font-bold text-gray-900">{pendingCount}</p>
+                    <p className="text-xs text-yellow-600 mt-1 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Awaiting approval
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Clock className="h-6 w-6 text-yellow-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Executive</p>
+                    <p className="text-3xl font-bold text-gray-900">{executiveCount}</p>
+                    <p className="text-xs text-purple-600 mt-1 flex items-center">
+                      <Users className="h-3 w-3 mr-1" />
+                      C-level & chairs
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Directors</p>
+                    <p className="text-3xl font-bold text-gray-900">{directorCount}</p>
+                    <p className="text-xs text-blue-600 mt-1 flex items-center">
+                      <Users className="h-3 w-3 mr-1" />
+                      Board directors
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters and Search */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search by name, email, designation, or company..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-36 h-11 border-gray-200">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="pending_activation">Pending</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Select value={filterRole} onValueChange={setFilterRole}>
+                    <SelectTrigger className="w-40 h-11 border-gray-200">
+                      <SelectValue placeholder="Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="chairman">Chairman</SelectItem>
+                      <SelectItem value="vice_chairman">Vice Chairman</SelectItem>
+                      <SelectItem value="ceo">CEO</SelectItem>
+                      <SelectItem value="cfo">CFO</SelectItem>
+                      <SelectItem value="cto">CTO</SelectItem>
+                      <SelectItem value="independent_director">Independent Director</SelectItem>
+                      <SelectItem value="executive_director">Executive Director</SelectItem>
+                      <SelectItem value="board_member">Board Member</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Active Filters */}
+              {(searchTerm || filterStatus !== 'all' || filterRole !== 'all') && (
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                  <span className="text-sm text-gray-500">Active filters:</span>
+                  {searchTerm && (
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
+                      Search: "{searchTerm}"
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="ml-2 hover:text-blue-900"
+                      >
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {filterStatus !== 'all' && (
+                    <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100">
+                      Status: {filterStatus}
+                      <button
+                        onClick={() => setFilterStatus('all')}
+                        className="ml-2 hover:text-green-900"
+                      >
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {filterRole !== 'all' && (
+                    <Badge variant="secondary" className="bg-purple-50 text-purple-700 hover:bg-purple-100">
+                      Role: {filterRole.replace('_', ' ')}
+                      <button
+                        onClick={() => setFilterRole('all')}
+                        className="ml-2 hover:text-purple-900"
+                      >
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setFilterStatus('all');
+                      setFilterRole('all');
+                    }}
+                    className="text-gray-500 hover:text-gray-700 text-xs"
+                  >
+                    Clear all
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Content */}
+          {error ? (
+            <Card className="border-red-200 bg-red-50 shadow-sm">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="h-8 w-8 text-red-500" />
+                </div>
+                <h3 className="text-xl font-semibold text-red-900 mb-2">
+                  Failed to load BoardMates
+                </h3>
+                <p className="text-red-700 mb-6 max-w-sm mx-auto">{error}</p>
+                <Button 
+                  onClick={loadBoardmates} 
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
+          ) : isLoading ? (
+            <div className={cn(
+              "gap-6",
+              viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "space-y-4"
+            )}>
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="animate-pulse bg-white border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                      </div>
+                      <div className="h-3 bg-gray-200 rounded w-full"></div>
+                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredBoardMates.map((boardmate) => (
-                <BoardMateCard
-                  key={boardmate.id}
-                  boardmate={boardmate}
-                  onEdit={handleEdit}
-                  onMessage={handleMessage}
-                  onManageAssociations={handleManageAssociations}
-                  className="max-w-none"
-                />
-              ))}
-            </div>
-          )}
+            <>
+              {/* Results Count */}
+              {filteredBoardMates.length > 0 && (
+                <div className="flex items-center justify-between mb-6">
+                  <p className="text-sm text-gray-600">
+                    Showing {filteredBoardMates.length} of {boardmates.length} BoardMates
+                  </p>
+                </div>
+              )}
 
-          {/* Empty State */}
-          {filteredBoardMates.length === 0 && !isLoading && (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No BoardMates found
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  {searchTerm || filterStatus !== 'all' || filterRole !== 'all'
-                    ? 'Try adjusting your search or filters'
-                    : 'Get started by adding your first BoardMate'
-                  }
-                </p>
-                {(!searchTerm && filterStatus === 'all' && filterRole === 'all') && (
-                  <Link href="/dashboard/boardmates/create">
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add BoardMate
-                    </Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
+              {/* BoardMates Cards */}
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredBoardMates.map((boardmate) => (
+                    <BoardMateCard
+                      key={boardmate.id}
+                      boardmate={boardmate}
+                      onEdit={handleEdit}
+                      onMessage={handleMessage}
+                      onManageAssociations={handleManageAssociations}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredBoardMates.map((boardmate) => (
+                    <BoardMateCard
+                      key={boardmate.id}
+                      boardmate={boardmate}
+                      onEdit={handleEdit}
+                      onMessage={handleMessage}
+                      onManageAssociations={handleManageAssociations}
+                      className="max-w-none"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Empty State */}
+              {filteredBoardMates.length === 0 && !isLoading && (
+                <Card className="bg-white border-0 shadow-sm">
+                  <CardContent className="p-16 text-center">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Users className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      No BoardMates found
+                    </h3>
+                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                      {searchTerm || filterStatus !== 'all' || filterRole !== 'all'
+                        ? 'Try adjusting your search criteria or filters to find what you\'re looking for.'
+                        : 'Get started by inviting your first board member or director to join your organization.'
+                      }
+                    </p>
+                    {(!searchTerm && filterStatus === 'all' && filterRole === 'all') && (
+                      <Link href="/dashboard/boardmates/create">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Your First BoardMate
+                        </Button>
+                      </Link>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
-        </>
-      )}
 
       {/* Association Manager Modal */}
       {selectedBoardmate && (

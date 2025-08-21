@@ -69,8 +69,12 @@ function validateCreateRequest(data: any): { isValid: boolean; errors: string[];
       errors.push('Website must be a string')
     }
 
-    if (org.industry && !INDUSTRIES.map(i => i.toLowerCase()).includes(org.industry.toLowerCase())) {
-      errors.push('Invalid industry selection')
+    if (org.industry && org.industry.trim() !== '') {
+      const normalizedIndustry = org.industry.toLowerCase().replace(/[_&\s-]/g, '');
+      const validIndustries = INDUSTRIES.map(i => i.toLowerCase().replace(/[_&\s-]/g, ''));
+      if (!validIndustries.includes(normalizedIndustry)) {
+        errors.push('Invalid industry selection')
+      }
     }
 
     if (org.organizationSize && !ORGANIZATION_SIZES.map(s => s.value).includes(org.organizationSize)) {

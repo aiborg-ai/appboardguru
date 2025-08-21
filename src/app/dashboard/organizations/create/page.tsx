@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CreateOrganizationWizard from '@/features/organizations/CreateOrganizationWizard';
 import { CreateOrganizationRequest, OrganizationCreationResponse } from '@/features/organizations/types';
@@ -8,16 +8,39 @@ import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
 import Link from 'next/link';
+import { createSupabaseBrowserClient } from '@/lib/supabase';
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
   const [isCompleted, setIsCompleted] = useState(false);
   const [createdOrganization, setCreatedOrganization] = useState<OrganizationCreationResponse | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Get current user on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        // Redirect to sign in if not authenticated
+        router.push('/auth/signin');
+        return;
+      }
+      
+      setCurrentUser({ id: user.id });
+      setIsLoadingAuth(false);
+    };
+
+    getUser();
+  }, [router]);
 
   const handleCreateOrganization = async (data: CreateOrganizationRequest): Promise<void> => {
     try {
-      // TODO: Get current user ID from auth context/session
-      const currentUserId = 'temp-user-id'; // Replace with actual user ID
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
 
       const response = await fetch('/api/organizations/create', {
         method: 'POST',
@@ -26,7 +49,7 @@ export default function CreateOrganizationPage() {
         },
         body: JSON.stringify({
           ...data,
-          createdBy: currentUserId,
+          createdBy: currentUser.id,
         }),
       });
 
@@ -44,6 +67,20 @@ export default function CreateOrganizationPage() {
       throw error; // Re-throw to let the wizard handle the error display
     }
   };
+
+  // Show loading screen while checking authentication
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="w-8 h-8 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Checking authentication...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleGoToOrganization = () => {
     if (createdOrganization?.organization) {
