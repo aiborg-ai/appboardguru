@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
-import { CreateOrganizationModal } from '@/features/organizations/CreateOrganizationModal'
 import { OrganizationSettings } from '@/features/organizations/OrganizationSettings'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
@@ -25,7 +25,6 @@ import {
 } from '@/features/shared/ui/dropdown-menu'
 
 export default function OrganizationsPage() {
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
 
@@ -36,10 +35,6 @@ export default function OrganizationsPage() {
     isLoadingOrganizations 
   } = useOrganization()
 
-  const handleCreateSuccess = () => {
-    setShowCreateModal(false)
-    // Organization list will be updated automatically through context
-  }
 
   const handleSettingsOpen = (orgId: string) => {
     setSelectedOrgId(orgId)
@@ -100,10 +95,12 @@ export default function OrganizationsPage() {
               Manage your organizations and switch between different workspaces
             </p>
           </div>
-          <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Organization
-          </Button>
+          <Link href="/dashboard/organizations/create">
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create Organization
+            </Button>
+          </Link>
         </div>
 
         {/* Organizations Grid */}
@@ -114,10 +111,12 @@ export default function OrganizationsPage() {
             <p className="text-gray-600 mb-6">
               Create your first organization to get started with BoardGuru
             </p>
-            <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Organization
-            </Button>
+            <Link href="/dashboard/organizations/create">
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create Organization
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -209,12 +208,6 @@ export default function OrganizationsPage() {
           </div>
         )}
 
-        {/* Create Organization Modal */}
-        <CreateOrganizationModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={handleCreateSuccess}
-        />
 
         {/* Organization Settings Modal */}
         {showSettings && selectedOrgId && (
