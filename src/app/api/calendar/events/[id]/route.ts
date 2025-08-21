@@ -22,7 +22,7 @@ const updateEventSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -32,6 +32,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const { data: event, error } = await supabase
       .from('calendar_events')
       .select(`
@@ -41,7 +42,7 @@ export async function GET(
         meeting:meetings(*),
         created_by_user:users!calendar_events_created_by_fkey(id, full_name, email)
       `)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (error) {
@@ -62,7 +63,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -72,6 +73,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const body = await request.json()
     const validatedData = updateEventSchema.parse(body)
 
@@ -79,7 +81,7 @@ export async function PUT(
     const { data: existingEvent, error: fetchError } = await supabase
       .from('calendar_events')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError || !existingEvent) {
@@ -91,7 +93,7 @@ export async function PUT(
       const { data: attendee } = await supabase
         .from('calendar_attendees')
         .select('can_edit')
-        .eq('event_id', params.id)
+        .eq('event_id', resolvedParams.id)
         .eq('user_id', user.id)
         .single()
 
@@ -110,7 +112,7 @@ export async function PUT(
           p_user_id: existingEvent.user_id,
           p_start_datetime: startTime,
           p_end_datetime: endTime,
-          p_exclude_event_id: params.id
+          p_exclude_event_id: resolvedParams.id
         })
 
       if (conflicts && conflicts.length > 0) {
@@ -125,7 +127,7 @@ export async function PUT(
     const { data: updatedEvent, error: updateError } = await supabase
       .from('calendar_events')
       .update(validatedData)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select(`
         *,
         attendees:calendar_attendees(*),
@@ -158,7 +160,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -168,6 +170,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const { searchParams } = new URL(request.url)
     const deleteRecurring = searchParams.get('delete_recurring') === 'true'
 
@@ -175,7 +178,7 @@ export async function DELETE(
     const { data: existingEvent, error: fetchError } = await supabase
       .from('calendar_events')
       .select('user_id, is_recurring, parent_event_id')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError || !existingEvent) {
@@ -188,7 +191,7 @@ export async function DELETE(
 
     if (deleteRecurring && (existingEvent.is_recurring || existingEvent.parent_event_id)) {
       // Delete all recurring instances
-      const parentId = existingEvent.parent_event_id || params.id
+      const parentId = existingEvent.parent_event_id || resolvedParams.id
       
       const { error: deleteError } = await supabase
         .from('calendar_events')
@@ -206,7 +209,7 @@ export async function DELETE(
       const { error: deleteError } = await supabase
         .from('calendar_events')
         .delete()
-        .eq('id', params.id)
+        .eq('id', resolvedParams.id)
 
       if (deleteError) {
         console.error('Calendar event deletion error:', deleteError)
