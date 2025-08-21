@@ -1,10 +1,30 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { OrganizationSettings } from '@/features/organizations/OrganizationSettings'
 import { useOrganization } from '@/contexts/OrganizationContext'
+import {
+  ViewToggle,
+  ItemCard,
+  ItemList,
+  ItemDetails,
+  EmptyState,
+  FilterBar,
+  useViewPreferences
+} from '@/features/shared/components/views'
+import type {
+  ViewMode,
+  ItemCardAction,
+  ItemCardBadge,
+  ItemCardMetric,
+  ListColumn,
+  ListAction,
+  DetailTab,
+  DetailAction,
+  FilterConfig
+} from '@/features/shared/components/views'
 import { 
   Building2, 
   Plus, 
@@ -12,21 +32,31 @@ import {
   Users, 
   Crown,
   Calendar,
-  MoreVertical
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  Share2,
+  Copy,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Calendar as CalendarIcon,
+  Activity,
+  FileText,
+  X
 } from 'lucide-react'
 import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/features/shared/ui/dropdown-menu'
 
 export default function OrganizationsPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
+  const [selectedOrg, setSelectedOrg] = useState<any>(null)
+  const [showDetails, setShowDetails] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterRole, setFilterRole] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('all')
 
   const { 
     organizations, 
@@ -34,6 +64,15 @@ export default function OrganizationsPage() {
     selectOrganization,
     isLoadingOrganizations 
   } = useOrganization()
+
+  const {
+    viewMode,
+    setViewMode,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder
+  } = useViewPreferences('card', 'organizations')
 
 
   const handleSettingsOpen = (orgId: string) => {
@@ -44,6 +83,11 @@ export default function OrganizationsPage() {
   const handleSettingsClose = () => {
     setShowSettings(false)
     setSelectedOrgId(null)
+  }
+
+  const handleViewDetails = (org: any) => {
+    setSelectedOrg(org)
+    setShowDetails(true)
   }
 
   const getRoleColor = (role: string) => {
@@ -58,24 +102,203 @@ export default function OrganizationsPage() {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'owner': return <Crown className="h-3 w-3" />
-      case 'admin': return <Settings className="h-3 w-3" />
-      default: return <Users className="h-3 w-3" />
+      case 'owner': return Crown
+      case 'admin': return Settings
+      default: return Users
     }
   }
+
+  // Filter and sort organizations
+  const filteredOrganizations = useMemo(() => {
+    let filtered = organizations.filter(org => {
+      const matchesSearch = !searchQuery || 
+        org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        org.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      const matchesRole = filterRole === 'all' || (org as any).role === filterRole
+      const matchesStatus = filterStatus === 'all' || (org as any).status === filterStatus
+      
+      return matchesSearch && matchesRole && matchesStatus
+    })
+
+    // Sort organizations
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'created_at':
+          aValue = new Date((a as any).created_at || Date.now()).getTime()
+          bValue = new Date((b as any).created_at || Date.now()).getTime()
+          break
+        case 'member_count':
+          aValue = (a as any).memberCount || 0
+          bValue = (b as any).memberCount || 0
+          break
+        default:
+          return 0
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
+
+    return filtered
+  }, [organizations, searchQuery, filterRole, filterStatus, sortBy, sortOrder])
+
+  // Configuration for filters
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'role',
+      label: 'Role',
+      type: 'select',
+      icon: Users,
+      options: [
+        { value: 'owner', label: 'Owner', count: organizations.filter(o => (o as any).role === 'owner').length },
+        { value: 'admin', label: 'Admin', count: organizations.filter(o => (o as any).role === 'admin').length },
+        { value: 'member', label: 'Member', count: organizations.filter(o => (o as any).role === 'member').length },
+        { value: 'viewer', label: 'Viewer', count: organizations.filter(o => (o as any).role === 'viewer').length }
+      ]
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      icon: Activity,
+      options: [
+        { value: 'active', label: 'Active', count: organizations.filter(o => (o as any).status === 'active').length },
+        { value: 'pending', label: 'Pending', count: organizations.filter(o => (o as any).status === 'pending').length },
+        { value: 'suspended', label: 'Suspended', count: organizations.filter(o => (o as any).status === 'suspended').length }
+      ]
+    }
+  ]
+
+  // Configuration for list columns
+  const listColumns: ListColumn[] = [
+    {
+      key: 'name',
+      label: 'Organization',
+      sortable: true,
+      render: (org) => (
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Building2 className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="font-medium text-gray-900">{org.name}</div>
+            {org.description && (
+              <div className="text-sm text-gray-500 truncate max-w-xs">{org.description}</div>
+            )}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      render: (org) => {
+        const RoleIcon = getRoleIcon((org as any).role)
+        return (
+          <div className="flex items-center space-x-2">
+            <RoleIcon className="h-4 w-4 text-gray-500" />
+            <span className="capitalize text-sm">{(org as any).role}</span>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'memberCount',
+      label: 'Members',
+      sortable: true,
+      align: 'center' as const,
+      render: (org) => (
+        <div className="text-sm text-gray-900">{(org as any).memberCount || 0}</div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (org) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          (org as any).status === 'active' ? 'bg-green-100 text-green-800' :
+          (org as any).status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-red-100 text-red-800'
+        }`}>
+          {(org as any).status}
+        </span>
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'Created',
+      sortable: true,
+      render: (org) => (
+        <div className="text-sm text-gray-500">
+          {new Date((org as any).created_at || Date.now()).toLocaleDateString()}
+        </div>
+      )
+    }
+  ]
+
+  // Actions configuration
+  const getCardActions = (org: any): ItemCardAction[] => [
+    {
+      id: 'view',
+      label: 'View Details',
+      icon: Eye,
+      onClick: () => handleViewDetails(org)
+    },
+    {
+      id: 'edit',
+      label: 'Edit',
+      icon: Edit,
+      onClick: () => handleSettingsOpen(org.id)
+    },
+    {
+      id: 'share',
+      label: 'Share',
+      icon: Share2,
+      onClick: () => console.log('Share organization:', org.name)
+    }
+  ]
+
+  const listActions: ListAction[] = [
+    {
+      id: 'view',
+      label: 'View Details',
+      icon: Eye,
+      onClick: (org) => handleViewDetails(org)
+    },
+    {
+      id: 'edit',
+      label: 'Edit',
+      icon: Edit,
+      onClick: (org) => handleSettingsOpen(org.id)
+    },
+    {
+      id: 'share',
+      label: 'Share',
+      icon: Share2,
+      onClick: (org) => console.log('Share organization:', org.name)
+    }
+  ]
 
   if (isLoadingOrganizations) {
     return (
       <DashboardLayout>
         <div className="p-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
-              ))}
-            </div>
-          </div>
+          <EmptyState
+            variant="loading"
+            title="Loading Organizations"
+            description="Please wait while we fetch your organizations..."
+          />
         </div>
       </DashboardLayout>
     )
@@ -83,34 +306,24 @@ export default function OrganizationsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Building2 className="h-7 w-7 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <Building2 className="h-8 w-8 text-blue-600" />
               Organizations
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 mt-2">
               Manage your organizations and switch between different workspaces
             </p>
           </div>
-          <Link href="/dashboard/organizations/create">
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Organization
-            </Button>
-          </Link>
-        </div>
-
-        {/* Organizations Grid */}
-        {organizations.length === 0 ? (
-          <div className="text-center py-12">
-            <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Organizations Yet</h3>
-            <p className="text-gray-600 mb-6">
-              Create your first organization to get started with BoardGuru
-            </p>
+          <div className="flex items-center gap-3">
+            <ViewToggle
+              currentView={viewMode}
+              onViewChange={setViewMode}
+              size="md"
+            />
             <Link href="/dashboard/organizations/create">
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
@@ -118,77 +331,198 @@ export default function OrganizationsPage() {
               </Button>
             </Link>
           </div>
+        </div>
+
+        {/* Filter Bar */}
+        <FilterBar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search organizations..."
+          filters={filterConfigs}
+          activeFilters={{ role: filterRole, status: filterStatus }}
+          onFilterChange={(key, value) => {
+            if (key === 'role') setFilterRole(value)
+            if (key === 'status') setFilterStatus(value)
+          }}
+          sortOptions={[
+            { value: 'name', label: 'Name' },
+            { value: 'created_at', label: 'Created Date' },
+            { value: 'member_count', label: 'Member Count' }
+          ]}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSortChange={(sortBy, order) => {
+            setSortBy(sortBy)
+            setSortOrder(order)
+          }}
+          onClearAll={() => {
+            setSearchQuery('')
+            setFilterRole('all')
+            setFilterStatus('all')
+          }}
+          resultCount={filteredOrganizations.length}
+          totalCount={organizations.length}
+        />
+
+        {/* Content */}
+        {filteredOrganizations.length === 0 ? (
+          organizations.length === 0 ? (
+            <EmptyState
+              icon={Building2}
+              title="No Organizations Yet"
+              description="Create your first organization to get started with BoardGuru's enterprise board management platform."
+              actions={[
+                {
+                  id: 'create',
+                  label: 'Create Organization',
+                  icon: Plus,
+                  onClick: () => window.location.href = '/dashboard/organizations/create',
+                  primary: true
+                }
+              ]}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={Building2}
+              title="No Organizations Match Filters"
+              description="Try adjusting your search terms or filters to find organizations."
+              actions={[
+                {
+                  id: 'clear',
+                  label: 'Clear Filters',
+                  icon: X,
+                  onClick: () => {
+                    setSearchQuery('')
+                    setFilterRole('all')
+                    setFilterStatus('all')
+                  },
+                  primary: true
+                }
+              ]}
+            />
+          )
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {organizations.map((org) => (
-              <Card 
-                key={org.id} 
-                className={`relative cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                  currentOrganization?.id === org.id ? 'ring-2 ring-blue-500 shadow-md' : ''
-                }`}
-                onClick={() => selectOrganization(org)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-gray-900 mb-2">
-                        {org.name}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="secondary" 
-                          className={`${getRoleColor((org as any).role)} text-xs`}
-                        >
-                          {getRoleIcon((org as any).role)}
-                          <span className="ml-1 capitalize">{(org as any).role}</span>
-                        </Badge>
-                        {currentOrganization?.id === org.id && (
-                          <Badge variant="outline" className="text-xs">
-                            Current
-                          </Badge>
+          <>
+            {viewMode === 'card' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredOrganizations.map((org) => {
+                  const RoleIcon = getRoleIcon((org as any).role)
+                  return (
+                    <ItemCard
+                      key={org.id}
+                      id={org.id}
+                      title={org.name}
+                      description={org.description}
+                      icon={Building2}
+                      iconColor="text-blue-600"
+                      badges={[
+                        {
+                          label: (org as any).role,
+                          color: getRoleColor((org as any).role)
+                        },
+                        ...(currentOrganization?.id === org.id ? [{ label: 'Current', variant: 'outline' as const }] : [])
+                      ]}
+                      metrics={[
+                        {
+                          label: 'Members',
+                          value: (org as any).memberCount || 0,
+                          icon: Users,
+                          color: 'text-gray-500'
+                        },
+                        {
+                          label: 'Created',
+                          value: new Date((org as any).created_at || Date.now()).toLocaleDateString(),
+                          icon: CalendarIcon,
+                          color: 'text-gray-500'
+                        }
+                      ]}
+                      actions={getCardActions(org)}
+                      onClick={() => selectOrganization(org)}
+                      isSelected={currentOrganization?.id === org.id}
+                      status={(org as any).status}
+                      createdAt={(org as any).created_at}
+                      lastActivity="2 hours ago"
+                    />
+                  )
+                })}
+              </div>
+            )}
+
+            {viewMode === 'list' && (
+              <ItemList
+                items={filteredOrganizations}
+                columns={listColumns}
+                actions={listActions}
+                onItemClick={(org) => selectOrganization(org)}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={(column, order) => {
+                  setSortBy(column)
+                  setSortOrder(order)
+                }}
+                selectedIds={currentOrganization ? [currentOrganization.id] : []}
+                hover
+                striped
+              />
+            )}
+
+            {viewMode === 'details' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <ItemList
+                    items={filteredOrganizations}
+                    columns={listColumns.slice(0, 3)}
+                    onItemClick={(org) => {
+                      selectOrganization(org)
+                      handleViewDetails(org)
+                    }}
+                    selectedIds={selectedOrg ? [selectedOrg.id] : []}
+                    compact
+                    hover
+                  />
+                </div>
+                <div className="lg:sticky lg:top-6">
+                  {selectedOrg ? (
+                    <div className="bg-white border rounded-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4">Organization Details</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Name</label>
+                          <p className="text-gray-900">{selectedOrg.name}</p>
+                        </div>
+                        {selectedOrg.description && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Description</label>
+                            <p className="text-gray-900">{selectedOrg.description}</p>
+                          </div>
                         )}
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Your Role</label>
+                          <p className="text-gray-900 capitalize">{(selectedOrg as any).role}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Status</label>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            selectedOrg.status === 'active' ? 'bg-green-100 text-green-800' :
+                            selectedOrg.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {selectedOrg.status}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation()
-                          handleSettingsOpen(org.id)
-                        }}>
-                          <Settings className="h-4 w-4 mr-2" />
-                          Settings
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {org.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {org.description}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {(org as any).memberCount || 0} members
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {new Date((org as any).created_at || Date.now()).toLocaleDateString()}
-                      </span>
+                  ) : (
+                    <div className="bg-gray-50 border border-dashed rounded-lg p-8 text-center">
+                      <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">Select an organization to view details</p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Current Organization Info */}
@@ -208,7 +542,6 @@ export default function OrganizationsPage() {
           </div>
         )}
 
-
         {/* Organization Settings Modal */}
         {showSettings && selectedOrgId && (
           <OrganizationSettings
@@ -216,6 +549,67 @@ export default function OrganizationsPage() {
             onClose={handleSettingsClose}
           />
         )}
+
+        {/* Details Panel */}
+        <ItemDetails
+          item={selectedOrg}
+          isOpen={showDetails}
+          onClose={() => setShowDetails(false)}
+          title={selectedOrg?.name || ''}
+          subtitle={`${(selectedOrg as any)?.role} in organization`}
+          description={selectedOrg?.description}
+          icon={Building2}
+          iconColor="text-blue-600"
+          actions={[
+            {
+              id: 'edit',
+              label: 'Edit',
+              icon: Edit,
+              onClick: () => {
+                setShowDetails(false)
+                handleSettingsOpen(selectedOrg.id)
+              },
+              primary: true
+            },
+            {
+              id: 'share',
+              label: 'Share',
+              icon: Share2,
+              onClick: () => console.log('Share organization')
+            }
+          ]}
+          fields={selectedOrg ? [
+            {
+              label: 'Organization Name',
+              value: selectedOrg.name,
+              icon: Building2,
+              copyable: true
+            },
+            {
+              label: 'Your Role',
+              value: (selectedOrg as any).role,
+              type: 'badge',
+              icon: Users
+            },
+            {
+              label: 'Status',
+              value: selectedOrg.status,
+              type: 'badge',
+              icon: Activity
+            },
+            {
+              label: 'Member Count',
+              value: `${(selectedOrg as any).memberCount || 0} members`,
+              icon: Users
+            },
+            {
+              label: 'Created Date',
+              value: (selectedOrg as any).created_at,
+              type: 'date',
+              icon: CalendarIcon
+            }
+          ] : []}
+        />
       </div>
     </DashboardLayout>
   )

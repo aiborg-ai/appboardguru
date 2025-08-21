@@ -166,12 +166,6 @@ const bottomMenuItems: MenuItem[] = [
     href: '/dashboard/boardmates'
   },
   {
-    id: 'ai-assistant',
-    label: 'AI Assistant',
-    icon: MessageSquare,
-    href: '/dashboard/ai-chat'
-  },
-  {
     id: 'settings',
     label: 'Settings',
     icon: Settings,
