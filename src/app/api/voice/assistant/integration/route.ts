@@ -44,6 +44,7 @@ export interface ConversationEntry {
   type: 'user_input' | 'system_response' | 'insight' | 'recommendation';
   content: string;
   metadata: Record<string, unknown>;
+  confidence: number;
 }
 
 export interface DocumentContext {
@@ -841,16 +842,20 @@ async function processFullContextSync(
 async function enhanceContextForChat(contextData: IntegrationContext): Promise<EnhancedChatContext> {
   // Enhance conversation context for chat system
   return {
-    enhancedHistory: contextData.conversationHistory?.map(entry => ({
+    enhancedHistory: (contextData.conversationHistory?.map(entry => ({
       ...entry,
       chatOptimized: true,
-      intelligentSuggestions: generateChatSuggestions(entry.content)
-    })) || [],
+      intelligentSuggestions: generateChatSuggestions(entry.content),
+      confidence: (entry as any).confidence ?? 0.8
+    })) || []) as ConversationEntry[],
     documentContext: contextData.activeDocuments?.map(doc => ({
       ...doc,
       chatRelevant: true,
       quickSummary: doc.aiSummary || 'No summary available'
-    })) || []
+    })) || [],
+    combinedHistory: [],
+    contextContinuity: true,
+    intelligentTransitions: true
   };
 }
 
@@ -931,18 +936,20 @@ async function enhanceMeetingsForVoice(
   contextData: IntegrationContext
 ): Promise<VoiceEnhancedMeeting[]> {
   return meetings.map(meeting => {
-    const preparation = preparations.find(p => p.meeting_id === meeting.id);
+    const preparation = preparations.find(p => p.meetingId === meeting.id);
     
     return {
       ...meeting,
       voiceEnhanced: true,
       voiceBriefing: preparation ? {
-        summary: `Meeting preparation for ${meeting.title}`,
-        keyPoints: ['Review agenda', 'Check attendee list', 'Prepare discussion points'],
-        estimatedPrepTime: 30
+        executiveSummary: `Meeting preparation for ${meeting.title}`,
+        audioScript: `Briefing for ${meeting.title} meeting`,
+        keyTalkingPoints: ['Review agenda', 'Check attendee list', 'Prepare discussion points'],
+        anticipatedQuestions: ['What are the key agenda items?', 'Who are the main decision makers?'],
+        criticalReminders: ['Complete preparation 24 hours before', 'Review all documents'],
+        estimatedBriefingTime: 3
       } : null,
-      preparationInsights: preparation?.preparation_data ? 
-        JSON.parse(preparation.preparation_data) : null,
+      preparationInsights: preparation ? preparation : null,
       voiceCommands: [
         `Brief me on ${meeting.title}`,
         `What do I need to prepare for this meeting?`,
