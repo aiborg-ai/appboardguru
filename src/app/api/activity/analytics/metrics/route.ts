@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url)
     const timeRange = url.searchParams.get('timeRange') || '24h'
-    const includeBreakdown = url.searchParams.get('includeBreakdown') === 'true'
+    // const includeBreakdown = url.searchParams.get('includeBreakdown') === 'true'
 
     let startDate: Date
     const endDate = new Date()
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         // TODO: Implement ActivityAnalytics.recalculateMetrics method
         return NextResponse.json({ success: true, message: 'Metrics recalculation not implemented yet' })
 
-      case 'export':
+      case 'export': {
         const { format = 'json', timeRange = '30d' } = data
         let startDate: Date
         const endDate = new Date()
@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
             exportedAt: new Date().toISOString()
           }
         })
+      }
 
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

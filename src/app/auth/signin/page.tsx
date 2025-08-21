@@ -554,7 +554,7 @@ export default function SignInPage() {
           <div className="card p-6 bg-white shadow-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">First Time Access</h3>
             <p className="text-sm text-gray-600 mb-4">
-              If you've been approved but haven't set your password yet, enter your email to receive a secure setup link.
+              If you&apos;ve been approved but haven&apos;t set your password yet, enter your email to receive a secure setup link.
             </p>
             <div className="space-y-4">
               <input
@@ -599,7 +599,7 @@ export default function SignInPage() {
             {/* Prominent First Time User Button */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800 mb-3">
-                <strong>First time signing in?</strong> If you've been approved but haven't set up your password yet:
+                <strong>First time signing in?</strong> If you&apos;ve been approved but haven&apos;t set up your password yet:
               </p>
               <button
                 onClick={() => setShowMagicLinkForm(true)}
@@ -612,7 +612,7 @@ export default function SignInPage() {
             {/* Regular Account Actions */}
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/" className="font-medium text-primary-600 hover:text-primary-500">
                   Request access
                 </Link>
@@ -630,7 +630,7 @@ export default function SignInPage() {
           <div className="text-center space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <p className="text-sm text-green-800">
-                <strong>First-time sign-in detected!</strong> We've switched to secure code verification for your account setup.
+                <strong>First-time sign-in detected!</strong> We&apos;ve switched to secure code verification for your account setup.
               </p>
             </div>
           </div>

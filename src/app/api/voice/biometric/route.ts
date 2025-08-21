@@ -169,28 +169,28 @@ export async function POST(request: NextRequest) {
     // Route to specific operation
     switch (operation) {
       case 'enroll':
-        return handleEnrollment(body, user, supabase);
+        return handleEnrollment(body, user as any, supabase);
       
       case 'authenticate':
-        return handleAuthentication(body, user, supabase);
+        return handleAuthentication(body, user as any, supabase);
       
       case 'verify':
-        return handleVerification(body, user, supabase);
+        return handleVerification(body, user as any, supabase);
       
       case 'emotion_analysis':
-        return handleEmotionAnalysis(body, user, supabase);
+        return handleEmotionAnalysis(body, user as any, supabase);
       
       case 'fraud_detection':
-        return handleFraudDetection(body, user, supabase);
+        return handleFraudDetection(body, user as any, supabase);
       
       case 'get_profile':
-        return handleGetProfile(user, supabase);
+        return handleGetProfile(user as any, supabase);
       
       case 'update_profile':
-        return handleUpdateProfile(body, user, supabase);
+        return handleUpdateProfile(body, user as any, supabase);
       
       case 'delete_profile':
-        return handleDeleteProfile(user, supabase);
+        return handleDeleteProfile(user as any, supabase);
       
       default:
         return NextResponse.json(
@@ -306,7 +306,7 @@ async function handleEnrollment(
       const encryptedTemplate = await BiometricEncryption.encryptTemplate(
         decryptedTemplate,
         user.id,
-        user.organizations?.[0]?.id || 'default'
+        (user as any).organizations?.[0]?.id || 'default'
       );
 
       await supabase
@@ -325,7 +325,7 @@ async function handleEnrollment(
       const newProfile: VoiceBiometricProfile = {
         id: BiometricUtils.generateSessionId(),
         userId: user.id,
-        organizationId: user.organizations?.[0]?.id || 'default',
+        organizationId: (user as any).organizations?.[0]?.id || 'default',
         voiceprintTemplate: '', // Will be set after encryption
         voiceCharacteristics,
         enrollmentData: {
@@ -417,7 +417,7 @@ async function handleEnrollment(
       const encryptedTemplate = await BiometricEncryption.encryptTemplate(
         newProfile,
         user.id,
-        user.organizations?.[0]?.id || 'default'
+        (user as any).organizations?.[0]?.id || 'default'
       );
 
       // Save to database
@@ -600,9 +600,9 @@ async function handleAuthentication(
       },
       biometricQuality: {
         templateQuality: BiometricUtils.calculateTemplateQuality(decryptedProfile.voiceCharacteristics),
-        signalQuality: Math.round(audioValidation.quality === 'excellent' ? 95 : 
-                                audioValidation.quality === 'good' ? 80 :
-                                audioValidation.quality === 'fair' ? 65 : 45),
+        signalQuality: Math.round((audioValidation.quality as any) === 'excellent' ? 95 : 
+                                (audioValidation.quality as any) === 'good' ? 80 :
+                                (audioValidation.quality as any) === 'fair' ? 65 : 45),
         featureExtraction: Math.round(matchingResult.confidence * 100),
         matchingReliability: Math.round(matchingResult.confidence * 100)
       },
@@ -729,7 +729,7 @@ async function handleEmotionAnalysis(
         .insert({
           id: emotionResult.emotionId,
           user_id: user.id,
-          organization_id: user.organizations?.[0]?.id || 'default',
+          organization_id: (user as any).organizations?.[0]?.id || 'default',
           session_id: sessionId,
           emotion_data: JSON.stringify(emotionResult),
           analysis_type: analysisType,

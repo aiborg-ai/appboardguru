@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Settings, 
   Users, 
-  Database, 
   BarChart3, 
   Shield,
   List,

@@ -19,7 +19,7 @@ const alertRuleSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'critical'])
 })
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createSupabaseServerClient()
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()

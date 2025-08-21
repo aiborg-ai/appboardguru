@@ -1,12 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { 
   Plus, 
@@ -58,7 +57,7 @@ export default function DropdownOptionsManagement() {
   })
 
   // Fetch options for selected category
-  const fetchOptions = async () => {
+  const fetchOptions = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(`/api/cms/dropdown-options?category=${selectedCategory}`)
@@ -72,7 +71,7 @@ export default function DropdownOptionsManagement() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCategory])
 
   // Create new option
   const handleCreateOption = async () => {
@@ -120,7 +119,7 @@ export default function DropdownOptionsManagement() {
 
   // Delete option
   const handleDeleteOption = async (optionId: string) => {
-    if (!confirm('Are you sure you want to delete this option?')) return
+    if (!window.confirm('Are you sure you want to delete this option?')) return
 
     try {
       const response = await fetch(`/api/cms/dropdown-options/${optionId}`, {
@@ -137,7 +136,7 @@ export default function DropdownOptionsManagement() {
 
   useEffect(() => {
     fetchOptions()
-  }, [selectedCategory])
+  }, [selectedCategory, fetchOptions])
 
   const currentCategory = CATEGORIES.find(cat => cat.name === selectedCategory)
 
@@ -404,7 +403,7 @@ export default function DropdownOptionsManagement() {
                 <h4 className="font-medium">Value Format</h4>
                 <ul className="text-gray-600 space-y-1">
                   <li>• Use lowercase with underscores</li>
-                  <li>• Example: "financial_services"</li>
+                  <li>• Example: &quot;financial_services&quot;</li>
                   <li>• Must be unique within category</li>
                 </ul>
               </div>

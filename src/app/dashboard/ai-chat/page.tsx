@@ -202,7 +202,7 @@ export default function AIChatPage() {
           <Alert className="mb-6">
             <Building2 className="h-4 w-4" />
             <AlertDescription>
-              Please select an organization from the sidebar to enable context-aware AI assistance. The AI will have access to your organization's data and documents.
+              Please select an organization from the sidebar to enable context-aware AI assistance. The AI will have access to your organization&apos;s data and documents.
             </AlertDescription>
           </Alert>
         )}
@@ -281,7 +281,7 @@ export default function AIChatPage() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                  <span>Try asking "help" for guidance</span>
+                  <span>Try asking &quot;help&quot; for guidance</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-600 rounded-full"></div>

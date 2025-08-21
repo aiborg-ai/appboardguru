@@ -263,7 +263,7 @@ function SetPasswordPageContent() {
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Set Successfully!</h2>
               <p className="text-gray-600">
-                Welcome to BoardGuru, {userInfo?.name}! You'll be redirected to your dashboard shortly.
+                Welcome to BoardGuru, {userInfo?.name}! You&apos;ll be redirected to your dashboard shortly.
               </p>
             </div>
           </div>

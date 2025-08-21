@@ -84,7 +84,7 @@ export async function PATCH(request: NextRequest) {
     const { action, alertId } = body
 
     switch (action) {
-      case 'acknowledge':
+      case 'acknowledge': {
         const { error: updateError } = await supabase
           .from('activity_alert_instances')
           .update({
@@ -115,6 +115,7 @@ export async function PATCH(request: NextRequest) {
           })
 
         return NextResponse.json({ success: true })
+      }
 
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

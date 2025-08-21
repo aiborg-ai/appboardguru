@@ -398,7 +398,7 @@ export default function AnnotationsPage() {
                                 className="inline-block px-2 py-1 rounded text-sm"
                                 style={{ backgroundColor: annotation.color + '40' }}
                               >
-                                "{annotation.selected_text}"
+                                &quot;{annotation.selected_text}&quot;
                               </div>
                             </div>
                           )}

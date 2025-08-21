@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types'
+import type { Database } from '@/types/database'
 
 // Environment validation schema
 const databaseEnvSchema = z.object({

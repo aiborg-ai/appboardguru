@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { ComplianceEngine } from '@/lib/activity/compliance'
+// import { ComplianceEngine } from '@/lib/activity/compliance'
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     let exportData: any
 
     switch (reportType) {
-      case 'activity':
+      case 'activity': {
         let query = supabase
           .from('audit_logs')
           .select(`
@@ -123,8 +123,9 @@ export async function POST(request: NextRequest) {
           })) || []
         }
         break
+      }
 
-      case 'compliance':
+      case 'compliance': {
         // TODO: Implement ComplianceEngine.generateComplianceReport method
         exportData = {
           message: 'Compliance report generation not implemented yet',
@@ -132,8 +133,9 @@ export async function POST(request: NextRequest) {
           organization_id: user.organization_id
         }
         break
+      }
 
-      case 'security':
+      case 'security': {
         if (user.role !== 'admin') {
           return NextResponse.json({ error: 'Admin access required for security reports' }, { status: 403 })
         }
@@ -160,6 +162,7 @@ export async function POST(request: NextRequest) {
           }
         }
         break
+      }
 
       default:
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 })
@@ -169,7 +172,7 @@ export async function POST(request: NextRequest) {
     const filename = `${reportType}-report-${timeRange}-${timestamp}`
 
     switch (format) {
-      case 'csv':
+      case 'csv': {
         let csvContent = ''
         
         if (reportType === 'activity') {
@@ -199,6 +202,7 @@ export async function POST(request: NextRequest) {
             'Content-Disposition': `attachment; filename="${filename}.csv"`
           }
         })
+      }
 
       case 'excel':
         return NextResponse.json({

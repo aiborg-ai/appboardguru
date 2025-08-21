@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { action, data } = body
+    const { action } = body
 
     switch (action) {
       case 'feedback':

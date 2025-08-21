@@ -276,7 +276,7 @@ async function initializeSession(
       confidence: 1.0
     },
     proactiveInsights: insights,
-    contextUpdates: initialContext
+    contextUpdates: initialContext as any
   };
 }
 
@@ -459,7 +459,7 @@ async function searchRelevantContent(
     };
 
     const searchResponse = await searchService.search(searchRequest);
-    return searchResponse.results || [];
+    return (searchResponse.results || []) as any;
   } catch (error) {
     console.error('Content search error:', error);
     return [];

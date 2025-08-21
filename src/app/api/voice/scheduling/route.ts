@@ -77,10 +77,10 @@ async function processVoiceSchedulingCommand(
   const entities = extractEntities(command, intent);
   
   // Generate actions based on intent
-  const actions = generateActions(intent, entities, context);
+  const actions = generateActions(intent, entities, context || {});
   
   // Generate suggestions and alternatives
-  const suggestions = generateSuggestions(intent, entities, context);
+  const suggestions = generateSuggestions(intent, entities, context || {});
   
   // Check for clarifications needed
   const clarifications = generateClarifications(intent, entities);
@@ -275,7 +275,7 @@ function extractEntities(command: string, intent: SchedulingIntent): SchedulingE
     });
   }
 
-  return entities;
+  return entities as SchedulingEntity[];
 }
 
 function generateActions(intent: SchedulingIntent, entities: SchedulingEntity[], context: Record<string, unknown>): SchedulingAction[] {
@@ -301,7 +301,7 @@ function generateActions(intent: SchedulingIntent, entities: SchedulingEntity[],
             start: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
             end: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), // +1 hour
             duration: 60,
-            timezone: context?.timeZone || 'UTC',
+            timezone: (context?.timeZone as string) || 'UTC',
             availability: 'free'
           }],
           resources: [],
@@ -348,7 +348,7 @@ function generateActions(intent: SchedulingIntent, entities: SchedulingEntity[],
             start: new Date().toISOString(),
             end: new Date().toISOString(),
             duration: 60,
-            timezone: context?.timeZone || 'UTC',
+            timezone: (context?.timeZone as string) || 'UTC',
             availability: 'busy'
           }],
           resources: [],

@@ -167,7 +167,7 @@ async function triggerWorkflow(params: TriggerWorkflowRequest): Promise<NextResp
         parameters
       };
 
-      activeWorkflows.set(executionId, execution);
+      activeWorkflows.set(executionId, execution as any);
 
       // Store in database for persistence
       await supabase
@@ -416,7 +416,7 @@ async function getWorkflows(params: WorkflowListRequest): Promise<NextResponse> 
     // Filter workflows user has permission to view
     const viewableWorkflows = (workflows || []).filter((workflow: VoiceWorkflowTrigger) =>
       workflow.permissions.canView.includes(userId) || 
-      workflow.created_by === userId
+      workflow.createdBy === userId
     );
 
     return NextResponse.json({
@@ -498,7 +498,7 @@ async function executeAction(params: ActionExecuteRequest): Promise<NextResponse
       );
     }
 
-    const result = await executeWorkflowAction(action, execution.parameters);
+    const result = await executeWorkflowAction(action, execution.parameters || {});
 
     return NextResponse.json({
       success: true,
@@ -578,7 +578,7 @@ async function confirmWorkflowExecution(params: ExecutionConfirmRequest): Promis
     execution.confirmedBy = userId;
     execution.confirmedAt = new Date().toISOString();
 
-    await executeWorkflowActions(executionId, execution.actions, execution.parameters);
+    await executeWorkflowActions(executionId, execution.actions, execution.parameters || {});
 
     // Update database
     await supabase
@@ -964,12 +964,12 @@ async function executeApiCall(action: WorkflowAction, parameters: Record<string,
   
   try {
     const response = await fetch(target, {
-      method: actionParams.method || 'POST',
+      method: (actionParams as any).method || 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...actionParams.headers
+        ...(actionParams as any).headers
       },
-      body: JSON.stringify({ ...actionParams.body, ...parameters })
+      body: JSON.stringify({ ...(actionParams as any).body, ...parameters })
     });
     
     const result = await response.json();
