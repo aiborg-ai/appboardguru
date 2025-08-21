@@ -98,18 +98,18 @@ const menuItems: MenuItem[] = [
         href: '/dashboard/performance'
       },
       {
-        id: 'meeting-intelligence',
-        label: 'Meeting Intelligence',
-        icon: Calendar,
-        href: '/dashboard/meetings'
-      },
-      {
         id: 'peer-benchmarking',
         label: 'Peer Benchmarking',
         icon: BarChart3,
         href: '/dashboard/benchmarking'
       }
     ]
+  },
+  {
+    id: 'meetings',
+    label: 'Meetings',
+    icon: Calendar,
+    href: '/dashboard/meetings'
   },
   {
     id: 'assets',
