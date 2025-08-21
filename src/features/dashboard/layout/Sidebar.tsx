@@ -26,7 +26,8 @@ import {
   Folder as FolderIcon,
   Building2,
   Plus,
-  Package
+  Package,
+  MessageCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -167,6 +168,12 @@ const menuItems: MenuItem[] = [
     label: 'Settings',
     icon: Settings,
     href: '/dashboard/settings'
+  },
+  {
+    id: 'feedback',
+    label: 'Feedback',
+    icon: MessageCircle,
+    href: '/dashboard/feedback'
   }
 ]
 

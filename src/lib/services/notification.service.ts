@@ -467,4 +467,408 @@ ${emailConfig.templates.footerText}
   private generateGenericNotificationText(data: any): string {
     return `Generic notification text template: ${data.title}`
   }
+
+  // =============================================
+  // COMPLIANCE-SPECIFIC NOTIFICATION METHODS
+  // =============================================
+
+  /**
+   * Create compliance deadline reminder notification
+   */
+  async createComplianceDeadlineNotification(data: {
+    userId: string
+    organizationId: string
+    title: string
+    regulationType: string
+    dueDate: string
+    priority: 'low' | 'medium' | 'high' | 'critical'
+    actionUrl?: string
+    requiresAcknowledgment?: boolean
+    calendarEntryId?: string
+  }): Promise<void> {
+    try {
+      const daysUntilDue = Math.ceil(
+        (new Date(data.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      )
+
+      let urgencyText = ''
+      if (daysUntilDue <= 0) {
+        urgencyText = 'OVERDUE: '
+      } else if (daysUntilDue <= 3) {
+        urgencyText = 'URGENT: '
+      } else if (daysUntilDue <= 7) {
+        urgencyText = 'Important: '
+      }
+
+      const message = `${data.regulationType} compliance deadline is ${
+        daysUntilDue <= 0 ? 'overdue' : `due in ${daysUntilDue} days`
+      }. Please review and take necessary action.`
+
+      await this.supabase
+        .from('notifications')
+        .insert({
+          user_id: data.userId,
+          organization_id: data.organizationId,
+          type: 'reminder',
+          category: 'compliance_deadline',
+          title: `${urgencyText}${data.title}`,
+          message,
+          priority: data.priority,
+          action_url: data.actionUrl,
+          action_text: 'View Compliance Details',
+          icon: 'alert-triangle',
+          color: this.getPriorityColor(data.priority),
+          resource_type: 'compliance_calendar',
+          resource_id: data.calendarEntryId,
+          compliance_type: data.regulationType,
+          deadline_type: 'regulatory',
+          requires_acknowledgment: data.requiresAcknowledgment || false,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+        })
+
+      // Send email notification for critical/high priority items
+      if (['critical', 'high'].includes(data.priority)) {
+        const { data: user } = await this.supabase
+          .from('users')
+          .select('email, full_name')
+          .eq('id', data.userId)
+          .single()
+
+        if (user?.email) {
+          const template = this.createComplianceDeadlineTemplate({
+            title: data.title,
+            regulationType: data.regulationType,
+            dueDate: data.dueDate,
+            daysUntilDue,
+            actionUrl: data.actionUrl,
+            urgencyText
+          })
+
+          await this.sendEmail(user.email, template, 'compliance_deadline')
+        }
+      }
+
+      await this.logActivity('create_compliance_deadline_notification', 'compliance_notification', undefined, data)
+    } catch (error) {
+      this.handleError(error, 'createComplianceDeadlineNotification', data)
+    }
+  }
+
+  /**
+   * Create workflow assignment notification
+   */
+  async createWorkflowAssignmentNotification(data: {
+    userId: string
+    organizationId: string
+    workflowId: string
+    workflowName: string
+    regulationType: string
+    stepName?: string
+    dueDate?: string
+    assignerName: string
+    actionUrl?: string
+  }): Promise<void> {
+    try {
+      const title = `Compliance Task Assigned: ${data.workflowName}`
+      const message = `${data.assignerName} has assigned you to a compliance workflow${
+        data.stepName ? ` - Step: ${data.stepName}` : ''
+      }. ${data.dueDate ? `Due: ${new Date(data.dueDate).toLocaleDateString()}` : ''}`
+
+      await this.supabase
+        .from('notifications')
+        .insert({
+          user_id: data.userId,
+          organization_id: data.organizationId,
+          type: 'reminder',
+          category: 'workflow_assignment',
+          title,
+          message,
+          priority: 'medium',
+          action_url: data.actionUrl,
+          action_text: 'View Workflow',
+          icon: 'briefcase',
+          color: '#3B82F6',
+          resource_type: 'notification_workflows',
+          resource_id: data.workflowId,
+          workflow_id: data.workflowId,
+          compliance_type: data.regulationType,
+          requires_acknowledgment: true
+        })
+
+      await this.logActivity('create_workflow_assignment_notification', 'compliance_notification', data.workflowId, data)
+    } catch (error) {
+      this.handleError(error, 'createWorkflowAssignmentNotification', data)
+    }
+  }
+
+  /**
+   * Create escalation notification
+   */
+  async createEscalationNotification(data: {
+    userId: string
+    organizationId: string
+    workflowId: string
+    workflowName: string
+    originalAssignee: string
+    escalationLevel: number
+    overdueDays: number
+    actionUrl?: string
+  }): Promise<void> {
+    try {
+      const title = `ESCALATED: ${data.workflowName}`
+      const message = `Compliance workflow escalated to you (Level ${data.escalationLevel}). Originally assigned to ${data.originalAssignee}. Overdue by ${data.overdueDays} days.`
+
+      await this.supabase
+        .from('notifications')
+        .insert({
+          user_id: data.userId,
+          organization_id: data.organizationId,
+          type: 'security',
+          category: 'escalation',
+          title,
+          message,
+          priority: 'critical',
+          action_url: data.actionUrl,
+          action_text: 'Review Escalated Task',
+          icon: 'alert-circle',
+          color: '#DC2626',
+          resource_type: 'notification_workflows',
+          resource_id: data.workflowId,
+          workflow_id: data.workflowId,
+          escalation_level: data.escalationLevel,
+          requires_acknowledgment: true
+        })
+
+      await this.logActivity('create_escalation_notification', 'compliance_notification', data.workflowId, data)
+    } catch (error) {
+      this.handleError(error, 'createEscalationNotification', data)
+    }
+  }
+
+  /**
+   * Create workflow completion notification
+   */
+  async createWorkflowCompletionNotification(data: {
+    userId: string
+    organizationId: string
+    workflowId: string
+    workflowName: string
+    completedBy: string
+    completionDate: string
+    actionUrl?: string
+  }): Promise<void> {
+    try {
+      const title = `Compliance Task Completed: ${data.workflowName}`
+      const message = `${data.completedBy} completed the compliance workflow on ${new Date(data.completionDate).toLocaleDateString()}.`
+
+      await this.supabase
+        .from('notifications')
+        .insert({
+          user_id: data.userId,
+          organization_id: data.organizationId,
+          type: 'system',
+          category: 'workflow_completion',
+          title,
+          message,
+          priority: 'low',
+          action_url: data.actionUrl,
+          action_text: 'View Completed Workflow',
+          icon: 'check-circle',
+          color: '#10B981',
+          resource_type: 'notification_workflows',
+          resource_id: data.workflowId,
+          workflow_id: data.workflowId
+        })
+
+      await this.logActivity('create_workflow_completion_notification', 'compliance_notification', data.workflowId, data)
+    } catch (error) {
+      this.handleError(error, 'createWorkflowCompletionNotification', data)
+    }
+  }
+
+  /**
+   * Send bulk notifications to multiple users
+   */
+  async sendBulkComplianceNotifications(
+    userIds: string[],
+    notificationData: {
+      organizationId: string
+      type: 'deadline_reminder' | 'workflow_assignment' | 'escalation' | 'completion'
+      title: string
+      message: string
+      priority: 'low' | 'medium' | 'high' | 'critical'
+      actionUrl?: string
+      resourceType?: string
+      resourceId?: string
+      requiresAcknowledgment?: boolean
+    }
+  ): Promise<{ successful: number; failed: number }> {
+    let successful = 0
+    let failed = 0
+
+    for (const userId of userIds) {
+      try {
+        await this.supabase
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            organization_id: notificationData.organizationId,
+            type: 'reminder',
+            category: `compliance_${notificationData.type}`,
+            title: notificationData.title,
+            message: notificationData.message,
+            priority: notificationData.priority,
+            action_url: notificationData.actionUrl,
+            action_text: 'Take Action',
+            icon: this.getComplianceIcon(notificationData.type),
+            color: this.getPriorityColor(notificationData.priority),
+            resource_type: notificationData.resourceType,
+            resource_id: notificationData.resourceId,
+            requires_acknowledgment: notificationData.requiresAcknowledgment || false
+          })
+        
+        successful++
+      } catch (error) {
+        console.error(`Failed to send notification to user ${userId}:`, error)
+        failed++
+      }
+    }
+
+    await this.logActivity('send_bulk_compliance_notifications', 'compliance_notification', undefined, {
+      userCount: userIds.length,
+      successful,
+      failed,
+      notificationType: notificationData.type
+    })
+
+    return { successful, failed }
+  }
+
+  // =============================================
+  // COMPLIANCE EMAIL TEMPLATES
+  // =============================================
+
+  private createComplianceDeadlineTemplate(data: {
+    title: string
+    regulationType: string
+    dueDate: string
+    daysUntilDue: number
+    actionUrl?: string
+    urgencyText: string
+  }): EmailTemplate {
+    const subject = `${data.urgencyText}Compliance Deadline: ${data.title}`
+    
+    const html = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="background: ${data.daysUntilDue <= 0 ? '#DC2626' : data.daysUntilDue <= 3 ? '#F59E0B' : '#3B82F6'}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 24px;">${data.urgencyText}Compliance Deadline</h1>
+        </div>
+        
+        <div style="padding: 20px; background: #F9FAFB; border-radius: 0 0 8px 8px;">
+          <h2 style="color: #1F2937; margin-top: 0;">${data.title}</h2>
+          
+          <div style="background: white; padding: 15px; border-radius: 6px; margin: 15px 0;">
+            <p><strong>Regulation Type:</strong> ${data.regulationType}</p>
+            <p><strong>Due Date:</strong> ${new Date(data.dueDate).toLocaleDateString()}</p>
+            <p><strong>Status:</strong> ${
+              data.daysUntilDue <= 0 
+                ? `<span style="color: #DC2626; font-weight: bold;">OVERDUE by ${Math.abs(data.daysUntilDue)} days</span>`
+                : `<span style="color: #059669;">${data.daysUntilDue} days remaining</span>`
+            }</p>
+          </div>
+          
+          <p>This compliance requirement needs your immediate attention. Please review and take the necessary actions to ensure compliance.</p>
+          
+          ${data.actionUrl ? `
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${data.actionUrl}" style="background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                View Compliance Details
+              </a>
+            </div>
+          ` : ''}
+          
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #E5E7EB; font-size: 14px; color: #6B7280;">
+            <p>This is an automated compliance notification from BoardGuru.</p>
+          </div>
+        </div>
+      </div>
+    `
+
+    const text = `
+${data.urgencyText}Compliance Deadline: ${data.title}
+
+Regulation Type: ${data.regulationType}
+Due Date: ${new Date(data.dueDate).toLocaleDateString()}
+Status: ${data.daysUntilDue <= 0 ? `OVERDUE by ${Math.abs(data.daysUntilDue)} days` : `${data.daysUntilDue} days remaining`}
+
+This compliance requirement needs your immediate attention. Please review and take the necessary actions to ensure compliance.
+
+${data.actionUrl ? `View Details: ${data.actionUrl}` : ''}
+
+This is an automated compliance notification from BoardGuru.
+    `.trim()
+
+    return { subject, html, text }
+  }
+
+  // =============================================
+  // HELPER METHODS FOR COMPLIANCE
+  // =============================================
+
+  private getPriorityColor(priority: string): string {
+    switch (priority) {
+      case 'critical': return '#DC2626'
+      case 'high': return '#F59E0B'
+      case 'medium': return '#3B82F6'
+      case 'low': return '#10B981'
+      default: return '#6B7280'
+    }
+  }
+
+  private getComplianceIcon(type: string): string {
+    switch (type) {
+      case 'deadline_reminder': return 'clock'
+      case 'workflow_assignment': return 'briefcase'
+      case 'escalation': return 'alert-triangle'
+      case 'completion': return 'check-circle'
+      default: return 'bell'
+    }
+  }
+
+  /**
+   * Get compliance notification statistics for dashboard
+   */
+  async getComplianceNotificationStats(organizationId: string): Promise<{
+    total: number
+    unread: number
+    byType: Record<string, number>
+    byPriority: Record<string, number>
+  }> {
+    try {
+      const { data: notifications } = await this.supabase
+        .from('notifications')
+        .select('compliance_type, priority, status')
+        .eq('organization_id', organizationId)
+        .not('compliance_type', 'is', null)
+
+      const stats = {
+        total: notifications?.length || 0,
+        unread: notifications?.filter(n => n.status === 'unread').length || 0,
+        byType: {} as Record<string, number>,
+        byPriority: {} as Record<string, number>
+      }
+
+      notifications?.forEach(notification => {
+        if (notification.compliance_type) {
+          stats.byType[notification.compliance_type] = (stats.byType[notification.compliance_type] || 0) + 1
+        }
+        stats.byPriority[notification.priority] = (stats.byPriority[notification.priority] || 0) + 1
+      })
+
+      return stats
+    } catch (error) {
+      this.handleError(error, 'getComplianceNotificationStats', { organizationId })
+      return { total: 0, unread: 0, byType: {}, byPriority: {} }
+    }
+  }
 }

@@ -2006,6 +2006,15 @@ export interface Database {
           expires_at: string | null
           created_at: string
           updated_at: string
+          workflow_id: string | null
+          compliance_type: string | null
+          deadline_type: 'soft' | 'hard' | 'regulatory' | null
+          requires_acknowledgment: boolean | null
+          acknowledged_at: string | null
+          acknowledgment_method: 'click' | 'digital_signature' | 'email_reply' | null
+          escalation_level: number | null
+          compliance_evidence_url: string | null
+          regulatory_reference: string | null
         }
         Insert: {
           id?: string
@@ -2032,6 +2041,15 @@ export interface Database {
           expires_at?: string | null
           created_at?: string
           updated_at?: string
+          workflow_id?: string | null
+          compliance_type?: string | null
+          deadline_type?: 'soft' | 'hard' | 'regulatory' | null
+          requires_acknowledgment?: boolean | null
+          acknowledged_at?: string | null
+          acknowledgment_method?: 'click' | 'digital_signature' | 'email_reply' | null
+          escalation_level?: number | null
+          compliance_evidence_url?: string | null
+          regulatory_reference?: string | null
         }
         Update: {
           id?: string
@@ -2058,6 +2076,863 @@ export interface Database {
           expires_at?: string | null
           created_at?: string
           updated_at?: string
+          workflow_id?: string | null
+          compliance_type?: string | null
+          deadline_type?: 'soft' | 'hard' | 'regulatory' | null
+          requires_acknowledgment?: boolean | null
+          acknowledged_at?: string | null
+          acknowledgment_method?: 'click' | 'digital_signature' | 'email_reply' | null
+          escalation_level?: number | null
+          compliance_evidence_url?: string | null
+          regulatory_reference?: string | null
+        }
+      }
+      notification_patterns: {
+        Row: {
+          id: string
+          pattern_id: string
+          pattern_type: string
+          organization_id: string | null
+          user_id: string | null
+          pattern_data: any
+          confidence_score: number
+          frequency_detected: number
+          last_detected_at: string | null
+          conditions: any | null
+          outcomes: any | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          pattern_id: string
+          pattern_type: string
+          organization_id?: string | null
+          user_id?: string | null
+          pattern_data: any
+          confidence_score?: number
+          frequency_detected?: number
+          last_detected_at?: string | null
+          conditions?: any | null
+          outcomes?: any | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          pattern_id?: string
+          pattern_type?: string
+          organization_id?: string | null
+          user_id?: string | null
+          pattern_data?: any
+          confidence_score?: number
+          frequency_detected?: number
+          last_detected_at?: string | null
+          conditions?: any | null
+          outcomes?: any | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_behavior_metrics: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          action_type: string
+          timestamp: string
+          context: any
+          response_time_ms: number | null
+          engagement_score: number | null
+          session_id: string | null
+          metadata: any | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          action_type: string
+          timestamp?: string
+          context: any
+          response_time_ms?: number | null
+          engagement_score?: number | null
+          session_id?: string | null
+          metadata?: any | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          action_type?: string
+          timestamp?: string
+          context?: any
+          response_time_ms?: number | null
+          engagement_score?: number | null
+          session_id?: string | null
+          metadata?: any | null
+          created_at?: string
+        }
+      }
+      board_benchmarks: {
+        Row: {
+          id: string
+          metric_type: string
+          industry: string
+          organization_size: string
+          region: string
+          percentile_data: any
+          sample_size: number
+          data_source: string
+          confidence_interval: any | null
+          effective_date: string
+          expires_date: string | null
+          is_active: boolean
+          metadata: any | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          metric_type: string
+          industry: string
+          organization_size: string
+          region?: string
+          percentile_data: any
+          sample_size: number
+          data_source: string
+          confidence_interval?: any | null
+          effective_date: string
+          expires_date?: string | null
+          is_active?: boolean
+          metadata?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          metric_type?: string
+          industry?: string
+          organization_size?: string
+          region?: string
+          percentile_data?: any
+          sample_size?: number
+          data_source?: string
+          confidence_interval?: any | null
+          effective_date?: string
+          expires_date?: string | null
+          is_active?: boolean
+          metadata?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      predicted_notifications: {
+        Row: {
+          id: string
+          prediction_id: string
+          user_id: string
+          organization_id: string | null
+          pattern_id: string | null
+          predicted_type: string
+          predicted_time: string
+          confidence_score: number
+          priority_score: number
+          prediction_data: any
+          model_version: string
+          actual_sent_at: string | null
+          actual_outcome: string | null
+          actual_response_time_ms: number | null
+          prediction_accuracy: number | null
+          feedback_score: number | null
+          is_sent: boolean
+          is_successful: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          prediction_id: string
+          user_id: string
+          organization_id?: string | null
+          pattern_id?: string | null
+          predicted_type: string
+          predicted_time: string
+          confidence_score: number
+          priority_score?: number
+          prediction_data: any
+          model_version: string
+          actual_sent_at?: string | null
+          actual_outcome?: string | null
+          actual_response_time_ms?: number | null
+          prediction_accuracy?: number | null
+          feedback_score?: number | null
+          is_sent?: boolean
+          is_successful?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          prediction_id?: string
+          user_id?: string
+          organization_id?: string | null
+          pattern_id?: string | null
+          predicted_type?: string
+          predicted_time?: string
+          confidence_score?: number
+          priority_score?: number
+          prediction_data?: any
+          model_version?: string
+          actual_sent_at?: string | null
+          actual_outcome?: string | null
+          actual_response_time_ms?: number | null
+          prediction_accuracy?: number | null
+          feedback_score?: number | null
+          is_sent?: boolean
+          is_successful?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      intelligence_sources: {
+        Row: {
+          id: string
+          source_name: string
+          source_type: string
+          api_endpoint: string | null
+          api_key_encrypted: string | null
+          update_frequency_hours: number
+          last_updated_at: string | null
+          next_update_at: string | null
+          is_active: boolean
+          rate_limit_per_hour: number
+          current_usage_count: number
+          configuration: any | null
+          metadata: any | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          source_name: string
+          source_type: string
+          api_endpoint?: string | null
+          api_key_encrypted?: string | null
+          update_frequency_hours?: number
+          last_updated_at?: string | null
+          next_update_at?: string | null
+          is_active?: boolean
+          rate_limit_per_hour?: number
+          current_usage_count?: number
+          configuration?: any | null
+          metadata?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          source_name?: string
+          source_type?: string
+          api_endpoint?: string | null
+          api_key_encrypted?: string | null
+          update_frequency_hours?: number
+          last_updated_at?: string | null
+          next_update_at?: string | null
+          is_active?: boolean
+          rate_limit_per_hour?: number
+          current_usage_count?: number
+          configuration?: any | null
+          metadata?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      anomaly_detections: {
+        Row: {
+          id: string
+          anomaly_id: string
+          organization_id: string | null
+          user_id: string | null
+          anomaly_type: string
+          severity: string
+          anomaly_score: number
+          detection_method: string
+          baseline_data: any
+          anomalous_data: any
+          affected_metrics: any | null
+          recommended_actions: any | null
+          investigation_status: string
+          investigated_by: string | null
+          investigated_at: string | null
+          resolution_notes: string | null
+          is_resolved: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          anomaly_id: string
+          organization_id?: string | null
+          user_id?: string | null
+          anomaly_type: string
+          severity?: string
+          anomaly_score: number
+          detection_method: string
+          baseline_data: any
+          anomalous_data: any
+          affected_metrics?: any | null
+          recommended_actions?: any | null
+          investigation_status?: string
+          investigated_by?: string | null
+          investigated_at?: string | null
+          resolution_notes?: string | null
+          is_resolved?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          anomaly_id?: string
+          organization_id?: string | null
+          user_id?: string | null
+          anomaly_type?: string
+          severity?: string
+          anomaly_score?: number
+          detection_method?: string
+          baseline_data?: any
+          anomalous_data?: any
+          affected_metrics?: any | null
+          recommended_actions?: any | null
+          investigation_status?: string
+          investigated_by?: string | null
+          investigated_at?: string | null
+          resolution_notes?: string | null
+          is_resolved?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      prediction_accuracy_logs: {
+        Row: {
+          id: string
+          model_name: string
+          model_version: string
+          evaluation_date: string
+          metric_name: string
+          metric_value: number
+          sample_size: number
+          test_set_description: string | null
+          model_parameters: any | null
+          performance_notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          model_name: string
+          model_version: string
+          evaluation_date: string
+          metric_name: string
+          metric_value: number
+          sample_size: number
+          test_set_description?: string | null
+          model_parameters?: any | null
+          performance_notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          model_name?: string
+          model_version?: string
+          evaluation_date?: string
+          metric_name?: string
+          metric_value?: number
+          sample_size?: number
+          test_set_description?: string | null
+          model_parameters?: any | null
+          performance_notes?: string | null
+          created_at?: string
+        }
+      }
+      intelligence_insights: {
+        Row: {
+          id: string
+          insight_id: string
+          source_id: string | null
+          insight_type: string
+          title: string
+          content: string
+          relevance_score: number
+          impact_level: string
+          affected_organizations: string[] | null
+          tags: string[] | null
+          external_references: any | null
+          expires_at: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          insight_id: string
+          source_id?: string | null
+          insight_type: string
+          title: string
+          content: string
+          relevance_score?: number
+          impact_level?: string
+          affected_organizations?: string[] | null
+          tags?: string[] | null
+          external_references?: any | null
+          expires_at?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          insight_id?: string
+          source_id?: string | null
+          insight_type?: string
+          title?: string
+          content?: string
+          relevance_score?: number
+          impact_level?: string
+          affected_organizations?: string[] | null
+          tags?: string[] | null
+          external_references?: any | null
+          expires_at?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      compliance_templates: {
+        Row: {
+          id: string
+          organization_id: string | null
+          name: string
+          description: string | null
+          regulation_type: string
+          category: string
+          frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
+          priority: 'low' | 'medium' | 'high' | 'critical'
+          workflow_steps: any
+          requirements: string[] | null
+          required_roles: string[] | null
+          reminder_schedule: any | null
+          escalation_rules: any | null
+          is_active: boolean
+          is_system_template: boolean
+          version: number
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          name: string
+          description?: string | null
+          regulation_type: string
+          category?: string
+          frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
+          priority?: 'low' | 'medium' | 'high' | 'critical'
+          workflow_steps?: any
+          requirements?: string[] | null
+          required_roles?: string[] | null
+          reminder_schedule?: any | null
+          escalation_rules?: any | null
+          is_active?: boolean
+          is_system_template?: boolean
+          version?: number
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          name?: string
+          description?: string | null
+          regulation_type?: string
+          category?: string
+          frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
+          priority?: 'low' | 'medium' | 'high' | 'critical'
+          workflow_steps?: any
+          requirements?: string[] | null
+          required_roles?: string[] | null
+          reminder_schedule?: any | null
+          escalation_rules?: any | null
+          is_active?: boolean
+          is_system_template?: boolean
+          version?: number
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      compliance_calendar: {
+        Row: {
+          id: string
+          organization_id: string
+          template_id: string | null
+          title: string
+          description: string | null
+          regulation_type: string
+          category: string
+          due_date: string
+          start_date: string | null
+          business_days_notice: number | null
+          is_recurring: boolean
+          recurrence_pattern: any | null
+          next_occurrence: string | null
+          priority: 'low' | 'medium' | 'high' | 'critical'
+          is_mandatory: boolean
+          regulatory_authority: string | null
+          status: 'scheduled' | 'active' | 'in_progress' | 'completed' | 'overdue' | 'cancelled' | 'postponed'
+          completion_date: string | null
+          postponed_until: string | null
+          tags: string[] | null
+          external_reference: string | null
+          metadata: any | null
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          template_id?: string | null
+          title: string
+          description?: string | null
+          regulation_type: string
+          category?: string
+          due_date: string
+          start_date?: string | null
+          business_days_notice?: number | null
+          is_recurring?: boolean
+          recurrence_pattern?: any | null
+          next_occurrence?: string | null
+          priority?: 'low' | 'medium' | 'high' | 'critical'
+          is_mandatory?: boolean
+          regulatory_authority?: string | null
+          status?: 'scheduled' | 'active' | 'in_progress' | 'completed' | 'overdue' | 'cancelled' | 'postponed'
+          completion_date?: string | null
+          postponed_until?: string | null
+          tags?: string[] | null
+          external_reference?: string | null
+          metadata?: any | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          template_id?: string | null
+          title?: string
+          description?: string | null
+          regulation_type?: string
+          category?: string
+          due_date?: string
+          start_date?: string | null
+          business_days_notice?: number | null
+          is_recurring?: boolean
+          recurrence_pattern?: any | null
+          next_occurrence?: string | null
+          priority?: 'low' | 'medium' | 'high' | 'critical'
+          is_mandatory?: boolean
+          regulatory_authority?: string | null
+          status?: 'scheduled' | 'active' | 'in_progress' | 'completed' | 'overdue' | 'cancelled' | 'postponed'
+          completion_date?: string | null
+          postponed_until?: string | null
+          tags?: string[] | null
+          external_reference?: string | null
+          metadata?: any | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      notification_workflows: {
+        Row: {
+          id: string
+          organization_id: string
+          template_id: string | null
+          calendar_entry_id: string | null
+          name: string
+          description: string | null
+          workflow_type: string
+          steps: any
+          current_step: number
+          total_steps: number
+          status: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
+          progress_percentage: number | null
+          started_at: string | null
+          completed_at: string | null
+          due_date: string | null
+          estimated_completion_date: string | null
+          assigned_to: string | null
+          assigned_role: string | null
+          escalated_to: string | null
+          escalation_level: number | null
+          auto_advance_steps: boolean | null
+          require_all_participants: boolean | null
+          allow_parallel_execution: boolean | null
+          send_reminders: boolean | null
+          reminder_frequency_hours: number | null
+          compliance_notes: string | null
+          risk_level: 'low' | 'medium' | 'high' | 'critical' | null
+          metadata: any | null
+          tags: string[] | null
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          template_id?: string | null
+          calendar_entry_id?: string | null
+          name: string
+          description?: string | null
+          workflow_type?: string
+          steps?: any
+          current_step?: number
+          total_steps?: number
+          status?: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
+          progress_percentage?: number | null
+          started_at?: string | null
+          completed_at?: string | null
+          due_date?: string | null
+          estimated_completion_date?: string | null
+          assigned_to?: string | null
+          assigned_role?: string | null
+          escalated_to?: string | null
+          escalation_level?: number | null
+          auto_advance_steps?: boolean | null
+          require_all_participants?: boolean | null
+          allow_parallel_execution?: boolean | null
+          send_reminders?: boolean | null
+          reminder_frequency_hours?: number | null
+          compliance_notes?: string | null
+          risk_level?: 'low' | 'medium' | 'high' | 'critical' | null
+          metadata?: any | null
+          tags?: string[] | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          template_id?: string | null
+          calendar_entry_id?: string | null
+          name?: string
+          description?: string | null
+          workflow_type?: string
+          steps?: any
+          current_step?: number
+          total_steps?: number
+          status?: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
+          progress_percentage?: number | null
+          started_at?: string | null
+          completed_at?: string | null
+          due_date?: string | null
+          estimated_completion_date?: string | null
+          assigned_to?: string | null
+          assigned_role?: string | null
+          escalated_to?: string | null
+          escalation_level?: number | null
+          auto_advance_steps?: boolean | null
+          require_all_participants?: boolean | null
+          allow_parallel_execution?: boolean | null
+          send_reminders?: boolean | null
+          reminder_frequency_hours?: number | null
+          compliance_notes?: string | null
+          risk_level?: 'low' | 'medium' | 'high' | 'critical' | null
+          metadata?: any | null
+          tags?: string[] | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      compliance_participants: {
+        Row: {
+          id: string
+          workflow_id: string
+          user_id: string | null
+          participant_type: 'assignee' | 'approver' | 'reviewer' | 'observer' | 'escalation_contact'
+          role_in_workflow: string | null
+          step_number: number | null
+          is_required: boolean | null
+          can_delegate: boolean | null
+          status: 'assigned' | 'in_progress' | 'completed' | 'declined' | 'escalated' | 'delegated' | 'removed'
+          assigned_at: string | null
+          started_at: string | null
+          completed_at: string | null
+          declined_at: string | null
+          completion_notes: string | null
+          completion_evidence_url: string | null
+          requires_evidence: boolean | null
+          delegated_to: string | null
+          delegated_at: string | null
+          delegation_reason: string | null
+          last_notified_at: string | null
+          notification_count: number | null
+          metadata: any | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workflow_id: string
+          user_id?: string | null
+          participant_type?: 'assignee' | 'approver' | 'reviewer' | 'observer' | 'escalation_contact'
+          role_in_workflow?: string | null
+          step_number?: number | null
+          is_required?: boolean | null
+          can_delegate?: boolean | null
+          status?: 'assigned' | 'in_progress' | 'completed' | 'declined' | 'escalated' | 'delegated' | 'removed'
+          assigned_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          declined_at?: string | null
+          completion_notes?: string | null
+          completion_evidence_url?: string | null
+          requires_evidence?: boolean | null
+          delegated_to?: string | null
+          delegated_at?: string | null
+          delegation_reason?: string | null
+          last_notified_at?: string | null
+          notification_count?: number | null
+          metadata?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workflow_id?: string
+          user_id?: string | null
+          participant_type?: 'assignee' | 'approver' | 'reviewer' | 'observer' | 'escalation_contact'
+          role_in_workflow?: string | null
+          step_number?: number | null
+          is_required?: boolean | null
+          can_delegate?: boolean | null
+          status?: 'assigned' | 'in_progress' | 'completed' | 'declined' | 'escalated' | 'delegated' | 'removed'
+          assigned_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          declined_at?: string | null
+          completion_notes?: string | null
+          completion_evidence_url?: string | null
+          requires_evidence?: boolean | null
+          delegated_to?: string | null
+          delegated_at?: string | null
+          delegation_reason?: string | null
+          last_notified_at?: string | null
+          notification_count?: number | null
+          metadata?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      notification_audit_log: {
+        Row: {
+          id: string
+          organization_id: string | null
+          event_type: string
+          event_category: string
+          action: string
+          workflow_id: string | null
+          notification_id: string | null
+          template_id: string | null
+          calendar_entry_id: string | null
+          actor_user_id: string | null
+          target_user_id: string | null
+          event_description: string
+          event_data: any | null
+          previous_state: any | null
+          new_state: any | null
+          ip_address: string | null
+          user_agent: string | null
+          session_id: string | null
+          request_id: string | null
+          retention_required_until: string | null
+          is_legally_significant: boolean | null
+          regulatory_context: string | null
+          processing_time_ms: number | null
+          outcome: 'success' | 'failure' | 'warning' | 'partial_success' | 'timeout' | 'cancelled'
+          error_message: string | null
+          error_code: string | null
+          event_timestamp: string
+          search_vector: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          event_type: string
+          event_category?: string
+          action: string
+          workflow_id?: string | null
+          notification_id?: string | null
+          template_id?: string | null
+          calendar_entry_id?: string | null
+          actor_user_id?: string | null
+          target_user_id?: string | null
+          event_description: string
+          event_data?: any | null
+          previous_state?: any | null
+          new_state?: any | null
+          ip_address?: string | null
+          user_agent?: string | null
+          session_id?: string | null
+          request_id?: string | null
+          retention_required_until?: string | null
+          is_legally_significant?: boolean | null
+          regulatory_context?: string | null
+          processing_time_ms?: number | null
+          outcome?: 'success' | 'failure' | 'warning' | 'partial_success' | 'timeout' | 'cancelled'
+          error_message?: string | null
+          error_code?: string | null
+          event_timestamp?: string
+          search_vector?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          event_type?: string
+          event_category?: string
+          action?: string
+          workflow_id?: string | null
+          notification_id?: string | null
+          template_id?: string | null
+          calendar_entry_id?: string | null
+          actor_user_id?: string | null
+          target_user_id?: string | null
+          event_description?: string
+          event_data?: any | null
+          previous_state?: any | null
+          new_state?: any | null
+          ip_address?: string | null
+          user_agent?: string | null
+          session_id?: string | null
+          request_id?: string | null
+          retention_required_until?: string | null
+          is_legally_significant?: boolean | null
+          regulatory_context?: string | null
+          processing_time_ms?: number | null
+          outcome?: 'success' | 'failure' | 'warning' | 'partial_success' | 'timeout' | 'cancelled'
+          error_message?: string | null
+          error_code?: string | null
+          event_timestamp?: string
+          search_vector?: string | null
         }
       }
     }
@@ -2077,7 +2952,7 @@ export interface Database {
       organization_size: 'startup' | 'small' | 'medium' | 'large' | 'enterprise'
       audit_event_type: 'authentication' | 'authorization' | 'data_access' | 'data_modification' | 'system_admin' | 'security_event' | 'compliance' | 'user_action'
       audit_severity: 'low' | 'medium' | 'high' | 'critical'
-      audit_outcome: 'success' | 'failure' | 'error' | 'blocked'
+      audit_outcome: 'success' | 'failure' | 'error' | 'blocked' | 'warning' | 'partial_success' | 'timeout' | 'cancelled'
       plan_type: 'free' | 'professional' | 'enterprise'
       otp_purpose: 'first_login' | 'password_reset'
       meeting_type: 'agm' | 'board' | 'committee' | 'other'
@@ -2110,6 +2985,14 @@ export interface Database {
       notification_type_general: 'system' | 'meeting' | 'chat' | 'asset' | 'vault' | 'user' | 'security' | 'reminder'
       notification_priority: 'low' | 'medium' | 'high' | 'critical'
       notification_status_general: 'unread' | 'read' | 'archived' | 'dismissed'
+      compliance_frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
+      compliance_status: 'scheduled' | 'active' | 'in_progress' | 'completed' | 'overdue' | 'cancelled' | 'postponed'
+      workflow_status: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
+      participant_type: 'assignee' | 'approver' | 'reviewer' | 'observer' | 'escalation_contact'
+      participant_status: 'assigned' | 'in_progress' | 'completed' | 'declined' | 'escalated' | 'delegated' | 'removed'
+      deadline_type: 'soft' | 'hard' | 'regulatory'
+      acknowledgment_method: 'click' | 'digital_signature' | 'email_reply'
+      risk_level: 'low' | 'medium' | 'high' | 'critical'
     }
   }
 }

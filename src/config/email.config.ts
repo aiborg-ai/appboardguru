@@ -119,6 +119,8 @@ export const emailConfig = {
     marketing: 'marketing',
     transactional: 'transactional',
     system: 'system',
+    feedback: 'feedback',
+    feedback_confirmation: 'feedback_confirmation',
   },
 
   // Feature flags
@@ -167,6 +169,13 @@ export const emailSubjects = {
   system: {
     maintenance: 'Scheduled maintenance notification',
     outage: 'Service disruption notification',
+  },
+  feedback: {
+    bugReport: '🐛 New Bug Report: {title}',
+    featureRequest: '✨ New Feature Request: {title}',
+    improvement: '📈 New Improvement Suggestion: {title}',
+    general: '💬 New Feedback: {title}',
+    confirmation: '✅ Your feedback has been received - {title}',
   },
 } as const
 

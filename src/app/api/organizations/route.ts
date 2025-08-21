@@ -1,4 +1,4 @@
-import { DIHandlers, useServices } from '@/lib/di/apiHandler'
+import { EnhancedHandlers, useServices } from '@/lib/middleware/apiHandler'
 import type { 
   CreateOrganizationDTO, 
   UpdateOrganizationDTO, 
@@ -51,7 +51,7 @@ const OrganizationListFiltersSchema = z.object({
 /**
  * POST /api/organizations - Create a new organization
  */
-export const POST = DIHandlers.post(
+export const POST = EnhancedHandlers.post(
   CreateOrganizationSchema,
   {
     rateLimit: { requests: 5, window: '1h' }, // 5 per hour
@@ -69,7 +69,7 @@ export const POST = DIHandlers.post(
 /**
  * GET /api/organizations - List user's organizations or get single organization
  */
-export const GET = DIHandlers.get(
+export const GET = EnhancedHandlers.get(
   {
     validation: { query: OrganizationListFiltersSchema },
     rateLimit: { requests: 30, window: '1m' }, // 30 per minute
@@ -99,8 +99,8 @@ const UpdateOrganizationWithIdSchema = UpdateOrganizationSchema.extend({
   organizationId: z.string().uuid('Organization ID must be a valid UUID')
 })
 
-export const PUT = DIHandlers.put(
-  UpdateOrganizationWithIdSchema,
+export const PUT = EnhancedHandlers.put(
+  UpdateOrganizationSchema,
   {
     rateLimit: { requests: 10, window: '1h' }, // 10 per hour
     featureFlag: 'USE_NEW_API_LAYER'
@@ -108,16 +108,21 @@ export const PUT = DIHandlers.put(
   async (req) => {
     const { organizationService } = useServices(req)
     
-    const { organizationId, ...updateData } = req.validatedBody!
+    const { searchParams } = new URL(req.url)
+    const organizationId = searchParams.get('id')
     
-    return await organizationService.update(organizationId, updateData, req.user!.id)
+    if (!organizationId) {
+      throw new Error('Organization ID is required')
+    }
+    
+    return await organizationService.update(organizationId, req.validatedBody!, req.user!.id)
   }
 )
 
 /**
  * DELETE /api/organizations - Delete organization
  */
-export const DELETE = DIHandlers.delete(
+export const DELETE = EnhancedHandlers.delete(
   {
     rateLimit: { requests: 5, window: '1h' }, // 5 per hour
     featureFlag: 'USE_NEW_API_LAYER'

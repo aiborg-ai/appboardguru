@@ -84,14 +84,16 @@ export class ActivityAnalytics {
         return acc
       }, {} as Record<string, number>)
 
-      const topActivities = Object.entries(activityCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10)
-        .map(([type, count]) => ({
-          type,
-          count,
-          trend: await this.calculateTrend(organizationId, type, timeRange)
-        }))
+      const topActivities = await Promise.all(
+        Object.entries(activityCounts)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 10)
+          .map(async ([type, count]) => ({
+            type,
+            count,
+            trend: await this.calculateTrend(organizationId, type, timeRange)
+          }))
+      )
 
       // Hourly distribution
       const hourlyDistribution = Array.from({ length: 24 }, (_, hour) => ({
@@ -162,7 +164,7 @@ export class ActivityAnalytics {
         if (!acc[uid]) {
           acc[uid] = {
             userId: uid,
-            userName: activity.users?.full_name || activity.users?.email || 'Unknown',
+            userName: (activity.users as any)?.full_name || (activity.users as any)?.email || 'Unknown',
             activities: [],
             activeDays: new Set(),
             riskEvents: 0
@@ -208,7 +210,7 @@ export class ActivityAnalytics {
         }, {})
 
         const topActivities = Object.entries(activityTypes)
-          .sort(([,a], [,b]) => b - a)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
           .slice(0, 3)
           .map(([type]) => type)
 

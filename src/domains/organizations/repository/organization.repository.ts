@@ -219,7 +219,7 @@ export class OrganizationRepository extends BaseRepository {
       const totalPages = Math.ceil(total / limit)
 
       return {
-        items: data as OrganizationEntityWithRelations[],
+        items: (data || []) as unknown as OrganizationEntityWithRelations[],
         pagination: {
           page,
           limit,

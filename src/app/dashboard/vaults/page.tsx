@@ -31,13 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/features/shared/ui/dropdown-menu'
-import ViewToggle from '@/features/shared/components/views/ViewToggle'
-import ItemCard from '@/features/shared/components/views/ItemCard'
-import ItemList from '@/features/shared/components/views/ItemList'
-import ItemDetails from '@/features/shared/components/views/ItemDetails'
-import EmptyState from '@/features/shared/components/views/EmptyState'
-import FilterBar from '@/features/shared/components/views/FilterBar'
-import { useViewPreferences } from '@/features/shared/components/views/ViewToggle'
+import { ViewToggle, useViewPreferences } from '@/features/shared/components/views/ViewToggle'
+import { ItemCard } from '@/features/shared/components/views/ItemCard'
+import { ItemList } from '@/features/shared/components/views/ItemList'
+import { ItemDetails } from '@/features/shared/components/views/ItemDetails'
+import { EmptyState } from '@/features/shared/components/views/EmptyState'
+import { FilterBar } from '@/features/shared/components/views/FilterBar'
 import { cn } from '@/lib/utils'
 
 type ViewMode = 'card' | 'list' | 'details'
@@ -465,101 +464,104 @@ export default function VaultsPage() {
                     title="Vault Details"
                     icon={Package}
                   >
-                    {(vault) => (
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            <div>
-                              <label className="text-sm font-medium text-gray-700">Name</label>
-                              <p className="mt-1 text-gray-900">{vault.name}</p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-700">Description</label>
-                              <p className="mt-1 text-gray-600">{vault.description || 'No description provided'}</p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-700">Status</label>
-                              <div className="mt-1">
-                                <Badge 
-                                  variant="secondary" 
-                                  className={cn(
-                                    vault.status === 'active' ? 'bg-green-100 text-green-800' :
-                                    vault.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                                    vault.status === 'archived' ? 'bg-gray-100 text-gray-600' :
-                                    'bg-red-100 text-red-800'
-                                  )}
-                                >
-                                  {vault.status}
-                                </Badge>
+                    {(() => {
+                      const vault = selectedVault || (currentVault && filteredAndSortedVaults.find(v => v.id === currentVault.id)) || filteredAndSortedVaults[0];
+                      return (
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Name</label>
+                                <p className="mt-1 text-gray-900">{vault?.name}</p>
                               </div>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-gray-700">Priority</label>
-                              <div className="mt-1">
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn(getPriorityColor(vault.priority))}
-                                >
-                                  {vault.priority}
-                                </Badge>
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Description</label>
+                                <p className="mt-1 text-gray-600">{vault?.description || 'No description provided'}</p>
                               </div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <label className="text-sm font-medium text-gray-700">Statistics</label>
-                              <div className="mt-2 grid grid-cols-2 gap-4">
-                                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                  <Users className="h-5 w-5 text-gray-600 mx-auto mb-1" />
-                                  <p className="text-lg font-semibold text-gray-900">{vault.memberCount || 0}</p>
-                                  <p className="text-xs text-gray-600">Members</p>
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Status</label>
+                                <div className="mt-1">
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={cn(
+                                      vault?.status === 'active' ? 'bg-green-100 text-green-800' :
+                                      vault?.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                                      vault?.status === 'archived' ? 'bg-gray-100 text-gray-600' :
+                                      'bg-red-100 text-red-800'
+                                    )}
+                                  >
+                                    {vault?.status}
+                                  </Badge>
                                 </div>
-                                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                  <FolderOpen className="h-5 w-5 text-gray-600 mx-auto mb-1" />
-                                  <p className="text-lg font-semibold text-gray-900">{vault.assetCount || 0}</p>
-                                  <p className="text-xs text-gray-600">Assets</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Priority</label>
+                                <div className="mt-1">
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(getPriorityColor(vault?.priority))}
+                                  >
+                                    {vault?.priority}
+                                  </Badge>
                                 </div>
                               </div>
                             </div>
                             
-                            <div>
-                              <label className="text-sm font-medium text-gray-700">Activity</label>
-                              <div className="mt-2 space-y-2">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Calendar className="h-4 w-4 text-gray-500" />
-                                  <span className="text-gray-600">Created:</span>
-                                  <span className="text-gray-900">{new Date(vault.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                {vault.lastActivityAt && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <Zap className="h-4 w-4 text-gray-500" />
-                                    <span className="text-gray-600">Last activity:</span>
-                                    <span className="text-gray-900">{new Date(vault.lastActivityAt).toLocaleDateString()}</span>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Statistics</label>
+                                <div className="mt-2 grid grid-cols-2 gap-4">
+                                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                    <Users className="h-5 w-5 text-gray-600 mx-auto mb-1" />
+                                    <p className="text-lg font-semibold text-gray-900">{vault?.memberCount || 0}</p>
+                                    <p className="text-xs text-gray-600">Members</p>
                                   </div>
-                                )}
+                                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                    <FolderOpen className="h-5 w-5 text-gray-600 mx-auto mb-1" />
+                                    <p className="text-lg font-semibold text-gray-900">{vault?.assetCount || 0}</p>
+                                    <p className="text-xs text-gray-600">Assets</p>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div className="pt-4 space-y-2">
-                              <Link href={`/dashboard/vaults/${vault.id}`}>
-                                <Button className="w-full flex items-center gap-2">
-                                  <FolderOpen className="h-4 w-4" />
-                                  Open Vault
-                                </Button>
-                              </Link>
-                              <Link href={`/dashboard/vaults/${vault.id}/settings`}>
-                                <Button variant="outline" className="w-full flex items-center gap-2">
-                                  <Settings className="h-4 w-4" />
-                                  Vault Settings
-                                </Button>
-                              </Link>
+                              
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Activity</label>
+                                <div className="mt-2 space-y-2">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Calendar className="h-4 w-4 text-gray-500" />
+                                    <span className="text-gray-600">Created:</span>
+                                    <span className="text-gray-900">{vault?.created_at ? new Date(vault.created_at).toLocaleDateString() : 'N/A'}</span>
+                                  </div>
+                                  {vault?.lastActivityAt && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <Zap className="h-4 w-4 text-gray-500" />
+                                      <span className="text-gray-600">Last activity:</span>
+                                      <span className="text-gray-900">{new Date(vault.lastActivityAt).toLocaleDateString()}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="pt-4 space-y-2">
+                                <Link href={`/dashboard/vaults/${vault?.id}`}>
+                                  <Button className="w-full flex items-center gap-2">
+                                    <FolderOpen className="h-4 w-4" />
+                                    Open Vault
+                                  </Button>
+                                </Link>
+                                <Link href={`/dashboard/vaults/${vault?.id}/settings`}>
+                                  <Button variant="outline" className="w-full flex items-center gap-2">
+                                    <Settings className="h-4 w-4" />
+                                    Vault Settings
+                                  </Button>
+                                </Link>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  />
+                      );
+                    })()}
+                  </ItemDetails>
                 </div>
               </div>
             ) : (

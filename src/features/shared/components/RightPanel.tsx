@@ -27,7 +27,12 @@ import {
   FileIcon,
   ChevronDown,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  ExternalLink,
+  FileText as DocumentIcon,
+  Calendar,
+  BarChart3,
+  Eye
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,8 +44,8 @@ import {
 } from '@/features/shared/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useEnhancedChatSession } from '@/lib/api/enhanced-openrouter-client';
 import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat, type ContextScopeOption } from '@/features/ai-chat/ai/ScopeSelectorTypes';
+import { EnhancedChatResponse, AssetReference, WebReference, VaultReference, MeetingReference, ReportReference } from '@/types/search';
 
 interface RightPanelProps {
   className?: string;
@@ -85,6 +90,19 @@ interface SelectedContext {
   vaultName?: string;
   assetId?: string;
   assetName?: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  scope?: {
+    type: string;
+    label: string;
+  };
+  isWebSearch?: boolean;
+  references?: EnhancedChatResponse['references'];
 }
 
 interface LogEntry {
@@ -159,7 +177,9 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   const [contextScope, setContextScope] = useState<ContextScope>('boardguru');
   const [selectedContext, setSelectedContext] = useState<SelectedContext>({});
   const [chatMessage, setChatMessage] = useState('');
-  const { messages, isLoading, error, sendMessage, clearMessages } = useEnhancedChatSession('right-panel-chat');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Available data for selection
   const [availableVaults, setAvailableVaults] = useState<Vault[]>([]);
@@ -293,23 +313,78 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   const handleSendMessage = async () => {
     if (!chatMessage.trim()) return;
 
-    const chatScope = mapContextScopeToChat(contextScope, {
-      organizationName: selectedContext.organizationName,
-      organizationId: selectedContext.organizationId,
-      vaultName: selectedContext.vaultName,
-      vaultId: selectedContext.vaultId,
-      assetName: selectedContext.assetName,
-      assetId: selectedContext.assetId
-    });
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: chatMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setChatMessage('');
+    setIsLoading(true);
+    setError(null);
 
     try {
-      await sendMessage(chatMessage, chatScope, {
-        includeWebSearch: contextScope === 'general'
+      const response = await fetch('/api/chat/enhanced', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          context: {
+            scope: contextScope,
+            organizationId: selectedContext.organizationId,
+            organizationName: selectedContext.organizationName,
+            vaultId: selectedContext.vaultId,
+            vaultName: selectedContext.vaultName,
+            assetId: selectedContext.assetId,
+            assetName: selectedContext.assetName
+          },
+          options: {
+            includeWebSearch: contextScope === 'general',
+            includeReferences: true,
+            maxReferences: 5
+          }
+        })
       });
-      setChatMessage('');
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: EnhancedChatResponse = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get response');
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.message || 'Sorry, I could not generate a response.',
+        timestamp: new Date(),
+        references: data.references,
+        scope: {
+          type: contextScope,
+          label: getContextScopeLabel(contextScope)
+        },
+        isWebSearch: contextScope === 'general'
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
       console.error('Failed to send message:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const clearMessages = () => {
+    setMessages([]);
+    setError(null);
   };
   
   const handleScopeChange = (newScope: ContextScope) => {
@@ -818,7 +893,186 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                             <span>{message.scope.label}</span>
                           </div>
                         )}
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <div className="space-y-2">
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          
+                          {/* References Section */}
+                          {message.references && (
+                            <div className="mt-3 space-y-3">
+                              {/* Asset References */}
+                              {message.references.assets && message.references.assets.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-gray-600 border-b border-gray-300 pb-1">
+                                    📄 Documents ({message.references.assets.length})
+                                  </div>
+                                  <div className="space-y-1">
+                                    {message.references.assets.map((asset, index) => (
+                                      <a
+                                        key={asset.id}
+                                        href={asset.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-start space-x-2 p-2 bg-white bg-opacity-50 rounded border border-gray-200 hover:bg-gray-50 transition-colors text-xs group"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        <DocumentIcon className="h-3 w-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-gray-900 truncate group-hover:text-blue-600">
+                                            {asset.title}
+                                          </div>
+                                          <div className="text-gray-500 truncate">
+                                            {asset.description || asset.metadata.fileName}
+                                          </div>
+                                          {asset.metadata.vault && (
+                                            <div className="text-gray-400 text-xs">
+                                              📁 {asset.metadata.vault.name}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-blue-600" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Vault References */}
+                              {message.references.vaults && message.references.vaults.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-gray-600 border-b border-gray-300 pb-1">
+                                    📁 Vaults ({message.references.vaults.length})
+                                  </div>
+                                  <div className="space-y-1">
+                                    {message.references.vaults.map((vault, index) => (
+                                      <a
+                                        key={vault.id}
+                                        href={vault.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-start space-x-2 p-2 bg-white bg-opacity-50 rounded border border-gray-200 hover:bg-gray-50 transition-colors text-xs group"
+                                      >
+                                        <Folder className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-gray-900 truncate group-hover:text-green-600">
+                                            {vault.name}
+                                          </div>
+                                          <div className="text-gray-500 truncate">
+                                            {vault.description}
+                                          </div>
+                                          <div className="text-gray-400 text-xs">
+                                            {vault.asset_count} assets • {vault.member_count} members
+                                          </div>
+                                        </div>
+                                        <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-green-600" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Meeting References */}
+                              {message.references.meetings && message.references.meetings.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-gray-600 border-b border-gray-300 pb-1">
+                                    🗓️ Meetings ({message.references.meetings.length})
+                                  </div>
+                                  <div className="space-y-1">
+                                    {message.references.meetings.map((meeting, index) => (
+                                      <a
+                                        key={meeting.id}
+                                        href={meeting.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-start space-x-2 p-2 bg-white bg-opacity-50 rounded border border-gray-200 hover:bg-gray-50 transition-colors text-xs group"
+                                      >
+                                        <Calendar className="h-3 w-3 text-purple-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-gray-900 truncate group-hover:text-purple-600">
+                                            {meeting.title}
+                                          </div>
+                                          <div className="text-gray-500 truncate">
+                                            {meeting.description}
+                                          </div>
+                                          <div className="text-gray-400 text-xs">
+                                            {meeting.meeting_type} • {meeting.status}
+                                          </div>
+                                        </div>
+                                        <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-purple-600" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Website References */}
+                              {message.references.websites && message.references.websites.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-gray-600 border-b border-gray-300 pb-1">
+                                    🌐 Web Resources ({message.references.websites.length})
+                                  </div>
+                                  <div className="space-y-1">
+                                    {message.references.websites.map((website, index) => (
+                                      <a
+                                        key={index}
+                                        href={website.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-start space-x-2 p-2 bg-white bg-opacity-50 rounded border border-gray-200 hover:bg-gray-50 transition-colors text-xs group"
+                                      >
+                                        <Globe className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-gray-900 truncate group-hover:text-blue-500">
+                                            {website.title}
+                                          </div>
+                                          <div className="text-gray-500 truncate">
+                                            {website.description || website.domain}
+                                          </div>
+                                        </div>
+                                        <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-blue-500" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Reports References */}
+                              {message.references.reports && message.references.reports.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-gray-600 border-b border-gray-300 pb-1">
+                                    📊 Reports ({message.references.reports.length})
+                                  </div>
+                                  <div className="space-y-1">
+                                    {message.references.reports.map((report, index) => (
+                                      <a
+                                        key={report.id}
+                                        href={report.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-start space-x-2 p-2 bg-white bg-opacity-50 rounded border border-gray-200 hover:bg-gray-50 transition-colors text-xs group"
+                                      >
+                                        <BarChart3 className="h-3 w-3 text-orange-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-gray-900 truncate group-hover:text-orange-600">
+                                            {report.title}
+                                          </div>
+                                          <div className="text-gray-500 truncate">
+                                            {report.description}
+                                          </div>
+                                          <div className="text-gray-400 text-xs">
+                                            {report.type}
+                                          </div>
+                                        </div>
+                                        <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-orange-600" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         <div className={cn(
                           "text-xs mt-1 flex items-center justify-between",
                           message.role === 'user' ? "text-blue-100" : "text-gray-500"
