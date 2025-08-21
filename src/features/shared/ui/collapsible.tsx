@@ -74,7 +74,7 @@ const CollapsibleTrigger = React.forwardRef<HTMLButtonElement, CollapsibleTrigge
         onClick: handleClick,
         'aria-expanded': open,
         'data-state': open ? 'open' : 'closed'
-      } as any)
+      } as React.HTMLAttributes<HTMLElement> & { ref: React.ForwardedRef<HTMLButtonElement> })
     }
 
     return (

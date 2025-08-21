@@ -1,175 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { searchService } from '@/lib/services/search.service';
+import {
+  VoiceAssistantSession,
+  VoiceAssistantRequest,
+  VoiceAssistantResponse,
+  ConversationEntry,
+  VoiceIntent,
+  ExtractedEntity,
+  ProactiveInsight,
+  BoardRecommendation,
+  BoardAnalytics,
+  SupabaseClient,
+  User,
+  EmotionAnalysis,
+  VoiceAssistantContext,
+  VoicePreferences,
+  SearchResult,
+  ContextualInfo
+} from '@/types/voice';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-
-// Voice Assistant Session Types
-export interface VoiceAssistantSession {
-  id: string;
-  userId: string;
-  organizationId: string;
-  conversationHistory: ConversationEntry[];
-  contextState: ContextState;
-  proactiveInsights: ProactiveInsight[];
-  createdAt: string;
-  lastActivity: string;
-  isActive: boolean;
-}
-
-export interface ConversationEntry {
-  id: string;
-  timestamp: string;
-  type: 'user_voice' | 'user_text' | 'assistant_voice' | 'assistant_text' | 'system_insight';
-  content: string;
-  audioUrl?: string;
-  emotion?: string;
-  stressLevel?: number;
-  urgencyLevel?: number;
-  confidence: number;
-  intent?: VoiceIntent;
-  entities?: ExtractedEntity[];
-  followUpRequired?: boolean;
-  escalationTriggered?: boolean;
-}
-
-export interface ContextState {
-  currentFocus: 'dashboard' | 'documents' | 'meetings' | 'compliance' | 'analysis' | 'general';
-  activeDocument?: string;
-  activeMeeting?: string;
-  activeVault?: string;
-  currentPage?: string;
-  recentDocuments: string[];
-  upcomingMeetings: string[];
-  pendingTasks: string[];
-  riskAlerts: string[];
-  complianceDeadlines: string[];
-  interruptionContext?: InterruptionContext;
-}
-
-export interface InterruptionContext {
-  pausedAt: string;
-  contextSummary: string;
-  urgencyLevel: number;
-  resumptionCue: string;
-  preservedState: any;
-}
-
-export interface ProactiveInsight {
-  id: string;
-  type: 'revenue_trend' | 'risk_assessment' | 'compliance_deadline' | 'meeting_prep' | 'document_relationship' | 'performance_metric';
-  title: string;
-  description: string;
-  urgency: 'low' | 'medium' | 'high' | 'critical';
-  confidence: number;
-  recommendations: string[];
-  relatedDocuments: string[];
-  scheduledFor?: string;
-  triggered: boolean;
-  acknowledged: boolean;
-  createdAt: string;
-  expiresAt?: string;
-}
-
-export interface VoiceIntent {
-  intent: string;
-  confidence: number;
-  domain: 'board_governance' | 'document_management' | 'meeting_management' | 'compliance' | 'analytics' | 'general';
-  action: string;
-  parameters: Record<string, any>;
-}
-
-export interface ExtractedEntity {
-  type: 'document' | 'meeting' | 'person' | 'date' | 'metric' | 'company' | 'topic';
-  value: string;
-  confidence: number;
-  context: string;
-}
-
-export interface VoiceAssistantRequest {
-  sessionId?: string;
-  audioData?: string; // Base64 encoded audio
-  textInput?: string;
-  requestType: 'voice_query' | 'text_query' | 'proactive_insight' | 'context_resume' | 'session_init';
-  context?: {
-    currentPage?: string;
-    organizationId: string;
-    vaultId?: string;
-    documentId?: string;
-    meetingId?: string;
-    emotionState?: any;
-  };
-  preferences?: {
-    responseMode: 'voice_only' | 'text_only' | 'voice_with_text';
-    verbosityLevel: 'concise' | 'balanced' | 'detailed';
-    proactiveLevel: 'minimal' | 'moderate' | 'aggressive';
-    voicePersonality: 'professional' | 'friendly' | 'supportive';
-  };
-}
-
-export interface VoiceAssistantResponse {
-  success: boolean;
-  sessionId: string;
-  response: {
-    text: string;
-    audioUrl?: string;
-    emotion?: string;
-    intent?: VoiceIntent;
-    confidence: number;
-  };
-  proactiveInsights?: ProactiveInsight[];
-  contextUpdates?: Partial<ContextState>;
-  followUpSuggestions?: string[];
-  recommendations?: BoardRecommendation[];
-  analytics?: BoardAnalytics;
-  interruption?: InterruptionData;
-  error?: string;
-}
-
-export interface BoardRecommendation {
-  type: 'meeting_preparation' | 'document_review' | 'compliance_action' | 'risk_mitigation' | 'strategic_planning';
-  title: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  timeline: string;
-  requiredActions: string[];
-  relatedItems: string[];
-  estimatedTime: number; // minutes
-}
-
-export interface BoardAnalytics {
-  type: 'revenue_trends' | 'risk_metrics' | 'compliance_status' | 'performance_kpis' | 'governance_health';
-  summary: string;
-  keyMetrics: Record<string, number>;
-  trends: TrendData[];
-  alerts: AlertData[];
-  visualizationUrl?: string;
-}
-
-export interface TrendData {
-  metric: string;
-  current: number;
-  previous: number;
-  change: number;
-  direction: 'up' | 'down' | 'stable';
-  significance: 'minor' | 'moderate' | 'major';
-}
-
-export interface AlertData {
-  type: 'warning' | 'critical' | 'info';
-  message: string;
-  threshold: number;
-  current: number;
-  recommendedAction: string;
-}
-
-export interface InterruptionData {
-  canInterrupt: boolean;
-  priority: 'low' | 'medium' | 'high' | 'emergency';
-  contextPreservation: boolean;
-  estimatedResumeTime: number; // minutes
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -239,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Update session with new conversation entry
     if (userInput) {
-      const historyEntry: any = {
+      const historyEntry: Partial<ConversationEntry> = {
         type: body.audioData ? 'user_voice' : 'user_text',
         content: userInput,
         confidence: transcriptionConfidence,
@@ -298,7 +150,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function getOrCreateSession(
-  supabase: any, 
+  supabase: SupabaseClient, 
   userId: string, 
   organizationId: string, 
   sessionId?: string
@@ -382,7 +234,7 @@ async function transcribeVoiceInput(audioData: string): Promise<{ success: boole
   }
 }
 
-async function analyzeEmotion(audioData: string, userId: string): Promise<any> {
+async function analyzeEmotion(audioData: string, userId: string): Promise<EmotionAnalysis | null> {
   try {
     const emotionResponse = await fetch('/api/voice/biometric', {
       method: 'POST',
@@ -404,9 +256,9 @@ async function analyzeEmotion(audioData: string, userId: string): Promise<any> {
 }
 
 async function initializeSession(
-  supabase: any,
+  supabase: SupabaseClient,
   session: VoiceAssistantSession,
-  context: any
+  context: VoiceAssistantContext
 ): Promise<VoiceAssistantResponse> {
   // Get initial context from user's current state
   const initialContext = await buildInitialContext(supabase, session.userId, session.organizationId, context);
@@ -429,12 +281,12 @@ async function initializeSession(
 }
 
 async function processQuery(
-  supabase: any,
+  supabase: SupabaseClient,
   session: VoiceAssistantSession,
   userInput: string,
-  context: any,
-  emotion: any,
-  preferences: any
+  context: VoiceAssistantContext,
+  emotion: EmotionAnalysis | null,
+  preferences: VoicePreferences | undefined
 ): Promise<VoiceAssistantResponse> {
   // Extract intent and entities
   const intent = await extractIntent(userInput, context);
@@ -483,7 +335,7 @@ async function processQuery(
   };
 }
 
-async function extractIntent(userInput: string, context: any): Promise<VoiceIntent> {
+async function extractIntent(userInput: string, context: VoiceAssistantContext): Promise<VoiceIntent> {
   // Use AI to extract intent from user input
   const systemPrompt = `You are a board governance intent classifier. Analyze the user input and extract the intent, domain, action, and parameters.
 
@@ -592,11 +444,11 @@ async function extractEntities(userInput: string): Promise<ExtractedEntity[]> {
 }
 
 async function searchRelevantContent(
-  supabase: any,
+  supabase: SupabaseClient,
   query: string,
   organizationId: string,
   intent: VoiceIntent
-): Promise<any[]> {
+): Promise<SearchResult[]> {
   try {
     const searchRequest = {
       query,
@@ -615,7 +467,7 @@ async function searchRelevantContent(
 }
 
 async function generateBoardAnalytics(
-  supabase: any,
+  supabase: SupabaseClient,
   intent: VoiceIntent,
   organizationId: string
 ): Promise<BoardAnalytics | undefined> {
@@ -654,14 +506,14 @@ async function generateBoardAnalytics(
 }
 
 async function buildEnhancedContext(
-  supabase: any,
+  supabase: SupabaseClient,
   session: VoiceAssistantSession,
   userInput: string,
   intent: VoiceIntent,
   entities: ExtractedEntity[],
-  searchResults: any[],
-  emotion: any,
-  context: any
+  searchResults: SearchResult[],
+  emotion: EmotionAnalysis | null,
+  context: VoiceAssistantContext
 ): Promise<string> {
   const contextParts = [
     `User Query: "${userInput}"`,
@@ -689,7 +541,7 @@ async function buildEnhancedContext(
 
 async function generateIntelligentResponse(
   enhancedContext: string,
-  preferences: any
+  preferences: VoicePreferences | undefined
 ): Promise<{ message: string; confidence: number; suggestions?: string[] }> {
   const systemPrompt = `You are BoardGuru AI Assistant, a specialized AI for corporate governance and board management. You provide intelligent, context-aware assistance for board members, executives, and governance professionals.
 
@@ -767,11 +619,11 @@ function generateFollowUpSuggestions(response: string): string[] {
 
 // Additional helper functions would continue here...
 async function generateContextualInsights(
-  supabase: any,
+  supabase: SupabaseClient,
   session: VoiceAssistantSession,
   intent: VoiceIntent,
   entities: ExtractedEntity[],
-  context: any
+  context: VoiceAssistantContext
 ): Promise<ProactiveInsight[]> {
   // Implementation for generating contextual insights
   return [];
@@ -780,7 +632,7 @@ async function generateContextualInsights(
 async function generateBoardRecommendations(
   intent: VoiceIntent,
   entities: ExtractedEntity[],
-  searchResults: any[],
+  searchResults: SearchResult[],
   analytics?: BoardAnalytics
 ): Promise<BoardRecommendation[]> {
   // Implementation for generating board recommendations
@@ -788,9 +640,9 @@ async function generateBoardRecommendations(
 }
 
 async function generateProactiveInsights(
-  supabase: any,
+  supabase: SupabaseClient,
   session: VoiceAssistantSession,
-  context: any
+  context: VoiceAssistantContext
 ): Promise<VoiceAssistantResponse> {
   // Implementation for proactive insights
   return {
@@ -804,7 +656,7 @@ async function generateProactiveInsights(
 }
 
 async function resumeInterruptedContext(
-  supabase: any,
+  supabase: SupabaseClient,
   session: VoiceAssistantSession
 ): Promise<VoiceAssistantResponse> {
   // Implementation for resuming interrupted context
@@ -819,11 +671,11 @@ async function resumeInterruptedContext(
 }
 
 async function buildInitialContext(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   organizationId: string,
-  context: any
-): Promise<any> {
+  context: VoiceAssistantContext
+): Promise<ContextualInfo> {
   // Implementation for building initial context
   return {
     currentActivity: 'reviewing your dashboard'
@@ -831,7 +683,7 @@ async function buildInitialContext(
 }
 
 async function generateInitialInsights(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   organizationId: string
 ): Promise<ProactiveInsight[]> {
@@ -840,7 +692,7 @@ async function generateInitialInsights(
 }
 
 async function updateSessionHistory(
-  supabase: any,
+  supabase: SupabaseClient,
   sessionId: string,
   entry: Partial<ConversationEntry>
 ): Promise<void> {

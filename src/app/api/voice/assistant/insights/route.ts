@@ -1,174 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import {
+  ProactiveInsight,
+  ProactiveInsightRequest,
+  ProactiveInsightResponse,
+  ContextTrigger,
+  InsightType,
+  InsightEvidence,
+  DocumentReference,
+  MeetingReference,
+  StakeholderReference,
+  ActionableRecommendation,
+  TimelineItem,
+  InsightSummary,
+  ScheduledInsight,
+  AnalyticsMetadata,
+  ContextData,
+  SupabaseClient,
+  User,
+  Meeting,
+  Asset,
+  ComplianceWorkflow,
+  RiskAssessment
+} from '@/types/voice';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-export interface ProactiveInsightRequest {
-  organizationId: string;
-  userId?: string;
-  contextTriggers: ContextTrigger[];
-  insightTypes: InsightType[];
-  urgencyThreshold: 'low' | 'medium' | 'high' | 'critical';
-  lookbackPeriod: '24h' | '7d' | '30d' | '90d';
-  includeForecasting?: boolean;
-  includePeerComparison?: boolean;
-}
-
-export interface ContextTrigger {
-  type: 'document_upload' | 'meeting_scheduled' | 'deadline_approaching' | 'risk_threshold' | 'pattern_detected' | 'anomaly_detected';
-  entityId?: string;
-  metadata: Record<string, any>;
-  timestamp: string;
-  confidence: number;
-}
-
-export type InsightType = 
-  | 'document_relationships'
-  | 'meeting_preparation'
-  | 'compliance_deadlines'
-  | 'risk_patterns'
-  | 'performance_anomalies'
-  | 'strategic_opportunities'
-  | 'governance_gaps'
-  | 'stakeholder_insights'
-  | 'market_trends'
-  | 'regulatory_changes';
-
-export interface ProactiveInsight {
-  id: string;
-  type: InsightType;
-  category: 'strategic' | 'operational' | 'compliance' | 'risk' | 'governance';
-  title: string;
-  description: string;
-  detailedAnalysis: string;
-  urgency: 'low' | 'medium' | 'high' | 'critical';
-  confidence: number;
-  relevanceScore: number;
-  
-  // Evidence and supporting data
-  evidence: InsightEvidence[];
-  supportingDocuments: DocumentReference[];
-  relatedMeetings: MeetingReference[];
-  stakeholdersAffected: StakeholderReference[];
-  
-  // Actionable recommendations
-  recommendations: ActionableRecommendation[];
-  nextSteps: string[];
-  timeline: TimelineItem[];
-  
-  // Context and timing
-  contextTriggers: ContextTrigger[];
-  optimalTiming: string;
-  expiryConditions: string[];
-  
-  // Metadata
-  createdAt: string;
-  scheduledFor?: string;
-  acknowledgedAt?: string;
-  dismissedAt?: string;
-  escalatedAt?: string;
-  
-  // Personalization
-  personalizedToUser: boolean;
-  communicationStyle: 'concise' | 'detailed' | 'technical' | 'executive_summary';
-  deliveryPreference: 'immediate' | 'scheduled' | 'digest';
-}
-
-export interface InsightEvidence {
-  type: 'data_point' | 'trend_analysis' | 'pattern_match' | 'anomaly' | 'correlation' | 'external_factor';
-  description: string;
-  dataSource: string;
-  value?: number;
-  metadata: Record<string, any>;
-  confidence: number;
-}
-
-export interface DocumentReference {
-  id: string;
-  title: string;
-  type: string;
-  relevanceReason: string;
-  lastModified: string;
-  url: string;
-}
-
-export interface MeetingReference {
-  id: string;
-  title: string;
-  date: string;
-  type: string;
-  relevanceReason: string;
-  url: string;
-}
-
-export interface StakeholderReference {
-  id: string;
-  name: string;
-  role: string;
-  department: string;
-  impactLevel: 'low' | 'medium' | 'high';
-  requiresNotification: boolean;
-}
-
-export interface ActionableRecommendation {
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'immediate_action' | 'strategic_planning' | 'risk_mitigation' | 'process_improvement' | 'stakeholder_engagement';
-  title: string;
-  description: string;
-  expectedOutcome: string;
-  estimatedEffort: 'low' | 'medium' | 'high';
-  timeframe: string;
-  dependencies: string[];
-  resources: string[];
-  successMetrics: string[];
-  riskOfInaction: string;
-}
-
-export interface TimelineItem {
-  date: string;
-  milestone: string;
-  description: string;
-  responsible: string[];
-  critical: boolean;
-}
-
-export interface ProactiveInsightResponse {
-  success: boolean;
-  insights: ProactiveInsight[];
-  summary: InsightSummary;
-  scheduledInsights: ScheduledInsight[];
-  analyticsMetadata: AnalyticsMetadata;
-  error?: string;
-}
-
-export interface InsightSummary {
-  totalInsights: number;
-  criticalInsights: number;
-  highPriorityInsights: number;
-  categoryCounts: Record<string, number>;
-  avgConfidence: number;
-  avgRelevance: number;
-  newInsightsSinceLastCheck: number;
-}
-
-export interface ScheduledInsight {
-  insightId: string;
-  scheduledFor: string;
-  deliveryMethod: 'voice' | 'notification' | 'email' | 'dashboard';
-  conditions: string[];
-}
-
-export interface AnalyticsMetadata {
-  processingTime: number;
-  dataSources: string[];
-  algorithmsUsed: string[];
-  freshness: Record<string, string>;
-  confidence: {
-    overall: number;
-    byCategory: Record<string, number>;
-  };
-}
+// All interfaces now imported from @/types/voice
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -295,10 +154,10 @@ export async function POST(request: NextRequest) {
 }
 
 async function gatherContextData(
-  supabase: any,
+  supabase: SupabaseClient,
   request: ProactiveInsightRequest,
   userId: string
-): Promise<any> {
+): Promise<ContextData> {
   const lookbackDate = getLookbackDate(request.lookbackPeriod);
   
   // Gather comprehensive context data
@@ -401,9 +260,9 @@ function getLookbackDate(period: string): string {
 }
 
 async function generateProactiveInsights(
-  supabase: any,
+  supabase: SupabaseClient,
   request: ProactiveInsightRequest,
-  contextData: any,
+  contextData: ContextData,
   userId: string
 ): Promise<ProactiveInsight[]> {
   const insights: ProactiveInsight[] = [];
@@ -437,7 +296,7 @@ async function generateProactiveInsights(
 
 async function generateInsightsByType(
   type: InsightType,
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -462,7 +321,7 @@ async function generateInsightsByType(
 }
 
 async function generateDocumentRelationshipInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -473,29 +332,29 @@ async function generateDocumentRelationshipInsights(
   const documentGroups = groupDocumentsByTopic(recentAssets);
   
   for (const [topic, documents] of Object.entries(documentGroups)) {
-    if ((documents as any[]).length >= 3) {
+    if (documents.length >= 3) {
       const insight: ProactiveInsight = {
         id: `doc_rel_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
         type: 'document_relationships',
         category: 'operational',
         title: `Related Documents Detected: ${topic}`,
-        description: `Found ${(documents as any[]).length} documents related to ${topic} that may benefit from coordinated review`,
-        detailedAnalysis: `Analysis of recent document uploads shows a cluster of ${(documents as any[]).length} documents all relating to ${topic}. This suggests an emerging focus area that would benefit from comprehensive review and potential consolidation of insights.`,
-        urgency: (documents as any[]).length > 5 ? 'high' : 'medium',
+        description: `Found ${documents.length} documents related to ${topic} that may benefit from coordinated review`,
+        detailedAnalysis: `Analysis of recent document uploads shows a cluster of ${documents.length} documents all relating to ${topic}. This suggests an emerging focus area that would benefit from comprehensive review and potential consolidation of insights.`,
+        urgency: documents.length > 5 ? 'high' : 'medium',
         confidence: 0.85,
         relevanceScore: 0.8,
         
         evidence: [
           {
             type: 'pattern_match',
-            description: `${(documents as any[]).length} documents with similar topics uploaded recently`,
+            description: `${documents.length} documents with similar topics uploaded recently`,
             dataSource: 'assets',
-            metadata: { documentIds: (documents as any[]).map((d: any) => d.id) },
+            metadata: { documentIds: documents.map(d => d.id) },
             confidence: 0.9
           }
         ],
         
-        supportingDocuments: (documents as any[]).map((doc: any) => ({
+        supportingDocuments: documents.map(doc => ({
           id: doc.id,
           title: doc.title,
           type: doc.file_type,
@@ -558,7 +417,7 @@ async function generateDocumentRelationshipInsights(
 }
 
 async function generateMeetingPreparationInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -615,10 +474,10 @@ async function generateMeetingPreparationInsights(
           }
         ],
         
-        stakeholdersAffected: meeting.attendees ? meeting.attendees.map((attendee: any) => ({
-          id: attendee.id || attendee.email,
-          name: attendee.name || attendee.email,
-          role: attendee.role || 'Attendee',
+        stakeholdersAffected: meeting.attendees ? (meeting.attendees as unknown[]).map((attendee: unknown) => ({
+          id: (attendee as {id?: string; email: string}).id || (attendee as {email: string}).email,
+          name: (attendee as {name?: string; email: string}).name || (attendee as {email: string}).email,
+          role: (attendee as {role?: string}).role || 'Attendee',
           department: '',
           impactLevel: 'high' as const,
           requiresNotification: true
@@ -683,14 +542,14 @@ async function generateMeetingPreparationInsights(
 }
 
 async function generateComplianceDeadlineInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
   const insights: ProactiveInsight[] = [];
   const workflows = contextData.complianceWorkflows;
 
-  const upcomingDeadlines = workflows.filter((w: any) => {
+  const upcomingDeadlines = workflows.filter(w => {
     const dueDate = new Date(w.due_date);
     const daysUntilDue = Math.ceil((dueDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
     return daysUntilDue > 0 && daysUntilDue <= 30 && w.status !== 'completed';
@@ -775,7 +634,7 @@ async function generateComplianceDeadlineInsights(
 }
 
 async function generateRiskPatternInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -785,13 +644,13 @@ async function generateRiskPatternInsights(
   // Identify patterns in risk data
   const risksByCategory = groupRisksByCategory(risks);
   const highRiskCategories = Object.entries(risksByCategory)
-    .filter(([_, categoryRisks]) => (categoryRisks as any[]).length >= 2)
+    .filter(([_, categoryRisks]) => categoryRisks.length >= 2)
     .filter(([_, categoryRisks]) => 
-      (categoryRisks as any[]).some((r: any) => r.risk_level === 'high' || r.risk_level === 'critical')
+      categoryRisks.some(r => r.risk_level === 'high' || r.risk_level === 'critical')
     );
 
   for (const [category, categoryRisks] of highRiskCategories) {
-    const highRisks = (categoryRisks as any[]).filter((r: any) => 
+    const highRisks = categoryRisks.filter(r => 
       r.risk_level === 'high' || r.risk_level === 'critical'
     );
 
@@ -801,7 +660,7 @@ async function generateRiskPatternInsights(
       category: 'risk',
       title: `Risk Pattern Detected: ${category}`,
       description: `Multiple high-risk items identified in ${category} category (${highRisks.length} high/critical risks)`,
-      detailedAnalysis: `Pattern analysis reveals concentration of risk in ${category} with ${highRisks.length} high or critical risk items out of ${(categoryRisks as any[]).length} total risks in this category.`,
+      detailedAnalysis: `Pattern analysis reveals concentration of risk in ${category} with ${highRisks.length} high or critical risk items out of ${categoryRisks.length} total risks in this category.`,
       urgency: highRisks.length >= 3 ? 'critical' : 'high',
       confidence: 0.9,
       relevanceScore: 0.88,
@@ -870,7 +729,7 @@ async function generateRiskPatternInsights(
 }
 
 async function generatePerformanceAnomalyInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -880,7 +739,7 @@ async function generatePerformanceAnomalyInsights(
 }
 
 async function generateStrategicOpportunityInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -890,7 +749,7 @@ async function generateStrategicOpportunityInsights(
 }
 
 async function generateGovernanceGapInsights(
-  contextData: any,
+  contextData: ContextData,
   request: ProactiveInsightRequest,
   userId: string
 ): Promise<ProactiveInsight[]> {
@@ -900,8 +759,8 @@ async function generateGovernanceGapInsights(
 }
 
 // Utility functions
-function groupDocumentsByTopic(documents: any[]): Record<string, any[]> {
-  const groups: Record<string, any[]> = {};
+function groupDocumentsByTopic(documents: Asset[]): Record<string, Asset[]> {
+  const groups: Record<string, Asset[]> = {};
   
   for (const doc of documents) {
     const topic = doc.category || extractTopicFromTitle(doc.title);
@@ -928,7 +787,7 @@ function extractTopicFromTitle(title: string): string {
   return 'general';
 }
 
-function findRelevantDocumentsForMeeting(meeting: any, documents: any[]): any[] {
+function findRelevantDocumentsForMeeting(meeting: Meeting, documents: Asset[]): Asset[] {
   const meetingKeywords = [
     ...meeting.title.toLowerCase().split(' '),
     ...meeting.description?.toLowerCase().split(' ') || [],
@@ -952,8 +811,8 @@ function findRelevantDocumentsForMeeting(meeting: any, documents: any[]): any[] 
   });
 }
 
-function groupRisksByCategory(risks: any[]): Record<string, any[]> {
-  const groups: Record<string, any[]> = {};
+function groupRisksByCategory(risks: RiskAssessment[]): Record<string, RiskAssessment[]> {
+  const groups: Record<string, RiskAssessment[]> = {};
   
   for (const risk of risks) {
     const category = risk.category || 'general';
@@ -998,7 +857,7 @@ function determineScheduledInsights(insights: ProactiveInsight[], userId: string
 }
 
 async function storeGeneratedInsights(
-  supabase: any,
+  supabase: SupabaseClient,
   insights: ProactiveInsight[],
   organizationId: string,
   userId: string

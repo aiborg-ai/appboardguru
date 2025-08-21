@@ -19,11 +19,11 @@ export interface StatisticalResult {
 }
 
 export interface TimeGroupData {
-  readonly [key: string]: {
-    readonly count: number
-    readonly totalEngagement: number
-    readonly averageResponseTime: number
-    readonly actions: readonly string[]
+  [key: string]: {
+    count: number
+    totalEngagement: number
+    averageResponseTime: number
+    actions: string[]
   }
 }
 
@@ -655,25 +655,28 @@ export class StatisticalAnalysis {
     const dailyData = this.groupByDayOfWeek(behaviorData)
     const dayNames = Object.keys(dailyData)
     const peakEngagementDays = dayNames
-      .sort((a, b) => dailyData[b].totalEngagement - dailyData[a].totalEngagement)
+      .sort((a, b) => (dailyData[b]?.totalEngagement ?? 0) - (dailyData[a]?.totalEngagement ?? 0))
       .slice(0, 3) // Top 3 days
 
     // Analyze notification type preferences
     const typeEngagement: Record<string, number[]> = {}
     behaviorData.forEach(data => {
-      if (data.engagement_score !== null) {
+      if (data.engagement_score !== null && data.engagement_score !== undefined) {
         if (!typeEngagement[data.action_type]) {
           typeEngagement[data.action_type] = []
         }
-        typeEngagement[data.action_type].push(data.engagement_score)
+        typeEngagement[data.action_type]?.push(data.engagement_score)
       }
     })
 
     const preferredNotificationTypes = Object.keys(typeEngagement)
-      .map(type => ({
-        type,
-        avgEngagement: typeEngagement[type].reduce((sum, score) => sum + score, 0) / typeEngagement[type].length
-      }))
+      .map(type => {
+        const scores = typeEngagement[type] ?? []
+        return {
+          type,
+          avgEngagement: scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0
+        }
+      })
       .sort((a, b) => b.avgEngagement - a.avgEngagement)
       .slice(0, 3) // Top 3 types
       .map(item => item.type)
@@ -690,7 +693,19 @@ export class StatisticalAnalysis {
    */
   compareAgainstBenchmarks(
     orgMetrics: Record<string, number>,
-    benchmarks: readonly { metric: string; value: number; category: string }[]
+    benchmarks: readonly { 
+      metric: string; 
+      value: number; 
+      category: string;
+      metric_type: string;
+      percentile_data: {
+        p10: number;
+        p25: number;
+        p50: number;
+        p75: number;
+        p90: number;
+      };
+    }[]
   ): {
     metrics: Array<{
       metricType: string

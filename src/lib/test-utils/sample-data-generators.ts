@@ -224,7 +224,13 @@ export function generateSampleBoardMeetingData(
 /**
  * Generate user behavior profiles for realistic activity patterns
  */
-function generateUserBehaviorProfile(userId: number) {
+function generateUserBehaviorProfile(userId: number): {
+  minDailyActivities: number;
+  maxDailyActivities: number;
+  activeHours: { start: number; end: number };
+  worksWeekends: boolean;
+  engagementLevel: string;
+} {
   const profiles = [
     { // Heavy user
       minDailyActivities: 15,
@@ -276,7 +282,7 @@ function generateUserBehaviorProfile(userId: number) {
 /**
  * Generate realistic event data based on event type
  */
-function generateEventData(eventType: string, profile: any) {
+function generateEventData(eventType: string, profile: any): Record<string, any> {
   const baseData = {
     user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
@@ -316,7 +322,7 @@ function generateEventData(eventType: string, profile: any) {
 /**
  * Get realistic engagement rates by notification type
  */
-function getTypeEngagementRates(type: string) {
+function getTypeEngagementRates(type: string): { openRate: number; clickRate: number } {
   const rates = {
     'meeting_reminder': { openRate: 0.85, clickRate: 0.70 },
     'document_shared': { openRate: 0.65, clickRate: 0.45 },

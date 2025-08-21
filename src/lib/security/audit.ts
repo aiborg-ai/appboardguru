@@ -664,7 +664,7 @@ export async function generateSecurityReport(
     const riskEvents: Array<{ description: string; riskScore: number }> = []
     const complianceMap: Record<string, number> = {}
 
-    events.forEach(event => {
+    events.forEach((event: any) => {
       // Count by type
       eventsByType[event.event_type] = (eventsByType[event.event_type] || 0) + 1
 
@@ -680,7 +680,7 @@ export async function generateSecurityReport(
       }
 
       // Count compliance events
-      if (event.compliance_tags) {
+      if (event.compliance_tags && Array.isArray(event.compliance_tags)) {
         event.compliance_tags.forEach((tag: string) => {
           complianceMap[tag] = (complianceMap[tag] || 0) + 1
         })
@@ -689,7 +689,7 @@ export async function generateSecurityReport(
 
     // Top risks
     const riskCounts: Record<string, { count: number; maxRisk: number }> = {}
-    riskEvents.forEach(event => {
+    riskEvents.forEach((event: { description: string; riskScore: number }) => {
       if (!riskCounts[event.description]) {
         riskCounts[event.description] = { count: 0, maxRisk: 0 }
       }

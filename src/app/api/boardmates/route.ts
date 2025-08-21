@@ -80,11 +80,11 @@ export async function GET(request: NextRequest) {
       org_joined_at: boardmate.org_joined_at,
       org_last_accessed: boardmate.org_last_accessed,
       board_memberships: Array.isArray(boardmate.board_memberships) ? 
-        boardmate.board_memberships.filter((bm: any) => bm !== null) : [],
+        boardmate.board_memberships.filter((bm: unknown) => bm !== null) : [],
       committee_memberships: Array.isArray(boardmate.committee_memberships) ? 
-        boardmate.committee_memberships.filter((cm: any) => cm !== null) : [],
+        boardmate.committee_memberships.filter((cm: unknown) => cm !== null) : [],
       vault_memberships: Array.isArray(boardmate.vault_memberships) ? 
-        boardmate.vault_memberships.filter((vm: any) => vm !== null) : []
+        boardmate.vault_memberships.filter((vm: unknown) => vm !== null) : []
     })) || [];
 
     // Get total count for pagination
@@ -212,14 +212,15 @@ export async function POST(request: NextRequest) {
       }
 
       // Update existing user with new information if provided
+      const existingUserData = existingUser as { designation?: string; linkedin_url?: string; bio?: string; company?: string; position?: string };
       const { error: updateError } = await supabaseAdmin
         .from('users')
         .update({
-          designation: designation || (existingUser as any).designation,
-          linkedin_url: linkedin_url || (existingUser as any).linkedin_url,
-          bio: bio || (existingUser as any).bio,
-          company: company || (existingUser as any).company,
-          position: position || (existingUser as any).position,
+          designation: designation || existingUserData.designation,
+          linkedin_url: linkedin_url || existingUserData.linkedin_url,
+          bio: bio || existingUserData.bio,
+          company: company || existingUserData.company,
+          position: position || existingUserData.position,
           updated_at: new Date().toISOString()
         })
         .eq('id', existingUser.id);

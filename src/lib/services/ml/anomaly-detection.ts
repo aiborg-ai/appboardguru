@@ -6,30 +6,78 @@
 import { StatisticalAnalysis } from './statistical-analysis'
 
 export interface AnomalyResult {
-  type: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  score: number
-  method: string
-  baseline: any
-  anomalous: any
-  affectedMetrics: string[]
-  recommendedActions: string[]
-  description: string
+  readonly type: string
+  readonly severity: 'low' | 'medium' | 'high' | 'critical'
+  readonly score: number
+  readonly method: string
+  readonly baseline: Record<string, any>
+  readonly anomalous: Record<string, any>
+  readonly affectedMetrics: readonly string[]
+  readonly recommendedActions: readonly string[]
+  readonly description: string
+  readonly timestamp: Date
+  readonly confidence: number
 }
 
 export interface BehaviorProfile {
-  userId: string
-  normalPatterns: {
-    hourlyActivity: Record<string, number>
-    dailyActivity: Record<string, number>
-    responseTimeRange: [number, number]
-    engagementRange: [number, number]
-    commonActionTypes: string[]
+  readonly userId: string
+  readonly normalPatterns: {
+    readonly hourlyActivity: Record<string, number>
+    readonly dailyActivity: Record<string, number>
+    readonly responseTimeRange: readonly [number, number]
+    readonly engagementRange: readonly [number, number]
+    readonly commonActionTypes: readonly string[]
   }
-  thresholds: {
-    responseTime: { min: number; max: number }
-    engagement: { min: number; max: number }
-    frequency: { min: number; max: number }
+  readonly thresholds: {
+    readonly responseTime: { readonly min: number; readonly max: number }
+    readonly engagement: { readonly min: number; readonly max: number }
+    readonly frequency: { readonly min: number; readonly max: number }
+  }
+  readonly profileCreated: Date
+  readonly lastUpdated: Date
+  readonly dataQuality: {
+    readonly completeness: number // 0-1 scale
+    readonly consistency: number // 0-1 scale
+    readonly sampleSize: number
+  }
+}
+
+// Statistical baseline for anomaly detection
+export interface StatisticalBaseline {
+  readonly stats: Record<string, {
+    readonly mean: number
+    readonly stdDev: number
+    readonly min: number
+    readonly max: number
+    readonly median: number
+    readonly q25: number
+    readonly q75: number
+  }>
+  readonly patterns: Record<string, any>
+  readonly thresholds: Record<string, {
+    readonly min: number
+    readonly max: number
+  }>
+  readonly sampleSize: number
+  readonly createdAt: Date
+}
+
+// Anomaly detection configuration
+export interface AnomalyDetectionConfig {
+  readonly sensitivity: 'low' | 'medium' | 'high'
+  readonly methods: readonly ('volume' | 'timing' | 'engagement' | 'sequence' | 'velocity')[]
+  readonly timeWindow: {
+    readonly baseline: number // days
+    readonly analysis: number // days
+  }
+  readonly thresholds: {
+    readonly zScore: Record<'low' | 'medium' | 'high', number>
+    readonly ratio: Record<'low' | 'medium' | 'high', number>
+  }
+  readonly exclusions?: {
+    readonly ignoredHours?: readonly number[]
+    readonly ignoredDays?: readonly number[]
+    readonly ignoredActionTypes?: readonly string[]
   }
 }
 
@@ -44,21 +92,39 @@ export class AnomalyDetection {
    * Main anomaly detection method
    */
   async detectAnomalies(
-    baselineData: any[],
-    recentData: any[],
-    sensitivity: 'low' | 'medium' | 'high' = 'medium'
-  ): Promise<AnomalyResult[]> {
+    baselineData: readonly UserBehaviorData[],
+    recentData: readonly UserBehaviorData[],
+    config: AnomalyDetectionConfig = {
+      sensitivity: 'medium',
+      methods: ['volume', 'timing', 'engagement', 'sequence', 'velocity'],
+      timeWindow: { baseline: 30, analysis: 7 },
+      thresholds: {
+        zScore: { low: 3, medium: 2, high: 1.5 },
+        ratio: { low: 0.7, medium: 0.5, high: 0.3 }
+      }
+    }
+  ): Promise<readonly AnomalyResult[]> {
     const anomalies: AnomalyResult[] = []
 
     // Build baseline profile
     const baseline = this.buildBaselineProfile(baselineData)
     
-    // Detect various types of anomalies
-    const volumeAnomalies = this.detectVolumeAnomalies(baseline, recentData, sensitivity)
-    const timingAnomalies = this.detectTimingAnomalies(baseline, recentData, sensitivity)
-    const engagementAnomalies = this.detectEngagementAnomalies(baseline, recentData, sensitivity)
-    const sequenceAnomalies = this.detectSequenceAnomalies(baseline, recentData, sensitivity)
-    const velocityAnomalies = this.detectVelocityAnomalies(baseline, recentData, sensitivity)
+    // Detect various types of anomalies based on enabled methods
+    const volumeAnomalies = config.methods.includes('volume') 
+      ? this.detectVolumeAnomalies(baseline, recentData, config) 
+      : []
+    const timingAnomalies = config.methods.includes('timing')
+      ? this.detectTimingAnomalies(baseline, recentData, config)
+      : []
+    const engagementAnomalies = config.methods.includes('engagement')
+      ? this.detectEngagementAnomalies(baseline, recentData, config)
+      : []
+    const sequenceAnomalies = config.methods.includes('sequence')
+      ? this.detectSequenceAnomalies(baseline, recentData, config)
+      : []
+    const velocityAnomalies = config.methods.includes('velocity')
+      ? this.detectVelocityAnomalies(baseline, recentData, config)
+      : []
 
     anomalies.push(...volumeAnomalies)
     anomalies.push(...timingAnomalies)
@@ -72,11 +138,7 @@ export class AnomalyDetection {
   /**
    * Build baseline behavior profile from historical data
    */
-  private buildBaselineProfile(data: any[]): {
-    stats: Record<string, any>
-    patterns: Record<string, any>
-    thresholds: Record<string, any>
-  } {
+  private buildBaselineProfile(data: readonly UserBehaviorData[]): StatisticalBaseline {
     if (data.length === 0) {
       return { stats: {}, patterns: {}, thresholds: {} }
     }
@@ -123,17 +185,23 @@ export class AnomalyDetection {
       }
     }
 
-    return { stats, patterns, thresholds }
+    return { 
+      stats, 
+      patterns, 
+      thresholds,
+      sampleSize: data.length,
+      createdAt: new Date()
+    } as StatisticalBaseline
   }
 
   /**
    * Detect volume anomalies (unusual activity levels)
    */
   private detectVolumeAnomalies(
-    baseline: any,
-    recentData: any[],
-    sensitivity: 'low' | 'medium' | 'high'
-  ): AnomalyResult[] {
+    baseline: StatisticalBaseline,
+    recentData: readonly UserBehaviorData[],
+    config: AnomalyDetectionConfig
+  ): readonly AnomalyResult[] {
     const anomalies: AnomalyResult[] = []
     
     if (recentData.length === 0 || !baseline.stats.dailyVolume) {
@@ -144,13 +212,12 @@ export class AnomalyDetection {
     const recentDailyCounts = this.groupByDay(recentData)
     const recentDailyValues = Object.values(recentDailyCounts)
     
-    const sensitivityMultipliers = { low: 3, medium: 2, high: 1.5 }
-    const multiplier = sensitivityMultipliers[sensitivity]
+    const threshold = config.thresholds.zScore[config.sensitivity]
 
     for (const [day, count] of Object.entries(recentDailyCounts)) {
       const zScore = this.calculateZScore(count, baseline.stats.dailyVolume.mean, baseline.stats.dailyVolume.stdDev)
       
-      if (Math.abs(zScore) > multiplier) {
+      if (Math.abs(zScore) > threshold) {
         const isSpike = count > baseline.stats.dailyVolume.mean
         
         anomalies.push({
@@ -180,7 +247,9 @@ export class AnomalyDetection {
             'Check for system issues or user problems',
             'Consider user engagement initiatives'
           ],
-          description: `${isSpike ? 'Unusual spike' : 'Unusual drop'} in daily activity: ${count} vs expected ~${baseline.stats.dailyVolume.mean.toFixed(0)}`
+          description: `${isSpike ? 'Unusual spike' : 'Unusual drop'} in daily activity: ${count} vs expected ~${baseline.stats.dailyVolume.mean.toFixed(0)}`,
+          timestamp: new Date(),
+          confidence: Math.min(Math.abs(zScore) / 5, 1) // Scale confidence based on z-score
         })
       }
     }
@@ -192,10 +261,10 @@ export class AnomalyDetection {
    * Detect timing anomalies (unusual time patterns)
    */
   private detectTimingAnomalies(
-    baseline: any,
-    recentData: any[],
-    sensitivity: 'low' | 'medium' | 'high'
-  ): AnomalyResult[] {
+    baseline: StatisticalBaseline,
+    recentData: readonly UserBehaviorData[],
+    config: AnomalyDetectionConfig
+  ): readonly AnomalyResult[] {
     const anomalies: AnomalyResult[] = []
     
     if (!baseline.patterns.peakHours || recentData.length === 0) {
@@ -216,9 +285,9 @@ export class AnomalyDetection {
     }
 
     const unusualActivityRatio = unusualHourActivity / totalRecentActivity
-    const thresholds = { low: 0.6, medium: 0.4, high: 0.3 }
+    const threshold = config.thresholds.ratio[config.sensitivity]
 
-    if (unusualActivityRatio > thresholds[sensitivity]) {
+    if (unusualActivityRatio > threshold) {
       anomalies.push({
         type: 'timing_deviation',
         severity: this.calculateSeverityFromRatio(unusualActivityRatio),
@@ -238,7 +307,9 @@ export class AnomalyDetection {
           'Check for automated processes or external triggers',
           'Verify user time zones and working hours'
         ],
-        description: `${(unusualActivityRatio * 100).toFixed(1)}% of recent activity occurred during historically low-activity hours`
+        description: `${(unusualActivityRatio * 100).toFixed(1)}% of recent activity occurred during historically low-activity hours`,
+        timestamp: new Date(),
+        confidence: Math.min(unusualActivityRatio * 2, 1)
       })
     }
 
@@ -249,10 +320,10 @@ export class AnomalyDetection {
    * Detect engagement anomalies
    */
   private detectEngagementAnomalies(
-    baseline: any,
-    recentData: any[],
-    sensitivity: 'low' | 'medium' | 'high'
-  ): AnomalyResult[] {
+    baseline: StatisticalBaseline,
+    recentData: readonly UserBehaviorData[],
+    config: AnomalyDetectionConfig
+  ): readonly AnomalyResult[] {
     const anomalies: AnomalyResult[] = []
     
     const recentEngagementScores = recentData
@@ -268,9 +339,9 @@ export class AnomalyDetection {
     const baselineStdDev = baseline.stats.engagement.stdDev
 
     const zScore = this.calculateZScore(recentAvgEngagement, baselineAvg, baselineStdDev)
-    const sensitivityThresholds = { low: 2.5, medium: 2, high: 1.5 }
+    const threshold = config.thresholds.zScore[config.sensitivity]
 
-    if (Math.abs(zScore) > sensitivityThresholds[sensitivity]) {
+    if (Math.abs(zScore) > threshold) {
       const isDecrease = recentAvgEngagement < baselineAvg
       
       anomalies.push({
@@ -297,7 +368,9 @@ export class AnomalyDetection {
           'Consider scaling successful engagement strategies',
           'Monitor sustainability of engagement increase'
         ],
-        description: `${isDecrease ? 'Significant decline' : 'Notable increase'} in user engagement: ${(recentAvgEngagement * 100).toFixed(1)}% vs baseline ${(baselineAvg * 100).toFixed(1)}%`
+        description: `${isDecrease ? 'Significant decline' : 'Notable increase'} in user engagement: ${(recentAvgEngagement * 100).toFixed(1)}% vs baseline ${(baselineAvg * 100).toFixed(1)}%`,
+        timestamp: new Date(),
+        confidence: Math.min(Math.abs(zScore) / 4, 1)
       })
     }
 
@@ -308,10 +381,10 @@ export class AnomalyDetection {
    * Detect sequence anomalies (unusual action sequences)
    */
   private detectSequenceAnomalies(
-    baseline: any,
-    recentData: any[],
-    sensitivity: 'low' | 'medium' | 'high'
-  ): AnomalyResult[] {
+    baseline: StatisticalBaseline,
+    recentData: readonly UserBehaviorData[],
+    config: AnomalyDetectionConfig
+  ): readonly AnomalyResult[] {
     const anomalies: AnomalyResult[] = []
     
     if (recentData.length < 5) {
@@ -329,9 +402,9 @@ export class AnomalyDetection {
 
     if (unusualSequences.length > 0) {
       const unusualRatio = unusualSequences.length / recentSequences.length
-      const thresholds = { low: 0.7, medium: 0.5, high: 0.3 }
+      const threshold = config.thresholds.ratio[config.sensitivity]
 
-      if (unusualRatio > thresholds[sensitivity]) {
+      if (unusualRatio > threshold) {
         anomalies.push({
           type: 'sequence_anomaly',
           severity: this.calculateSeverityFromRatio(unusualRatio),
@@ -351,7 +424,9 @@ export class AnomalyDetection {
             'Investigate if unusual sequences indicate user confusion',
             'Consider user experience improvements'
           ],
-          description: `${(unusualRatio * 100).toFixed(1)}% of recent action sequences are unusual compared to historical patterns`
+          description: `${(unusualRatio * 100).toFixed(1)}% of recent action sequences are unusual compared to historical patterns`,
+          timestamp: new Date(),
+          confidence: Math.min(unusualRatio * 2, 1)
         })
       }
     }
@@ -363,10 +438,10 @@ export class AnomalyDetection {
    * Detect velocity anomalies (unusual speed of actions)
    */
   private detectVelocityAnomalies(
-    baseline: any,
-    recentData: any[],
-    sensitivity: 'low' | 'medium' | 'high'
-  ): AnomalyResult[] {
+    baseline: StatisticalBaseline,
+    recentData: readonly UserBehaviorData[],
+    config: AnomalyDetectionConfig
+  ): readonly AnomalyResult[] {
     const anomalies: AnomalyResult[] = []
     
     if (!baseline.stats.responseTime || recentData.length === 0) {
@@ -386,9 +461,9 @@ export class AnomalyDetection {
     const baselineStdDev = baseline.stats.responseTime.stdDev
 
     const zScore = this.calculateZScore(recentAvgResponseTime, baselineAvg, baselineStdDev)
-    const sensitivityThresholds = { low: 2.5, medium: 2, high: 1.5 }
+    const threshold = config.thresholds.zScore[config.sensitivity]
 
-    if (Math.abs(zScore) > sensitivityThresholds[sensitivity]) {
+    if (Math.abs(zScore) > threshold) {
       const isFaster = recentAvgResponseTime < baselineAvg
       
       anomalies.push({
@@ -416,7 +491,9 @@ export class AnomalyDetection {
           'Analyze user workflow bottlenecks',
           'Consider user training or interface improvements'
         ],
-        description: `Significant change in response velocity: ${(recentAvgResponseTime / 1000 / 60).toFixed(1)} min vs baseline ${(baselineAvg / 1000 / 60).toFixed(1)} min`
+        description: `Significant change in response velocity: ${(recentAvgResponseTime / 1000 / 60).toFixed(1)} min vs baseline ${(baselineAvg / 1000 / 60).toFixed(1)} min`,
+        timestamp: new Date(),
+        confidence: Math.min(Math.abs(zScore) / 4, 1)
       })
     }
 
@@ -426,7 +503,7 @@ export class AnomalyDetection {
   /**
    * Identify risk factors for specific users
    */
-  identifyUserRiskFactors(behaviorData: any[]): string[] {
+  identifyUserRiskFactors(behaviorData: readonly UserBehaviorData[]): readonly string[] {
     const riskFactors: string[] = []
     
     if (behaviorData.length === 0) {
@@ -435,8 +512,11 @@ export class AnomalyDetection {
 
     // Check for declining engagement trend
     const engagementScores = behaviorData
-      .filter(d => d.engagement_score !== null)
-      .map(d => ({ score: d.engagement_score, timestamp: new Date(d.timestamp) }))
+      .filter(d => d.engagement_score !== null && d.engagement_score !== undefined)
+      .map(d => ({ 
+        score: d.engagement_score!, 
+        timestamp: typeof d.timestamp === 'string' ? new Date(d.timestamp) : d.timestamp
+      }))
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
 
     if (engagementScores.length >= 10) {
@@ -464,7 +544,7 @@ export class AnomalyDetection {
     // Check for very slow response times
     const responseTimes = behaviorData
       .filter(d => d.response_time_ms && d.response_time_ms > 0)
-      .map(d => d.response_time_ms)
+      .map(d => d.response_time_ms!)
     
     if (responseTimes.length > 0) {
       const avgResponseTime = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
@@ -476,8 +556,11 @@ export class AnomalyDetection {
     }
 
     // Check for low overall activity
-    const daysCovered = new Set(behaviorData.map(d => new Date(d.timestamp).toDateString())).size
-    const avgActionsPerDay = behaviorData.length / daysCovered
+    const daysCovered = new Set(behaviorData.map(d => {
+      const timestamp = typeof d.timestamp === 'string' ? new Date(d.timestamp) : d.timestamp
+      return timestamp.toDateString()
+    })).size
+    const avgActionsPerDay = daysCovered > 0 ? behaviorData.length / daysCovered : 0
     
     if (avgActionsPerDay < 2) {
       riskFactors.push('Low overall activity level')
@@ -492,21 +575,154 @@ export class AnomalyDetection {
     return riskFactors.length > 0 ? riskFactors : ['No significant risk factors detected']
   }
 
+  /**
+   * Create comprehensive behavior profile for a user
+   */
+  createUserBehaviorProfile(
+    userId: string,
+    behaviorData: readonly UserBehaviorData[]
+  ): BehaviorProfile {
+    if (behaviorData.length === 0) {
+      throw new Error('Insufficient data to create behavior profile')
+    }
+
+    const responseTimes = behaviorData
+      .filter(d => d.response_time_ms && d.response_time_ms > 0)
+      .map(d => d.response_time_ms!)
+
+    const engagementScores = behaviorData
+      .filter(d => d.engagement_score !== null && d.engagement_score !== undefined)
+      .map(d => d.engagement_score!)
+
+    const hourlyActivity = this.groupByHour(behaviorData)
+    const dailyActivity = this.groupByDay(behaviorData)
+    const actionTypes = behaviorData.map(d => d.action_type)
+
+    // Calculate ranges
+    const responseTimeRange: readonly [number, number] = responseTimes.length > 0 
+      ? [Math.min(...responseTimes), Math.max(...responseTimes)]
+      : [0, 0]
+
+    const engagementRange: readonly [number, number] = engagementScores.length > 0
+      ? [Math.min(...engagementScores), Math.max(...engagementScores)]
+      : [0, 1]
+
+    // Calculate thresholds (mean ± 2 standard deviations)
+    const responseStats = this.statisticalAnalysis.calculateDescriptiveStats(responseTimes)
+    const engagementStats = this.statisticalAnalysis.calculateDescriptiveStats(engagementScores)
+    const activityStats = this.statisticalAnalysis.calculateDescriptiveStats(Object.values(hourlyActivity))
+
+    return {
+      userId,
+      normalPatterns: {
+        hourlyActivity,
+        dailyActivity,
+        responseTimeRange,
+        engagementRange,
+        commonActionTypes: this.findCommonActionTypes(actionTypes)
+      },
+      thresholds: {
+        responseTime: {
+          min: Math.max(0, responseStats.mean - 2 * responseStats.stdDev),
+          max: responseStats.mean + 2 * responseStats.stdDev
+        },
+        engagement: {
+          min: Math.max(0, engagementStats.mean - 2 * engagementStats.stdDev),
+          max: Math.min(1, engagementStats.mean + 2 * engagementStats.stdDev)
+        },
+        frequency: {
+          min: Math.max(0, activityStats.mean - 2 * activityStats.stdDev),
+          max: activityStats.mean + 2 * activityStats.stdDev
+        }
+      },
+      profileCreated: new Date(),
+      lastUpdated: new Date(),
+      dataQuality: {
+        completeness: this.calculateDataCompleteness(behaviorData),
+        consistency: this.calculateDataConsistency(behaviorData),
+        sampleSize: behaviorData.length
+      }
+    }
+  }
+
+  /**
+   * Calculate data completeness score
+   */
+  private calculateDataCompleteness(data: readonly UserBehaviorData[]): number {
+    if (data.length === 0) return 0
+
+    let completenessScore = 0
+    let totalFields = 0
+
+    data.forEach(record => {
+      const fields = [
+        record.timestamp,
+        record.action_type,
+        record.engagement_score,
+        record.response_time_ms
+      ]
+
+      fields.forEach(field => {
+        totalFields++
+        if (field !== null && field !== undefined) {
+          completenessScore++
+        }
+      })
+    })
+
+    return totalFields > 0 ? completenessScore / totalFields : 0
+  }
+
+  /**
+   * Calculate data consistency score
+   */
+  private calculateDataConsistency(data: readonly UserBehaviorData[]): number {
+    if (data.length < 2) return 1
+
+    // Check for consistent timestamp ordering
+    let consistentOrdering = 0
+    for (let i = 1; i < data.length; i++) {
+      const prev = new Date(data[i-1]!.timestamp)
+      const curr = new Date(data[i]!.timestamp)
+      if (curr >= prev) {
+        consistentOrdering++
+      }
+    }
+
+    // Check for reasonable engagement score ranges
+    const engagementScores = data
+      .filter(d => d.engagement_score !== null && d.engagement_score !== undefined)
+      .map(d => d.engagement_score!)
+    
+    const validEngagementScores = engagementScores.filter(score => score >= 0 && score <= 1).length
+    const engagementConsistency = engagementScores.length > 0 
+      ? validEngagementScores / engagementScores.length 
+      : 1
+
+    const orderingConsistency = (data.length - 1) > 0 ? consistentOrdering / (data.length - 1) : 1
+
+    return (orderingConsistency + engagementConsistency) / 2
+  }
+
   // Helper methods
 
-  private groupByDay(data: any[]): Record<string, number> {
+  private groupByDay(data: readonly UserBehaviorData[]): Record<string, number> {
     const grouped: Record<string, number> = {}
     data.forEach(item => {
-      const day = new Date(item.timestamp).toISOString().split('T')[0]
-      grouped[day] = (grouped[day] || 0) + 1
+      const timestamp = typeof item.timestamp === 'string' ? new Date(item.timestamp) : item.timestamp
+      const day = timestamp.toISOString().split('T')[0]
+      if (day) {
+        grouped[day] = (grouped[day] || 0) + 1
+      }
     })
     return grouped
   }
 
-  private groupByHour(data: any[]): Record<string, number> {
+  private groupByHour(data: readonly UserBehaviorData[]): Record<string, number> {
     const grouped: Record<string, number> = {}
     data.forEach(item => {
-      const hour = new Date(item.timestamp).getHours().toString()
+      const timestamp = typeof item.timestamp === 'string' ? new Date(item.timestamp) : item.timestamp
+      const hour = timestamp.getHours().toString()
       grouped[hour] = (grouped[hour] || 0) + 1
     })
     return grouped
@@ -521,7 +737,7 @@ export class AnomalyDetection {
     const avgCount = counts.reduce((sum, count) => sum + count, 0) / counts.length
     const threshold = avgCount * 1.2 // 20% above average
     
-    return hours.filter(hour => hourlyCounts[hour.toString()] > threshold)
+    return hours.filter(hour => (hourlyCounts[hour.toString()] ?? 0) > threshold)
   }
 
   private findPeakActivityDays(dailyCounts: Record<string, number>): string[] {
@@ -533,7 +749,7 @@ export class AnomalyDetection {
     const avgCount = counts.reduce((sum, count) => sum + count, 0) / counts.length
     const threshold = avgCount * 1.3 // 30% above average
     
-    return days.filter(day => dailyCounts[day] > threshold)
+    return days.filter(day => (dailyCounts[day] ?? 0) > threshold)
   }
 
   private findCommonActionTypes(actionTypes: string[]): string[] {
@@ -548,7 +764,10 @@ export class AnomalyDetection {
       .map(([action]) => action)
   }
 
-  private analyzeSessionPatterns(data: any[]): any {
+  private analyzeSessionPatterns(data: readonly UserBehaviorData[]): {
+    readonly averageSessionLength: number
+    readonly totalSessions: number
+  } {
     // Group by session_id if available
     const sessions: Record<string, any[]> = {}
     data.forEach(item => {
@@ -564,7 +783,7 @@ export class AnomalyDetection {
     }
   }
 
-  private extractActionSequences(data: any[], sequenceLength: number): string[] {
+  private extractActionSequences(data: readonly UserBehaviorData[], sequenceLength: number): readonly string[] {
     const sequences: string[] = []
     
     for (let i = 0; i <= data.length - sequenceLength; i++) {
@@ -577,7 +796,7 @@ export class AnomalyDetection {
     return sequences
   }
 
-  private isSequenceCommon(sequence: string, commonActions: string[]): boolean {
+  private isSequenceCommon(sequence: string, commonActions: readonly string[]): boolean {
     // Check if the sequence contains common action patterns
     const actions = sequence.split(' -> ')
     return actions.every(action => commonActions.includes(action))

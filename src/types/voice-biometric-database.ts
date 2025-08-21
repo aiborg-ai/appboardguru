@@ -3,6 +3,148 @@
  * Database table definitions for voice biometric security and personalization features
  */
 
+// ============================================================================
+// VOICE BIOMETRIC TYPE DEFINITIONS
+// ============================================================================
+
+export interface BiometricSecuritySettings {
+  readonly encryptionLevel?: 'standard' | 'enhanced' | 'maximum';
+  readonly storageLocation?: 'local' | 'cloud' | 'hybrid';
+  readonly retentionPeriod?: number;
+  readonly accessControl?: {
+    readonly allowRemoteAccess: boolean;
+    readonly restrictToDevice: boolean;
+    readonly requireTwoFactor: boolean;
+  };
+  readonly auditLevel?: 'basic' | 'detailed' | 'comprehensive';
+}
+
+export interface VoicePersonalizationProfile {
+  readonly preferredLanguage?: string;
+  readonly speechRate?: number;
+  readonly voiceTone?: 'formal' | 'casual' | 'friendly';
+  readonly adaptiveResponse?: boolean;
+  readonly contextAwareness?: boolean;
+  readonly learningEnabled?: boolean;
+  readonly privacyLevel?: 'minimal' | 'standard' | 'enhanced';
+}
+
+export interface DeviceInfo {
+  readonly deviceId: string;
+  readonly platform: string;
+  readonly osVersion: string;
+  readonly appVersion: string;
+  readonly microphoneType?: string;
+  readonly audioQuality?: 'low' | 'medium' | 'high';
+  readonly batteryLevel?: number;
+}
+
+export interface ContextualInfo {
+  readonly environment?: 'quiet' | 'noisy' | 'moderate';
+  readonly timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
+  readonly locationContext?: string;
+  readonly userState?: 'calm' | 'stressed' | 'excited' | 'tired';
+  readonly sessionDuration?: number;
+}
+
+export interface SecurityFlag {
+  readonly flag: string;
+  readonly severity: 'low' | 'medium' | 'high' | 'critical';
+  readonly description?: string;
+  readonly timestamp: string;
+}
+
+export interface BiometricQualityMetrics {
+  readonly clarity: number;
+  readonly consistency: number;
+  readonly uniqueness: number;
+  readonly completeness: number;
+  readonly overallScore: number;
+  readonly recommendations?: readonly string[];
+}
+
+export interface FraudIndicator {
+  readonly type: 'deepfake' | 'replay' | 'synthesis' | 'spoofing';
+  readonly confidence: number;
+  readonly evidence?: string;
+  readonly riskLevel: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export interface SecurityAssessment {
+  readonly riskScore: number;
+  readonly riskLevel: 'very_low' | 'low' | 'medium' | 'high' | 'very_high';
+  readonly factors: readonly string[];
+  readonly recommendations?: readonly string[];
+  readonly timestamp: string;
+}
+
+export interface EmotionAnalysisResult {
+  readonly primaryEmotion: string;
+  readonly confidence: number;
+  readonly emotions: Record<string, number>;
+  readonly valence: number;
+  readonly arousal: number;
+  readonly stress: number;
+}
+
+export interface CommunicationStyle {
+  readonly formality: number;
+  readonly directness: number;
+  readonly enthusiasm: number;
+  readonly clarity: number;
+  readonly preferred: {
+    readonly tone: string;
+    readonly pace: number;
+    readonly style: string;
+  };
+}
+
+export interface AdaptiveSettings {
+  readonly autoAdjust: boolean;
+  readonly learningRate: number;
+  readonly adaptationThreshold: number;
+  readonly personalizationLevel: 'basic' | 'moderate' | 'advanced';
+}
+
+export interface VoiceShortcut {
+  readonly command: string;
+  readonly action: string;
+  readonly parameters?: Record<string, unknown>;
+  readonly enabled: boolean;
+}
+
+export interface LearningHistory {
+  readonly interactions: number;
+  readonly adaptations: number;
+  readonly improvements: readonly string[];
+  readonly lastUpdate: string;
+}
+
+export interface PersonalizationPreferences {
+  readonly dataCollection: boolean;
+  readonly profileSharing: boolean;
+  readonly anonymization: boolean;
+  readonly retentionPeriod?: number;
+}
+
+export interface VoiceCharacteristics {
+  readonly frequency: {
+    readonly fundamental: number;
+    readonly range: [number, number];
+    readonly variability: number;
+  };
+  readonly spectral: {
+    readonly centroid: number;
+    readonly rolloff: number;
+    readonly flux: number;
+  };
+  readonly temporal: {
+    readonly duration: number;
+    readonly pausePattern: readonly number[];
+    readonly rhythm: number;
+  };
+}
+
 export interface VoiceBiometricDatabase {
   public: {
     Tables: {
@@ -18,8 +160,8 @@ export interface VoiceBiometricDatabase {
           template_version: string;
           enrollment_complete: boolean;
           quality_score: number;
-          security_settings: any; // JSON of BiometricSecuritySettings
-          personalization_settings: any; // JSON of VoicePersonalizationProfile
+          security_settings: BiometricSecuritySettings;
+          personalization_settings: VoicePersonalizationProfile;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -37,8 +179,8 @@ export interface VoiceBiometricDatabase {
           template_version?: string;
           enrollment_complete?: boolean;
           quality_score?: number;
-          security_settings?: any;
-          personalization_settings?: any;
+          security_settings?: BiometricSecuritySettings;
+          personalization_settings?: VoicePersonalizationProfile;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -56,8 +198,8 @@ export interface VoiceBiometricDatabase {
           template_version?: string;
           enrollment_complete?: boolean;
           quality_score?: number;
-          security_settings?: any;
-          personalization_settings?: any;
+          security_settings?: BiometricSecuritySettings;
+          personalization_settings?: VoicePersonalizationProfile;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -79,14 +221,14 @@ export interface VoiceBiometricDatabase {
           attempts: number;
           fallback_used: string | null;
           risk_level: 'very_low' | 'low' | 'medium' | 'high' | 'very_high';
-          device_info: any; // JSON of DeviceInfo
-          location: any | null; // JSON of GeolocationInfo
-          contextual_info: any; // JSON of ContextualInfo
-          security_flags: any; // JSON array of SecurityFlag
-          biometric_quality: any; // JSON of BiometricQualityMetrics
+          device_info: DeviceInfo;
+          location: GeolocationInfo | null;
+          contextual_info: ContextualInfo;
+          security_flags: readonly SecurityFlag[];
+          biometric_quality: BiometricQualityMetrics;
           emotional_state: string | null;
           stress_level: number | null;
-          fraud_indicators: any | null; // JSON array of FraudIndicator
+          fraud_indicators: readonly FraudIndicator[] | null;
           timestamp: string;
           error_code: string | null;
           error_message: string | null;
@@ -105,14 +247,14 @@ export interface VoiceBiometricDatabase {
           attempts?: number;
           fallback_used?: string | null;
           risk_level: 'very_low' | 'low' | 'medium' | 'high' | 'very_high';
-          device_info?: any;
-          location?: any | null;
-          contextual_info?: any;
-          security_flags?: any;
-          biometric_quality?: any;
+          device_info?: DeviceInfo;
+          location?: GeolocationInfo | null;
+          contextual_info?: ContextualInfo;
+          security_flags?: readonly SecurityFlag[];
+          biometric_quality?: BiometricQualityMetrics;
           emotional_state?: string | null;
           stress_level?: number | null;
-          fraud_indicators?: any | null;
+          fraud_indicators?: readonly FraudIndicator[] | null;
           timestamp?: string;
           error_code?: string | null;
           error_message?: string | null;
@@ -131,14 +273,14 @@ export interface VoiceBiometricDatabase {
           attempts?: number;
           fallback_used?: string | null;
           risk_level?: 'very_low' | 'low' | 'medium' | 'high' | 'very_high';
-          device_info?: any;
-          location?: any | null;
-          contextual_info?: any;
-          security_flags?: any;
-          biometric_quality?: any;
+          device_info?: DeviceInfo;
+          location?: GeolocationInfo | null;
+          contextual_info?: ContextualInfo;
+          security_flags?: readonly SecurityFlag[];
+          biometric_quality?: BiometricQualityMetrics;
           emotional_state?: string | null;
           stress_level?: number | null;
-          fraud_indicators?: any | null;
+          fraud_indicators?: readonly FraudIndicator[] | null;
           timestamp?: string;
           error_code?: string | null;
           error_message?: string | null;
@@ -154,10 +296,10 @@ export interface VoiceBiometricDatabase {
           organization_id: string;
           session_token: string;
           authentication_method: 'voice_primary' | 'voice_secondary' | 'voice_continuous';
-          risk_assessment: any; // JSON of SecurityAssessment
+          risk_assessment: SecurityAssessment;
           device_fingerprint: string;
           ip_address: string;
-          location_data: any | null; // JSON of GeolocationInfo
+          location_data: GeolocationInfo | null;
           expires_at: string;
           created_at: string;
           last_activity: string;
@@ -171,10 +313,10 @@ export interface VoiceBiometricDatabase {
           organization_id: string;
           session_token: string;
           authentication_method: 'voice_primary' | 'voice_secondary' | 'voice_continuous';
-          risk_assessment?: any;
+          risk_assessment?: SecurityAssessment;
           device_fingerprint: string;
           ip_address: string;
-          location_data?: any | null;
+          location_data?: GeolocationInfo | null;
           expires_at: string;
           created_at?: string;
           last_activity?: string;
@@ -188,10 +330,10 @@ export interface VoiceBiometricDatabase {
           organization_id?: string;
           session_token?: string;
           authentication_method?: 'voice_primary' | 'voice_secondary' | 'voice_continuous';
-          risk_assessment?: any;
+          risk_assessment?: SecurityAssessment;
           device_fingerprint?: string;
           ip_address?: string;
-          location_data?: any | null;
+          location_data?: GeolocationInfo | null;
           expires_at?: string;
           created_at?: string;
           last_activity?: string;
@@ -207,7 +349,7 @@ export interface VoiceBiometricDatabase {
           user_id: string;
           organization_id: string;
           session_id: string | null;
-          emotion_data: any; // JSON of EmotionAnalysisResult
+          emotion_data: EmotionAnalysisResult;
           analysis_type: 'basic' | 'comprehensive' | 'fraud_detection';
           context_tags: string[]; // Array of context strings
           dominant_emotion: string;
@@ -228,7 +370,7 @@ export interface VoiceBiometricDatabase {
           user_id: string;
           organization_id: string;
           session_id?: string | null;
-          emotion_data: any;
+          emotion_data: EmotionAnalysisResult;
           analysis_type: 'basic' | 'comprehensive' | 'fraud_detection';
           context_tags?: string[];
           dominant_emotion: string;
@@ -249,7 +391,7 @@ export interface VoiceBiometricDatabase {
           user_id?: string;
           organization_id?: string;
           session_id?: string | null;
-          emotion_data?: any;
+          emotion_data?: EmotionAnalysisResult;
           analysis_type?: 'basic' | 'comprehensive' | 'fraud_detection';
           context_tags?: string[];
           dominant_emotion?: string;
@@ -272,13 +414,13 @@ export interface VoiceBiometricDatabase {
           id: string;
           user_id: string;
           organization_id: string;
-          profile_data: any; // JSON of VoicePersonalizationProfile
-          communication_style: any; // JSON of CommunicationStyle
+          profile_data: VoicePersonalizationProfile;
+          communication_style: CommunicationStyle;
           interaction_modes: string[]; // Array of InteractionMode
-          adaptive_settings: any; // JSON of AdaptiveSettings
-          voice_shortcuts: any; // JSON array of VoiceShortcut
-          learning_history: any; // JSON of LearningHistory
-          privacy_settings: any; // JSON of PersonalizationPreferences
+          adaptive_settings: AdaptiveSettings;
+          voice_shortcuts: readonly VoiceShortcut[];
+          learning_history: LearningHistory;
+          privacy_settings: PersonalizationPreferences;
           learning_enabled: boolean;
           data_retention_days: number;
           last_adapted: string | null;
@@ -291,13 +433,13 @@ export interface VoiceBiometricDatabase {
           id?: string;
           user_id: string;
           organization_id: string;
-          profile_data: any;
-          communication_style?: any;
+          profile_data: VoicePersonalizationProfile;
+          communication_style?: CommunicationStyle;
           interaction_modes?: string[];
-          adaptive_settings?: any;
-          voice_shortcuts?: any;
-          learning_history?: any;
-          privacy_settings?: any;
+          adaptive_settings?: AdaptiveSettings;
+          voice_shortcuts?: readonly VoiceShortcut[];
+          learning_history?: LearningHistory;
+          privacy_settings?: PersonalizationPreferences;
           learning_enabled?: boolean;
           data_retention_days?: number;
           last_adapted?: string | null;
@@ -310,13 +452,13 @@ export interface VoiceBiometricDatabase {
           id?: string;
           user_id?: string;
           organization_id?: string;
-          profile_data?: any;
-          communication_style?: any;
+          profile_data?: VoicePersonalizationProfile;
+          communication_style?: CommunicationStyle;
           interaction_modes?: string[];
-          adaptive_settings?: any;
-          voice_shortcuts?: any;
-          learning_history?: any;
-          privacy_settings?: any;
+          adaptive_settings?: AdaptiveSettings;
+          voice_shortcuts?: readonly VoiceShortcut[];
+          learning_history?: LearningHistory;
+          privacy_settings?: PersonalizationPreferences;
           learning_enabled?: boolean;
           data_retention_days?: number;
           last_adapted?: string | null;
@@ -334,7 +476,7 @@ export interface VoiceBiometricDatabase {
           organization_id: string;
           authentication_log_id: string | null;
           risk_score: number;
-          fraud_indicators: any; // JSON array of FraudIndicator
+          fraud_indicators: readonly FraudIndicator[];
           recommendation: 'approve' | 'review' | 'deny';
           confidence: number;
           detection_methods: string[]; // Array of detection method names
@@ -355,7 +497,7 @@ export interface VoiceBiometricDatabase {
           organization_id: string;
           authentication_log_id?: string | null;
           risk_score: number;
-          fraud_indicators: any;
+          fraud_indicators: readonly FraudIndicator[];
           recommendation: 'approve' | 'review' | 'deny';
           confidence: number;
           detection_methods?: string[];
@@ -376,7 +518,7 @@ export interface VoiceBiometricDatabase {
           organization_id?: string;
           authentication_log_id?: string | null;
           risk_score?: number;
-          fraud_indicators?: any;
+          fraud_indicators?: readonly FraudIndicator[];
           recommendation?: 'approve' | 'review' | 'deny';
           confidence?: number;
           detection_methods?: string[];
@@ -401,7 +543,7 @@ export interface VoiceBiometricDatabase {
           event_type: 'spoofing_detected' | 'liveness_failed' | 'threshold_exceeded' | 'anomaly_detected' | 'fraud_suspected';
           severity: 'low' | 'medium' | 'high' | 'critical';
           description: string;
-          event_data: any; // JSON of event-specific data
+          event_data: Record<string, unknown>;
           detection_method: string;
           confidence: number;
           automated_response: string | null;
@@ -423,7 +565,7 @@ export interface VoiceBiometricDatabase {
           event_type: 'spoofing_detected' | 'liveness_failed' | 'threshold_exceeded' | 'anomaly_detected' | 'fraud_suspected';
           severity: 'low' | 'medium' | 'high' | 'critical';
           description: string;
-          event_data?: any;
+          event_data?: Record<string, unknown>;
           detection_method: string;
           confidence: number;
           automated_response?: string | null;
@@ -445,7 +587,7 @@ export interface VoiceBiometricDatabase {
           event_type?: 'spoofing_detected' | 'liveness_failed' | 'threshold_exceeded' | 'anomaly_detected' | 'fraud_suspected';
           severity?: 'low' | 'medium' | 'high' | 'critical';
           description?: string;
-          event_data?: any;
+          event_data?: Record<string, unknown>;
           detection_method?: string;
           confidence?: number;
           automated_response?: string | null;
@@ -473,8 +615,8 @@ export interface VoiceBiometricDatabase {
           utterance: string;
           quality_score: number;
           signal_to_noise_ratio: number;
-          device_info: any; // JSON of DeviceInfo
-          audio_characteristics: any; // JSON of VoiceCharacteristics
+          device_info: DeviceInfo;
+          audio_characteristics: VoiceCharacteristics;
           enrollment_complete: boolean;
           created_at: string;
           processed_at: string | null;
@@ -490,8 +632,8 @@ export interface VoiceBiometricDatabase {
           utterance: string;
           quality_score: number;
           signal_to_noise_ratio: number;
-          device_info?: any;
-          audio_characteristics?: any;
+          device_info?: DeviceInfo;
+          audio_characteristics?: VoiceCharacteristics;
           enrollment_complete?: boolean;
           created_at?: string;
           processed_at?: string | null;
@@ -507,8 +649,8 @@ export interface VoiceBiometricDatabase {
           utterance?: string;
           quality_score?: number;
           signal_to_noise_ratio?: number;
-          device_info?: any;
-          audio_characteristics?: any;
+          device_info?: DeviceInfo;
+          audio_characteristics?: VoiceCharacteristics;
           enrollment_complete?: boolean;
           created_at?: string;
           processed_at?: string | null;
@@ -521,7 +663,7 @@ export interface VoiceBiometricDatabase {
           id: string;
           organization_id: string;
           setting_key: string;
-          setting_value: any; // JSON value
+          setting_value: Record<string, unknown>;
           setting_type: 'security' | 'personalization' | 'fraud_detection' | 'general';
           description: string | null;
           is_active: boolean;
@@ -536,7 +678,7 @@ export interface VoiceBiometricDatabase {
           id?: string;
           organization_id: string;
           setting_key: string;
-          setting_value: any;
+          setting_value: Record<string, unknown>;
           setting_type: 'security' | 'personalization' | 'fraud_detection' | 'general';
           description?: string | null;
           is_active?: boolean;
@@ -551,7 +693,7 @@ export interface VoiceBiometricDatabase {
           id?: string;
           organization_id?: string;
           setting_key?: string;
-          setting_value?: any;
+          setting_value?: Record<string, unknown>;
           setting_type?: 'security' | 'personalization' | 'fraud_detection' | 'general';
           description?: string | null;
           is_active?: boolean;
@@ -605,7 +747,7 @@ export interface VoiceBiometricDatabase {
         };
         Returns: {
           risk_score: number;
-          contributing_factors: any;
+          contributing_factors: Record<string, unknown>;
           recommendation: string;
         };
       };
@@ -639,6 +781,60 @@ export interface VoiceBiometricDatabase {
     };
   };
 }
+
+// ============================================================================
+// CONVENIENCE EXPORTS FOR VOICE BIOMETRIC TYPES
+// ============================================================================
+
+// Re-export all voice biometric interfaces for easy import
+export type {
+  BiometricSecuritySettings,
+  VoicePersonalizationProfile,
+  DeviceInfo,
+  ContextualInfo,
+  SecurityFlag,
+  BiometricQualityMetrics,
+  FraudIndicator,
+  SecurityAssessment,
+  EmotionAnalysisResult,
+  CommunicationStyle,
+  AdaptiveSettings,
+  VoiceShortcut,
+  LearningHistory,
+  PersonalizationPreferences,
+  VoiceCharacteristics,
+};
+
+// Voice biometric database table types
+export type VoiceBiometricProfile = VoiceBiometricDatabase['public']['Tables']['voice_biometric_profiles']['Row'];
+export type VoiceAuthenticationLog = VoiceBiometricDatabase['public']['Tables']['voice_authentication_logs']['Row'];
+export type VoiceSecurityEvent = VoiceBiometricDatabase['public']['Tables']['voice_security_events']['Row'];
+export type VoiceEmotionAnalysis = VoiceBiometricDatabase['public']['Tables']['emotion_history']['Row'];
+export type VoicePersonalizationData = VoiceBiometricDatabase['public']['Tables']['voice_personalization_profiles']['Row'];
+
+// Voice biometric insert types
+export type VoiceBiometricProfileInsert = VoiceBiometricDatabase['public']['Tables']['voice_biometric_profiles']['Insert'];
+export type VoiceAuthenticationLogInsert = VoiceBiometricDatabase['public']['Tables']['voice_authentication_logs']['Insert'];
+export type VoiceSecurityEventInsert = VoiceBiometricDatabase['public']['Tables']['voice_security_events']['Insert'];
+
+// Voice biometric update types  
+export type VoiceBiometricProfileUpdate = VoiceBiometricDatabase['public']['Tables']['voice_biometric_profiles']['Update'];
+export type VoicePersonalizationDataUpdate = VoiceBiometricDatabase['public']['Tables']['voice_personalization_profiles']['Update'];
+
+// Common voice biometric enums
+export type AuthenticationType = 'login' | 'verification' | 'continuous';
+export type RiskLevel = 'very_low' | 'low' | 'medium' | 'high' | 'very_high';
+export type FraudType = 'deepfake' | 'replay' | 'synthesis' | 'spoofing';
+export type SecurityFlagSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type EncryptionLevel = 'standard' | 'enhanced' | 'maximum';
+export type StorageLocation = 'local' | 'cloud' | 'hybrid';
+export type PersonalizationLevel = 'basic' | 'moderate' | 'advanced';
+export type AudioQuality = 'low' | 'medium' | 'high';
+export type Environment = 'quiet' | 'noisy' | 'moderate';
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+export type UserState = 'calm' | 'stressed' | 'excited' | 'tired';
+export type VoiceTone = 'formal' | 'casual' | 'friendly';
+export type PrivacyLevel = 'minimal' | 'standard' | 'enhanced';
 
 // SQL Schema for creating the tables (for reference)
 export const VOICE_BIOMETRIC_SCHEMA_SQL = `

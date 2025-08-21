@@ -1,3 +1,381 @@
+// ============================================================================
+// BRANDED TYPES FOR TYPE SAFETY
+// ============================================================================
+
+declare const __brand: unique symbol;
+
+type Brand<T, TBrand> = T & { readonly [__brand]: TBrand };
+
+export type UserId = Brand<string, 'UserId'>;
+export type OrganizationId = Brand<string, 'OrganizationId'>;
+export type AssetId = Brand<string, 'AssetId'>;
+export type VaultId = Brand<string, 'VaultId'>;
+export type BoardId = Brand<string, 'BoardId'>;
+export type NotificationId = Brand<string, 'NotificationId'>;
+export type TemplateId = Brand<string, 'TemplateId'>;
+export type EventId = Brand<string, 'EventId'>;
+
+// ============================================================================
+// CORE INTERFACE DEFINITIONS
+// ============================================================================
+
+export interface OrganizationSettings {
+  readonly theme?: 'light' | 'dark' | 'auto';
+  readonly timezone?: string;
+  readonly language?: string;
+  readonly notifications?: {
+    readonly email: boolean;
+    readonly push: boolean;
+    readonly inApp: boolean;
+  };
+  readonly features?: {
+    readonly voiceChat: boolean;
+    readonly boardmates: boolean;
+    readonly calendar: boolean;
+    readonly compliance: boolean;
+  };
+}
+
+export interface ComplianceSettings {
+  readonly dataRetentionDays?: number;
+  readonly requireTwoFactor?: boolean;
+  readonly allowedIpRanges?: readonly string[];
+  readonly auditLevel?: 'basic' | 'detailed' | 'comprehensive';
+  readonly encryptionLevel?: 'standard' | 'enhanced';
+  readonly accessLogging?: boolean;
+  readonly complianceStandards?: readonly ('SOX' | 'GDPR' | 'HIPAA' | 'ISO27001')[];
+}
+
+export interface BillingSettings {
+  readonly plan?: 'free' | 'starter' | 'professional' | 'enterprise';
+  readonly subscriptionId?: string;
+  readonly billingCycle?: 'monthly' | 'yearly';
+  readonly paymentMethod?: {
+    readonly type: 'credit_card' | 'bank_transfer' | 'invoice';
+    readonly lastFour?: string;
+    readonly expiryMonth?: number;
+    readonly expiryYear?: number;
+  };
+  readonly limits?: {
+    readonly maxUsers: number;
+    readonly maxStorage: number;
+    readonly maxAssets: number;
+  };
+}
+
+export interface CustomPermissions {
+  readonly canCreateBoards?: boolean;
+  readonly canManageAssets?: boolean;
+  readonly canAccessReports?: boolean;
+  readonly canManageUsers?: boolean;
+  readonly canViewAuditLogs?: boolean;
+  readonly customRoles?: readonly string[];
+}
+
+export interface AssetMetadata {
+  readonly fileSize?: number;
+  readonly dimensions?: {
+    readonly width: number;
+    readonly height: number;
+  };
+  readonly duration?: number;
+  readonly format?: string;
+  readonly encoding?: string;
+  readonly checksum?: string;
+  readonly tags?: readonly string[];
+  readonly customFields?: Record<string, unknown>;
+}
+
+export interface ActivityDetails {
+  readonly action: string;
+  readonly resource?: string;
+  readonly resourceId?: string;
+  readonly changes?: Record<string, unknown>;
+  readonly severity?: 'low' | 'medium' | 'high' | 'critical';
+  readonly category?: 'auth' | 'data' | 'security' | 'system' | 'user';
+}
+
+export interface GeolocationInfo {
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly accuracy?: number;
+  readonly city?: string;
+  readonly region?: string;
+  readonly country?: string;
+  readonly timezone?: string;
+}
+
+export interface RequestHeaders {
+  readonly userAgent?: string;
+  readonly referer?: string;
+  readonly acceptLanguage?: string;
+  readonly xForwardedFor?: string;
+  readonly xRealIp?: string;
+  readonly authorization?: string;
+}
+
+export interface ContentPosition {
+  readonly x: number;
+  readonly y: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly page?: number;
+  readonly layer?: number;
+}
+
+export interface BoardSettings {
+  readonly isPublic?: boolean;
+  readonly allowComments?: boolean;
+  readonly requireApproval?: boolean;
+  readonly maxMembers?: number;
+  readonly permissions?: {
+    readonly view: readonly string[];
+    readonly edit: readonly string[];
+    readonly admin: readonly string[];
+  };
+}
+
+export interface VaultSettings {
+  readonly encryptionEnabled?: boolean;
+  readonly accessLevel?: 'private' | 'organization' | 'public';
+  readonly autoArchive?: boolean;
+  readonly retentionDays?: number;
+  readonly allowDownloads?: boolean;
+  readonly watermarkEnabled?: boolean;
+}
+
+export interface MemberSettings {
+  readonly notifications?: {
+    readonly email: boolean;
+    readonly push: boolean;
+    readonly mentions: boolean;
+  };
+  readonly privacy?: {
+    readonly showActivity: boolean;
+    readonly showPresence: boolean;
+  };
+}
+
+export interface EmailTemplateData {
+  readonly subject: string;
+  readonly body: string;
+  readonly variables?: Record<string, string>;
+  readonly styling?: {
+    readonly theme: 'light' | 'dark';
+    readonly brandColors?: {
+      readonly primary: string;
+      readonly secondary: string;
+    };
+  };
+}
+
+export interface NotificationResponseData {
+  readonly action?: string;
+  readonly acknowledged?: boolean;
+  readonly responseTime?: number;
+  readonly deviceInfo?: {
+    readonly platform: string;
+    readonly version: string;
+  };
+}
+
+export interface EventMetadata {
+  readonly category?: string;
+  readonly priority?: 'low' | 'medium' | 'high' | 'urgent';
+  readonly attendees?: readonly string[];
+  readonly resources?: readonly string[];
+  readonly location?: string;
+  readonly isVirtual?: boolean;
+  readonly meetingLink?: string;
+}
+
+export interface RecurrenceRule {
+  readonly frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  readonly interval?: number;
+  readonly endDate?: string;
+  readonly occurrences?: number;
+  readonly daysOfWeek?: readonly number[];
+  readonly dayOfMonth?: number;
+  readonly exceptions?: readonly string[];
+}
+
+export interface EquityCompensation {
+  readonly stockOptions?: number;
+  readonly vestingSchedule?: {
+    readonly totalShares: number;
+    readonly vestedShares: number;
+    readonly vestingStart: string;
+    readonly cliffMonths: number;
+    readonly vestingMonths: number;
+  };
+  readonly equityPercentage?: number;
+}
+
+export interface MemberSkills {
+  readonly technical?: readonly string[];
+  readonly soft?: readonly string[];
+  readonly certifications?: readonly {
+    readonly name: string;
+    readonly issuer: string;
+    readonly dateObtained: string;
+    readonly expiryDate?: string;
+  }[];
+  readonly languages?: readonly {
+    readonly language: string;
+    readonly proficiency: 'basic' | 'conversational' | 'fluent' | 'native';
+  }[];
+}
+
+export interface PatternData {
+  readonly pattern: string;
+  readonly confidence: number;
+  readonly frequency: number;
+  readonly timeRange?: {
+    readonly start: string;
+    readonly end: string;
+  };
+}
+
+export interface AnalyticsConditions {
+  readonly filters?: Record<string, unknown>;
+  readonly dateRange?: {
+    readonly start: string;
+    readonly end: string;
+  };
+  readonly groupBy?: readonly string[];
+  readonly threshold?: number;
+}
+
+export interface AnalyticsOutcomes {
+  readonly metrics: Record<string, number>;
+  readonly trends: Record<string, 'up' | 'down' | 'stable'>;
+  readonly recommendations?: readonly string[];
+  readonly insights?: readonly string[];
+}
+
+export interface PercentileData {
+  readonly percentile: number;
+  readonly value: number;
+  readonly rank?: number;
+  readonly totalCount?: number;
+}
+
+export interface ConfidenceInterval {
+  readonly lower: number;
+  readonly upper: number;
+  readonly confidence: number;
+}
+
+export interface PredictionData {
+  readonly prediction: number;
+  readonly confidence: number;
+  readonly factors?: Record<string, number>;
+  readonly timeHorizon?: string;
+  readonly methodology?: string;
+}
+
+export interface MLConfiguration {
+  readonly algorithm?: string;
+  readonly parameters?: Record<string, unknown>;
+  readonly trainingData?: {
+    readonly size: number;
+    readonly features: readonly string[];
+  };
+  readonly hyperparameters?: Record<string, unknown>;
+}
+
+export interface AnomalyData {
+  readonly baseline: Record<string, number>;
+  readonly anomalous: Record<string, number>;
+  readonly severity: 'low' | 'medium' | 'high' | 'critical';
+  readonly deviation: number;
+}
+
+export interface ModelParameters {
+  readonly version?: string;
+  readonly algorithm?: string;
+  readonly hyperparameters?: Record<string, unknown>;
+  readonly performance?: {
+    readonly accuracy?: number;
+    readonly precision?: number;
+    readonly recall?: number;
+    readonly f1Score?: number;
+  };
+}
+
+export interface ExternalReferences {
+  readonly apiEndpoints?: readonly string[];
+  readonly documentIds?: readonly string[];
+  readonly relatedEntities?: Record<string, string>;
+  readonly externalIds?: Record<string, string>;
+}
+
+export interface WorkflowSteps {
+  readonly steps: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly type: 'manual' | 'automated' | 'conditional';
+    readonly conditions?: Record<string, unknown>;
+    readonly actions?: readonly string[];
+    readonly order: number;
+  }[];
+  readonly parallel?: boolean;
+  readonly failureStrategy?: 'stop' | 'continue' | 'retry';
+}
+
+export interface ReminderSchedule {
+  readonly reminders: readonly {
+    readonly offset: number;
+    readonly unit: 'minutes' | 'hours' | 'days' | 'weeks';
+    readonly message?: string;
+    readonly channels?: readonly ('email' | 'push' | 'sms')[];
+  }[];
+  readonly timezone?: string;
+}
+
+export interface EscalationRules {
+  readonly levels: readonly {
+    readonly level: number;
+    readonly delay: number;
+    readonly assignees?: readonly string[];
+    readonly actions?: readonly string[];
+  }[];
+  readonly maxLevel?: number;
+  readonly autoEscalate?: boolean;
+}
+
+export interface MeetingSettings {
+  readonly allowRecording?: boolean;
+  readonly requirePasscode?: boolean;
+  readonly waitingRoom?: boolean;
+  readonly autoRecord?: boolean;
+  readonly muteOnEntry?: boolean;
+  readonly allowScreenShare?: boolean;
+  readonly maxParticipants?: number;
+  readonly recordingSettings?: {
+    readonly autoStart: boolean;
+    readonly cloudStorage: boolean;
+    readonly localStorage: boolean;
+  };
+}
+
+export interface CommitteeSettings {
+  readonly meetingQuorum?: number;
+  readonly votingRules?: {
+    readonly majorityRequired: number;
+    readonly allowAbstention: boolean;
+    readonly requireUnanimous: boolean;
+  };
+  readonly reportingRequirements?: {
+    readonly frequency: 'monthly' | 'quarterly' | 'annually';
+    readonly recipients: readonly string[];
+  };
+  readonly decisionAuthority?: {
+    readonly budgetLimit?: number;
+    readonly requiresBoardApproval?: boolean;
+  };
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -73,9 +451,9 @@ export interface Database {
           is_active: boolean
           deleted_at: string | null
           deletion_scheduled_for: string | null
-          settings: any
-          compliance_settings: any
-          billing_settings: any
+          settings: OrganizationSettings
+          compliance_settings: ComplianceSettings
+          billing_settings: BillingSettings
         }
         Insert: {
           id?: string
@@ -92,9 +470,9 @@ export interface Database {
           is_active?: boolean
           deleted_at?: string | null
           deletion_scheduled_for?: string | null
-          settings?: any
-          compliance_settings?: any
-          billing_settings?: any
+          settings?: OrganizationSettings
+          compliance_settings?: ComplianceSettings
+          billing_settings?: BillingSettings
         }
         Update: {
           id?: string
@@ -111,9 +489,9 @@ export interface Database {
           is_active?: boolean
           deleted_at?: string | null
           deletion_scheduled_for?: string | null
-          settings?: any
-          compliance_settings?: any
-          billing_settings?: any
+          settings?: OrganizationSettings
+          compliance_settings?: ComplianceSettings
+          billing_settings?: BillingSettings
         }
       }
       organization_members: {
@@ -122,7 +500,7 @@ export interface Database {
           organization_id: string
           user_id: string
           role: 'owner' | 'admin' | 'member' | 'viewer'
-          custom_permissions: any
+          custom_permissions: CustomPermissions
           invited_by: string | null
           approved_by: string | null
           joined_at: string
@@ -140,7 +518,7 @@ export interface Database {
           organization_id: string
           user_id: string
           role?: 'owner' | 'admin' | 'member' | 'viewer'
-          custom_permissions?: any
+          custom_permissions?: CustomPermissions
           invited_by?: string | null
           approved_by?: string | null
           joined_at?: string
@@ -158,7 +536,7 @@ export interface Database {
           organization_id?: string
           user_id?: string
           role?: 'owner' | 'admin' | 'member' | 'viewer'
-          custom_permissions?: any
+          custom_permissions?: CustomPermissions
           invited_by?: string | null
           approved_by?: string | null
           joined_at?: string
@@ -306,7 +684,7 @@ export interface Database {
           organization_id: string | null
           visibility: 'organization' | 'public' | 'private' | null
           tags: string[] | null
-          metadata: any | null
+          metadata: AssetMetadata | null
           archived_at: string | null
           auto_archive_date: string | null
           category: 'board_pack' | 'meeting_notes' | 'agenda' | 'notes' | 'financial_report' | 'legal_document' | 'presentation' | 'other'
@@ -329,7 +707,7 @@ export interface Database {
           organization_id?: string | null
           visibility?: 'organization' | 'public' | 'private' | null
           tags?: string[] | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           archived_at?: string | null
           auto_archive_date?: string | null
           category?: 'board_pack' | 'meeting_notes' | 'agenda' | 'notes' | 'financial_report' | 'legal_document' | 'presentation' | 'other'
@@ -352,7 +730,7 @@ export interface Database {
           organization_id?: string | null
           visibility?: 'organization' | 'public' | 'private' | null
           tags?: string[] | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           archived_at?: string | null
           auto_archive_date?: string | null
           category?: 'board_pack' | 'meeting_notes' | 'agenda' | 'notes' | 'financial_report' | 'legal_document' | 'presentation' | 'other'
@@ -429,22 +807,22 @@ export interface Database {
           resource_type: string
           resource_id: string | null
           event_description: string
-          details: any | null
-          metadata: any | null
+          details: ActivityDetails | null
+          metadata: AssetMetadata | null
           severity: 'low' | 'medium' | 'high' | 'critical'
           outcome: 'success' | 'failure' | 'error' | 'blocked'
           risk_score: number | null
           ip_address: string | null
           user_agent: string | null
           device_fingerprint: string | null
-          geolocation: any | null
+          geolocation: GeolocationInfo | null
           http_method: string | null
           endpoint: string | null
-          request_headers: any | null
+          request_headers: RequestHeaders | null
           response_status: number | null
           response_time_ms: number | null
-          old_values: any | null
-          new_values: any | null
+          old_values: Record<string, unknown> | null
+          new_values: Record<string, unknown> | null
           affected_rows: number | null
           created_at: string
           correlation_id: string | null
@@ -468,22 +846,22 @@ export interface Database {
           resource_type: string
           resource_id?: string | null
           event_description: string
-          details?: any | null
-          metadata?: any | null
+          details?: ActivityDetails | null
+          metadata?: AssetMetadata | null
           severity?: 'low' | 'medium' | 'high' | 'critical'
           outcome: 'success' | 'failure' | 'error' | 'blocked'
           risk_score?: number | null
           ip_address?: string | null
           user_agent?: string | null
           device_fingerprint?: string | null
-          geolocation?: any | null
+          geolocation?: GeolocationInfo | null
           http_method?: string | null
           endpoint?: string | null
-          request_headers?: any | null
+          request_headers?: RequestHeaders | null
           response_status?: number | null
           response_time_ms?: number | null
-          old_values?: any | null
-          new_values?: any | null
+          old_values?: Record<string, unknown> | null
+          new_values?: Record<string, unknown> | null
           affected_rows?: number | null
           created_at?: string
           correlation_id?: string | null
@@ -507,22 +885,22 @@ export interface Database {
           resource_type?: string
           resource_id?: string | null
           event_description?: string
-          details?: any | null
-          metadata?: any | null
+          details?: ActivityDetails | null
+          metadata?: AssetMetadata | null
           severity?: 'low' | 'medium' | 'high' | 'critical'
           outcome?: 'success' | 'failure' | 'error' | 'blocked'
           risk_score?: number | null
           ip_address?: string | null
           user_agent?: string | null
           device_fingerprint?: string | null
-          geolocation?: any | null
+          geolocation?: GeolocationInfo | null
           http_method?: string | null
           endpoint?: string | null
-          request_headers?: any | null
+          request_headers?: RequestHeaders | null
           response_status?: number | null
           response_time_ms?: number | null
-          old_values?: any | null
-          new_values?: any | null
+          old_values?: Record<string, unknown> | null
+          new_values?: Record<string, unknown> | null
           affected_rows?: number | null
           created_at?: string
           correlation_id?: string | null
@@ -619,9 +997,9 @@ export interface Database {
           created_at: string
           updated_at: string
           annotation_type: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
-          content: any
+          content: Record<string, unknown>
           page_number: number
-          position: any
+          position: ContentPosition
           selected_text: string | null
           comment_text: string | null
           color: string
@@ -632,7 +1010,7 @@ export interface Database {
           resolved_at: string | null
           is_anchored: boolean
           anchor_text: string | null
-          metadata: any
+          metadata: EventMetadata
           is_deleted: boolean
           deleted_at: string | null
           deleted_by: string | null
@@ -646,9 +1024,9 @@ export interface Database {
           created_at?: string
           updated_at?: string
           annotation_type: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
-          content: any
+          content: Record<string, unknown>
           page_number: number
-          position: any
+          position: ContentPosition
           selected_text?: string | null
           comment_text?: string | null
           color?: string
@@ -659,7 +1037,7 @@ export interface Database {
           resolved_at?: string | null
           is_anchored?: boolean
           anchor_text?: string | null
-          metadata?: any
+          metadata?: EventMetadata
           is_deleted?: boolean
           deleted_at?: string | null
           deleted_by?: string | null
@@ -673,9 +1051,9 @@ export interface Database {
           created_at?: string
           updated_at?: string
           annotation_type?: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
-          content?: any
+          content?: Record<string, unknown>
           page_number?: number
-          position?: any
+          position?: ContentPosition
           selected_text?: string | null
           comment_text?: string | null
           color?: string
@@ -686,7 +1064,7 @@ export interface Database {
           resolved_at?: string | null
           is_anchored?: boolean
           anchor_text?: string | null
-          metadata?: any
+          metadata?: EventMetadata
           is_deleted?: boolean
           deleted_at?: string | null
           deleted_by?: string | null
@@ -861,7 +1239,7 @@ export interface Database {
           estimated_duration_minutes: number
           actual_start: string | null
           actual_end: string | null
-          settings: any
+          settings: MeetingSettings
           tags: string[]
           category: string | null
           created_at: string
@@ -894,7 +1272,7 @@ export interface Database {
           estimated_duration_minutes?: number
           actual_start?: string | null
           actual_end?: string | null
-          settings?: any
+          settings?: MemberSettings
           tags?: string[]
           category?: string | null
           created_at?: string
@@ -927,7 +1305,7 @@ export interface Database {
           estimated_duration_minutes?: number
           actual_start?: string | null
           actual_end?: string | null
-          settings?: any
+          settings?: MemberSettings
           tags?: string[]
           category?: string | null
           created_at?: string
@@ -1160,12 +1538,12 @@ export interface Database {
           subject: string
           content: string
           template_name: string | null
-          template_data: any
+          template_data: EmailTemplateData
           scheduled_send_at: string
           sent_at: string | null
           opened_at: string | null
           clicked_at: string | null
-          response_data: any
+          response_data: NotificationResponseData
           error_message: string | null
           retry_count: number
           max_retries: number
@@ -1182,12 +1560,12 @@ export interface Database {
           subject: string
           content: string
           template_name?: string | null
-          template_data?: any
+          template_data?: EmailTemplateData
           scheduled_send_at: string
           sent_at?: string | null
           opened_at?: string | null
           clicked_at?: string | null
-          response_data?: any
+          response_data?: NotificationResponseData
           error_message?: string | null
           retry_count?: number
           max_retries?: number
@@ -1204,12 +1582,12 @@ export interface Database {
           subject?: string
           content?: string
           template_name?: string | null
-          template_data?: any
+          template_data?: EmailTemplateData
           scheduled_send_at?: string
           sent_at?: string | null
           opened_at?: string | null
           clicked_at?: string | null
-          response_data?: any
+          response_data?: NotificationResponseData
           error_message?: string | null
           retry_count?: number
           max_retries?: number
@@ -1223,9 +1601,9 @@ export interface Database {
           name: string
           description: string | null
           meeting_type: 'agm' | 'board' | 'committee' | 'other'
-          template_data: any
+          template_data: EmailTemplateData
           default_duration_minutes: number
-          default_settings: any
+          default_settings: Record<string, unknown>
           organization_id: string | null
           created_by: string
           is_public: boolean
@@ -1240,9 +1618,9 @@ export interface Database {
           name: string
           description?: string | null
           meeting_type: 'agm' | 'board' | 'committee' | 'other'
-          template_data: any
+          template_data: EmailTemplateData
           default_duration_minutes?: number
-          default_settings?: any
+          default_settings?: Record<string, unknown>
           organization_id?: string | null
           created_by: string
           is_public?: boolean
@@ -1257,9 +1635,9 @@ export interface Database {
           name?: string
           description?: string | null
           meeting_type?: 'agm' | 'board' | 'committee' | 'other'
-          template_data?: any
+          template_data?: EmailTemplateData
           default_duration_minutes?: number
-          default_settings?: any
+          default_settings?: Record<string, unknown>
           organization_id?: string | null
           created_by?: string
           is_public?: boolean
@@ -1366,7 +1744,7 @@ export interface Database {
           is_active: boolean
           is_system: boolean
           sort_order: number
-          metadata: any
+          metadata: EventMetadata
           created_at: string
           updated_at: string
         }
@@ -1379,7 +1757,7 @@ export interface Database {
           is_active?: boolean
           is_system?: boolean
           sort_order?: number
-          metadata?: any
+          metadata?: EventMetadata
           created_at?: string
           updated_at?: string
         }
@@ -1392,7 +1770,7 @@ export interface Database {
           is_active?: boolean
           is_system?: boolean
           sort_order?: number
-          metadata?: any
+          metadata?: EventMetadata
           created_at?: string
           updated_at?: string
         }
@@ -1418,7 +1796,7 @@ export interface Database {
           location: string | null
           virtual_meeting_url: string | null
           is_recurring: boolean
-          recurrence_rule: any | null
+          recurrence_rule: RecurrenceRule | null
           parent_event_id: string | null
           created_at: string
           updated_at: string
@@ -1444,7 +1822,7 @@ export interface Database {
           location?: string | null
           virtual_meeting_url?: string | null
           is_recurring?: boolean
-          recurrence_rule?: any | null
+          recurrence_rule?: RecurrenceRule | null
           parent_event_id?: string | null
           created_at?: string
           updated_at?: string
@@ -1470,7 +1848,7 @@ export interface Database {
           location?: string | null
           virtual_meeting_url?: string | null
           is_recurring?: boolean
-          recurrence_rule?: any | null
+          recurrence_rule?: RecurrenceRule | null
           parent_event_id?: string | null
           created_at?: string
           updated_at?: string
@@ -1708,7 +2086,7 @@ export interface Database {
           created_by: string
           created_at: string
           updated_at: string
-          settings: any
+          settings: BoardSettings
           tags: string[]
         }
         Insert: {
@@ -1727,7 +2105,7 @@ export interface Database {
           created_by: string
           created_at?: string
           updated_at?: string
-          settings?: any
+          settings?: MemberSettings
           tags?: string[]
         }
         Update: {
@@ -1746,7 +2124,7 @@ export interface Database {
           created_by?: string
           created_at?: string
           updated_at?: string
-          settings?: any
+          settings?: MemberSettings
           tags?: string[]
         }
       }
@@ -1771,7 +2149,7 @@ export interface Database {
           created_by: string
           created_at: string
           updated_at: string
-          settings: any
+          settings: CommitteeSettings
           tags: string[]
         }
         Insert: {
@@ -1794,7 +2172,7 @@ export interface Database {
           created_by: string
           created_at?: string
           updated_at?: string
-          settings?: any
+          settings?: MemberSettings
           tags?: string[]
         }
         Update: {
@@ -1817,7 +2195,7 @@ export interface Database {
           created_by?: string
           created_at?: string
           updated_at?: string
-          settings?: any
+          settings?: MemberSettings
           tags?: string[]
         }
       }
@@ -1840,12 +2218,12 @@ export interface Database {
           termination_reason: string | null
           annual_compensation: number | null
           compensation_currency: string | null
-          equity_compensation: any | null
+          equity_compensation: EquityCompensation | null
           meetings_attended: number
           meetings_total: number
           attendance_rate: number | null
           expertise_areas: string[]
-          skills: any | null
+          skills: MemberSkills | null
           created_by: string | null
           created_at: string
           updated_at: string
@@ -1868,11 +2246,11 @@ export interface Database {
           termination_reason?: string | null
           annual_compensation?: number | null
           compensation_currency?: string | null
-          equity_compensation?: any | null
+          equity_compensation?: EquityCompensation | null
           meetings_attended?: number
           meetings_total?: number
           expertise_areas?: string[]
-          skills?: any | null
+          skills?: MemberSkills | null
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -1895,11 +2273,11 @@ export interface Database {
           termination_reason?: string | null
           annual_compensation?: number | null
           compensation_currency?: string | null
-          equity_compensation?: any | null
+          equity_compensation?: EquityCompensation | null
           meetings_attended?: number
           meetings_total?: number
           expertise_areas?: string[]
-          skills?: any | null
+          skills?: MemberSkills | null
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -1998,7 +2376,7 @@ export interface Database {
           resource_type: string | null
           resource_id: string | null
           sender_id: string | null
-          metadata: any | null
+          metadata: AssetMetadata | null
           scheduled_for: string | null
           delivered_at: string | null
           read_at: string | null
@@ -2033,7 +2411,7 @@ export interface Database {
           resource_type?: string | null
           resource_id?: string | null
           sender_id?: string | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           scheduled_for?: string | null
           delivered_at?: string | null
           read_at?: string | null
@@ -2068,7 +2446,7 @@ export interface Database {
           resource_type?: string | null
           resource_id?: string | null
           sender_id?: string | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           scheduled_for?: string | null
           delivered_at?: string | null
           read_at?: string | null
@@ -2094,12 +2472,12 @@ export interface Database {
           pattern_type: string
           organization_id: string | null
           user_id: string | null
-          pattern_data: any
+          pattern_data: PatternData
           confidence_score: number
           frequency_detected: number
           last_detected_at: string | null
-          conditions: any | null
-          outcomes: any | null
+          conditions: AnalyticsConditions | null
+          outcomes: AnalyticsOutcomes | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -2110,12 +2488,12 @@ export interface Database {
           pattern_type: string
           organization_id?: string | null
           user_id?: string | null
-          pattern_data: any
+          pattern_data: PatternData
           confidence_score?: number
           frequency_detected?: number
           last_detected_at?: string | null
-          conditions?: any | null
-          outcomes?: any | null
+          conditions?: AnalyticsConditions | null
+          outcomes?: AnalyticsOutcomes | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -2126,12 +2504,12 @@ export interface Database {
           pattern_type?: string
           organization_id?: string | null
           user_id?: string | null
-          pattern_data?: any
+          pattern_data?: PatternData
           confidence_score?: number
           frequency_detected?: number
           last_detected_at?: string | null
-          conditions?: any | null
-          outcomes?: any | null
+          conditions?: AnalyticsConditions | null
+          outcomes?: AnalyticsOutcomes | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -2144,11 +2522,11 @@ export interface Database {
           organization_id: string | null
           action_type: string
           timestamp: string
-          context: any
+          context: Record<string, unknown>
           response_time_ms: number | null
           engagement_score: number | null
           session_id: string | null
-          metadata: any | null
+          metadata: AssetMetadata | null
           created_at: string
         }
         Insert: {
@@ -2157,11 +2535,11 @@ export interface Database {
           organization_id?: string | null
           action_type: string
           timestamp?: string
-          context: any
+          context: Record<string, unknown>
           response_time_ms?: number | null
           engagement_score?: number | null
           session_id?: string | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_at?: string
         }
         Update: {
@@ -2170,11 +2548,11 @@ export interface Database {
           organization_id?: string | null
           action_type?: string
           timestamp?: string
-          context?: any
+          context?: Record<string, unknown>
           response_time_ms?: number | null
           engagement_score?: number | null
           session_id?: string | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_at?: string
         }
       }
@@ -2185,14 +2563,14 @@ export interface Database {
           industry: string
           organization_size: string
           region: string
-          percentile_data: any
+          percentile_data: PercentileData
           sample_size: number
           data_source: string
-          confidence_interval: any | null
+          confidence_interval: ConfidenceInterval | null
           effective_date: string
           expires_date: string | null
           is_active: boolean
-          metadata: any | null
+          metadata: AssetMetadata | null
           created_at: string
           updated_at: string
         }
@@ -2202,14 +2580,14 @@ export interface Database {
           industry: string
           organization_size: string
           region?: string
-          percentile_data: any
+          percentile_data: PercentileData
           sample_size: number
           data_source: string
-          confidence_interval?: any | null
+          confidence_interval?: ConfidenceInterval | null
           effective_date: string
           expires_date?: string | null
           is_active?: boolean
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_at?: string
           updated_at?: string
         }
@@ -2219,14 +2597,14 @@ export interface Database {
           industry?: string
           organization_size?: string
           region?: string
-          percentile_data?: any
+          percentile_data?: PercentileData
           sample_size?: number
           data_source?: string
-          confidence_interval?: any | null
+          confidence_interval?: ConfidenceInterval | null
           effective_date?: string
           expires_date?: string | null
           is_active?: boolean
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_at?: string
           updated_at?: string
         }
@@ -2242,7 +2620,7 @@ export interface Database {
           predicted_time: string
           confidence_score: number
           priority_score: number
-          prediction_data: any
+          prediction_data: PredictionData
           model_version: string
           actual_sent_at: string | null
           actual_outcome: string | null
@@ -2264,7 +2642,7 @@ export interface Database {
           predicted_time: string
           confidence_score: number
           priority_score?: number
-          prediction_data: any
+          prediction_data: PredictionData
           model_version: string
           actual_sent_at?: string | null
           actual_outcome?: string | null
@@ -2286,7 +2664,7 @@ export interface Database {
           predicted_time?: string
           confidence_score?: number
           priority_score?: number
-          prediction_data?: any
+          prediction_data?: PredictionData
           model_version?: string
           actual_sent_at?: string | null
           actual_outcome?: string | null
@@ -2312,8 +2690,8 @@ export interface Database {
           is_active: boolean
           rate_limit_per_hour: number
           current_usage_count: number
-          configuration: any | null
-          metadata: any | null
+          configuration: MLConfiguration | null
+          metadata: AssetMetadata | null
           created_at: string
           updated_at: string
         }
@@ -2329,8 +2707,8 @@ export interface Database {
           is_active?: boolean
           rate_limit_per_hour?: number
           current_usage_count?: number
-          configuration?: any | null
-          metadata?: any | null
+          configuration?: MLConfiguration | null
+          metadata?: AssetMetadata | null
           created_at?: string
           updated_at?: string
         }
@@ -2346,8 +2724,8 @@ export interface Database {
           is_active?: boolean
           rate_limit_per_hour?: number
           current_usage_count?: number
-          configuration?: any | null
-          metadata?: any | null
+          configuration?: MLConfiguration | null
+          metadata?: AssetMetadata | null
           created_at?: string
           updated_at?: string
         }
@@ -2362,10 +2740,10 @@ export interface Database {
           severity: string
           anomaly_score: number
           detection_method: string
-          baseline_data: any
-          anomalous_data: any
-          affected_metrics: any | null
-          recommended_actions: any | null
+          baseline_data: Record<string, number>
+          anomalous_data: Record<string, number>
+          affected_metrics: readonly string[] | null
+          recommended_actions: readonly string[] | null
           investigation_status: string
           investigated_by: string | null
           investigated_at: string | null
@@ -2383,10 +2761,10 @@ export interface Database {
           severity?: string
           anomaly_score: number
           detection_method: string
-          baseline_data: any
-          anomalous_data: any
-          affected_metrics?: any | null
-          recommended_actions?: any | null
+          baseline_data: Record<string, number>
+          anomalous_data: Record<string, number>
+          affected_metrics?: readonly string[] | null
+          recommended_actions?: readonly string[] | null
           investigation_status?: string
           investigated_by?: string | null
           investigated_at?: string | null
@@ -2404,10 +2782,10 @@ export interface Database {
           severity?: string
           anomaly_score?: number
           detection_method?: string
-          baseline_data?: any
-          anomalous_data?: any
-          affected_metrics?: any | null
-          recommended_actions?: any | null
+          baseline_data?: Record<string, number>
+          anomalous_data?: Record<string, number>
+          affected_metrics?: readonly string[] | null
+          recommended_actions?: readonly string[] | null
           investigation_status?: string
           investigated_by?: string | null
           investigated_at?: string | null
@@ -2427,7 +2805,7 @@ export interface Database {
           metric_value: number
           sample_size: number
           test_set_description: string | null
-          model_parameters: any | null
+          model_parameters: ModelParameters | null
           performance_notes: string | null
           created_at: string
         }
@@ -2440,7 +2818,7 @@ export interface Database {
           metric_value: number
           sample_size: number
           test_set_description?: string | null
-          model_parameters?: any | null
+          model_parameters?: ModelParameters | null
           performance_notes?: string | null
           created_at?: string
         }
@@ -2453,7 +2831,7 @@ export interface Database {
           metric_value?: number
           sample_size?: number
           test_set_description?: string | null
-          model_parameters?: any | null
+          model_parameters?: ModelParameters | null
           performance_notes?: string | null
           created_at?: string
         }
@@ -2470,7 +2848,7 @@ export interface Database {
           impact_level: string
           affected_organizations: string[] | null
           tags: string[] | null
-          external_references: any | null
+          external_references: ExternalReferences | null
           expires_at: string | null
           is_active: boolean
           created_at: string
@@ -2487,7 +2865,7 @@ export interface Database {
           impact_level?: string
           affected_organizations?: string[] | null
           tags?: string[] | null
-          external_references?: any | null
+          external_references?: ExternalReferences | null
           expires_at?: string | null
           is_active?: boolean
           created_at?: string
@@ -2504,7 +2882,7 @@ export interface Database {
           impact_level?: string
           affected_organizations?: string[] | null
           tags?: string[] | null
-          external_references?: any | null
+          external_references?: ExternalReferences | null
           expires_at?: string | null
           is_active?: boolean
           created_at?: string
@@ -2521,11 +2899,11 @@ export interface Database {
           category: string
           frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
           priority: 'low' | 'medium' | 'high' | 'critical'
-          workflow_steps: any
+          workflow_steps: WorkflowSteps
           requirements: string[] | null
           required_roles: string[] | null
-          reminder_schedule: any | null
-          escalation_rules: any | null
+          reminder_schedule: ReminderSchedule | null
+          escalation_rules: EscalationRules | null
           is_active: boolean
           is_system_template: boolean
           version: number
@@ -2542,11 +2920,11 @@ export interface Database {
           category?: string
           frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
           priority?: 'low' | 'medium' | 'high' | 'critical'
-          workflow_steps?: any
+          workflow_steps?: WorkflowSteps
           requirements?: string[] | null
           required_roles?: string[] | null
-          reminder_schedule?: any | null
-          escalation_rules?: any | null
+          reminder_schedule?: ReminderSchedule | null
+          escalation_rules?: EscalationRules | null
           is_active?: boolean
           is_system_template?: boolean
           version?: number
@@ -2563,11 +2941,11 @@ export interface Database {
           category?: string
           frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'ad_hoc'
           priority?: 'low' | 'medium' | 'high' | 'critical'
-          workflow_steps?: any
+          workflow_steps?: WorkflowSteps
           requirements?: string[] | null
           required_roles?: string[] | null
-          reminder_schedule?: any | null
-          escalation_rules?: any | null
+          reminder_schedule?: ReminderSchedule | null
+          escalation_rules?: EscalationRules | null
           is_active?: boolean
           is_system_template?: boolean
           version?: number
@@ -2589,7 +2967,7 @@ export interface Database {
           start_date: string | null
           business_days_notice: number | null
           is_recurring: boolean
-          recurrence_pattern: any | null
+          recurrence_pattern: Record<string, unknown> | null
           next_occurrence: string | null
           priority: 'low' | 'medium' | 'high' | 'critical'
           is_mandatory: boolean
@@ -2599,7 +2977,7 @@ export interface Database {
           postponed_until: string | null
           tags: string[] | null
           external_reference: string | null
-          metadata: any | null
+          metadata: AssetMetadata | null
           created_by: string
           created_at: string
           updated_at: string
@@ -2616,7 +2994,7 @@ export interface Database {
           start_date?: string | null
           business_days_notice?: number | null
           is_recurring?: boolean
-          recurrence_pattern?: any | null
+          recurrence_pattern?: Record<string, unknown> | null
           next_occurrence?: string | null
           priority?: 'low' | 'medium' | 'high' | 'critical'
           is_mandatory?: boolean
@@ -2626,7 +3004,7 @@ export interface Database {
           postponed_until?: string | null
           tags?: string[] | null
           external_reference?: string | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_by: string
           created_at?: string
           updated_at?: string
@@ -2643,7 +3021,7 @@ export interface Database {
           start_date?: string | null
           business_days_notice?: number | null
           is_recurring?: boolean
-          recurrence_pattern?: any | null
+          recurrence_pattern?: Record<string, unknown> | null
           next_occurrence?: string | null
           priority?: 'low' | 'medium' | 'high' | 'critical'
           is_mandatory?: boolean
@@ -2653,7 +3031,7 @@ export interface Database {
           postponed_until?: string | null
           tags?: string[] | null
           external_reference?: string | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_by?: string
           created_at?: string
           updated_at?: string
@@ -2668,7 +3046,7 @@ export interface Database {
           name: string
           description: string | null
           workflow_type: string
-          steps: any
+          steps: Record<string, unknown>
           current_step: number
           total_steps: number
           status: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
@@ -2688,7 +3066,7 @@ export interface Database {
           reminder_frequency_hours: number | null
           compliance_notes: string | null
           risk_level: 'low' | 'medium' | 'high' | 'critical' | null
-          metadata: any | null
+          metadata: AssetMetadata | null
           tags: string[] | null
           created_by: string
           created_at: string
@@ -2702,7 +3080,7 @@ export interface Database {
           name: string
           description?: string | null
           workflow_type?: string
-          steps?: any
+          steps?: Record<string, unknown>
           current_step?: number
           total_steps?: number
           status?: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
@@ -2722,7 +3100,7 @@ export interface Database {
           reminder_frequency_hours?: number | null
           compliance_notes?: string | null
           risk_level?: 'low' | 'medium' | 'high' | 'critical' | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           tags?: string[] | null
           created_by: string
           created_at?: string
@@ -2736,7 +3114,7 @@ export interface Database {
           name?: string
           description?: string | null
           workflow_type?: string
-          steps?: any
+          steps?: Record<string, unknown>
           current_step?: number
           total_steps?: number
           status?: 'pending' | 'in_progress' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled' | 'on_hold'
@@ -2756,7 +3134,7 @@ export interface Database {
           reminder_frequency_hours?: number | null
           compliance_notes?: string | null
           risk_level?: 'low' | 'medium' | 'high' | 'critical' | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           tags?: string[] | null
           created_by?: string
           created_at?: string
@@ -2786,7 +3164,7 @@ export interface Database {
           delegation_reason: string | null
           last_notified_at: string | null
           notification_count: number | null
-          metadata: any | null
+          metadata: AssetMetadata | null
           created_at: string
           updated_at: string
         }
@@ -2812,7 +3190,7 @@ export interface Database {
           delegation_reason?: string | null
           last_notified_at?: string | null
           notification_count?: number | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_at?: string
           updated_at?: string
         }
@@ -2838,7 +3216,7 @@ export interface Database {
           delegation_reason?: string | null
           last_notified_at?: string | null
           notification_count?: number | null
-          metadata?: any | null
+          metadata?: AssetMetadata | null
           created_at?: string
           updated_at?: string
         }
@@ -2857,9 +3235,9 @@ export interface Database {
           actor_user_id: string | null
           target_user_id: string | null
           event_description: string
-          event_data: any | null
-          previous_state: any | null
-          new_state: any | null
+          event_data: Record<string, unknown> | null
+          previous_state: Record<string, unknown> | null
+          new_state: Record<string, unknown> | null
           ip_address: string | null
           user_agent: string | null
           session_id: string | null
@@ -2887,9 +3265,9 @@ export interface Database {
           actor_user_id?: string | null
           target_user_id?: string | null
           event_description: string
-          event_data?: any | null
-          previous_state?: any | null
-          new_state?: any | null
+          event_data?: Record<string, unknown> | null
+          previous_state?: Record<string, unknown> | null
+          new_state?: Record<string, unknown> | null
           ip_address?: string | null
           user_agent?: string | null
           session_id?: string | null
@@ -2917,9 +3295,9 @@ export interface Database {
           actor_user_id?: string | null
           target_user_id?: string | null
           event_description?: string
-          event_data?: any | null
-          previous_state?: any | null
-          new_state?: any | null
+          event_data?: Record<string, unknown> | null
+          previous_state?: Record<string, unknown> | null
+          new_state?: Record<string, unknown> | null
           ip_address?: string | null
           user_agent?: string | null
           session_id?: string | null
@@ -2996,3 +3374,123 @@ export interface Database {
     }
   }
 }
+
+// ============================================================================
+// CONVENIENCE TYPE EXPORTS FOR OTHER AGENTS
+// ============================================================================
+
+// Re-export all branded types for easy import
+export type {
+  UserId,
+  OrganizationId,
+  AssetId,
+  VaultId,
+  BoardId,
+  NotificationId,
+  TemplateId,
+  EventId,
+};
+
+// Re-export all core interfaces for easy import
+export type {
+  OrganizationSettings,
+  ComplianceSettings,
+  BillingSettings,
+  CustomPermissions,
+  AssetMetadata,
+  ActivityDetails,
+  GeolocationInfo,
+  RequestHeaders,
+  ContentPosition,
+  BoardSettings,
+  VaultSettings,
+  MemberSettings,
+  EmailTemplateData,
+  NotificationResponseData,
+  EventMetadata,
+  RecurrenceRule,
+  EquityCompensation,
+  MemberSkills,
+  PatternData,
+  AnalyticsConditions,
+  AnalyticsOutcomes,
+  PercentileData,
+  ConfidenceInterval,
+  PredictionData,
+  MLConfiguration,
+  AnomalyData,
+  ModelParameters,
+  ExternalReferences,
+  WorkflowSteps,
+  ReminderSchedule,
+  EscalationRules,
+  MeetingSettings,
+  CommitteeSettings,
+};
+
+// Database table row types for direct access
+export type DatabaseUser = Database['public']['Tables']['users']['Row'];
+export type DatabaseOrganization = Database['public']['Tables']['organizations']['Row'];
+export type DatabaseAsset = Database['public']['Tables']['assets']['Row'];
+export type DatabaseVault = Database['public']['Tables']['vaults']['Row'];
+export type DatabaseBoard = Database['public']['Tables']['boards']['Row'];
+export type DatabaseMeeting = Database['public']['Tables']['meetings']['Row'];
+export type DatabaseCommittee = Database['public']['Tables']['committees']['Row'];
+
+// Database insert types for form handling
+export type DatabaseUserInsert = Database['public']['Tables']['users']['Insert'];
+export type DatabaseOrganizationInsert = Database['public']['Tables']['organizations']['Insert'];
+export type DatabaseAssetInsert = Database['public']['Tables']['assets']['Insert'];
+export type DatabaseVaultInsert = Database['public']['Tables']['vaults']['Insert'];
+export type DatabaseBoardInsert = Database['public']['Tables']['boards']['Insert'];
+
+// Database update types for editing
+export type DatabaseUserUpdate = Database['public']['Tables']['users']['Update'];
+export type DatabaseOrganizationUpdate = Database['public']['Tables']['organizations']['Update'];
+export type DatabaseAssetUpdate = Database['public']['Tables']['assets']['Update'];
+export type DatabaseVaultUpdate = Database['public']['Tables']['vaults']['Update'];
+export type DatabaseBoardUpdate = Database['public']['Tables']['boards']['Update'];
+
+// Utility types for common patterns
+export type DatabaseTableName = keyof Database['public']['Tables'];
+export type DatabaseRow<T extends DatabaseTableName> = Database['public']['Tables'][T]['Row'];
+export type DatabaseInsert<T extends DatabaseTableName> = Database['public']['Tables'][T]['Insert'];
+export type DatabaseUpdate<T extends DatabaseTableName> = Database['public']['Tables'][T]['Update'];
+
+// Common status enums
+export type UserRole = 'pending' | 'director' | 'admin' | 'viewer';
+export type UserStatus = 'pending' | 'approved' | 'rejected';
+export type OrganizationSize = 'startup' | 'small' | 'medium' | 'large' | 'enterprise';
+export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
+export type MemberStatus = 'active' | 'suspended' | 'pending_activation';
+export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'revoked';
+export type MeetingType = 'agm' | 'board' | 'committee' | 'other';
+export type MeetingStatus = 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
+export type Visibility = 'public' | 'organization' | 'private';
+export type BoardType = 'main_board' | 'advisory_board' | 'subsidiary_board' | 'committee_board';
+export type BoardStatus = 'active' | 'inactive' | 'dissolved';
+export type CommitteeType = 'audit' | 'compensation' | 'governance' | 'risk' | 'nomination' | 'strategy' | 'technology' | 'investment' | 'ethics' | 'executive' | 'other';
+export type CommitteeStatus = 'active' | 'inactive' | 'dissolved' | 'temporary';
+
+// Type guards for runtime type checking
+export const isUserRole = (value: string): value is UserRole => 
+  ['pending', 'director', 'admin', 'viewer'].includes(value);
+
+export const isUserStatus = (value: string): value is UserStatus => 
+  ['pending', 'approved', 'rejected'].includes(value);
+
+export const isMemberRole = (value: string): value is MemberRole => 
+  ['owner', 'admin', 'member', 'viewer'].includes(value);
+
+export const isMeetingType = (value: string): value is MeetingType => 
+  ['agm', 'board', 'committee', 'other'].includes(value);
+
+export const isVisibility = (value: string): value is Visibility => 
+  ['public', 'organization', 'private'].includes(value);
+
+// Helper functions for type-safe operations
+export const createBrandedId = <T extends string>(id: string, _brand: T): Brand<string, T> => 
+  id as Brand<string, T>;
+
+export const extractId = <T extends string>(brandedId: Brand<string, T>): string => 
+  brandedId as string;

@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ComplianceEngine } from '@/lib/services/compliance-engine'
-import type { AuditReportRequest, AuditReportFilters } from '@/types/entities/compliance.types'
+import type { 
+  AuditReportRequest, 
+  AuditReportFilters,
+  ComplianceApiResponse
+} from '@/types/entities/compliance.types'
+import type {
+  ActivityApiResponse,
+  ComplianceReport
+} from '@/types/entities/activity.types'
 
 export async function GET(request: NextRequest) {
   try {
@@ -136,8 +144,8 @@ export async function POST(request: NextRequest) {
     const reportId = crypto.randomUUID()
     
     // Generate report based on type
-    let reportData: any = {}
-    let summary: any = {}
+    let reportData: readonly any[] = []
+    let summary: Record<string, any> = {}
 
     switch (body.report_type) {
       case 'compliance_summary':
@@ -159,7 +167,7 @@ export async function POST(request: NextRequest) {
           body.date_range.end_date,
           body.filters
         )
-        summary = calculateWorkflowSummary(reportData)
+        summary = calculateWorkflowSummary([...reportData])
         break
 
       case 'participant_activity':
@@ -241,11 +249,16 @@ export async function POST(request: NextRequest) {
 // Helper functions for generating different types of reports
 
 async function generateAuditSummaryReport(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
   organizationId: string,
   startDate: string,
   endDate: string
-) {
+): Promise<{
+  readonly total_events: number
+  readonly event_breakdown: Record<string, number>
+  readonly outcome_breakdown: Record<string, number>
+  readonly entries: readonly any[]
+}> {
   // Get audit activities in date range
   const { data: auditEntries } = await supabase
     .from('notification_audit_log')
@@ -272,7 +285,20 @@ async function generateAuditSummaryReport(
   }
 }
 
-async function generateComplianceOverviewReport(supabase: any, organizationId: string) {
+async function generateComplianceOverviewReport(
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
+  organizationId: string
+): Promise<{
+  readonly workflows: {
+    readonly total: number
+    readonly by_status: Record<string, number>
+    readonly by_regulation: Record<string, number>
+  }
+  readonly calendar_entries: {
+    readonly total: number
+    readonly by_status: Record<string, number>
+  }
+}> {
   // Get workflows by status
   const { data: workflows } = await supabase
     .from('notification_workflows')
@@ -315,7 +341,16 @@ async function generateComplianceOverviewReport(supabase: any, organizationId: s
   }
 }
 
-async function generateRegulatoryCoverageReport(supabase: any, organizationId: string) {
+async function generateRegulatoryCoverageReport(
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
+  organizationId: string
+): Promise<readonly {
+  readonly regulation_type: string
+  readonly total_templates: number
+  readonly active_workflows: number
+  readonly completed_workflows: number
+  readonly coverage_percentage: number
+}[]> {
   // Get all regulation types and their coverage
   const { data: templates } = await supabase
     .from('compliance_templates')
@@ -348,7 +383,7 @@ async function generateRegulatoryCoverageReport(supabase: any, organizationId: s
   }
 
   for (const workflow of workflows || []) {
-    const regulationType = workflow.template?.regulation_type
+    const regulationType = (workflow.template as any)?.regulation_type
     if (coverage[regulationType]) {
       coverage[regulationType].active_workflows++
       if (workflow.status === 'completed') {
@@ -358,7 +393,13 @@ async function generateRegulatoryCoverageReport(supabase: any, organizationId: s
   }
 
   // Calculate coverage percentages
-  Object.values(coverage).forEach((item: any) => {
+  Object.values(coverage).forEach((item: {
+    regulation_type: string
+    total_templates: number
+    active_workflows: number
+    completed_workflows: number
+    coverage_percentage: number
+  }) => {
     item.coverage_percentage = item.total_templates > 0 
       ? Math.round((item.completed_workflows / item.total_templates) * 100)
       : 0
@@ -368,12 +409,12 @@ async function generateRegulatoryCoverageReport(supabase: any, organizationId: s
 }
 
 async function generateComplianceSummaryReport(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
   organizationId: string,
   startDate: string,
   endDate: string,
   filters?: AuditReportFilters
-) {
+): Promise<readonly any[]> {
   let query = supabase
     .from('notification_workflows')
     .select(`
@@ -386,7 +427,7 @@ async function generateComplianceSummaryReport(
     .lte('created_at', endDate)
 
   if (filters?.regulation_types?.length) {
-    // This would need to be handled with a join or subquery
+    // TODO: This would need to be handled with a join or subquery for regulation_types filter
   }
 
   if (filters?.statuses?.length) {
@@ -398,12 +439,12 @@ async function generateComplianceSummaryReport(
 }
 
 async function generateWorkflowDetailReport(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
   organizationId: string,
   startDate: string,
   endDate: string,
   filters?: AuditReportFilters
-) {
+): Promise<readonly any[]> {
   // Detailed workflow report with participants
   let query = supabase
     .from('notification_workflows')
@@ -425,12 +466,12 @@ async function generateWorkflowDetailReport(
 }
 
 async function generateParticipantActivityReport(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
   organizationId: string,
   startDate: string,
   endDate: string,
   filters?: AuditReportFilters
-) {
+): Promise<readonly any[]> {
   // Participant activity report
   const { data: participants } = await supabase
     .from('compliance_participants')
@@ -451,12 +492,12 @@ async function generateParticipantActivityReport(
 }
 
 async function generateRegulatoryOverviewReport(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never,
   organizationId: string,
   startDate: string,
   endDate: string,
   filters?: AuditReportFilters
-) {
+): Promise<readonly any[]> {
   // Regulatory overview grouped by regulation type
   const { data: data } = await supabase
     .from('compliance_calendar')
@@ -472,7 +513,13 @@ async function generateRegulatoryOverviewReport(
 }
 
 // Summary calculation functions
-function calculateComplianceSummary(data: any[]) {
+function calculateComplianceSummary(data: readonly any[]): {
+  readonly total_workflows: number
+  readonly completed_workflows: number
+  readonly in_progress_workflows: number
+  readonly overdue_workflows: number
+  readonly completion_rate: number
+} {
   const statusCounts: Record<string, number> = {}
   for (const item of data) {
     statusCounts[item.status] = (statusCounts[item.status] || 0) + 1
@@ -487,7 +534,11 @@ function calculateComplianceSummary(data: any[]) {
   }
 }
 
-function calculateWorkflowSummary(data: any[]) {
+function calculateWorkflowSummary(data: readonly any[]): {
+  readonly total_workflows: number
+  readonly average_participants: number
+  readonly total_participants: number
+} {
   return {
     total_workflows: data.length,
     average_participants: data.length > 0 
@@ -497,7 +548,11 @@ function calculateWorkflowSummary(data: any[]) {
   }
 }
 
-function calculateParticipantSummary(data: any[]) {
+function calculateParticipantSummary(data: readonly any[]): {
+  readonly total_participants: number
+  readonly unique_users: number
+  readonly status_breakdown: Record<string, number>
+} {
   const uniqueUsers = new Set(data.map(p => p.user_id)).size
   const statusCounts: Record<string, number> = {}
   
@@ -512,7 +567,10 @@ function calculateParticipantSummary(data: any[]) {
   }
 }
 
-function calculateRegulatorySummary(data: any[]) {
+function calculateRegulatorySummary(data: readonly any[]): {
+  readonly total_entries: number
+  readonly regulation_types: number
+} {
   return {
     total_entries: data.length,
     regulation_types: [...new Set(data.map(d => d.regulation_type))].length

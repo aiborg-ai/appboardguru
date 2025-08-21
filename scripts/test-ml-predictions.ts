@@ -54,6 +54,11 @@ function printInfo(message: string): void {
 }
 
 // Mock Supabase client for testing
+interface MockSupabaseResponse {
+  data: any[] | any
+  error?: any
+}
+
 class MockSupabaseClient {
   private data: Map<string, any[]> = new Map()
 
@@ -69,44 +74,44 @@ class MockSupabaseClient {
 
   from(table: string) {
     return {
-      select: (columns = '*') => ({
+      select: (columns: string = '*') => ({
         eq: (column: string, value: any) => ({
           gte: (column: string, value: any) => ({
             lte: (column: string, value: any) => ({
               order: (column: string, options?: any) => ({
-                limit: (count: number) => ({
+                limit: (count: number): MockSupabaseResponse => ({
                   data: this.data.get(table)?.slice(0, count) || []
                 }),
                 data: this.data.get(table) || []
               }),
               data: this.data.get(table) || []
             }),
-            order: (column: string, options?: any) => ({
+            order: (column: string, options?: any): MockSupabaseResponse => ({
               data: this.data.get(table) || []
             }),
             data: this.data.get(table) || []
           }),
-          order: (column: string, options?: any) => ({
+          order: (column: string, options?: any): MockSupabaseResponse => ({
             data: this.data.get(table) || []
           }),
-          single: () => ({
+          single: (): MockSupabaseResponse => ({
             data: this.data.get(table)?.[0] || null
           }),
           data: this.data.get(table) || []
         }),
         data: this.data.get(table) || []
       }),
-      insert: (values: any) => ({
-        data: Array.isArray(values) ? values.map((v, i) => ({ ...v, id: `${table}-${i}` })) : [{ ...values, id: `${table}-1` }],
+      insert: (values: any): MockSupabaseResponse => ({
+        data: Array.isArray(values) ? values.map((v: any, i: number) => ({ ...v, id: `${table}-${i}` })) : [{ ...values, id: `${table}-1` }],
         error: null
       }),
       update: (values: any) => ({
-        eq: (column: string, value: any) => ({
+        eq: (column: string, value: any): MockSupabaseResponse => ({
           data: [{ ...values, id: `${table}-updated` }],
           error: null
         })
       }),
-      upsert: (values: any) => ({
+      upsert: (values: any): MockSupabaseResponse => ({
         data: Array.isArray(values) ? values : [values],
         error: null
       })
@@ -172,13 +177,15 @@ async function runMLPredictionTests() {
   }
 }
 
-async function testPatternRecognition(mockSupabase: any, organizationId: string) {
+async function testPatternRecognition(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing Pattern Recognition Engine')
 
   try {
     // Override the Supabase client in the pattern recognition engine
     const originalCreateClient = require('../src/lib/supabase-server').createSupabaseServerClient
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    // Mock the function properly
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     const patterns = await patternRecognitionEngine.analyzePatterns(organizationId, {
       lookbackDays: 30,
@@ -206,16 +213,18 @@ async function testPatternRecognition(mockSupabase: any, organizationId: string)
     require('../src/lib/supabase-server').createSupabaseServerClient = originalCreateClient
 
   } catch (error) {
-    printError(`Pattern recognition test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`Pattern recognition test failed: ${errorMessage}`)
     throw error
   }
 }
 
-async function testAnomalyDetection(mockSupabase: any, organizationId: string) {
+async function testAnomalyDetection(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing Anomaly Detection')
 
   try {
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     const anomalies = await patternRecognitionEngine.detectAnomalies(organizationId, {
       lookbackDays: 14,
@@ -247,16 +256,18 @@ async function testAnomalyDetection(mockSupabase: any, organizationId: string) {
     printInfo(`Low sensitivity: ${lowSensitivity.length} anomalies`)
 
   } catch (error) {
-    printError(`Anomaly detection test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`Anomaly detection test failed: ${errorMessage}`)
     throw error
   }
 }
 
-async function testUserEngagementProfiles(mockSupabase: any, organizationId: string) {
+async function testUserEngagementProfiles(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing User Engagement Profiles')
 
   try {
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     const userIds = ['user-001', 'user-002', 'user-003', 'user-004', 'user-005']
     const profiles = await patternRecognitionEngine.generateUserEngagementProfiles(
@@ -287,16 +298,18 @@ async function testUserEngagementProfiles(mockSupabase: any, organizationId: str
     })
 
   } catch (error) {
-    printError(`User engagement profiling test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`User engagement profiling test failed: ${errorMessage}`)
     throw error
   }
 }
 
-async function testOptimalTimingPrediction(mockSupabase: any, organizationId: string) {
+async function testOptimalTimingPrediction(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing Optimal Timing Predictions')
 
   try {
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     const testCases = [
       { userId: 'user-001', type: 'meeting_reminder' },
@@ -322,16 +335,18 @@ async function testOptimalTimingPrediction(mockSupabase: any, organizationId: st
     }
 
   } catch (error) {
-    printError(`Optimal timing prediction test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`Optimal timing prediction test failed: ${errorMessage}`)
     throw error
   }
 }
 
-async function testSmartNotificationGeneration(mockSupabase: any, organizationId: string) {
+async function testSmartNotificationGeneration(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing Smart Notification Generation')
 
   try {
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     const smartRequests = [
       {
@@ -380,16 +395,18 @@ async function testSmartNotificationGeneration(mockSupabase: any, organizationId
     }
 
   } catch (error) {
-    printError(`Smart notification generation test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`Smart notification generation test failed: ${errorMessage}`)
     throw error
   }
 }
 
-async function testPredictiveInsights(mockSupabase: any, organizationId: string) {
+async function testPredictiveInsights(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing Predictive Insights Generation')
 
   try {
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     const insights = await predictiveNotificationService.generatePredictiveInsights(
       organizationId,
@@ -426,16 +443,18 @@ async function testPredictiveInsights(mockSupabase: any, organizationId: string)
     })
 
   } catch (error) {
-    printError(`Predictive insights test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`Predictive insights test failed: ${errorMessage}`)
     throw error
   }
 }
 
-async function testPerformanceMetrics(mockSupabase: any, organizationId: string) {
+async function testPerformanceMetrics(mockSupabase: MockSupabaseClient, organizationId: string) {
   printSubHeader('Testing Performance Metrics')
 
   try {
-    require('../src/lib/supabase-server').createSupabaseServerClient = jest.fn(() => mockSupabase)
+    const mockCreateClient = () => mockSupabase as any
+    require('../src/lib/supabase-server').createSupabaseServerClient = mockCreateClient
 
     // Mock some prediction accuracy data
     mockSupabase.setTestData('predicted_notifications', [
@@ -492,7 +511,8 @@ async function testPerformanceMetrics(mockSupabase: any, organizationId: string)
     })
 
   } catch (error) {
-    printError(`Performance metrics test failed: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    printError(`Performance metrics test failed: ${errorMessage}`)
     throw error
   }
 }
@@ -505,7 +525,8 @@ if (require.main === module) {
       process.exit(0)
     })
     .catch((error) => {
-      printError(`Test suite failed: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      printError(`Test suite failed: ${errorMessage}`)
       console.error(error)
       process.exit(1)
     })

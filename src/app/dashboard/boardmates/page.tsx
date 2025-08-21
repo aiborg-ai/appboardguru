@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
@@ -22,8 +22,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import BoardMateCard, { BoardMateProfile } from '@/components/boardmates/BoardMateCard';
+import BoardMateCard from '@/components/boardmates/BoardMateCard';
 import AssociationManager from '@/components/boardmates/AssociationManager';
+import type { 
+  BoardMateProfile, 
+  AssociationUpdate,
+  BoardMateEventHandlers 
+} from '@/types/boardmates';
 import {
   Select,
   SelectContent,
@@ -32,13 +37,7 @@ import {
   SelectValue,
 } from '@/features/shared/ui/select';
 
-interface AssociationUpdate {
-  type: 'board' | 'committee' | 'vault';
-  id: string;
-  action: 'add' | 'remove' | 'update_role';
-  role?: string;
-  current_role?: string;
-}
+// Remove interface definition as it's now imported from types
 
 const STATUS_CONFIG = {
   active: { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
@@ -71,7 +70,7 @@ export default function BoardMatesPage() {
     }
   }, [currentOrganization?.id]);
 
-  const loadBoardmates = async () => {
+  const loadBoardmates = useCallback(async () => {
     if (!currentOrganization?.id) return;
     
     setIsLoading(true);
@@ -93,7 +92,7 @@ export default function BoardMatesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentOrganization?.id]);
 
   const filteredBoardMates = boardmates.filter(boardmate => {
     const matchesSearch = 
@@ -116,22 +115,38 @@ export default function BoardMatesPage() {
   });
 
   // Event handlers
-  const handleEdit = (boardmate: BoardMateProfile) => {
+  const handleEdit = useCallback((boardmate: BoardMateProfile) => {
     // Navigate to edit page or open edit modal
     console.log('Edit boardmate:', boardmate.id);
-  };
+  }, []);
 
-  const handleMessage = (boardmate: BoardMateProfile) => {
+  const handleMessage = useCallback((boardmate: BoardMateProfile) => {
     // Open messaging interface
     console.log('Message boardmate:', boardmate.id);
-  };
+  }, []);
 
-  const handleManageAssociations = (boardmate: BoardMateProfile) => {
+  const handleManageAssociations = useCallback((boardmate: BoardMateProfile) => {
     setSelectedBoardmate(boardmate);
     setIsAssociationManagerOpen(true);
-  };
+  }, []);
 
-  const handleAssociationUpdate = async (updates: AssociationUpdate[]) => {
+  const handleViewModeChange = useCallback((mode: 'grid' | 'list') => {
+    setViewMode(mode);
+  }, []);
+
+  const handleSearchChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setFilterStatus(value);
+  }, []);
+
+  const handleRoleFilterChange = useCallback((value: string) => {
+    setFilterRole(value);
+  }, []);
+
+  const handleAssociationUpdate = useCallback(async (updates: AssociationUpdate[]) => {
     if (!selectedBoardmate || !currentOrganization?.id) return;
     
     try {
@@ -160,7 +175,7 @@ export default function BoardMatesPage() {
       console.error('Error updating associations:', err);
       // Handle error (show toast, etc.)
     }
-  };
+  }, [selectedBoardmate, currentOrganization?.id, loadBoardmates]);
 
   // Calculate stats
   const activeCount = boardmates.filter(b => b.org_status === 'active').length;
@@ -201,7 +216,7 @@ export default function BoardMatesPage() {
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => handleViewModeChange('grid')}
                   className={cn(
                     "px-3 py-1.5 text-sm",
                     viewMode === 'grid' ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
@@ -213,7 +228,7 @@ export default function BoardMatesPage() {
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setViewMode('list')}
+                  onClick={() => handleViewModeChange('list')}
                   className={cn(
                     "px-3 py-1.5 text-sm",
                     viewMode === 'list' ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
@@ -318,7 +333,7 @@ export default function BoardMatesPage() {
                     <Input
                       placeholder="Search by name, email, designation, or company..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={handleSearchChange}
                       className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
@@ -327,7 +342,7 @@ export default function BoardMatesPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-500" />
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <Select value={filterStatus} onValueChange={handleStatusFilterChange}>
                       <SelectTrigger className="w-36 h-11 border-gray-200">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
@@ -340,7 +355,7 @@ export default function BoardMatesPage() {
                     </Select>
                   </div>
                   
-                  <Select value={filterRole} onValueChange={setFilterRole}>
+                  <Select value={filterRole} onValueChange={handleRoleFilterChange}>
                     <SelectTrigger className="w-40 h-11 border-gray-200">
                       <SelectValue placeholder="Role" />
                     </SelectTrigger>

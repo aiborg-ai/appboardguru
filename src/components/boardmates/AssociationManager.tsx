@@ -27,45 +27,16 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { BoardMateProfile } from './BoardMateCard';
+import type { 
+  BoardMateProfile,
+  AssociationManagerProps,
+  Board,
+  Committee,
+  Vault,
+  AssociationUpdate
+} from '@/types/boardmates';
 
-interface Board {
-  id: string;
-  name: string;
-  board_type: 'main_board' | 'advisory_board' | 'subsidiary_board' | 'committee_board';
-  status: 'active' | 'inactive' | 'dissolved';
-}
-
-interface Committee {
-  id: string;
-  name: string;
-  committee_type: 'audit' | 'compensation' | 'governance' | 'risk' | 'nomination' | 'strategy' | 'technology' | 'investment' | 'ethics' | 'executive' | 'other';
-  board_id: string;
-  board_name: string;
-  status: 'active' | 'inactive' | 'dissolved' | 'temporary';
-}
-
-interface Vault {
-  id: string;
-  name: string;
-  status: 'draft' | 'active' | 'archived' | 'expired' | 'cancelled';
-  description?: string;
-}
-
-interface AssociationUpdate {
-  type: 'board' | 'committee' | 'vault';
-  id: string;
-  action: 'add' | 'remove' | 'update_role';
-  role?: string;
-  current_role?: string;
-}
-
-interface AssociationManagerProps {
-  boardmate: BoardMateProfile;
-  isOpen: boolean;
-  onClose: () => void;
-  onUpdate: (updates: AssociationUpdate[]) => Promise<void>;
-}
+// Types now imported from shared types file
 
 const BOARD_ROLES = [
   { value: 'chairman', label: 'Chairman' },

@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import type { BoardMateCardProps } from '@/types/boardmates';
 import { Card, CardContent, CardHeader } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
@@ -29,76 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Types for BoardMate with associations
-export interface BoardMembership {
-  board_id: string;
-  board_name: string;
-  board_type: 'main_board' | 'advisory_board' | 'subsidiary_board' | 'committee_board';
-  board_status: 'active' | 'inactive' | 'dissolved';
-  member_role: 'chairman' | 'vice_chairman' | 'ceo' | 'cfo' | 'cto' | 'independent_director' | 'executive_director' | 'non_executive_director' | 'board_member' | 'board_observer';
-  member_status: 'active' | 'inactive' | 'resigned' | 'terminated';
-  appointed_date: string;
-  term_start_date?: string;
-  term_end_date?: string;
-  is_voting_member: boolean;
-  attendance_rate?: number;
-}
-
-export interface CommitteeMembership {
-  committee_id: string;
-  committee_name: string;
-  committee_type: 'audit' | 'compensation' | 'governance' | 'risk' | 'nomination' | 'strategy' | 'technology' | 'investment' | 'ethics' | 'executive' | 'other';
-  committee_status: 'active' | 'inactive' | 'dissolved' | 'temporary';
-  board_name: string;
-  member_role: 'chair' | 'vice_chair' | 'member' | 'secretary' | 'advisor' | 'observer';
-  member_status: 'active' | 'inactive' | 'resigned' | 'terminated';
-  appointed_date: string;
-  term_start_date?: string;
-  term_end_date?: string;
-  is_voting_member: boolean;
-  attendance_rate?: number;
-}
-
-export interface VaultMembership {
-  vault_id: string;
-  vault_name: string;
-  vault_status: 'draft' | 'active' | 'archived' | 'expired' | 'cancelled';
-  member_role: 'owner' | 'admin' | 'moderator' | 'contributor' | 'viewer';
-  member_status: 'active' | 'suspended' | 'pending' | 'left';
-  joined_at: string;
-  last_accessed_at?: string;
-  access_count: number;
-}
-
-export interface BoardMateProfile {
-  id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  designation?: string;
-  linkedin_url?: string;
-  bio?: string;
-  company?: string;
-  position?: string;
-  user_status: 'pending' | 'approved' | 'rejected';
-  organization_name: string;
-  organization_logo?: string;
-  org_role: 'owner' | 'admin' | 'member' | 'viewer';
-  org_status: 'active' | 'suspended' | 'pending_activation';
-  org_joined_at: string;
-  org_last_accessed?: string;
-  board_memberships: BoardMembership[];
-  committee_memberships: CommitteeMembership[];
-  vault_memberships: VaultMembership[];
-}
-
-interface BoardMateCardProps {
-  boardmate: BoardMateProfile;
-  onEdit?: (boardmate: BoardMateProfile) => void;
-  onMessage?: (boardmate: BoardMateProfile) => void;
-  onManageAssociations?: (boardmate: BoardMateProfile) => void;
-  className?: string;
-}
+// Types now imported from shared types file
 
 // Role configurations
 const BOARD_ROLE_CONFIG = {

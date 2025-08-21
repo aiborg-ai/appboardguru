@@ -170,15 +170,15 @@ export default function CreateMeetingWizard({
   // Navigation handlers
   const goToNextStep = useCallback(() => {
     const nextIndex = currentStepIndex + 1;
-    if (nextIndex < STEPS.length) {
-      setCurrentStep(STEPS[nextIndex].id);
+    if (nextIndex < STEPS.length && STEPS[nextIndex]) {
+      setCurrentStep(STEPS[nextIndex]!.id);
     }
   }, [currentStepIndex]);
 
   const goToPreviousStep = useCallback(() => {
     const prevIndex = currentStepIndex - 1;
-    if (prevIndex >= 0) {
-      setCurrentStep(STEPS[prevIndex].id);
+    if (prevIndex >= 0 && STEPS[prevIndex]) {
+      setCurrentStep(STEPS[prevIndex]!.id);
     }
   }, [currentStepIndex]);
 

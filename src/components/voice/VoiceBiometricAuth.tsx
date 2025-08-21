@@ -327,7 +327,8 @@ export default function VoiceBiometricAuth({
           } else {
             // Move to next phrase
             const nextPhraseIndex = enrollmentState.currentSession % ENROLLMENT_PHRASES.length;
-            setCurrentPhrase(ENROLLMENT_PHRASES[nextPhraseIndex]);
+            const nextPhrase = ENROLLMENT_PHRASES[nextPhraseIndex] ?? ENROLLMENT_PHRASES[0] ?? '';
+            setCurrentPhrase(nextPhrase);
           }
         } else {
           onError?.(result.error || 'Enrollment failed');
@@ -361,7 +362,7 @@ export default function VoiceBiometricAuth({
         } else {
           onError?.(result.errorDetails?.message || 'Authentication failed');
           
-          if (result.fallbackOptions && result.fallbackOptions.length > 0) {
+          if (result.fallbackOptions && result.fallbackOptions.length > 0 && result.fallbackOptions[0]) {
             onFallback?.(result.fallbackOptions[0]);
           }
         }

@@ -113,7 +113,13 @@ class GeoLocation {
     lon?: number
   } | null> {
     // Mock implementation - in production use real geolocation service
-    const mockLocations: Record<string, any> = {
+    const mockLocations: Record<string, {
+      country: string;
+      region: string;
+      city: string;
+      lat: number;
+      lon: number;
+    }> = {
       '127.0.0.1': { country: 'US', region: 'CA', city: 'San Francisco', lat: 37.7749, lon: -122.4194 },
       'localhost': { country: 'US', region: 'CA', city: 'San Francisco', lat: 37.7749, lon: -122.4194 }
     }
@@ -262,8 +268,8 @@ export class ThreatDetectionEngine {
       }
 
       const attempts = recentAttempts?.length || 0
-      const userAttempts = recentAttempts?.filter(a => a.user_id === userId).length || 0
-      const ipAttempts = recentAttempts?.filter(a => a.ip_address === ip).length || 0
+      const userAttempts = recentAttempts?.filter((a: any) => a.user_id === userId).length || 0
+      const ipAttempts = recentAttempts?.filter((a: any) => a.ip_address === ip).length || 0
 
       // Calculate risk score
       let riskScore = this.config.riskScoring.baseScore
@@ -281,7 +287,7 @@ export class ThreatDetectionEngine {
       }
 
       // Check for distributed attacks (same user, multiple IPs)
-      const uniqueIPs = new Set(recentAttempts?.map(a => a.ip_address) || [])
+      const uniqueIPs = new Set(recentAttempts?.map((a: any) => a.ip_address) || [])
       if (uniqueIPs.size > 3) {
         riskScore += 25
       }
@@ -372,12 +378,12 @@ export class ThreatDetectionEngine {
 
       if (error) throw error
 
-      const accessHistory = recentAccess || []
+      const accessHistory: any[] = recentAccess || []
 
       // Get recent locations for analysis
       const recentLocations = accessHistory
-        .filter(a => a.geolocation?.lat && a.geolocation?.lon)
-        .map(a => ({
+        .filter((a: any) => a.geolocation?.lat && a.geolocation?.lon)
+        .map((a: any) => ({
           lat: a.geolocation.lat,
           lon: a.geolocation.lon,
           timestamp: new Date(a.created_at)
@@ -389,17 +395,19 @@ export class ThreatDetectionEngine {
         // Check for impossible travel
         if (recentLocations.length > 0) {
           const lastLocation = recentLocations[0]
-          const timeDiff = (Date.now() - lastLocation.timestamp.getTime()) / 1000 / 3600 // hours
-          const distance = GeoLocation.calculateDistance(
-            lastLocation.lat, lastLocation.lon,
-            context.location.lat, context.location.lon
-          )
+          if (lastLocation) {
+            const timeDiff = (Date.now() - lastLocation.timestamp.getTime()) / 1000 / 3600 // hours
+            const distance = GeoLocation.calculateDistance(
+              lastLocation.lat, lastLocation.lon,
+              context.location.lat, context.location.lon
+            )
           
-          const velocity = timeDiff > 0 ? distance / timeDiff : 0
-          
-          if (velocity > this.config.anomalousAccess.velocityThreshold) {
-            anomalies.push('impossible_travel')
-            riskScore += 50
+            const velocity = timeDiff > 0 ? distance / timeDiff : 0
+            
+            if (velocity > this.config.anomalousAccess.velocityThreshold) {
+              anomalies.push('impossible_travel')
+              riskScore += 50
+            }
           }
         }
 
@@ -412,14 +420,14 @@ export class ThreatDetectionEngine {
           return distance < 50 // Within 50km is considered same location
         })
 
-        if (knownLocations.length === 0) {
+        if (knownLocations.length === 0 && context.location) {
           anomalies.push('new_location')
           riskScore += 20
         }
 
         // Check for too many locations
         const uniqueLocations = new Set(
-          recentLocations.map(loc => `${Math.round(loc.lat)},${Math.round(loc.lon)}`)
+          recentLocations.map(loc => `${Math.round(loc?.lat || 0)},${Math.round(loc?.lon || 0)}`)
         )
         
         if (uniqueLocations.size > this.config.anomalousAccess.maxLocations) {
@@ -436,7 +444,7 @@ export class ThreatDetectionEngine {
       anomalies.push(...deviceAnalysis.flags)
 
       // Check for new device
-      const recentDevices = accessHistory.map(a => a.device_fingerprint).filter(Boolean)
+      const recentDevices = accessHistory.map((a: any) => a.device_fingerprint).filter(Boolean)
       if (!recentDevices.includes(deviceFingerprint)) {
         anomalies.push('new_device')
         riskScore += 15
@@ -454,8 +462,8 @@ export class ThreatDetectionEngine {
       const isWeekend = [0, 6].includes((context.timestamp || new Date()).getDay())
       
       // Check typical access times
-      const accessHours = accessHistory.map(a => new Date(a.created_at).getHours())
-      const hourFreq = accessHours.reduce((acc, h) => {
+      const accessHours = accessHistory.map((a: any) => new Date(a.created_at).getHours())
+      const hourFreq = accessHours.reduce((acc: Record<number, number>, h: number) => {
         acc[h] = (acc[h] || 0) + 1
         return acc
       }, {} as Record<number, number>)
@@ -468,13 +476,13 @@ export class ThreatDetectionEngine {
       // Off-hours access (assuming 9 AM - 6 PM are business hours)
       if (hour < 9 || hour > 18) {
         anomalies.push('off_hours_access')
-        riskScore += this.config.riskScoring.factors.offHours * 10
+        riskScore += (this.config.riskScoring.factors.offHours || 1.0) * 10
       }
 
       // Weekend access
       if (isWeekend) {
         anomalies.push('weekend_access')
-        riskScore += this.config.riskScoring.factors.weekend * 10
+        riskScore += (this.config.riskScoring.factors.weekend || 1.0) * 10
       }
 
       const isAnomalous = anomalies.length > 2 || riskScore > 60
@@ -503,7 +511,7 @@ export class ThreatDetectionEngine {
           recentDevices: uniqueDevices.size,
           accessPatterns: {
             hourlyDistribution: hourFreq,
-            weekendAccess: accessHistory.filter(a => 
+            weekendAccess: accessHistory.filter((a: any) => 
               [0, 6].includes(new Date(a.created_at).getDay())
             ).length
           }
@@ -564,7 +572,7 @@ export class ThreatDetectionEngine {
       // Analyze timing patterns
       const timestamps = actions.map(a => a.timestamp.getTime())
       const intervals = timestamps.slice(1).map((t, i) => t - timestamps[i])
-      const avgInterval = intervals.reduce((sum, i) => sum + i, 0) / intervals.length
+      const avgInterval = intervals.length > 0 ? intervals.reduce((sum, i) => sum + i, 0) / intervals.length : 0
 
       // Very short intervals suggest automated access
       if (avgInterval < 1000 && actions.length > 5) { // Less than 1 second between actions
@@ -611,7 +619,7 @@ export class ThreatDetectionEngine {
           }
         }
         
-        if (sequentialCount > actions.length * 0.7) {
+        if (actions.length > 0 && sequentialCount > actions.length * 0.7) {
           indicators.push('sequential_access_pattern')
           riskScore += 30
         }
@@ -734,40 +742,44 @@ export class ThreatDetectionEngine {
       const isWeekend = [0, 6].includes((context.timestamp || new Date()).getDay())
 
       if (hour < 6 || hour > 22) {
+        const weight = this.config.riskScoring.factors.offHours || 1.0
         factors.push({
           factor: 'off_hours_access',
           score: 15,
-          weight: this.config.riskScoring.factors.offHours
+          weight
         })
-        totalScore += 15 * this.config.riskScoring.factors.offHours
+        totalScore += 15 * weight
       }
 
       if (isWeekend) {
+        const weight = this.config.riskScoring.factors.weekend || 1.0
         factors.push({
           factor: 'weekend_access',
           score: 10,
-          weight: this.config.riskScoring.factors.weekend
+          weight
         })
-        totalScore += 10 * this.config.riskScoring.factors.weekend
+        totalScore += 10 * weight
       }
 
       // Action-based factors
       if (context.action.includes('admin')) {
+        const weight = this.config.riskScoring.factors.adminAction || 1.0
         factors.push({
           factor: 'admin_action',
           score: 20,
-          weight: this.config.riskScoring.factors.adminAction
+          weight
         })
-        totalScore += 20 * this.config.riskScoring.factors.adminAction
+        totalScore += 20 * weight
       }
 
       if (context.resourceType === 'sensitive_data') {
+        const weight = this.config.riskScoring.factors.sensitiveData || 1.0
         factors.push({
           factor: 'sensitive_data_access',
           score: 25,
-          weight: this.config.riskScoring.factors.sensitiveData
+          weight
         })
-        totalScore += 25 * this.config.riskScoring.factors.sensitiveData
+        totalScore += 25 * weight
       }
 
       // Cap the risk score at 100

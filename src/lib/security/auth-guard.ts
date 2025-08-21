@@ -55,7 +55,7 @@ function extractTokenFromRequest(request: NextRequest): string | null {
     if (match) {
       try {
         const tokenData = JSON.parse(decodeURIComponent(match[1]))
-        return tokenData.access_token
+        return tokenData.access_token || null
       } catch {
         // Invalid cookie format
       }

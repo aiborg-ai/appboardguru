@@ -9,11 +9,11 @@ export type UserSegment = 'highly_engaged' | 'moderate' | 'low_engagement' | 'sp
 
 // Type-safe user behavior data structure
 export interface UserBehaviorData {
-  readonly timestamp: Date;
-  readonly action: string;
+  readonly timestamp: Date | string;
+  readonly action_type: string;
   readonly duration?: number;
   readonly engagement_score?: number;
-  readonly response_time?: number;
+  readonly response_time_ms?: number;
   readonly success?: boolean;
   readonly context?: {
     readonly device?: string;
@@ -190,7 +190,7 @@ export class UserSegmentation {
     // Calculate average response time
     const responseTimes = behaviorData
       .filter(d => d.response_time_ms && d.response_time_ms > 0)
-      .map(d => d.response_time_ms)
+      .map(d => d.response_time_ms!)
     const avgResponseTime = responseTimes.length > 0
       ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
       : 0
@@ -451,8 +451,8 @@ export class UserSegmentation {
   }
 
   private findClosestCluster(userFeatures: number[], centers: Record<string, ClusterCenter>): string {
-    let closestCluster = Object.keys(centers)[0]
-    let minDistance = this.euclideanDistanceToCenter(userFeatures, centers[closestCluster])
+    let closestCluster = Object.keys(centers)[0] ?? 'cluster_0'
+    let minDistance = this.euclideanDistanceToCenter(userFeatures, centers[closestCluster]!)
 
     for (const [clusterId, center] of Object.entries(centers)) {
       const distance = this.euclideanDistanceToCenter(userFeatures, center)
@@ -467,7 +467,7 @@ export class UserSegmentation {
 
   private euclideanDistance(a: number[], b: number[]): number {
     return Math.sqrt(
-      a.reduce((sum, val, i) => sum + Math.pow(val - b[i], 2), 0)
+      a.reduce((sum, val, i) => sum + Math.pow(val - (b[i] ?? 0), 2), 0)
     )
   }
 
@@ -485,9 +485,9 @@ export class UserSegmentation {
     for (const [clusterId, userIds] of Object.entries(clusters)) {
       if (userIds.length === 0) continue
 
-      const clusterFeatures = userIds.map(userId => 
-        userFeatures.find(u => u.userId === userId)!.features
-      )
+      const clusterFeatures = userIds
+        .map(userId => userFeatures.find(u => u.userId === userId)?.features)
+        .filter((features): features is number[] => features !== undefined)
 
       // Calculate mean of each feature (first 4 features for ClusterCenter)
       const sums = { engagement: 0, frequency: 0, responseTime: 0, consistency: 0 }
@@ -526,7 +526,7 @@ export class UserSegmentation {
 
       if (currentUsers.size !== previousUsers.size) return false
 
-      for (const user of currentUsers) {
+      for (const user of Array.from(currentUsers)) {
         if (!previousUsers.has(user)) return false
       }
     }
@@ -547,15 +547,19 @@ export class UserSegmentation {
       if (userIds.length <= 1) continue
 
       for (const userId of userIds) {
-        const userFeature = userFeatures.find(u => u.userId === userId)!
+        const userFeature = userFeatures.find(u => u.userId === userId)
+        if (!userFeature) continue
+        
+        const clusterCenter = centers[clusterId]
+        if (!clusterCenter) continue
         
         // Calculate intra-cluster distance
-        const intraDistance = this.euclideanDistanceToCenter(userFeature.features, centers[clusterId])
+        const intraDistance = this.euclideanDistanceToCenter(userFeature.features, clusterCenter)
         
         // Calculate inter-cluster distance (to nearest other cluster)
         let minInterDistance = Infinity
         for (const [otherClusterId, otherCenter] of Object.entries(centers)) {
-          if (otherClusterId !== clusterId) {
+          if (otherClusterId !== clusterId && otherCenter) {
             const interDistance = this.euclideanDistanceToCenter(userFeature.features, otherCenter)
             minInterDistance = Math.min(minInterDistance, interDistance)
           }
@@ -577,7 +581,10 @@ export class UserSegmentation {
   private calculateDaySpan(behaviorData: readonly UserBehaviorData[]): number {
     if (behaviorData.length === 0) return 0
 
-    const timestamps = behaviorData.map(d => new Date(d.timestamp).getTime())
+    const timestamps = behaviorData.map(d => {
+      const timestamp = typeof d.timestamp === 'string' ? new Date(d.timestamp) : d.timestamp
+      return timestamp.getTime()
+    })
     const minTime = Math.min(...timestamps)
     const maxTime = Math.max(...timestamps)
 
@@ -588,10 +595,13 @@ export class UserSegmentation {
     if (behaviorData.length < 7) return 0 // Need at least a week of data
 
     // Group by day of week and calculate variance
-    const dayOfWeekCounts = Array(7).fill(0)
+    const dayOfWeekCounts = Array(7).fill(0) as number[]
     behaviorData.forEach(item => {
-      const dayOfWeek = new Date(item.timestamp).getDay()
-      dayOfWeekCounts[dayOfWeek]++
+      const timestamp = typeof item.timestamp === 'string' ? new Date(item.timestamp) : item.timestamp
+      const dayOfWeek = timestamp.getDay()
+      if (dayOfWeek >= 0 && dayOfWeek < 7) {
+        dayOfWeekCounts[dayOfWeek]++
+      }
     })
 
     const stats = this.statisticalAnalysis.calculateDescriptiveStats(dayOfWeekCounts)
@@ -611,10 +621,13 @@ export class UserSegmentation {
   private calculatePeakHourSpread(behaviorData: readonly UserBehaviorData[]): number {
     if (behaviorData.length === 0) return 0
 
-    const hourCounts = Array(24).fill(0)
+    const hourCounts = Array(24).fill(0) as number[]
     behaviorData.forEach(item => {
-      const hour = new Date(item.timestamp).getHours()
-      hourCounts[hour]++
+      const timestamp = typeof item.timestamp === 'string' ? new Date(item.timestamp) : item.timestamp
+      const hour = timestamp.getHours()
+      if (hour >= 0 && hour < 24) {
+        hourCounts[hour]++
+      }
     })
 
     // Find hours with activity above average

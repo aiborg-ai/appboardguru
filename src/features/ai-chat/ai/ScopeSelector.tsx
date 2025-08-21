@@ -128,7 +128,7 @@ export function ScopeSelector({ selectedScope, onScopeChange, className = '' }: 
     if (!acc[scope.type]) {
       acc[scope.type] = []
     }
-    acc[scope.type].push(scope)
+    acc[scope.type]!.push(scope)
     return acc
   }, {} as Record<string, ChatScope[]>)
 

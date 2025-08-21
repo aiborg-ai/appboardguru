@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { SupabaseClient, User, Organization, OrganizationAnalyticsData } from '@/types/voice';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -140,8 +141,8 @@ export interface VisualizationConfig {
 export interface ChartConfig {
   type: 'line' | 'bar' | 'pie' | 'gauge' | 'treemap' | 'heatmap';
   title: string;
-  data: any;
-  config: any;
+  data: unknown;
+  config: unknown;
   priority: 'high' | 'medium' | 'low';
 }
 
@@ -268,7 +269,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateBoardAnalytics(
-  supabase: any,
+  supabase: SupabaseClient,
   request: BoardAnalyticsRequest,
   userId: string
 ): Promise<BoardAnalytics> {
@@ -295,10 +296,10 @@ async function generateBoardAnalytics(
 }
 
 async function fetchOrganizationData(
-  supabase: any,
+  supabase: SupabaseClient,
   organizationId: string,
   timeframe: string
-): Promise<any> {
+): Promise<OrganizationAnalyticsData> {
   const timeframeDate = getTimeframeDate(timeframe);
   
   // Fetch various data points
@@ -356,11 +357,11 @@ function getTimeframeDate(timeframe: string): string {
 }
 
 async function generateRevenueTrendAnalysis(
-  orgData: any,
+  orgData: OrganizationAnalyticsData,
   request: BoardAnalyticsRequest
 ): Promise<BoardAnalytics> {
   // Extract revenue metrics from financial data
-  const revenueData = orgData.financials.filter((f: any) => f.metric_type === 'revenue');
+  const revenueData = orgData.financials.filter(f => f.metric_type === 'revenue');
   
   const currentRevenue = revenueData.length > 0 ? revenueData[revenueData.length - 1].value : 0;
   const previousRevenue = revenueData.length > 1 ? revenueData[revenueData.length - 2].value : 0;
@@ -435,13 +436,13 @@ async function generateRevenueTrendAnalysis(
 }
 
 async function generateRiskAssessmentAnalysis(
-  orgData: any,
+  orgData: OrganizationAnalyticsData,
   request: BoardAnalyticsRequest
 ): Promise<BoardAnalytics> {
   const risks = orgData.risks;
-  const highRisks = risks.filter((r: any) => r.risk_level === 'high' || r.risk_level === 'critical');
+  const highRisks = risks.filter(r => r.risk_level === 'high' || r.risk_level === 'critical');
   const averageRiskScore = risks.length > 0 ? 
-    risks.reduce((sum: number, r: any) => sum + (r.risk_score || 0), 0) / risks.length : 0;
+    risks.reduce((sum: number, r) => sum + (r.risk_score || 0), 0) / risks.length : 0;
 
   return {
     type: 'risk_assessment',
@@ -478,7 +479,7 @@ async function generateRiskAssessmentAnalysis(
     },
     trends: [],
     comparisons: [],
-    riskFactors: risks.map((r: any) => ({
+    riskFactors: risks.map(r => ({
       category: r.category || 'operational',
       description: r.description || 'Risk description not available',
       likelihood: r.likelihood || 'medium',
@@ -518,12 +519,12 @@ async function generateRiskAssessmentAnalysis(
 }
 
 async function generateComplianceStatusAnalysis(
-  orgData: any,
+  orgData: OrganizationAnalyticsData,
   request: BoardAnalyticsRequest
 ): Promise<BoardAnalytics> {
   const workflows = orgData.compliance;
-  const completedWorkflows = workflows.filter((w: any) => w.status === 'completed');
-  const overdueWorkflows = workflows.filter((w: any) => 
+  const completedWorkflows = workflows.filter(w => w.status === 'completed');
+  const overdueWorkflows = workflows.filter(w => 
     w.status !== 'completed' && new Date(w.due_date) < new Date()
   );
   
@@ -557,7 +558,7 @@ async function generateComplianceStatusAnalysis(
     },
     trends: [],
     comparisons: [],
-    riskFactors: overdueWorkflows.map((w: any) => ({
+    riskFactors: overdueWorkflows.map(w => ({
       category: 'compliance',
       description: `Overdue compliance workflow: ${w.workflow_name}`,
       likelihood: 'high',
@@ -597,7 +598,7 @@ async function generateComplianceStatusAnalysis(
 }
 
 async function generatePerformanceKPIAnalysis(
-  orgData: any,
+  orgData: OrganizationAnalyticsData,
   request: BoardAnalyticsRequest
 ): Promise<BoardAnalytics> {
   // Extract KPIs from various data sources
@@ -607,8 +608,8 @@ async function generatePerformanceKPIAnalysis(
 
   const documentProcessingRate = assets.length;
   const meetingAttendanceRate = meetings.length > 0 ? 
-    meetings.reduce((sum: number, m: any) => sum + (m.attendance_rate || 80), 0) / meetings.length : 80;
-  const userEngagementRate = auditLogs.filter((l: any) => 
+    meetings.reduce((sum: number, m) => sum + ((m as unknown as {attendance_rate?: number}).attendance_rate || 80), 0) / meetings.length : 80;
+  const userEngagementRate = auditLogs.filter(l => 
     l.event_category === 'user_action'
   ).length;
 
@@ -694,7 +695,7 @@ async function generatePerformanceKPIAnalysis(
 }
 
 async function generateGovernanceHealthAnalysis(
-  orgData: any,
+  orgData: OrganizationAnalyticsData,
   request: BoardAnalyticsRequest
 ): Promise<BoardAnalytics> {
   const meetings = orgData.meetings;
@@ -703,9 +704,9 @@ async function generateGovernanceHealthAnalysis(
   
   const boardMeetingFrequency = meetings.length;
   const complianceRate = compliance.length > 0 ? 
-    (compliance.filter((c: any) => c.status === 'completed').length / compliance.length) * 100 : 100;
+    (compliance.filter(c => c.status === 'completed').length / compliance.length) * 100 : 100;
   const riskManagementScore = risks.length > 0 ? 
-    100 - (risks.filter((r: any) => r.risk_level === 'high').length / risks.length) * 100 : 85;
+    100 - (risks.filter(r => r.risk_level === 'high').length / risks.length) * 100 : 85;
 
   const overallScore = (boardMeetingFrequency * 10 + complianceRate + riskManagementScore) / 3;
 
@@ -776,7 +777,7 @@ async function generateGovernanceHealthAnalysis(
 }
 
 async function generateComprehensiveAnalysis(
-  orgData: any,
+  orgData: OrganizationAnalyticsData,
   request: BoardAnalyticsRequest
 ): Promise<BoardAnalytics> {
   // Combine insights from all other analysis types

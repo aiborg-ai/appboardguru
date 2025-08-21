@@ -1,0 +1,57 @@
+{
+  "lastRun": "2025-08-21T17:53:18.050Z",
+  "totalRuns": 1,
+  "consecutivePasses": 0,
+  "consecutiveFails": 1,
+  "testHistory": [
+    {
+      "timestamp": "2025-08-21T17:53:18.050Z",
+      "passed": false,
+      "results": [
+        {
+          "test": "Server Running",
+          "passed": false,
+          "duration": 1311
+        },
+        {
+          "test": "CSS Loading",
+          "passed": false,
+          "duration": 0
+        },
+        {
+          "test": "Tailwind CSS Classes",
+          "passed": false,
+          "duration": 1258
+        },
+        {
+          "test": "TypeScript Compilation",
+          "passed": false,
+          "duration": 0
+        },
+        {},
+        {
+          "test": "Page: /",
+          "passed": false,
+          "duration": 1282
+        },
+        {
+          "test": "Page: /demo",
+          "passed": false,
+          "duration": 1087
+        },
+        {
+          "test": "Page: /auth/signin",
+          "passed": false,
+          "duration": 1576
+        },
+        {
+          "test": "Page: /auth/signup",
+          "passed": false,
+          "duration": 715
+        }
+      ]
+    }
+  ],
+  "knownIssues": [],
+  "performanceBaseline": {}
+}

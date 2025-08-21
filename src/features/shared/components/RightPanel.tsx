@@ -81,6 +81,15 @@ interface Asset {
   fileName: string;
   fileType: string;
   fileSize: number;
+  description?: string;
+  vault?: {
+    id: string;
+    name: string;
+    organization?: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
 }
 
 interface SelectedContext {
@@ -253,9 +262,40 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
           title: va.asset.title,
           fileName: va.asset.fileName,
           fileType: va.asset.fileType,
-          fileSize: va.asset.fileSize
+          fileSize: va.asset.fileSize,
+          description: va.asset.description,
+          vault: {
+            id: vaultId,
+            name: va.vault?.name || 'Unknown Vault',
+            organization: va.vault?.organization || null
+          }
         })) || [];
         setAvailableAssets(transformedAssets);
+      } else {
+        console.error('Failed to fetch assets');
+        setAvailableAssets([]);
+      }
+    } catch (error) {
+      console.error('Error fetching assets:', error);
+      setAvailableAssets([]);
+    } finally {
+      setIsLoadingAssets(false);
+    }
+  }, []);
+
+  // Fetch all available assets (for direct asset selection)
+  const fetchAllAssets = useCallback(async (query = '', limit = 50) => {
+    setIsLoadingAssets(true);
+    try {
+      const params = new URLSearchParams({
+        q: query,
+        limit: limit.toString()
+      });
+      
+      const response = await fetch(`/api/assets/search?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableAssets(data.assets || []);
       } else {
         console.error('Failed to fetch assets');
         setAvailableAssets([]);
@@ -393,6 +433,11 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     setSelectedContext({});
     setAvailableVaults([]);
     setAvailableAssets([]);
+    
+    // Load assets when asset scope is selected
+    if (newScope === 'asset') {
+      fetchAllAssets();
+    }
   };
   
   const handleContextSelection = (type: 'organization' | 'vault' | 'asset', selection: any) => {
@@ -418,6 +463,17 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     } else if (type === 'asset') {
       newContext.assetId = selection.id;
       newContext.assetName = selection.title;
+      
+      // Auto-populate vault and organization context from asset data
+      if (selection.vault) {
+        newContext.vaultId = selection.vault.id;
+        newContext.vaultName = selection.vault.name;
+        
+        if (selection.vault.organization) {
+          newContext.organizationId = selection.vault.organization.id;
+          newContext.organizationName = selection.vault.organization.name;
+        }
+      }
     }
     
     setSelectedContext(newContext);
@@ -768,76 +824,43 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                         {/* Show asset selection if in asset mode */}
                         {contextScope === 'asset' && (
                           <div className="pl-6 space-y-1 max-h-32 overflow-y-auto">
-                            {/* Organization and vault selection for assets */}
-                            {!selectedContext.organizationId && (
-                              <div className="text-xs text-gray-500 p-2">First select an organization:</div>
+                            {/* Direct asset selection */}
+                            {isLoadingAssets && (
+                              <div className="flex items-center text-xs text-gray-500 p-2">
+                                <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                                Loading assets...
+                              </div>
                             )}
-                            {!selectedContext.organizationId && organizations.map((org: any) => (
+                            {!isLoadingAssets && availableAssets.length === 0 && (
+                              <div className="text-xs text-gray-500 p-2">No assets found</div>
+                            )}
+                            {availableAssets.map((asset) => (
                               <DropdownMenuItem
-                                key={org.id}
-                                onSelect={() => handleContextSelection('organization', org)}
-                                className="cursor-pointer text-xs"
+                                key={asset.id}
+                                onSelect={() => handleContextSelection('asset', asset)}
+                                className={cn(
+                                  "cursor-pointer text-xs",
+                                  selectedContext.assetId === asset.id && "bg-blue-50"
+                                )}
                               >
-                                <Building2 className="h-3 w-3 mr-2" />
-                                {org.name}
+                                <FileIcon className="h-3 w-3 mr-2" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate">{asset.title}</div>
+                                  <div className="text-xs text-gray-400 truncate">{asset.fileName}</div>
+                                  {asset.vault && (
+                                    <div className="text-xs text-gray-400 truncate">
+                                      📁 {asset.vault.name}
+                                      {asset.vault.organization && (
+                                        <span> • 🏢 {asset.vault.organization.name}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                {selectedContext.assetId === asset.id && (
+                                  <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full" />
+                                )}
                               </DropdownMenuItem>
                             ))}
-                            
-                            {selectedContext.organizationId && !selectedContext.vaultId && (
-                              <>
-                                <div className="text-xs text-gray-500 p-2">Then select a vault:</div>
-                                {isLoadingVaults && (
-                                  <div className="flex items-center text-xs text-gray-500 p-2">
-                                    <Loader2 className="h-3 w-3 animate-spin mr-2" />
-                                    Loading vaults...
-                                  </div>
-                                )}
-                                {availableVaults.map((vault) => (
-                                  <DropdownMenuItem
-                                    key={vault.id}
-                                    onSelect={() => handleContextSelection('vault', vault)}
-                                    className="cursor-pointer text-xs"
-                                  >
-                                    <Folder className="h-3 w-3 mr-2" />
-                                    {vault.name}
-                                  </DropdownMenuItem>
-                                ))}
-                              </>
-                            )}
-                            
-                            {/* Asset selection */}
-                            {selectedContext.vaultId && (
-                              <>
-                                {isLoadingAssets && (
-                                  <div className="flex items-center text-xs text-gray-500 p-2">
-                                    <Loader2 className="h-3 w-3 animate-spin mr-2" />
-                                    Loading assets...
-                                  </div>
-                                )}
-                                {!isLoadingAssets && availableAssets.length === 0 && (
-                                  <div className="text-xs text-gray-500 p-2">No assets found</div>
-                                )}
-                                {availableAssets.map((asset) => (
-                                  <DropdownMenuItem
-                                    key={asset.id}
-                                    onSelect={() => handleContextSelection('asset', asset)}
-                                    className={cn(
-                                      "cursor-pointer text-xs",
-                                      selectedContext.assetId === asset.id && "bg-blue-50"
-                                    )}
-                                  >
-                                    <FileIcon className="h-3 w-3 mr-2" />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="truncate">{asset.title}</div>
-                                      <div className="text-xs text-gray-400">{asset.fileName}</div>
-                                    </div>
-                                    {selectedContext.assetId === asset.id && (
-                                      <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full" />
-                                    )}
-                                  </DropdownMenuItem>
-                                ))}
-                              </>
-                            )}
                           </div>
                         )}
                         
@@ -928,6 +951,9 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                                           {asset.metadata.vault && (
                                             <div className="text-gray-400 text-xs">
                                               📁 {asset.metadata.vault.name}
+                                              {asset.metadata.organization && (
+                                                <span> • 🏢 {asset.metadata.organization.name}</span>
+                                              )}
                                             </div>
                                           )}
                                         </div>

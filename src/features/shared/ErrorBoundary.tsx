@@ -26,7 +26,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('🚨 Error caught by ErrorBoundary:', error)
     console.error('Error info:', errorInfo)
     
@@ -45,7 +45,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.setState({ hasError: false, error: undefined, errorInfo: undefined })
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return <this.props.fallback error={this.state.error} resetError={this.resetError} />
@@ -165,12 +165,12 @@ export class APIErrorBoundary extends React.Component<
     throw error
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('🌐 API Error caught:', error)
     this.props.onError?.(error, errorInfo)
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

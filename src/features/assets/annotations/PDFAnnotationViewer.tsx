@@ -166,8 +166,8 @@ export default function PDFAnnotationViewer({
         position: newHighlight.position,
         selected_text: newHighlight.content.text,
         comment_text: commentText.trim() || undefined,
-        color: selectedColor.value,
-        opacity: selectedColor.opacity,
+        color: selectedColor?.value || '#FFFF00',
+        opacity: selectedColor?.opacity || 0.5,
         is_private: false,
       };
 
@@ -191,8 +191,8 @@ export default function PDFAnnotationViewer({
         created_at: result.annotation.created_at,
         updated_at: result.annotation.updated_at,
         comment_text: commentText.trim() || undefined,
-        color: selectedColor.value,
-        opacity: selectedColor.opacity,
+        color: selectedColor?.value || '#FFFF00',
+        opacity: selectedColor?.opacity || 0.5,
         is_private: false,
         is_resolved: false,
         page_number: (newHighlight.position as any).pageNumber || 1,
@@ -377,7 +377,7 @@ export default function PDFAnnotationViewer({
             <button
               key={color.value}
               className={`w-6 h-6 rounded border-2 ${
-                selectedColor.value === color.value ? 'border-gray-800' : 'border-gray-300'
+                selectedColor?.value === color.value ? 'border-gray-800' : 'border-gray-300'
               }`}
               style={{ backgroundColor: color.value }}
               onClick={() => setSelectedColor(color)}

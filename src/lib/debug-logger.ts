@@ -6,29 +6,63 @@
 import { isDevelopment } from '@/config/environment'
 
 export interface LogEntry {
-  timestamp: string
-  level: 'info' | 'warning' | 'error' | 'debug'
-  operation: string
-  email?: string
-  details: any
+  readonly timestamp: string
+  readonly level: 'info' | 'warning' | 'error' | 'debug'
+  readonly operation: string
+  readonly email?: string
+  readonly details: any
+  readonly sessionId?: string
+  readonly userId?: string
+  readonly requestId?: string
+}
+
+export interface LogFilter {
+  readonly level?: 'info' | 'warning' | 'error' | 'debug'
+  readonly operation?: string
+  readonly email?: string
+  readonly startTime?: Date
+  readonly endTime?: Date
+  readonly sessionId?: string
+}
+
+export interface LoggerConfig {
+  readonly maxLogs: number
+  readonly enableConsoleInProduction: boolean
+  readonly enableFileLogging: boolean
+  readonly logLevels: readonly ('info' | 'warning' | 'error' | 'debug')[]
+  readonly persistentStorage: boolean
 }
 
 class DebugLogger {
   private logs: LogEntry[] = []
-  private maxLogs = 100
+  private config: LoggerConfig = {
+    maxLogs: 100,
+    enableConsoleInProduction: false,
+    enableFileLogging: false,
+    logLevels: ['info', 'warning', 'error', 'debug'],
+    persistentStorage: false
+  }
 
   private createLogEntry(
     level: LogEntry['level'],
     operation: string,
     email: string | undefined,
-    details: any
+    details: any,
+    metadata: {
+      sessionId?: string
+      userId?: string
+      requestId?: string
+    } = {}
   ): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
       operation,
       email,
-      details
+      details,
+      sessionId: metadata.sessionId,
+      userId: metadata.userId,
+      requestId: metadata.requestId
     }
   }
 
@@ -63,27 +97,56 @@ class DebugLogger {
       }
     }
 
+    // Check if this log level is enabled
+    if (!this.config.logLevels.includes(entry.level)) {
+      return
+    }
+
     // Keep in memory for debugging
     this.logs.push(entry)
-    if (this.logs.length > this.maxLogs) {
+    if (this.logs.length > this.config.maxLogs) {
       this.logs.shift()
+    }
+
+    // Persist to storage if enabled
+    if (this.config.persistentStorage) {
+      this.persistLog(entry)
     }
   }
 
-  info(operation: string, email?: string, details?: any) {
-    this.addLog(this.createLogEntry('info', operation, email, details))
+  /**
+   * Configure the logger
+   */
+  configure(config: Partial<LoggerConfig>): void {
+    this.config = { ...this.config, ...config }
   }
 
-  warning(operation: string, email?: string, details?: any) {
-    this.addLog(this.createLogEntry('warning', operation, email, details))
+  /**
+   * Log info level message
+   */
+  info(operation: string, email?: string, details?: any, metadata?: { sessionId?: string; userId?: string; requestId?: string }) {
+    this.addLog(this.createLogEntry('info', operation, email, details, metadata))
   }
 
-  error(operation: string, email?: string, details?: any) {
-    this.addLog(this.createLogEntry('error', operation, email, details))
+  /**
+   * Log warning level message
+   */
+  warning(operation: string, email?: string, details?: any, metadata?: { sessionId?: string; userId?: string; requestId?: string }) {
+    this.addLog(this.createLogEntry('warning', operation, email, details, metadata))
   }
 
-  debug(operation: string, email?: string, details?: any) {
-    this.addLog(this.createLogEntry('debug', operation, email, details))
+  /**
+   * Log error level message
+   */
+  error(operation: string, email?: string, details?: any, metadata?: { sessionId?: string; userId?: string; requestId?: string }) {
+    this.addLog(this.createLogEntry('error', operation, email, details, metadata))
+  }
+
+  /**
+   * Log debug level message
+   */
+  debug(operation: string, email?: string, details?: any, metadata?: { sessionId?: string; userId?: string; requestId?: string }) {
+    this.addLog(this.createLogEntry('debug', operation, email, details, metadata))
   }
 
   // Specific logging methods for user creation workflow
@@ -147,50 +210,177 @@ class DebugLogger {
     }
   }
 
-  // Get recent logs for debugging
-  getRecentLogs(count: number = 50): LogEntry[] {
+  /**
+   * Get recent logs for debugging
+   */
+  getRecentLogs(count: number = 50): readonly LogEntry[] {
     return this.logs.slice(-count)
   }
 
-  // Get logs for specific email
-  getLogsForEmail(email: string): LogEntry[] {
+  /**
+   * Get logs for specific email
+   */
+  getLogsForEmail(email: string): readonly LogEntry[] {
     return this.logs.filter(log => log.email === email)
   }
 
-  // Clear logs (useful for testing)
-  clearLogs() {
+  /**
+   * Get filtered logs
+   */
+  getFilteredLogs(filter: LogFilter): readonly LogEntry[] {
+    return this.logs.filter(log => {
+      if (filter.level && log.level !== filter.level) return false
+      if (filter.operation && !log.operation.includes(filter.operation)) return false
+      if (filter.email && log.email !== filter.email) return false
+      if (filter.sessionId && log.sessionId !== filter.sessionId) return false
+      
+      if (filter.startTime || filter.endTime) {
+        const logTime = new Date(log.timestamp)
+        if (filter.startTime && logTime < filter.startTime) return false
+        if (filter.endTime && logTime > filter.endTime) return false
+      }
+      
+      return true
+    })
+  }
+
+  /**
+   * Get log statistics
+   */
+  getLogStatistics(): {
+    readonly total: number
+    readonly byLevel: Record<string, number>
+    readonly byOperation: Record<string, number>
+    readonly timeRange: { earliest: string; latest: string } | null
+  } {
+    const byLevel: Record<string, number> = {}
+    const byOperation: Record<string, number> = {}
+    
+    let earliest: string | null = null
+    let latest: string | null = null
+    
+    for (const log of this.logs) {
+      // Count by level
+      byLevel[log.level] = (byLevel[log.level] || 0) + 1
+      
+      // Count by operation
+      byOperation[log.operation] = (byOperation[log.operation] || 0) + 1
+      
+      // Track time range
+      if (!earliest || log.timestamp < earliest) earliest = log.timestamp
+      if (!latest || log.timestamp > latest) latest = log.timestamp
+    }
+    
+    return {
+      total: this.logs.length,
+      byLevel,
+      byOperation,
+      timeRange: earliest && latest ? { earliest, latest } : null
+    }
+  }
+
+  /**
+   * Export logs as JSON
+   */
+  exportLogs(filter?: LogFilter): string {
+    const logsToExport = filter ? this.getFilteredLogs(filter) : this.logs
+    return JSON.stringify({
+      exportDate: new Date().toISOString(),
+      totalLogs: logsToExport.length,
+      logs: logsToExport
+    }, null, 2)
+  }
+
+  /**
+   * Clear logs (useful for testing)
+   */
+  clearLogs(): void {
     this.logs = []
+  }
+
+  /**
+   * Persist log to storage (placeholder for future implementation)
+   */
+  private persistLog(entry: LogEntry): void {
+    // This could be implemented to write to local storage, IndexedDB, or send to server
+    // For now, it's a placeholder
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const persistedLogs = localStorage.getItem('debugLogs')
+        const logs = persistedLogs ? JSON.parse(persistedLogs) : []
+        logs.push(entry)
+        
+        // Keep only last 1000 logs in storage
+        if (logs.length > 1000) {
+          logs.splice(0, logs.length - 1000)
+        }
+        
+        localStorage.setItem('debugLogs', JSON.stringify(logs))
+      } catch (error) {
+        // Silently fail if localStorage is not available
+        console.warn('Failed to persist log to localStorage:', error)
+      }
+    }
   }
 }
 
 // Export singleton instance
 export const debugLogger = new DebugLogger()
 
-// Helper function to log function entry/exit
-export function logFunction<T extends any[], R>(
+/**
+ * Enhanced decorator for logging function entry/exit with better type safety
+ */
+export function logFunction<T extends readonly any[], R>(
   functionName: string,
-  email?: string
+  options: {
+    email?: string
+    logLevel?: 'info' | 'debug'
+    logArgs?: boolean
+    logResult?: boolean
+    sessionId?: string
+  } = {}
 ) {
   return function (
     target: any,
     propertyKey: string,
     descriptor: PropertyDescriptor
-  ) {
+  ): PropertyDescriptor {
     const originalMethod = descriptor.value
+    const { email, logLevel = 'debug', logArgs = false, logResult = false, sessionId } = options
 
     descriptor.value = async function (...args: T): Promise<R> {
-      debugLogger.debug(`${functionName}_START`, email, { args: args.length })
+      const metadata = { sessionId, requestId: `${functionName}_${Date.now()}` }
+      const startTime = Date.now()
+      
+      const logMethod = logLevel === 'info' ? debugLogger.info : debugLogger.debug
+      
+      logMethod(`${functionName}_START`, email, {
+        argsCount: args.length,
+        ...(logArgs && { args: args.slice(0, 3) }) // Log first 3 args for security
+      }, metadata)
       
       try {
         const result = await originalMethod.apply(this, args)
-        debugLogger.debug(`${functionName}_SUCCESS`, email, { 
-          resultType: typeof result 
-        })
+        const duration = Date.now() - startTime
+        
+        logMethod(`${functionName}_SUCCESS`, email, { 
+          duration: `${duration}ms`,
+          resultType: typeof result,
+          ...(logResult && { result: typeof result === 'object' ? '[Object]' : result })
+        }, metadata)
+        
         return result
       } catch (error) {
+        const duration = Date.now() - startTime
+        
         debugLogger.error(`${functionName}_ERROR`, email, {
-          error: error instanceof Error ? error.message : error
-        })
+          duration: `${duration}ms`,
+          error: error instanceof Error ? {
+            message: error.message,
+            stack: error.stack?.split('\n').slice(0, 5).join('\n') // First 5 lines of stack
+          } : String(error)
+        }, metadata)
+        
         throw error
       }
     }
@@ -199,26 +389,92 @@ export function logFunction<T extends any[], R>(
   }
 }
 
-// Helper to create timestamped operation tracker
-export function createOperationTracker(operationName: string, email?: string) {
+/**
+ * Enhanced operation tracker with better type safety and additional features
+ */
+export function createOperationTracker(
+  operationName: string, 
+  options: {
+    email?: string
+    sessionId?: string
+    userId?: string
+    autoLogStart?: boolean
+  } = {}
+): {
+  readonly success: (details?: Record<string, any>) => void
+  readonly error: (error: any, details?: Record<string, any>) => void
+  readonly warn: (message: string, details?: Record<string, any>) => void
+  readonly info: (message: string, details?: Record<string, any>) => void
+  readonly addCheckpoint: (name: string, details?: Record<string, any>) => void
+  readonly getDuration: () => number
+  readonly getMetadata: () => Record<string, any>
+} {
   const startTime = Date.now()
-  debugLogger.info(`${operationName}_START`, email, { startTime })
+  const metadata = {
+    sessionId: options.sessionId,
+    userId: options.userId,
+    requestId: `${operationName}_${startTime}`
+  }
+  const checkpoints: Array<{ name: string; timestamp: number; details?: any }> = []
+  
+  if (options.autoLogStart !== false) {
+    debugLogger.info(`${operationName}_START`, options.email, { 
+      startTime: new Date(startTime).toISOString() 
+    }, metadata)
+  }
 
   return {
-    success: (details?: any) => {
+    success: (details?: Record<string, any>) => {
       const duration = Date.now() - startTime
-      debugLogger.info(`${operationName}_SUCCESS`, email, { 
-        duration: `${duration}ms`, 
+      debugLogger.info(`${operationName}_SUCCESS`, options.email, { 
+        duration: `${duration}ms`,
+        checkpoints: checkpoints.length > 0 ? checkpoints : undefined,
         ...details 
+      }, metadata)
+    },
+    
+    error: (error: any, details?: Record<string, any>) => {
+      const duration = Date.now() - startTime
+      debugLogger.error(`${operationName}_ERROR`, options.email, { 
+        duration: `${duration}ms`,
+        checkpoints: checkpoints.length > 0 ? checkpoints : undefined,
+        error: error instanceof Error ? {
+          message: error.message,
+          name: error.name,
+          stack: error.stack?.split('\n').slice(0, 3).join('\n')
+        } : String(error),
+        ...details 
+      }, metadata)
+    },
+    
+    warn: (message: string, details?: Record<string, any>) => {
+      const duration = Date.now() - startTime
+      debugLogger.warning(`${operationName}_WARN`, options.email, {
+        message,
+        duration: `${duration}ms`,
+        ...details
+      }, metadata)
+    },
+    
+    info: (message: string, details?: Record<string, any>) => {
+      const duration = Date.now() - startTime
+      debugLogger.info(`${operationName}_INFO`, options.email, {
+        message,
+        duration: `${duration}ms`,
+        ...details
+      }, metadata)
+    },
+    
+    addCheckpoint: (name: string, details?: Record<string, any>) => {
+      checkpoints.push({
+        name,
+        timestamp: Date.now() - startTime,
+        details
       })
     },
-    error: (error: any, details?: any) => {
-      const duration = Date.now() - startTime
-      debugLogger.error(`${operationName}_ERROR`, email, { 
-        duration: `${duration}ms`, 
-        error: error instanceof Error ? error.message : error,
-        ...details 
-      })
-    }
+    
+    getDuration: () => Date.now() - startTime,
+    
+    getMetadata: () => ({ ...metadata, checkpoints })
   }
 }

@@ -713,7 +713,7 @@ function ActiveTrainingSession({
 
   const handleNextPhrase = () => {
     if (recordingState.audioData) {
-      onSubmitSample(currentPhrase);
+      onSubmitSample(currentPhrase || '');
     }
     
     if (currentPhraseIndex < exercise.targetPhrases.length - 1) {

@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { 
+  MeetingPreparation as ImportedMeetingPreparation, 
+  MeetingDetails as ImportedMeetingDetails, 
+  MeetingAttendee as ImportedMeetingAttendee, 
+  AgendaAnalysis, 
+  DocumentPackage, 
+  StakeholderPreparation, 
+  MeetingRiskAssessment, 
+  ComplianceReview, 
+  DiscussionGuide, 
+  DecisionPoint, 
+  FollowUpAction, 
+  ContextualInsight, 
+  PreparationTimeline,
+  VoiceBriefing,
+  PreparationRecommendation,
+  PreparationAlert,
+  Meeting,
+  MeetingContext,
+  SupabaseClient
+} from '@/types/voice';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -583,8 +604,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateMeetingPreparation(
-  supabase: any,
-  meeting: any,
+  supabase: SupabaseClient,
+  meeting: Meeting,
   request: AgendaPreparationRequest,
   userId: string
 ): Promise<MeetingPreparation> {
@@ -637,7 +658,7 @@ async function generateMeetingPreparation(
       location: meeting.location || 'Virtual',
       objectives: meeting.objectives || [],
       expectedOutcomes: meeting.expected_outcomes || []
-    },
+    } as ImportedMeetingDetails,
     agendaAnalysis,
     documentPackage,
     stakeholderPreparation,
@@ -653,10 +674,10 @@ async function generateMeetingPreparation(
 }
 
 async function fetchMeetingContext(
-  supabase: any,
-  meeting: any,
+  supabase: SupabaseClient,
+  meeting: Meeting,
   organizationId: string
-): Promise<any> {
+): Promise<MeetingContext> {
   const [
     relatedDocuments,
     previousMeetings,
@@ -684,7 +705,7 @@ async function fetchMeetingContext(
   };
 }
 
-async function fetchRelatedDocuments(supabase: any, meeting: any, organizationId: string) {
+async function fetchRelatedDocuments(supabase: SupabaseClient, meeting: Meeting, organizationId: string) {
   // Find documents related to meeting topics
   const searchTerms = [
     ...meeting.title.toLowerCase().split(' '),
@@ -704,7 +725,7 @@ async function fetchRelatedDocuments(supabase: any, meeting: any, organizationId
     .limit(50);
 }
 
-async function fetchPreviousMeetings(supabase: any, meeting: any, organizationId: string) {
+async function fetchPreviousMeetings(supabase: SupabaseClient, meeting: Meeting, organizationId: string) {
   return await supabase
     .from('meetings')
     .select('*')
@@ -715,7 +736,7 @@ async function fetchPreviousMeetings(supabase: any, meeting: any, organizationId
     .limit(5);
 }
 
-async function fetchAttendeeProfiles(supabase: any, attendees: any[]) {
+async function fetchAttendeeProfiles(supabase: SupabaseClient, attendees: MeetingAttendee[]) {
   if (!attendees.length) return [];
 
   const userIds = attendees.map(a => a.id || a.user_id).filter(Boolean);
@@ -732,11 +753,11 @@ async function fetchAttendeeProfiles(supabase: any, attendees: any[]) {
   }));
 }
 
-async function analyzeAgenda(meeting: any, context: any): Promise<AgendaAnalysis> {
-  const agendaItems = meeting.agenda_items || [];
+async function analyzeAgenda(meeting: Meeting, context: MeetingContext): Promise<AgendaAnalysis> {
+  const agendaItems = meeting.agenda_items as unknown[] || [];
   const totalItems = agendaItems.length;
   
-  const itemBreakdown = agendaItems.map((item: any, index: number) => ({
+  const itemBreakdown = agendaItems.map((item: unknown, index: number) => ({
     id: item.id || `item_${index}`,
     title: item.title || item.description || `Agenda Item ${index + 1}`,
     type: item.type || 'discussion',
@@ -773,9 +794,9 @@ async function analyzeAgenda(meeting: any, context: any): Promise<AgendaAnalysis
 }
 
 async function prepareDocumentPackage(
-  supabase: any,
-  meeting: any,
-  context: any,
+  supabase: SupabaseClient,
+  meeting: Meeting,
+  context: MeetingContext,
   request: AgendaPreparationRequest
 ): Promise<DocumentPackage> {
   const documents = context.relatedDocuments;
@@ -860,7 +881,7 @@ function isRecent(dateString: string, days: number): boolean {
   return diffDays <= days;
 }
 
-async function prepareStakeholderAnalysis(meeting: any, context: any): Promise<StakeholderPreparation> {
+async function prepareStakeholderAnalysis(meeting: Meeting, context: MeetingContext): Promise<StakeholderPreparation> {
   const attendees = meeting.attendees || [];
   
   const attendeePreparation: AttendeePreparation[] = attendees.map((attendee: any) => ({
@@ -940,7 +961,7 @@ async function prepareStakeholderAnalysis(meeting: any, context: any): Promise<S
   };
 }
 
-async function assessMeetingRisks(meeting: any, context: any): Promise<MeetingRiskAssessment> {
+async function assessMeetingRisks(meeting: Meeting, context: MeetingContext): Promise<MeetingRiskAssessment> {
   const risks: MeetingRisk[] = [
     {
       category: 'attendance',
@@ -996,7 +1017,7 @@ function createDefaultRiskAssessment(): MeetingRiskAssessment {
   };
 }
 
-async function reviewComplianceRequirements(meeting: any, context: any): Promise<ComplianceReview> {
+async function reviewComplianceRequirements(meeting: Meeting, context: MeetingContext): Promise<ComplianceReview> {
   return {
     overallStatus: 'compliant',
     governanceRequirements: [
@@ -1035,8 +1056,8 @@ function createDefaultComplianceReview(): ComplianceReview {
 }
 
 async function generateDiscussionGuides(
-  meeting: any,
-  context: any,
+  meeting: Meeting,
+  context: MeetingContext,
   agendaAnalysis: AgendaAnalysis
 ): Promise<DiscussionGuide[]> {
   return agendaAnalysis.itemBreakdown.map(item => ({
@@ -1060,8 +1081,8 @@ async function generateDiscussionGuides(
 }
 
 async function identifyDecisionPoints(
-  meeting: any,
-  context: any,
+  meeting: Meeting,
+  context: MeetingContext,
   agendaAnalysis: AgendaAnalysis
 ): Promise<DecisionPoint[]> {
   const decisionItems = agendaAnalysis.itemBreakdown.filter(item => item.type === 'decision');
@@ -1109,7 +1130,7 @@ async function identifyDecisionPoints(
   }));
 }
 
-async function planFollowUpActions(meeting: any, context: any): Promise<FollowUpAction[]> {
+async function planFollowUpActions(meeting: Meeting, context: MeetingContext): Promise<FollowUpAction[]> {
   return [
     {
       category: 'decision_implementation',
@@ -1134,7 +1155,7 @@ async function planFollowUpActions(meeting: any, context: any): Promise<FollowUp
   ];
 }
 
-async function generateContextualInsights(meeting: any, context: any): Promise<ContextualInsight[]> {
+async function generateContextualInsights(meeting: Meeting, context: MeetingContext): Promise<ContextualInsight[]> {
   return [
     {
       category: 'organizational_context',
@@ -1149,7 +1170,7 @@ async function generateContextualInsights(meeting: any, context: any): Promise<C
 }
 
 async function createPreparationTimeline(
-  meeting: any,
+  meeting: Meeting,
   agendaAnalysis: AgendaAnalysis,
   documentPackage: DocumentPackage
 ): Promise<PreparationTimeline> {
@@ -1191,7 +1212,7 @@ async function createPreparationTimeline(
   };
 }
 
-async function generateVoiceBriefing(preparation: MeetingPreparation): Promise<VoiceBriefing> {
+async function generateVoiceBriefing(preparation: LocalMeetingPreparation): Promise<VoiceBriefing> {
   const executiveSummary = `Meeting preparation for ${preparation.meetingDetails.title} scheduled for ${new Date(preparation.meetingDetails.date).toLocaleDateString()}. ${preparation.documentPackage.totalDocuments} documents require review with estimated ${preparation.documentPackage.readingTime.total} minutes of reading time. ${preparation.keyDecisionPoints.length} key decisions expected.`;
 
   const keyTalkingPoints = [
@@ -1234,7 +1255,7 @@ async function generateVoiceBriefing(preparation: MeetingPreparation): Promise<V
   };
 }
 
-async function generatePreparationRecommendations(preparation: MeetingPreparation): Promise<PreparationRecommendation[]> {
+async function generatePreparationRecommendations(preparation: LocalMeetingPreparation): Promise<PreparationRecommendation[]> {
   const recommendations: PreparationRecommendation[] = [];
 
   if (preparation.documentPackage.readingTime.total > 120) {
@@ -1268,7 +1289,7 @@ async function generatePreparationRecommendations(preparation: MeetingPreparatio
   return recommendations;
 }
 
-async function generatePreparationAlerts(preparation: MeetingPreparation): Promise<PreparationAlert[]> {
+async function generatePreparationAlerts(preparation: LocalMeetingPreparation): Promise<PreparationAlert[]> {
   const alerts: PreparationAlert[] = [];
   const meetingDate = new Date(preparation.meetingDetails.date);
   const daysUntilMeeting = Math.ceil((meetingDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
@@ -1302,8 +1323,8 @@ async function generatePreparationAlerts(preparation: MeetingPreparation): Promi
 }
 
 async function storePreparationData(
-  supabase: any,
-  preparation: MeetingPreparation,
+  supabase: SupabaseClient,
+  preparation: LocalMeetingPreparation,
   organizationId: string,
   userId: string
 ): Promise<void> {

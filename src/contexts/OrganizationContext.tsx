@@ -5,7 +5,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useUserOrganizations } from '@/hooks/useOrganizations'
 
 // Types
-interface Organization {
+export interface Organization {
   id: string
   name: string
   slug: string
@@ -16,7 +16,7 @@ interface Organization {
   membershipStatus: 'active' | 'suspended' | 'pending_activation'
 }
 
-interface Vault {
+export interface Vault {
   id: string
   name: string
   description?: string
@@ -29,7 +29,7 @@ interface Vault {
   lastActivityAt: string
 }
 
-interface VaultInvitation {
+export interface VaultInvitation {
   id: string
   permissionLevel: 'viewer' | 'contributor' | 'moderator' | 'admin'
   status: 'pending' | 'accepted' | 'rejected' | 'expired'
@@ -45,7 +45,7 @@ interface VaultInvitation {
   createdAt: string
 }
 
-interface OrganizationContextType {
+export interface OrganizationContextType {
   // Current selection state
   currentOrganization: Organization | null
   currentVault: Vault | null
@@ -134,7 +134,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       
       // Use saved org if found, otherwise use the first organization
       const defaultOrg = savedOrg || organizations[0]
-      setCurrentOrganization(defaultOrg as any)
+      setCurrentOrganization(defaultOrg)
     }
   }, [organizations, currentOrganization])
 
@@ -304,7 +304,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     currentVault,
     
     // Data
-    organizations: organizations as any,
+    organizations,
     vaults,
     pendingInvitations,
     

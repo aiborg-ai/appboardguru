@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { searchService } from '@/lib/services/search.service';
+import { 
+  SupabaseClient, 
+  User,
+  VoiceSession,
+  ChatSession,
+  EnhancedChatContext,
+  VoiceDocumentInsight,
+  VoiceEnhancedMeeting,
+  VaultWithAssets,
+  DocumentSummary,
+  Meeting,
+  MeetingPreparation
+} from '@/types/voice';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -30,7 +43,7 @@ export interface ConversationEntry {
   source: string;
   type: 'user_input' | 'system_response' | 'insight' | 'recommendation';
   content: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface DocumentContext {
@@ -125,8 +138,8 @@ export interface SyncedData {
 
 export interface ContextBridge {
   bridgeId: string;
-  sourceContext: any;
-  targetContext: any;
+  sourceContext: Record<string, unknown>;
+  targetContext: Record<string, unknown>;
   mappings: ContextMapping[];
   preservedElements: string[];
   enhancedElements: string[];
@@ -319,7 +332,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function processChatHandoff(
-  supabase: any,
+  supabase: SupabaseClient,
   request: VoiceIntegrationRequest,
   userId: string
 ): Promise<VoiceIntegrationResponse> {
@@ -424,7 +437,7 @@ async function processChatHandoff(
 }
 
 async function processDocumentAnalysisIntegration(
-  supabase: any,
+  supabase: SupabaseClient,
   request: VoiceIntegrationRequest,
   userId: string
 ): Promise<VoiceIntegrationResponse> {
@@ -518,7 +531,7 @@ async function processDocumentAnalysisIntegration(
 }
 
 async function processMeetingSyncIntegration(
-  supabase: any,
+  supabase: SupabaseClient,
   request: VoiceIntegrationRequest,
   userId: string
 ): Promise<VoiceIntegrationResponse> {
@@ -622,7 +635,7 @@ async function processMeetingSyncIntegration(
 }
 
 async function processBoardPackIntegration(
-  supabase: any,
+  supabase: SupabaseClient,
   request: VoiceIntegrationRequest,
   userId: string
 ): Promise<VoiceIntegrationResponse> {
@@ -652,7 +665,7 @@ async function processBoardPackIntegration(
 
   // Generate board pack integrations
   const boardPackIntegrations: BoardPackIntegration[] = await Promise.all(
-    (boardPacks || []).map(async (pack: any) => 
+    (boardPacks || []).map(async (pack: VaultWithAssets) => 
       await generateBoardPackIntegration(pack, documentSummaries || [], request.contextData)
     )
   );
@@ -743,7 +756,7 @@ async function processBoardPackIntegration(
 }
 
 async function processFullContextSync(
-  supabase: any,
+  supabase: SupabaseClient,
   request: VoiceIntegrationRequest,
   userId: string
 ): Promise<VoiceIntegrationResponse> {
@@ -825,7 +838,7 @@ async function processFullContextSync(
 }
 
 // Helper functions
-async function enhanceContextForChat(contextData: IntegrationContext): Promise<any> {
+async function enhanceContextForChat(contextData: IntegrationContext): Promise<EnhancedChatContext> {
   // Enhance conversation context for chat system
   return {
     enhancedHistory: contextData.conversationHistory?.map(entry => ({
@@ -855,9 +868,9 @@ function generateChatSuggestions(content: string): string[] {
 
 async function generateEnhancedChatContext(
   contextData: IntegrationContext,
-  voiceSessions: any[],
-  chatSessions: any[]
-): Promise<any> {
+  voiceSessions: VoiceSession[],
+  chatSessions: ChatSession[]
+): Promise<EnhancedChatContext> {
   // Generate enhanced context by combining voice and chat history
   return {
     combinedHistory: [
@@ -876,7 +889,7 @@ function calculateInsightsShared(contextData: IntegrationContext): number {
 }
 
 async function enhanceDocumentAnalysis(
-  supabase: any,
+  supabase: SupabaseClient,
   documents: DocumentContext[],
   organizationId: string
 ): Promise<DocumentContext[]> {
@@ -898,7 +911,7 @@ async function enhanceDocumentAnalysis(
   }));
 }
 
-async function generateVoiceDocumentInsights(documents: DocumentContext[]): Promise<any[]> {
+async function generateVoiceDocumentInsights(documents: DocumentContext[]): Promise<VoiceDocumentInsight[]> {
   return documents.map(doc => ({
     documentId: doc.id,
     voiceInsight: `This document contains key information about ${doc.title}`,
@@ -913,10 +926,10 @@ async function generateVoiceDocumentInsights(documents: DocumentContext[]): Prom
 }
 
 async function enhanceMeetingsForVoice(
-  meetings: any[],
-  preparations: any[],
+  meetings: Meeting[],
+  preparations: MeetingPreparation[],
   contextData: IntegrationContext
-): Promise<any[]> {
+): Promise<VoiceEnhancedMeeting[]> {
   return meetings.map(meeting => {
     const preparation = preparations.find(p => p.meeting_id === meeting.id);
     
@@ -940,8 +953,8 @@ async function enhanceMeetingsForVoice(
 }
 
 async function generateBoardPackIntegration(
-  pack: any,
-  documentSummaries: any[],
+  pack: VaultWithAssets,
+  documentSummaries: DocumentSummary[],
   contextData: IntegrationContext
 ): Promise<BoardPackIntegration> {
   const packDocuments = pack.vault_assets || [];
@@ -1002,7 +1015,7 @@ async function generateBoardPackIntegration(
 }
 
 async function storeBridgedContext(
-  supabase: any,
+  supabase: SupabaseClient,
   integrationId: string,
   contextBridge: ContextBridge,
   userId: string,

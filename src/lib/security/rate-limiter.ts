@@ -104,6 +104,14 @@ class RateLimitStorage {
     
     if (validRequests.length >= config.requests) {
       const oldestRequest = validRequests[0]
+      if (!oldestRequest) {
+        return {
+          allowed: false,
+          remaining: 0,
+          resetTime: now + config.windowMs,
+          retryAfter: Math.ceil(config.windowMs / 1000)
+        }
+      }
       const retryAfter = Math.ceil((oldestRequest.timestamp + config.windowMs - now) / 1000)
       
       return {
@@ -242,12 +250,15 @@ class RateLimitStorage {
       })
     }
     
-    logSecurityEvent('ip_blocked', {
-      ip,
-      reason,
-      durationMs,
-      blockCount: this.ipBlocks.get(ip)!.blockCount
-    }, 'high')
+    const blockInfo = this.ipBlocks.get(ip)
+    if (blockInfo) {
+      logSecurityEvent('ip_blocked', {
+        ip,
+        reason,
+        durationMs,
+        blockCount: blockInfo.blockCount
+      }, 'high')
+    }
   }
 
   unblockIP(ip: string): boolean {

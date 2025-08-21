@@ -6,6 +6,22 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { broadcastSystemAlert } from '@/lib/websocket/activity-stream'
+import type {
+  ActivityLog,
+  NotificationPayload,
+  NotificationChannel,
+  NotificationPriority,
+  WebhookDeliveryConfig,
+  SlackDeliveryConfig,
+  TeamsDeliveryConfig,
+  ActivityMetadata,
+  ActivityEventType,
+  ActivityEventCategory,
+  AuditOutcome,
+  ActivitySeverity,
+  NotificationDelivery,
+  NotificationDeliveryStatus
+} from '@/types/entities/activity.types'
 
 export interface AlertRule {
   id: string
@@ -23,14 +39,14 @@ export interface AlertRule {
 export interface AlertCondition {
   type: 'activity_count' | 'activity_type' | 'user_behavior' | 'time_based' | 'resource_access' | 'anomaly_score'
   operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'not_contains' | 'in_range' | 'not_in_range'
-  value: any
+  value: string | number | boolean | string[]
   timeWindow?: string // '1h', '24h', '7d', etc.
-  metadata?: Record<string, any>
+  metadata?: Record<string, string | number | boolean>
 }
 
 export interface AlertAction {
   type: 'email' | 'webhook' | 'slack' | 'teams' | 'push_notification' | 'create_ticket' | 'auto_response'
-  config: Record<string, any>
+  config: WebhookDeliveryConfig | SlackDeliveryConfig | TeamsDeliveryConfig | Record<string, string | number | boolean>
   template?: string
   recipients?: string[]
   priority: 'immediate' | 'high' | 'normal' | 'low'
@@ -44,7 +60,7 @@ export interface WorkflowTrigger {
 
 export interface WorkflowAction {
   type: 'send_notification' | 'update_permissions' | 'create_audit_entry' | 'trigger_backup' | 'lock_account' | 'require_mfa'
-  config: Record<string, any>
+  config: Record<string, string | number | boolean>
   delay?: number // seconds
   requiresApproval?: boolean
 }
@@ -97,10 +113,10 @@ export class SmartNotificationEngine {
     organizationId: string,
     activityData: {
       userId: string
-      activityType: string
+      activityType: ActivityEventType
       resourceType?: string
       resourceId?: string
-      metadata: Record<string, any>
+      metadata: ActivityMetadata
       timestamp: string
     }
   ): Promise<void> {
@@ -151,7 +167,14 @@ export class SmartNotificationEngine {
    */
   private static async evaluateConditions(
     conditions: AlertCondition[],
-    activityData: any,
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    },
     organizationId: string
   ): Promise<boolean> {
     try {
@@ -215,9 +238,16 @@ export class SmartNotificationEngine {
 
   private static async evaluateActivityCountCondition(
     condition: AlertCondition,
-    activityData: any,
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    },
     organizationId: string,
-    supabase: any
+    supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
     const timeWindow = condition.timeWindow || '1h'
     const windowMs = this.parseTimeWindow(timeWindow)
@@ -234,7 +264,14 @@ export class SmartNotificationEngine {
 
   private static evaluateActivityTypeCondition(
     condition: AlertCondition,
-    activityData: any
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    }
   ): boolean {
     const activityType = activityData.activityType
     
@@ -254,9 +291,16 @@ export class SmartNotificationEngine {
 
   private static async evaluateUserBehaviorCondition(
     condition: AlertCondition,
-    activityData: any,
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    },
     organizationId: string,
-    supabase: any
+    supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
     const { data: anomalies } = await supabase.rpc('detect_activity_anomalies', {
       input_user_id: activityData.userId,
@@ -284,7 +328,14 @@ export class SmartNotificationEngine {
 
   private static evaluateTimeBasedCondition(
     condition: AlertCondition,
-    activityData: any
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    }
   ): boolean {
     const activityTime = new Date(activityData.timestamp)
     const hour = activityTime.getHours()
@@ -306,7 +357,14 @@ export class SmartNotificationEngine {
 
   private static evaluateResourceAccessCondition(
     condition: AlertCondition,
-    activityData: any
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    }
   ): boolean {
     const resourceType = activityData.resourceType
     const resourceId = activityData.resourceId
@@ -323,9 +381,16 @@ export class SmartNotificationEngine {
 
   private static async evaluateAnomalyScoreCondition(
     condition: AlertCondition,
-    activityData: any,
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    },
     organizationId: string,
-    supabase: any
+    supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
     // Get recent anomaly score for user
     const { data: anomalies } = await supabase
@@ -346,8 +411,21 @@ export class SmartNotificationEngine {
    * Trigger alert and execute actions
    */
   private static async triggerAlert(
-    rule: any,
-    activityData: any,
+    rule: {
+      id: string
+      rule_name: string
+      severity: ActivitySeverity
+      alert_actions: AlertAction[]
+      trigger_count?: number
+    },
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    },
     organizationId: string
   ): Promise<void> {
     try {
@@ -405,8 +483,20 @@ export class SmartNotificationEngine {
    */
   private static async executeAlertAction(
     action: AlertAction,
-    rule: any,
-    activityData: any,
+    rule: {
+      id: string
+      rule_name: string
+      severity: ActivitySeverity
+      alert_actions: AlertAction[]
+    },
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    },
     organizationId: string
   ): Promise<void> {
     switch (action.type) {
@@ -462,8 +552,10 @@ export class SmartNotificationEngine {
         .in('role', ['owner', 'admin'])
         .eq('status', 'active')
 
-      const recipients = action.recipients || admins?.flatMap((admin: any) => 
-        Array.isArray(admin.users) ? admin.users.map((user: any) => user.email) : [admin.users?.email]
+      const recipients = action.recipients || admins?.flatMap((admin: {
+        users: { email: string; full_name: string } | { email: string; full_name: string }[]
+      }) => 
+        Array.isArray(admin.users) ? admin.users.map(user => user.email) : [admin.users?.email]
       ).filter(Boolean) || []
 
       if (recipients.length === 0) {
@@ -502,7 +594,7 @@ export class SmartNotificationEngine {
         organizationId,
         activityData,
         timestamp: new Date().toISOString(),
-        metadata: action.config.metadata || {}
+        metadata: (action.config as any)?.metadata || {}
       }
 
       // Add webhook signature if secret is provided
@@ -511,8 +603,8 @@ export class SmartNotificationEngine {
         'User-Agent': 'BoardGuru-Alerts/1.0'
       }
 
-      if (action.config.secret) {
-        const signature = await this.generateWebhookSignature(JSON.stringify(payload), action.config.secret)
+      if ((action.config as any)?.secret) {
+        const signature = await this.generateWebhookSignature(JSON.stringify(payload), (action.config as any).secret)
         headers['X-BoardGuru-Signature'] = signature
       }
 
@@ -538,7 +630,7 @@ export class SmartNotificationEngine {
       const { data: currentWebhook } = await supabase
         .from('activity_webhooks')
         .select('failure_count')
-        .eq('endpoint_url', action.config.url)
+        .eq('endpoint_url', (action.config as any)?.url || '')
         .single()
       
       await supabase
@@ -547,7 +639,7 @@ export class SmartNotificationEngine {
           failure_count: (currentWebhook?.failure_count || 0) + 1,
           updated_at: new Date().toISOString()
         })
-        .eq('endpoint_url', action.config.url)
+        .eq('endpoint_url', (action.config as any)?.url || '')
     }
   }
 
@@ -561,7 +653,7 @@ export class SmartNotificationEngine {
     organizationId: string
   ): Promise<void> {
     try {
-      const slackWebhook = action.config.webhookUrl
+      const slackWebhook = (action.config as any)?.webhookUrl
       if (!slackWebhook) return
 
       const slackMessage = {
@@ -587,7 +679,7 @@ export class SmartNotificationEngine {
               },
               {
                 title: 'User',
-                value: activityData.metadata.userName || 'Unknown',
+                value: (activityData.metadata as any)?.userName || 'Unknown',
                 short: true
               },
               {
@@ -624,7 +716,7 @@ export class SmartNotificationEngine {
     organizationId: string
   ): Promise<void> {
     try {
-      const teamsWebhook = action.config.webhookUrl
+      const teamsWebhook = (action.config as any)?.webhookUrl
       if (!teamsWebhook) return
 
       const teamsMessage = {
@@ -638,7 +730,7 @@ export class SmartNotificationEngine {
             activitySubtitle: `Severity: ${rule.severity.toUpperCase()}`,
             facts: [
               { name: 'Activity Type', value: activityData.activityType },
-              { name: 'User', value: activityData.metadata.userName || 'Unknown' },
+              { name: 'User', value: (activityData.metadata as any)?.userName || 'Unknown' },
               { name: 'Time', value: new Date(activityData.timestamp).toLocaleString() },
               { name: 'Organization', value: organizationId }
             ]
@@ -756,7 +848,7 @@ export class SmartNotificationEngine {
     organizationId: string
   ): Promise<void> {
     try {
-      const responseType = action.config.responseType
+      const responseType = (action.config as any)?.responseType
 
       switch (responseType) {
         case 'lock_user_account':
@@ -803,7 +895,11 @@ export class SmartNotificationEngine {
     return parseInt(amount) * multipliers[unit as keyof typeof multipliers]
   }
 
-  private static compareValues(actual: any, operator: string, expected: any): boolean {
+  private static compareValues(
+    actual: string | number | boolean,
+    operator: string,
+    expected: string | number | boolean
+  ): boolean {
     switch (operator) {
       case 'equals': return actual === expected
       case 'not_equals': return actual !== expected
@@ -835,7 +931,19 @@ export class SmartNotificationEngine {
     return mapping[severity] || 'medium'
   }
 
-  private static generateEmailContent(template: string, rule: any, activityData: any): string {
+  private static generateEmailContent(
+    template: string,
+    rule: {
+      rule_name: string
+      severity: ActivitySeverity
+      description?: string
+    },
+    activityData: {
+      activityType: ActivityEventType
+      metadata: ActivityMetadata
+      timestamp: string
+    }
+  ): string {
     // Generate email content based on template
     return `
       Alert: ${rule.rule_name}
@@ -843,7 +951,7 @@ export class SmartNotificationEngine {
       An activity monitoring alert has been triggered:
       
       Activity: ${activityData.activityType}
-      User: ${activityData.metadata.userName || 'Unknown'}
+      User: ${(activityData.metadata as any)?.userName || 'Unknown'}
       Time: ${new Date(activityData.timestamp).toLocaleString()}
       Severity: ${rule.severity.toUpperCase()}
       
@@ -931,7 +1039,14 @@ export class WorkflowAutomation {
    */
   static async processWorkflows(
     organizationId: string,
-    activityData: any
+    activityData: {
+      userId: string
+      activityType: ActivityEventType
+      resourceType?: string
+      resourceId?: string
+      metadata: ActivityMetadata
+      timestamp: string
+    }
   ): Promise<void> {
     try {
       for (const [workflowId, workflow] of this.workflows.entries()) {
@@ -1026,7 +1141,7 @@ export class NotificationDigest {
     digestType: 'daily' | 'weekly' | 'monthly'
   ): Promise<{
     summary: string
-    keyActivities: any[]
+    keyActivities: ActivityLog[]
     insights: string[]
     recommendations: string[]
     unreadAlerts: number

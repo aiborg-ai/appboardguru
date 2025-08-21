@@ -174,6 +174,8 @@ export default function VoicePDFAnnotations({
         viewer.removeEventListener('click', handlePDFClick);
       };
     }
+    
+    return undefined;
   }, [pdfViewerRef, state.isRecording]);
 
   const initializeAudioContext = async () => {
@@ -371,7 +373,7 @@ export default function VoicePDFAnnotations({
       let x = 0;
       
       for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
+        const v = (dataArray[i] ?? 0) / 128.0;
         const y = (v * canvas.height) / 2;
         
         if (i === 0) {

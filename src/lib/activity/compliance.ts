@@ -5,62 +5,37 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import type {
+  ComplianceReport,
+  ComplianceReportType,
+  ComplianceReportStatus,
+  ComplianceFinding,
+  ComplianceFindingStatus,
+  ComplianceSummary,
+  ComplianceEvidence,
+  ComplianceEvidenceType,
+  ImmutableAuditEntry,
+  AuditTrailIntegrity,
+  ZeroKnowledgeProof,
+  ActivityLog,
+  ActivityMetadata,
+  RiskLevel,
+  ActivitySeverity,
+  ComplianceViolation,
+  ComplianceViolationType,
+  PrivacySettings,
+  DataRetentionPolicy
+} from '@/types/entities/activity.types'
 
-export interface ComplianceReport {
-  id: string
-  reportType: 'SOC2' | 'GDPR' | 'HIPAA' | 'SOX' | 'ISO27001' | 'CCPA' | 'custom'
-  organizationId: string
-  periodStart: string
-  periodEnd: string
-  generatedAt: string
-  status: 'draft' | 'review' | 'approved' | 'submitted'
-  findings: ComplianceFinding[]
-  summary: ComplianceSummary
-  evidence: ComplianceEvidence[]
-  signatureHash: string
-  retentionUntil: string
-}
+// Using imported ComplianceReport from activity.types.ts
 
-export interface ComplianceFinding {
-  id: string
-  requirement: string
-  status: 'compliant' | 'non_compliant' | 'partially_compliant' | 'not_applicable'
-  evidence: string[]
-  riskLevel: 'low' | 'medium' | 'high' | 'critical'
-  remediation?: string[]
-  dueDate?: string
-}
+// Using imported ComplianceFinding from activity.types.ts
 
-export interface ComplianceSummary {
-  totalRequirements: number
-  compliantCount: number
-  nonCompliantCount: number
-  partiallyCompliantCount: number
-  overallScore: number
-  riskScore: number
-  previousScore?: number
-  trend: 'improving' | 'stable' | 'declining'
-}
+// Using imported ComplianceSummary from activity.types.ts
 
-export interface ComplianceEvidence {
-  id: string
-  type: 'audit_log' | 'policy_document' | 'access_control' | 'encryption' | 'backup' | 'training'
-  description: string
-  evidenceData: any
-  collectedAt: string
-  verificationHash: string
-}
+// Using imported ComplianceEvidence from activity.types.ts
 
-export interface ImmutableAuditEntry {
-  id: string
-  previousHash: string
-  currentHash: string
-  blockNumber: number
-  timestamp: string
-  eventData: any
-  signature: string
-  merkleRoot: string
-}
+// Using imported ImmutableAuditEntry from activity.types.ts
 
 export class ComplianceEngine {
   /**
@@ -306,11 +281,13 @@ export class ComplianceEngine {
       const integrityScore = (verifiedCount / auditEntries.length) * 100
 
       return {
-        isValid: corruptedEntries.length === 0,
-        totalEntries: auditEntries.length,
-        verifiedEntries: verifiedCount,
-        corruptedEntries,
-        integrityScore
+        is_valid: corruptedEntries.length === 0,
+        total_entries: auditEntries.length,
+        verified_entries: verifiedCount,
+        corrupted_entries: corruptedEntries,
+        integrity_score: integrityScore,
+        last_verified_at: new Date().toISOString(),
+        verification_method: 'blockchain_verification'
       }
     } catch (error) {
       console.error('Error verifying audit trail integrity:', error)
@@ -369,9 +346,12 @@ export class ComplianceEngine {
 
       return {
         proof,
-        publicInputs,
-        verificationKey,
-        description: `Zero-knowledge proof that organization has ${publicInputs.totalEvents} audit events with ${publicInputs.successfulEvents} successful operations in the specified period, without revealing sensitive details.`
+        public_inputs: publicInputs,
+        verification_key: verificationKey,
+        description: `Zero-knowledge proof that organization has ${publicInputs.totalEvents} audit events with ${publicInputs.successfulEvents} successful operations in the specified period, without revealing sensitive details.`,
+        generated_at: new Date().toISOString(),
+        proof_system: 'simplified_zkp',
+        circuit_hash: await this.generateHash('compliance_circuit_v1')
       }
     } catch (error) {
       console.error('Error generating zero-knowledge proof:', error)
@@ -419,7 +399,7 @@ export class ComplianceEngine {
   static async enforceDataRetention(organizationId: string): Promise<{
     deletedEntries: number
     archivedEntries: number
-    errors: string[]
+    errors: readonly string[]
   }> {
     try {
       const supabase = supabaseAdmin
@@ -482,8 +462,8 @@ export class ComplianceEngine {
     affectedTimeRange: { start: string; end: string },
     holdDuration?: string
   ): Promise<{
-    affectedEntries: number
-    holdId: string
+    readonly affectedEntries: number
+    readonly holdId: string
   }> {
     try {
       const supabase = supabaseAdmin
@@ -535,16 +515,16 @@ export class ComplianceEngine {
     organizationId: string,
     auditType: 'internal' | 'external' | 'regulatory',
     scope: {
-      startDate: string
-      endDate: string
-      systems: string[]
-      processes: string[]
+      readonly startDate: string
+      readonly endDate: string
+      readonly systems: readonly string[]
+      readonly processes: readonly string[]
     }
   ): Promise<{
-    auditPackage: any
-    evidenceBundle: any[]
-    complianceGaps: any[]
-    recommendedActions: string[]
+    readonly auditPackage: Record<string, unknown>
+    readonly evidenceBundle: readonly ComplianceEvidence[]
+    readonly complianceGaps: readonly ComplianceViolation[]
+    readonly recommendedActions: readonly string[]
   }> {
     try {
       // Generate comprehensive audit package
@@ -601,7 +581,7 @@ export class ComplianceEngine {
   /**
    * Generate tamper-proof signature
    */
-  private static async generateTamperProofSignature(data: any): Promise<string> {
+  private static async generateTamperProofSignature(data: Record<string, unknown>): Promise<string> {
     const dataString = JSON.stringify(data, Object.keys(data).sort())
     return this.generateHash(dataString + process.env.SIGNATURE_SECRET)
   }
@@ -609,7 +589,13 @@ export class ComplianceEngine {
   /**
    * Calculate block hash for blockchain-like audit trail
    */
-  private static async calculateBlockHash(blockData: any): Promise<string> {
+  private static async calculateBlockHash(blockData: {
+    previousHash: string
+    blockNumber: number
+    timestamp: string
+    eventData: ActivityLog
+    organizationId: string
+  }): Promise<string> {
     const blockString = JSON.stringify({
       previousHash: blockData.previousHash,
       blockNumber: blockData.blockNumber,
@@ -623,7 +609,13 @@ export class ComplianceEngine {
   /**
    * Sign block with cryptographic signature
    */
-  private static async signBlock(blockData: any, blockHash: string): Promise<string> {
+  private static async signBlock(blockData: {
+    previousHash: string
+    blockNumber: number
+    timestamp: string
+    eventData: ActivityLog
+    organizationId: string
+  }, blockHash: string): Promise<string> {
     // In production, use actual cryptographic signing with private keys
     const signatureData = blockHash + blockData.organizationId + process.env.SIGNING_SECRET
     return this.generateHash(signatureData)
@@ -632,7 +624,7 @@ export class ComplianceEngine {
   /**
    * Calculate Merkle root for batch verification
    */
-  private static async calculateMerkleRoot(hashes: string[]): Promise<string> {
+  private static async calculateMerkleRoot(hashes: readonly string[]): Promise<string> {
     if (hashes.length === 0) return ''
     if (hashes.length === 1) return hashes[0]
 
@@ -655,7 +647,12 @@ export class ComplianceEngine {
   /**
    * Get compliance requirements for specific standards
    */
-  private static getComplianceRequirements(reportType: ComplianceReport['reportType']): any[] {
+  private static getComplianceRequirements(reportType: ComplianceReportType): Array<{
+    id: string
+    name: string
+    description: string
+    category: string
+  }> {
     const requirements: Record<string, any[]> = {
       SOC2: [
         {
@@ -763,7 +760,12 @@ export class ComplianceEngine {
    * Assess individual compliance requirement
    */
   private static async assessRequirement(
-    requirement: any,
+    requirement: {
+      id: string
+      name: string
+      description: string
+      category: string
+    },
     organizationId: string,
     periodStart: string,
     periodEnd: string
@@ -843,11 +845,16 @@ export class ComplianceEngine {
    * Collect evidence for compliance requirements
    */
   private static async collectEvidence(
-    requirement: any,
+    requirement: {
+      id: string
+      name: string
+      description: string
+      category: string
+    },
     organizationId: string,
     periodStart: string,
     periodEnd: string
-  ): Promise<ComplianceEvidence[]> {
+  ): Promise<readonly ComplianceEvidence[]> {
     try {
       const supabase = await createSupabaseServerClient()
       const evidence: ComplianceEvidence[] = []
@@ -890,7 +897,7 @@ export class ComplianceEngine {
   /**
    * Calculate compliance summary
    */
-  private static calculateComplianceSummary(findings: ComplianceFinding[]): ComplianceSummary {
+  private static calculateComplianceSummary(findings: readonly ComplianceFinding[]): ComplianceSummary {
     const totalRequirements = findings.length
     const compliantCount = findings.filter(f => f.status === 'compliant').length
     const nonCompliantCount = findings.filter(f => f.status === 'non_compliant').length
@@ -939,7 +946,7 @@ export class ComplianceEngine {
     return new Date(cutoffTime).toISOString()
   }
 
-  private static calculateRetentionDate(reportType: ComplianceReport['reportType']): string {
+  private static calculateRetentionDate(reportType: ComplianceReportType): string {
     const retentionPeriods = {
       SOC2: 7, // 7 years
       GDPR: 3, // 3 years
@@ -958,7 +965,7 @@ export class ComplianceEngine {
     organizationId: string,
     periodStart: string,
     periodEnd: string,
-    supabase: any
+    supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<number> {
     const { count } = await supabase
       .from('audit_logs')
@@ -976,7 +983,7 @@ export class ComplianceEngine {
     organizationId: string,
     periodStart: string,
     periodEnd: string,
-    supabase: any
+    supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<number> {
     const { count } = await supabase
       .from('audit_logs')
@@ -994,8 +1001,8 @@ export class ComplianceEngine {
     organizationId: string,
     periodStart: string,
     periodEnd: string,
-    supabase: any
-  ): Promise<string[]> {
+    supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
+  ): Promise<readonly string[]> {
     const gaps: string[] = []
 
     // Check if all critical events are being monitored
@@ -1018,7 +1025,15 @@ export class ComplianceEngine {
     return gaps
   }
 
-  private static async generateAuditPackage(organizationId: string, scope: any): Promise<any> {
+  private static async generateAuditPackage(
+    organizationId: string,
+    scope: {
+      readonly startDate: string
+      readonly endDate: string
+      readonly systems: readonly string[]
+      readonly processes: readonly string[]
+    }
+  ): Promise<Record<string, unknown>> {
     // Generate comprehensive audit package
     return {
       organizationProfile: await this.getOrganizationProfile(organizationId),
@@ -1029,17 +1044,33 @@ export class ComplianceEngine {
     }
   }
 
-  private static async collectAuditEvidence(organizationId: string, scope: any): Promise<any[]> {
+  private static async collectAuditEvidence(
+    organizationId: string,
+    scope: {
+      readonly startDate: string
+      readonly endDate: string
+      readonly systems: readonly string[]
+      readonly processes: readonly string[]
+    }
+  ): Promise<readonly ComplianceEvidence[]> {
     // Collect all evidence for audit
     return []
   }
 
-  private static async identifyComplianceGaps(organizationId: string, scope: any): Promise<any[]> {
+  private static async identifyComplianceGaps(
+    organizationId: string,
+    scope: {
+      readonly startDate: string
+      readonly endDate: string
+      readonly systems: readonly string[]
+      readonly processes: readonly string[]
+    }
+  ): Promise<readonly ComplianceViolation[]> {
     // Identify compliance gaps
     return []
   }
 
-  private static generateAuditRecommendations(complianceGaps: any[]): string[] {
+  private static generateAuditRecommendations(complianceGaps: readonly ComplianceViolation[]): readonly string[] {
     // Generate recommendations based on gaps
     return [
       'Implement continuous compliance monitoring',
@@ -1049,12 +1080,12 @@ export class ComplianceEngine {
     ]
   }
 
-  private static async detectComplianceViolations(organizationId: string): Promise<any[]> {
+  private static async detectComplianceViolations(organizationId: string): Promise<readonly ComplianceViolation[]> {
     // Detect real-time compliance violations
     return []
   }
 
-  private static async notifyComplianceViolation(violation: any, organizationId: string): Promise<void> {
+  private static async notifyComplianceViolation(violation: ComplianceViolation, organizationId: string): Promise<void> {
     // Send compliance violation notifications
     console.log(`⚠️ Compliance violation detected: ${violation.type}`)
   }
@@ -1064,7 +1095,7 @@ export class ComplianceEngine {
     console.log(`📊 Compliance metrics updated for ${organizationId}`)
   }
 
-  private static async getOrganizationProfile(organizationId: string): Promise<any> {
+  private static async getOrganizationProfile(organizationId: string): Promise<Record<string, unknown> | null> {
     const supabase = await createSupabaseServerClient()
     const { data } = await supabase
       .from('organizations')
@@ -1074,17 +1105,29 @@ export class ComplianceEngine {
     return data
   }
 
-  private static async getSystemInventory(organizationId: string): Promise<any> {
+  private static async getSystemInventory(organizationId: string): Promise<Record<string, unknown>> {
     // Get system inventory for compliance
     return {}
   }
 
-  private static async getPolicyDocuments(organizationId: string): Promise<any> {
+  private static async getPolicyDocuments(organizationId: string): Promise<Record<string, unknown>> {
     // Get policy documents
     return {}
   }
 
-  private static async getAuditTrailSummary(organizationId: string, scope: any): Promise<any> {
+  private static async getAuditTrailSummary(
+    organizationId: string,
+    scope: {
+      readonly startDate: string
+      readonly endDate: string
+      readonly systems: readonly string[]
+      readonly processes: readonly string[]
+    }
+  ): Promise<{
+    readonly totalEvents: number
+    readonly eventTypes: readonly string[]
+    readonly successRate: number
+  }> {
     const supabase = await createSupabaseServerClient()
     const { data, count } = await supabase
       .from('audit_logs')
@@ -1112,8 +1155,8 @@ export class PrivacyEngine {
     organizationId: string,
     anonymizationLevel: 'minimal' | 'standard' | 'aggressive'
   ): Promise<{
-    processedEntries: number
-    anonymizedFields: string[]
+    readonly processedEntries: number
+    readonly anonymizedFields: readonly string[]
   }> {
     try {
       const supabase = supabaseAdmin
@@ -1172,13 +1215,13 @@ export class PrivacyEngine {
    */
   static async generatePrivacyReport(
     organizationId: string,
-    reportPeriod: { start: string; end: string }
+    reportPeriod: { readonly start: string; readonly end: string }
   ): Promise<{
-    dataProcessingActivities: any[]
-    privacyControls: any[]
-    dataRetentionStatus: any
-    consentManagement: any
-    breachIncidents: any[]
+    readonly dataProcessingActivities: readonly ActivityLog[]
+    readonly privacyControls: PrivacySettings
+    readonly dataRetentionStatus: DataRetentionPolicy
+    readonly consentManagement: Record<string, unknown>
+    readonly breachIncidents: readonly ComplianceViolation[]
   }> {
     try {
       const supabase = await createSupabaseServerClient()
@@ -1217,7 +1260,7 @@ export class PrivacyEngine {
     }
   }
 
-  private static async assessPrivacyControls(organizationId: string): Promise<any> {
+  private static async assessPrivacyControls(organizationId: string): Promise<PrivacySettings> {
     // Assess privacy control implementation
     return {
       encryption: 'implemented',
@@ -1227,7 +1270,7 @@ export class PrivacyEngine {
     }
   }
 
-  private static async checkDataRetentionStatus(organizationId: string): Promise<any> {
+  private static async checkDataRetentionStatus(organizationId: string): Promise<DataRetentionPolicy> {
     // Check data retention policy compliance
     return {
       policiesInPlace: true,
@@ -1236,7 +1279,7 @@ export class PrivacyEngine {
     }
   }
 
-  private static async analyzeConsentManagement(organizationId: string): Promise<any> {
+  private static async analyzeConsentManagement(organizationId: string): Promise<Record<string, unknown>> {
     // Analyze consent management practices
     return {
       consentTracking: 'implemented',
@@ -1245,7 +1288,10 @@ export class PrivacyEngine {
     }
   }
 
-  private static async checkSecurityIncidents(organizationId: string, reportPeriod: any): Promise<any[]> {
+  private static async checkSecurityIncidents(
+    organizationId: string,
+    reportPeriod: { readonly start: string; readonly end: string }
+  ): Promise<readonly ComplianceViolation[]> {
     const supabase = await createSupabaseServerClient()
     
     const { data: incidents } = await supabase
@@ -1321,7 +1367,7 @@ export class ImmutableAuditChain {
     }
   }
 
-  private static async generateCertificateData(data: any): Promise<string> {
+  private static async generateCertificateData(data: Record<string, unknown>): Promise<string> {
     const certificateData = JSON.stringify(data, null, 2)
     const signature = await ComplianceEngine['generateHash'](certificateData + process.env.CERTIFICATE_SECRET)
     

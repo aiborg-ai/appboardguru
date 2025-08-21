@@ -4,7 +4,14 @@
  */
 
 import { StatisticalAnalysis } from './statistical-analysis'
-import { UserEngagementProfile } from '../pattern-recognition'
+import type { UserBehaviorData } from './user-segmentation'
+
+// Define missing interfaces
+export interface UserProfileData {
+  readonly preferredTimes?: number[];
+  readonly userId: string;
+  readonly engagementHistory: number[];
+}
 
 export interface TimingPrediction {
   recommendedTime: Date
@@ -24,12 +31,74 @@ export interface EngagementPrediction {
 }
 
 export interface ModelPerformance {
-  accuracy: number
-  precision: number
-  recall: number
-  f1Score: number
-  mae: number // Mean Absolute Error
-  rmse: number // Root Mean Square Error
+  readonly accuracy: number
+  readonly precision: number
+  readonly recall: number
+  readonly f1Score: number
+  readonly mae: number // Mean Absolute Error
+  readonly rmse: number // Root Mean Square Error
+}
+
+// Training data interfaces
+export interface TrainingDataSample {
+  readonly features: Record<string, number>
+  readonly actualOutcome: number
+  readonly timestamp: Date
+  readonly weight?: number // For weighted training
+  readonly metadata?: Record<string, any>
+}
+
+export interface MLTrainingConfig {
+  readonly learningRate: number
+  readonly epochs: number
+  readonly batchSize?: number
+  readonly validationSplit: number
+  readonly earlyStoppingThreshold: number
+  readonly regularization?: {
+    readonly l1: number
+    readonly l2: number
+  }
+}
+
+export interface PredictionContext {
+  readonly userId: string
+  readonly sessionId?: string
+  readonly deviceInfo?: Record<string, any>
+  readonly timeContext: {
+    readonly timezone: string
+    readonly localTime: Date
+    readonly businessHours: boolean
+  }
+  readonly preferences?: Record<string, any>
+}
+
+// Model interfaces
+export interface TimingModel {
+  readonly type: 'timing_model'
+  readonly hourlyWeights: readonly Array<{
+    readonly hour: number
+    readonly weight: number
+    readonly normalized: number
+  }>
+  readonly dailyWeights: readonly Array<{
+    readonly day: number
+    readonly weight: number
+    readonly normalized: number
+  }>
+  readonly typeSpecificMultiplier: number
+  readonly responseTimeProfile: readonly number[]
+  readonly confidence: number
+  readonly lastUpdated: Date
+}
+
+export interface EngagementModel {
+  readonly type: 'engagement_model'
+  readonly weights: Record<string, number>
+  readonly bias: number
+  readonly features: readonly string[]
+  readonly performance: ModelPerformance
+  readonly lastTrained: Date
+  readonly trainingDataSize: number
 }
 
 export class PredictionModel {
@@ -120,13 +189,15 @@ export class PredictionModel {
    * Train model on historical data and evaluate performance
    */
   async trainAndEvaluateModel(
-    trainingData: Array<{
-      features: any
-      actualOutcome: number
-      timestamp: Date
-    }>
+    trainingData: readonly TrainingDataSample[],
+    config: MLTrainingConfig = {
+      learningRate: 0.01,
+      epochs: 1000,
+      validationSplit: 0.2,
+      earlyStoppingThreshold: 0.001
+    }
   ): Promise<{
-    model: any
+    model: TimingModel | EngagementModel
     performance: ModelPerformance
     featureImportance: Record<string, number>
   }> {
@@ -134,14 +205,14 @@ export class PredictionModel {
       throw new Error('Insufficient training data (minimum 20 samples required)')
     }
 
-    // Split data into training and testing sets (80/20 split)
+    // Split data into training and testing sets based on config
     const shuffled = [...trainingData].sort(() => 0.5 - Math.random())
-    const splitIndex = Math.floor(shuffled.length * 0.8)
+    const splitIndex = Math.floor(shuffled.length * (1 - config.validationSplit))
     const trainSet = shuffled.slice(0, splitIndex)
     const testSet = shuffled.slice(splitIndex)
 
     // Train model
-    const model = this.trainLinearRegressionModel(trainSet)
+    const model = this.trainLinearRegressionModel(trainSet, config)
     
     // Evaluate performance
     const performance = this.evaluateModel(model, testSet)
@@ -156,31 +227,36 @@ export class PredictionModel {
    * Update model with new data (online learning)
    */
   async updateModel(
-    existingModel: any,
-    newData: Array<{
-      features: any
-      actualOutcome: number
-      timestamp: Date
-    }>
-  ): Promise<any> {
+    existingModel: TimingModel | EngagementModel,
+    newData: readonly TrainingDataSample[],
+    config: Partial<MLTrainingConfig> = {}
+  ): Promise<TimingModel | EngagementModel> {
     // Implement exponential moving average for model updates
-    const learningRate = 0.1
+    const learningRate = config.learningRate ?? 0.1
+    const updatedWeights = { ...existingModel.weights }
+    let updatedBias = existingModel.bias
     
     for (const sample of newData) {
       const prediction = this.makePrediction(existingModel, sample.features)
       const error = sample.actualOutcome - prediction
       
       // Update model weights
-      existingModel.weights = existingModel.weights.map((weight: number, index: number) => {
-        const feature = Object.values(sample.features)[index] as number
-        return weight + learningRate * error * feature
-      })
+      for (const [featureName, featureValue] of Object.entries(sample.features)) {
+        const currentWeight = updatedWeights[featureName] ?? 0
+        updatedWeights[featureName] = currentWeight + learningRate * error * featureValue
+      }
       
       // Update bias
-      existingModel.bias += learningRate * error
+      updatedBias += learningRate * error
     }
 
-    return existingModel
+    return {
+      ...existingModel,
+      weights: updatedWeights,
+      bias: updatedBias,
+      lastTrained: new Date(),
+      trainingDataSize: existingModel.trainingDataSize + newData.length
+    }
   }
 
   // Private helper methods
@@ -197,16 +273,22 @@ export class PredictionModel {
 
     // Populate hourly engagement
     behaviorData.forEach(data => {
-      const hour = new Date(data.timestamp).getHours()
-      const engagement = data.engagement_score || 0
-      features.hourlyEngagement[hour] += engagement
+      const timestamp = typeof data.timestamp === 'string' ? new Date(data.timestamp) : data.timestamp
+      const hour = timestamp.getHours()
+      const engagement = data.engagement_score ?? 0
+      if (hour >= 0 && hour < 24) {
+        features.hourlyEngagement[hour] += engagement
+      }
     })
 
     // Populate daily engagement (0 = Sunday)
     behaviorData.forEach(data => {
-      const day = new Date(data.timestamp).getDay()
-      const engagement = data.engagement_score || 0
-      features.dailyEngagement[day] += engagement
+      const timestamp = typeof data.timestamp === 'string' ? new Date(data.timestamp) : data.timestamp
+      const day = timestamp.getDay()
+      const engagement = data.engagement_score ?? 0
+      if (day >= 0 && day < 7) {
+        features.dailyEngagement[day] += engagement
+      }
     })
 
     // Calculate type-specific engagement
@@ -239,20 +321,20 @@ export class PredictionModel {
     return features
   }
 
-  private extractEngagementFeatures(behaviorData: any[], notificationContext: any): any {
+  private extractEngagementFeatures(behaviorData: readonly UserBehaviorData[], notificationContext: any): any {
     const hour = notificationContext.timing.getHours()
     const dayOfWeek = notificationContext.timing.getDay()
     
     // Historical performance at this time
-    const sameHourData = behaviorData.filter(d => 
+    const sameHourData = [...behaviorData].filter(d => 
       new Date(d.timestamp).getHours() === hour
     )
-    const sameDayData = behaviorData.filter(d => 
+    const sameDayData = [...behaviorData].filter(d => 
       new Date(d.timestamp).getDay() === dayOfWeek
     )
 
     // Recent engagement trend
-    const recentData = behaviorData
+    const recentData = [...behaviorData]
       .filter(d => new Date(d.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) // Last 7 days
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
@@ -288,7 +370,7 @@ export class PredictionModel {
     return features
   }
 
-  private buildTimingModel(features: any): any {
+  private buildTimingModel(features: any): TimingModel {
     // Simple model based on historical engagement patterns
     const hourlyWeights = features.hourlyEngagement.map((engagement: number, hour: number) => ({
       hour,
@@ -307,11 +389,13 @@ export class PredictionModel {
       hourlyWeights: hourlyWeights.sort((a: any, b: any) => b.weight - a.weight),
       dailyWeights: dailyWeights.sort((a: any, b: any) => b.weight - a.weight),
       typeSpecificMultiplier: features.typeSpecificEngagement,
-      responseTimeProfile: features.responseTimeBuckets
-    }
+      responseTimeProfile: features.responseTimeBuckets,
+      confidence: 0.7, // Base confidence
+      lastUpdated: new Date()
+    } as TimingModel
   }
 
-  private buildEngagementModel(features: any): any {
+  private buildEngagementModel(features: any): EngagementModel {
     // Linear regression model weights (learned from historical data)
     const weights = {
       hour: 0.15,
@@ -332,11 +416,21 @@ export class PredictionModel {
       type: 'engagement_model',
       weights,
       bias: 0.5, // Base engagement rate
-      features: Object.keys(features)
-    }
+      features: Object.keys(features),
+      performance: {
+        accuracy: 0,
+        precision: 0,
+        recall: 0,
+        f1Score: 0,
+        mae: 0,
+        rmse: 0
+      },
+      lastTrained: new Date(),
+      trainingDataSize: 0
+    } as EngagementModel
   }
 
-  private predictNextOptimalTime(model: any, userProfile: any): {
+  private predictNextOptimalTime(model: TimingModel, userProfile: UserProfileData): {
     recommendedTime: Date
     confidence: number
     reasoning: string
@@ -359,8 +453,8 @@ export class PredictionModel {
       const day = candidateTime.getDay()
 
       // Calculate score based on historical patterns
-      const hourlyScore = model.hourlyWeights.find((h: any) => h.hour === hour)?.normalized || 0
-      const dailyScore = model.dailyWeights.find((d: any) => d.day === day)?.normalized || 0
+      const hourlyScore = model.hourlyWeights?.find((h: any) => h.hour === hour)?.normalized ?? 0
+      const dailyScore = model.dailyWeights?.find((d: any) => d.day === day)?.normalized ?? 0
       
       // Combine scores
       let totalScore = (hourlyScore * 0.6 + dailyScore * 0.4) * model.typeSpecificMultiplier
@@ -412,7 +506,7 @@ export class PredictionModel {
     }
   }
 
-  private generateAlternativeTimes(model: any, recommendedTime: Date): Date[] {
+  private generateAlternativeTimes(model: TimingModel, recommendedTime: Date): Date[] {
     const alternatives: Date[] = []
     const baseHour = recommendedTime.getHours()
 
@@ -432,7 +526,7 @@ export class PredictionModel {
     return alternatives.slice(0, 3) // Return top 3 alternatives
   }
 
-  private predictEngagementScore(model: any, features: any): {
+  private predictEngagementScore(model: EngagementModel, features: Record<string, number>): {
     score: number
     confidence: number
   } {
@@ -534,7 +628,10 @@ export class PredictionModel {
     return factors.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
   }
 
-  private trainLinearRegressionModel(trainingData: any[]): any {
+  private trainLinearRegressionModel(
+    trainingData: readonly TrainingDataSample[],
+    config: MLTrainingConfig
+  ): EngagementModel {
     // Simple linear regression implementation
     const featureNames = Object.keys(trainingData[0].features)
     const n = trainingData.length
@@ -545,8 +642,8 @@ export class PredictionModel {
     let bias = 0
 
     // Gradient descent
-    const learningRate = 0.01
-    const epochs = 1000
+    const learningRate = config.learningRate
+    const epochs = config.epochs
 
     for (let epoch = 0; epoch < epochs; epoch++) {
       let totalLoss = 0
@@ -558,7 +655,9 @@ export class PredictionModel {
         // Forward pass
         let prediction = bias
         for (let i = 0; i < features.length; i++) {
-          prediction += weights[i] * features[i]
+          const weight = weights[i] ?? 0
+          const feature = features[i] ?? 0
+          prediction += weight * feature
         }
 
         // Calculate error
@@ -568,23 +667,34 @@ export class PredictionModel {
         // Backward pass (gradient descent)
         bias -= learningRate * error
         for (let i = 0; i < features.length; i++) {
-          weights[i] -= learningRate * error * features[i]
+          const feature = features[i] ?? 0
+          weights[i] = (weights[i] ?? 0) - learningRate * error * feature
         }
       }
 
       // Early stopping if converged
-      if (totalLoss / n < 0.001) break
+      if (totalLoss / n < config.earlyStoppingThreshold) break
     }
 
     return {
-      type: 'linear_regression',
-      weights,
+      type: 'engagement_model',
+      weights: Object.fromEntries(featureNames.map((name, i) => [name, weights[i] ?? 0])),
       bias,
-      featureNames
-    }
+      features: featureNames,
+      performance: {
+        accuracy: 0,
+        precision: 0,
+        recall: 0,
+        f1Score: 0,
+        mae: 0,
+        rmse: 0
+      },
+      lastTrained: new Date(),
+      trainingDataSize: trainingData.length
+    } as EngagementModel
   }
 
-  private evaluateModel(model: any, testData: any[]): ModelPerformance {
+  private evaluateModel(model: EngagementModel, testData: readonly TrainingDataSample[]): ModelPerformance {
     const predictions = testData.map(sample => this.makePrediction(model, sample.features))
     const actuals = testData.map(sample => sample.actualOutcome)
 
@@ -615,31 +725,33 @@ export class PredictionModel {
     return { accuracy, precision, recall, f1Score, mae, rmse }
   }
 
-  private calculateFeatureImportance(model: any, trainingData: any[]): Record<string, number> {
+  private calculateFeatureImportance(model: EngagementModel, trainingData: readonly TrainingDataSample[]): Record<string, number> {
     const importance: Record<string, number> = {}
     
     // For linear regression, use absolute weights as importance
-    model.featureNames.forEach((name: string, index: number) => {
-      importance[name] = Math.abs(model.weights[index])
+    model.featureNames?.forEach((name: string, index: number) => {
+      const weight = model.weights?.[index] ?? 0
+      importance[name] = Math.abs(weight)
     })
 
     // Normalize to sum to 1
     const total = Object.values(importance).reduce((sum, val) => sum + val, 0)
     if (total > 0) {
       Object.keys(importance).forEach(key => {
-        importance[key] /= total
+        const currentValue = importance[key] ?? 0
+        importance[key] = currentValue / total
       })
     }
 
     return importance
   }
 
-  private makePrediction(model: any, features: any): number {
-    const featureValues = Object.values(features) as number[]
-    
+  private makePrediction(model: EngagementModel, features: Record<string, number>): number {
     let prediction = model.bias
-    for (let i = 0; i < featureValues.length; i++) {
-      prediction += model.weights[i] * featureValues[i]
+    
+    for (const [featureName, featureValue] of Object.entries(features)) {
+      const weight = model.weights[featureName] ?? 0
+      prediction += weight * featureValue
     }
 
     return Math.max(0, Math.min(1, prediction)) // Clamp between 0 and 1
@@ -680,7 +792,7 @@ export class PredictionModel {
     if (recentData.length < 3) return 0
 
     const engagementScores = recentData
-      .filter(d => d.engagement_score !== null)
+      .filter(d => d.engagement_score !== null && d.engagement_score !== undefined)
       .map(d => d.engagement_score)
 
     if (engagementScores.length < 3) return 0
@@ -693,7 +805,7 @@ export class PredictionModel {
     const meanX = x.reduce((sum, val) => sum + val, 0) / n
     const meanY = y.reduce((sum, val) => sum + val, 0) / n
 
-    const numerator = x.reduce((sum, val, i) => sum + (val - meanX) * (y[i] - meanY), 0)
+    const numerator = x.reduce((sum, val, i) => sum + (val - meanX) * ((y[i] ?? 0) - meanY), 0)
     const denominator = x.reduce((sum, val) => sum + Math.pow(val - meanX, 2), 0)
 
     return denominator > 0 ? numerator / denominator : 0
@@ -712,12 +824,12 @@ export class PredictionModel {
     return typeScores[type] || 0.5
   }
 
-  private countRecentNotifications(behaviorData: any[], hours: number): number {
+  private countRecentNotifications(behaviorData: readonly UserBehaviorData[], hours: number): number {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000)
     return behaviorData.filter(d => new Date(d.timestamp) > cutoff).length
   }
 
-  private getTimeSinceLastAction(behaviorData: any[]): number {
+  private getTimeSinceLastAction(behaviorData: readonly UserBehaviorData[]): number {
     if (behaviorData.length === 0) return 1 // Max normalized value
 
     const timestamps = behaviorData.map(d => new Date(d.timestamp).getTime())

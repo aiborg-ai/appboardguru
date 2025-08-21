@@ -165,7 +165,7 @@ export default function AgendaStep({ data, onUpdate }: AgendaStepProps) {
 
     const updatedItems = [...data.agendaItems];
     [updatedItems[currentIndex], updatedItems[newIndex]] = 
-    [updatedItems[newIndex], updatedItems[currentIndex]];
+    [updatedItems[newIndex]!, updatedItems[currentIndex]!];
     
     // Update order indices
     updatedItems.forEach((item, index) => {

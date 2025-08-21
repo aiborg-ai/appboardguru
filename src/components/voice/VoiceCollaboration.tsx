@@ -374,7 +374,9 @@ export default function VoiceCollaboration({
 
       // Handle remote stream
       peerConnection.ontrack = (event) => {
-        handleRemoteStream(participant.id, event.streams[0]);
+        if (event.streams[0]) {
+          handleRemoteStream(participant.id, event.streams[0]);
+        }
       };
 
       // Handle connection state changes
@@ -940,15 +942,16 @@ export default function VoiceCollaboration({
               </div>
               <Slider
                 value={[spatialConfig.ambientSounds?.volume || 20]}
-                onValueChange={([value]) => setSpatialConfig(prev => ({
-                  ...prev,
-                  ambientSounds: { 
-                    enabled: prev.ambientSounds?.enabled !== undefined ? prev.ambientSounds.enabled : true,
-                    volume: value,
-                    soundscape: prev.ambientSounds?.soundscape || 'meeting_room',
-                    spatializedAmbient: prev.ambientSounds?.spatializedAmbient !== undefined ? prev.ambientSounds.spatializedAmbient : true
-                  }
-                }))}
+                onValueChange={([value]) => setSpatialConfig(prev => {
+                  const newConfig = { ...prev };
+                  newConfig.ambientSounds = { 
+                    enabled: prev.ambientSounds?.enabled ?? true,
+                    volume: value ?? 20,
+                    soundscape: prev.ambientSounds?.soundscape ?? 'meeting_room',
+                    spatializedAmbient: prev.ambientSounds?.spatializedAmbient ?? true
+                  };
+                  return newConfig;
+                })}
                 max={100}
                 step={5}
                 className="w-full"

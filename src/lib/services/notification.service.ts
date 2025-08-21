@@ -7,6 +7,17 @@ import type {
   InviteUserRequest,
   VaultBroadcast 
 } from '@/types'
+import type {
+  NotificationPayload,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationDelivery,
+  NotificationDeliveryStatus,
+  NotificationCategory,
+  ActivityMetadata,
+  EmailDeliveryConfig,
+  RetryPolicy
+} from '@/types/entities/activity.types'
 
 interface EmailTemplate {
   subject: string
@@ -20,7 +31,7 @@ interface NotificationData {
   message?: string
   userId?: string
   email?: string
-  metadata?: Record<string, any>
+  metadata?: ActivityMetadata
 }
 
 export class NotificationService extends BaseService {
@@ -245,7 +256,7 @@ export class NotificationService extends BaseService {
           type: data.type,
           title: data.title,
           message: data.message,
-          metadata: data.metadata,
+          metadata: data.metadata as Record<string, any>,
           created_at: new Date().toISOString(),
           read_at: null,
         })
@@ -323,7 +334,15 @@ export class NotificationService extends BaseService {
   }
 
   // Template creation methods
-  private createInvitationTemplate(data: any): EmailTemplate {
+  private createInvitationTemplate(data: {
+    type: string
+    email: string
+    organizationName: string
+    inviterName: string
+    role: string
+    invitationUrl: string
+    personalMessage?: string
+  }): EmailTemplate {
     const subject = `You've been invited to join ${data.organizationName}`
     
     return {
@@ -333,7 +352,14 @@ export class NotificationService extends BaseService {
     }
   }
 
-  private createVaultInvitationTemplate(data: any): EmailTemplate {
+  private createVaultInvitationTemplate(data: {
+    email: string
+    vaultName: string
+    organizationName: string
+    inviterName: string
+    invitationUrl: string
+    message?: string
+  }): EmailTemplate {
     const subject = `New vault shared: ${data.vaultName}`
     
     return {
@@ -343,7 +369,12 @@ export class NotificationService extends BaseService {
     }
   }
 
-  private createWelcomeTemplate(data: any): EmailTemplate {
+  private createWelcomeTemplate(data: {
+    email: string
+    fullName: string
+    tempPassword: string
+    loginUrl: string
+  }): EmailTemplate {
     return {
       subject: 'Welcome to BoardGuru',
       html: this.generateWelcomeHTML(data),
@@ -351,7 +382,10 @@ export class NotificationService extends BaseService {
     }
   }
 
-  private createPasswordResetTemplate(data: any): EmailTemplate {
+  private createPasswordResetTemplate(data: {
+    email: string
+    resetUrl: string
+  }): EmailTemplate {
     return {
       subject: 'Reset your BoardGuru password',
       html: this.generatePasswordResetHTML(data),
@@ -359,7 +393,13 @@ export class NotificationService extends BaseService {
     }
   }
 
-  private createRegistrationNotificationTemplate(data: any): EmailTemplate {
+  private createRegistrationNotificationTemplate(data: {
+    userEmail: string
+    fullName: string
+    company?: string
+    message?: string
+    adminUrl: string
+  }): EmailTemplate {
     return {
       subject: 'New user registration requires approval',
       html: this.generateRegistrationNotificationHTML(data),
@@ -367,7 +407,11 @@ export class NotificationService extends BaseService {
     }
   }
 
-  private createAssetShareTemplate(data: any): EmailTemplate {
+  private createAssetShareTemplate(data: {
+    assetTitle: string
+    sharedBy: string
+    message?: string
+  }): EmailTemplate {
     return {
       subject: `New document shared: ${data.assetTitle}`,
       html: this.generateAssetShareHTML(data),
@@ -375,7 +419,10 @@ export class NotificationService extends BaseService {
     }
   }
 
-  private createGenericNotificationTemplate(data: any): EmailTemplate {
+  private createGenericNotificationTemplate(data: {
+    title: string
+    message: string
+  }): EmailTemplate {
     return {
       subject: data.title,
       html: this.generateGenericNotificationHTML(data),
@@ -384,7 +431,14 @@ export class NotificationService extends BaseService {
   }
 
   // HTML template generators (simplified versions)
-  private generateInvitationHTML(data: any): string {
+  private generateInvitationHTML(data: {
+    type: string
+    organizationName: string
+    inviterName: string
+    role: string
+    invitationUrl: string
+    personalMessage?: string
+  }): string {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>You're invited to join ${data.organizationName}</h2>
@@ -401,7 +455,13 @@ export class NotificationService extends BaseService {
     `
   }
 
-  private generateInvitationText(data: any): string {
+  private generateInvitationText(data: {
+    organizationName: string
+    inviterName: string
+    role: string
+    invitationUrl: string
+    personalMessage?: string
+  }): string {
     return `
 You're invited to join ${data.organizationName}
 
@@ -420,51 +480,51 @@ ${emailConfig.templates.footerText}
   }
 
   // Additional template generators would follow similar patterns...
-  private generateVaultInvitationHTML(data: any): string {
+  private generateVaultInvitationHTML(data: { vaultName: string }): string {
     return `<div>Vault invitation HTML template for ${data.vaultName}</div>`
   }
 
-  private generateVaultInvitationText(data: any): string {
+  private generateVaultInvitationText(data: { vaultName: string }): string {
     return `Vault invitation text template for ${data.vaultName}`
   }
 
-  private generateWelcomeHTML(data: any): string {
+  private generateWelcomeHTML(data: { fullName: string }): string {
     return `<div>Welcome HTML template for ${data.fullName}</div>`
   }
 
-  private generateWelcomeText(data: any): string {
+  private generateWelcomeText(data: { fullName: string }): string {
     return `Welcome text template for ${data.fullName}`
   }
 
-  private generatePasswordResetHTML(data: any): string {
+  private generatePasswordResetHTML(data: Record<string, unknown>): string {
     return `<div>Password reset HTML template</div>`
   }
 
-  private generatePasswordResetText(data: any): string {
+  private generatePasswordResetText(data: Record<string, unknown>): string {
     return `Password reset text template`
   }
 
-  private generateRegistrationNotificationHTML(data: any): string {
+  private generateRegistrationNotificationHTML(data: { fullName: string }): string {
     return `<div>Registration notification HTML template for ${data.fullName}</div>`
   }
 
-  private generateRegistrationNotificationText(data: any): string {
+  private generateRegistrationNotificationText(data: { fullName: string }): string {
     return `Registration notification text template for ${data.fullName}`
   }
 
-  private generateAssetShareHTML(data: any): string {
+  private generateAssetShareHTML(data: { assetTitle: string }): string {
     return `<div>Asset share HTML template for ${data.assetTitle}</div>`
   }
 
-  private generateAssetShareText(data: any): string {
+  private generateAssetShareText(data: { assetTitle: string }): string {
     return `Asset share text template for ${data.assetTitle}`
   }
 
-  private generateGenericNotificationHTML(data: any): string {
+  private generateGenericNotificationHTML(data: { title: string }): string {
     return `<div>Generic notification HTML template: ${data.title}</div>`
   }
 
-  private generateGenericNotificationText(data: any): string {
+  private generateGenericNotificationText(data: { title: string }): string {
     return `Generic notification text template: ${data.title}`
   }
 
@@ -481,7 +541,7 @@ ${emailConfig.templates.footerText}
     title: string
     regulationType: string
     dueDate: string
-    priority: 'low' | 'medium' | 'high' | 'critical'
+    priority: NotificationPriority
     actionUrl?: string
     requiresAcknowledgment?: boolean
     calendarEntryId?: string
@@ -690,19 +750,19 @@ ${emailConfig.templates.footerText}
    * Send bulk notifications to multiple users
    */
   async sendBulkComplianceNotifications(
-    userIds: string[],
+    userIds: readonly string[],
     notificationData: {
-      organizationId: string
-      type: 'deadline_reminder' | 'workflow_assignment' | 'escalation' | 'completion'
-      title: string
-      message: string
-      priority: 'low' | 'medium' | 'high' | 'critical'
-      actionUrl?: string
-      resourceType?: string
-      resourceId?: string
-      requiresAcknowledgment?: boolean
+      readonly organizationId: string
+      readonly type: 'deadline_reminder' | 'workflow_assignment' | 'escalation' | 'completion'
+      readonly title: string
+      readonly message: string
+      readonly priority: NotificationPriority
+      readonly actionUrl?: string
+      readonly resourceType?: string
+      readonly resourceId?: string
+      readonly requiresAcknowledgment?: boolean
     }
-  ): Promise<{ successful: number; failed: number }> {
+  ): Promise<{ readonly successful: number; readonly failed: number }> {
     let successful = 0
     let failed = 0
 
@@ -839,10 +899,10 @@ This is an automated compliance notification from BoardGuru.
    * Get compliance notification statistics for dashboard
    */
   async getComplianceNotificationStats(organizationId: string): Promise<{
-    total: number
-    unread: number
-    byType: Record<string, number>
-    byPriority: Record<string, number>
+    readonly total: number
+    readonly unread: number
+    readonly byType: Record<string, number>
+    readonly byPriority: Record<string, number>
   }> {
     try {
       const { data: notifications } = await this.supabase

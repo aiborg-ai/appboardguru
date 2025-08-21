@@ -134,6 +134,7 @@ export function FileUploadDropzone({
     
     for (let i = 0; i < Math.min(fileList.length, maxFiles - files.length); i++) {
       const file = fileList instanceof FileList ? fileList[i] : fileList[i]
+      if (!file) continue
       const validationError = validateFile(file)
       
       const preview = await createFilePreview(file)

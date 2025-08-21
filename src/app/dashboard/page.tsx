@@ -1,5 +1,7 @@
 'use client'
 
+import { useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { EnhancedAIChat } from '@/features/ai-chat/ai/EnhancedAIChat'
 import BoardChatButton from '@/components/boardchat/BoardChatButton'
@@ -26,23 +28,33 @@ import {
 } from 'lucide-react'
 
 export default function DashboardPage() {
-  const getCurrentDate = () => {
+  const router = useRouter()
+
+  const getCurrentDate = useCallback(() => {
     const now = new Date()
     return now.toLocaleDateString('en-US', { 
       weekday: 'short', 
       month: 'short', 
       day: 'numeric' 
     })
-  }
+  }, [])
 
-  const getCurrentTime = () => {
+  const getCurrentTime = useCallback(() => {
     const now = new Date()
     return now.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: true 
     })
-  }
+  }, [])
+
+  const handleNavigateToAssets = useCallback(() => {
+    router.push('/dashboard/assets')
+  }, [router])
+
+  const handleNavigateToAIChat = useCallback(() => {
+    router.push('/dashboard/ai-chat')
+  }, [router])
 
   return (
     <DashboardLayout>
@@ -153,7 +165,7 @@ export default function DashboardPage() {
                 </button>
 
                 <button 
-                  onClick={() => window.location.href = '/dashboard/assets'}
+                  onClick={handleNavigateToAssets}
                   className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <FolderIcon className="h-6 w-6 text-green-600" />
@@ -165,7 +177,7 @@ export default function DashboardPage() {
                 </button>
 
                 <button 
-                  onClick={() => window.location.href = '/dashboard/ai-chat'}
+                  onClick={handleNavigateToAIChat}
                   className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                 >
                   <Brain className="h-6 w-6 text-purple-600" />

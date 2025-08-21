@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import {
+import { 
+  SupabaseClient,
   VoiceSchedulingRequest,
   VoiceSchedulingResponse,
   SchedulingIntent,
   SchedulingAction,
   Suggestion,
   Clarification,
-  MeetingDetails,
-  AlternativeOption
-} from '@/types/voice-scheduling';
+  SchedulingEntity
+} from '@/types/voice';
 
 // POST - Process voice scheduling command
 export async function POST(request: NextRequest) {
@@ -60,12 +60,12 @@ export async function POST(request: NextRequest) {
 }
 
 async function processVoiceSchedulingCommand(
-  supabase: any,
+  supabase: SupabaseClient,
   command: string,
   audioData?: string,
-  context?: any,
-  preferences?: any,
-  constraints?: any
+  context?: Record<string, unknown>,
+  preferences?: Record<string, unknown>,
+  constraints?: Record<string, unknown>
 ): Promise<VoiceSchedulingResponse> {
   
   // Simulate intent recognition using simple keyword matching
@@ -209,7 +209,7 @@ function calculateConfidence(command: string, intent: SchedulingIntent): number 
   return Math.min(confidence, 1.0);
 }
 
-function extractEntities(command: string, intent: SchedulingIntent): any[] {
+function extractEntities(command: string, intent: SchedulingIntent): SchedulingEntity[] {
   const entities = [];
   const lowercaseCommand = command.toLowerCase();
 
@@ -278,7 +278,7 @@ function extractEntities(command: string, intent: SchedulingIntent): any[] {
   return entities;
 }
 
-function generateActions(intent: SchedulingIntent, entities: any[], context: any): SchedulingAction[] {
+function generateActions(intent: SchedulingIntent, entities: SchedulingEntity[], context: Record<string, unknown>): SchedulingAction[] {
   const actions: SchedulingAction[] = [];
 
   switch (intent) {
@@ -404,7 +404,7 @@ function generateActions(intent: SchedulingIntent, entities: any[], context: any
   return actions;
 }
 
-function generateSuggestions(intent: SchedulingIntent, entities: any[], context: any): Suggestion[] {
+function generateSuggestions(intent: SchedulingIntent, entities: SchedulingEntity[], context: Record<string, unknown>): Suggestion[] {
   const suggestions: Suggestion[] = [];
 
   switch (intent) {
@@ -471,7 +471,7 @@ function generateSuggestions(intent: SchedulingIntent, entities: any[], context:
   return suggestions;
 }
 
-function generateClarifications(intent: SchedulingIntent, entities: any[]): Clarification[] {
+function generateClarifications(intent: SchedulingIntent, entities: SchedulingEntity[]): Clarification[] {
   const clarifications: Clarification[] = [];
   
   // Check for missing required information
@@ -536,7 +536,7 @@ function generateClarifications(intent: SchedulingIntent, entities: any[]): Clar
 
 function generateResponse(
   intent: SchedulingIntent,
-  entities: any[],
+  entities: SchedulingEntity[],
   actions: SchedulingAction[],
   suggestions: Suggestion[]
 ): string {
@@ -582,7 +582,7 @@ function generateResponse(
 }
 
 // Helper functions to extract specific entities
-function extractMeetingTitle(entities: any[]): string {
+function extractMeetingTitle(entities: SchedulingEntity[]): string {
   const meetingType = entities.find(e => e.type === 'meeting_type');
   if (meetingType) {
     return `${meetingType.value.charAt(0).toUpperCase() + meetingType.value.slice(1)} Meeting`;
@@ -590,15 +590,15 @@ function extractMeetingTitle(entities: any[]): string {
   return 'Team Meeting';
 }
 
-function extractParticipants(entities: any[]): string[] {
+function extractParticipants(entities: SchedulingEntity[]): string[] {
   const participantEntity = entities.find(e => e.type === 'participants');
   if (participantEntity) {
-    return participantEntity.value.split(/[,&]/).map((p: string) => p.trim());
+    return participantEntity.value.split(/[,&]/).map(p => p.trim());
   }
   return [];
 }
 
-function extractDateTime(entities: any[]): string {
+function extractDateTime(entities: SchedulingEntity[]): string {
   const timeEntity = entities.find(e => ['time', 'relative_date', 'day_of_week'].includes(e.type));
   if (timeEntity) {
     // Simple date parsing - in production would use a proper date parser
@@ -615,7 +615,7 @@ function extractDateTime(entities: any[]): string {
   return defaultDate.toISOString();
 }
 
-function extractDuration(entities: any[]): number | null {
+function extractDuration(entities: SchedulingEntity[]): number | null {
   const durationEntity = entities.find(e => e.type === 'duration');
   if (durationEntity) {
     const match = durationEntity.value.match(/\d+/);
@@ -631,17 +631,17 @@ function extractDuration(entities: any[]): number | null {
   return null;
 }
 
-function extractLocation(entities: any[]): string | null {
+function extractLocation(entities: SchedulingEntity[]): string | null {
   const locationEntity = entities.find(e => e.type === 'location');
   return locationEntity ? locationEntity.value : null;
 }
 
-function extractTimeFrame(entities: any[]): string {
+function extractTimeFrame(entities: SchedulingEntity[]): string {
   const timeEntity = entities.find(e => e.type === 'relative_period');
   return timeEntity ? timeEntity.value : 'this_week';
 }
 
-function extractMeetingReference(entities: any[]): string {
+function extractMeetingReference(entities: SchedulingEntity[]): string {
   const meetingType = entities.find(e => e.type === 'meeting_type');
   const time = entities.find(e => ['relative_date', 'day_of_week'].includes(e.type));
   
@@ -651,7 +651,7 @@ function extractMeetingReference(entities: any[]): string {
   return 'next_meeting';
 }
 
-function extractConstraints(entities: any[]): any[] {
+function extractConstraints(entities: SchedulingEntity[]): Record<string, unknown>[] {
   // Extract scheduling constraints from entities
   return [];
 }

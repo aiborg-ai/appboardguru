@@ -1,0 +1,389 @@
+{
+  "lastRun": "2025-08-21T18:20:25.743Z",
+  "totalRuns": 10,
+  "consecutivePasses": 2,
+  "consecutiveFails": 0,
+  "testHistory": [
+    {
+      "timestamp": "2025-08-21T18:20:25.743Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:19:55.716Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:19:25.686Z",
+      "passed": false,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": false,
+          "details": "Missing artifacts: 0/2 present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:18:55.668Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:18:34.490Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:18:25.623Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:14:21.395Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^3.4.17",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T18:03:35.604Z",
+      "passed": true,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^4.1.12",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T17:58:01.950Z",
+      "passed": false,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "passed": "^4.1.12",
+          "details": "All critical scripts and dependencies present"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": false,
+          "details": ".next directory not found - run npm run build or npm run dev"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-08-21T17:57:26.664Z",
+      "passed": false,
+      "buildHealthy": false,
+      "results": [
+        {
+          "test": "Critical File Structure",
+          "passed": true,
+          "details": "All 5 critical files present"
+        },
+        {
+          "test": "Package.json Integrity",
+          "details": "Missing: Tailwind CSS"
+        },
+        {
+          "test": "Tailwind Configuration",
+          "passed": true,
+          "details": "Tailwind config appears valid"
+        },
+        {
+          "test": "Build Directory",
+          "passed": true,
+          "details": "Build artifacts present"
+        },
+        {
+          "test": "TypeScript Setup",
+          "passed": true,
+          "details": "TypeScript configuration looks good"
+        },
+        {
+          "test": "CSS Configuration",
+          "passed": true,
+          "details": "CSS file has proper Tailwind directives"
+        }
+      ]
+    }
+  ],
+  "knownIssues": [],
+  "buildHealth": {
+    "lastCleanBuild": null,
+    "buildFailures": 10,
+    "cssWorking": true,
+    "serverRunning": false
+  },
+  "changeImpact": {
+    "lastChange": null,
+    "changesWithoutTesting": 0,
+    "criticalFailures": []
+  }
+}

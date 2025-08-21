@@ -6,13 +6,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { 
+  SupabaseClient,
   VoiceWorkflowTrigger,
   WorkflowTriggerCondition,
   WorkflowAction,
   TriggerWorkflowRequest,
   WorkflowTriggerResponse,
-  WorkflowUsageStats
-} from '@/types/voice-collaboration';
+  WorkflowUsageStats,
+  WorkflowExecution,
+  WorkflowCreateRequest,
+  WorkflowUpdateRequest,
+  WorkflowDeleteRequest,
+  WorkflowListRequest,
+  WorkflowGetRequest,
+  ActionExecuteRequest,
+  ExecutionHistoryRequest,
+  ExecutionConfirmRequest,
+  ExecutionCancelRequest,
+  ActionResult
+} from '@/types/voice';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -21,8 +33,8 @@ const supabase = createClient(
 );
 
 // In-memory workflow execution cache
-const activeWorkflows = new Map<string, any>();
-const executionHistory = new Map<string, any[]>();
+const activeWorkflows = new Map<string, WorkflowExecution>();
+const executionHistory = new Map<string, WorkflowExecution[]>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -198,7 +210,7 @@ async function triggerWorkflow(params: TriggerWorkflowRequest): Promise<NextResp
   }
 }
 
-async function createWorkflow(params: any): Promise<NextResponse> {
+async function createWorkflow(params: WorkflowCreateRequest): Promise<NextResponse> {
   try {
     const {
       name,
@@ -293,7 +305,7 @@ async function createWorkflow(params: any): Promise<NextResponse> {
   }
 }
 
-async function updateWorkflow(params: any): Promise<NextResponse> {
+async function updateWorkflow(params: WorkflowUpdateRequest): Promise<NextResponse> {
   try {
     const { workflowId, updates } = params;
     const userId = params.userId || 'default-user';
@@ -335,7 +347,7 @@ async function updateWorkflow(params: any): Promise<NextResponse> {
   }
 }
 
-async function deleteWorkflow(params: any): Promise<NextResponse> {
+async function deleteWorkflow(params: WorkflowDeleteRequest): Promise<NextResponse> {
   try {
     const { workflowId } = params;
     const userId = params.userId || 'default-user';
@@ -379,7 +391,7 @@ async function deleteWorkflow(params: any): Promise<NextResponse> {
   }
 }
 
-async function getWorkflows(params: any): Promise<NextResponse> {
+async function getWorkflows(params: WorkflowListRequest): Promise<NextResponse> {
   try {
     const { organizationId, enabled, limit = 50, offset = 0 } = params;
     const userId = params.userId || 'default-user';
@@ -402,7 +414,7 @@ async function getWorkflows(params: any): Promise<NextResponse> {
     }
 
     // Filter workflows user has permission to view
-    const viewableWorkflows = (workflows || []).filter((workflow: any) =>
+    const viewableWorkflows = (workflows || []).filter((workflow: VoiceWorkflowTrigger) =>
       workflow.permissions.canView.includes(userId) || 
       workflow.created_by === userId
     );
@@ -422,7 +434,7 @@ async function getWorkflows(params: any): Promise<NextResponse> {
   }
 }
 
-async function getWorkflow(params: any): Promise<NextResponse> {
+async function getWorkflow(params: WorkflowGetRequest): Promise<NextResponse> {
   try {
     const { workflowId } = params;
     const userId = params.userId || 'default-user';
@@ -466,7 +478,7 @@ async function getWorkflow(params: any): Promise<NextResponse> {
   }
 }
 
-async function executeAction(params: any): Promise<NextResponse> {
+async function executeAction(params: ActionExecuteRequest): Promise<NextResponse> {
   try {
     const { executionId, actionIndex } = params;
 
@@ -502,7 +514,7 @@ async function executeAction(params: any): Promise<NextResponse> {
   }
 }
 
-async function getExecutionHistory(params: any): Promise<NextResponse> {
+async function getExecutionHistory(params: ExecutionHistoryRequest): Promise<NextResponse> {
   try {
     const { organizationId, userId, limit = 50, offset = 0 } = params;
 
@@ -541,7 +553,7 @@ async function getExecutionHistory(params: any): Promise<NextResponse> {
   }
 }
 
-async function confirmWorkflowExecution(params: any): Promise<NextResponse> {
+async function confirmWorkflowExecution(params: ExecutionConfirmRequest): Promise<NextResponse> {
   try {
     const { executionId } = params;
     const userId = params.userId || 'default-user';
@@ -589,7 +601,7 @@ async function confirmWorkflowExecution(params: any): Promise<NextResponse> {
   }
 }
 
-async function cancelWorkflowExecution(params: any): Promise<NextResponse> {
+async function cancelWorkflowExecution(params: ExecutionCancelRequest): Promise<NextResponse> {
   try {
     const { executionId } = params;
     const userId = params.userId || 'default-user';
@@ -735,7 +747,7 @@ function levenshteinDistance(str1: string, str2: string): number {
   return matrix[str2.length]?.[str1.length] ?? 0;
 }
 
-function hasPermissionToTrigger(userId: string, permissions: any): boolean {
+function hasPermissionToTrigger(userId: string, permissions: { canTrigger: string[] }): boolean {
   return permissions.canTrigger.includes(userId) || 
          permissions.canTrigger.includes('*'); // Allow all
 }
@@ -789,7 +801,7 @@ async function updateWorkflowUsage(workflowId: string): Promise<void> {
 async function executeWorkflowActions(
   executionId: string,
   actions: WorkflowAction[],
-  parameters: Record<string, any>
+  parameters: Record<string, unknown>
 ): Promise<void> {
   const execution = activeWorkflows.get(executionId);
   if (!execution) return;
@@ -874,7 +886,7 @@ async function executeWorkflowActions(
   }
 }
 
-async function executeWorkflowAction(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeWorkflowAction(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   console.log('Executing workflow action:', action.type, action.target);
   
   try {
@@ -908,7 +920,7 @@ async function executeWorkflowAction(action: WorkflowAction, parameters: Record<
   }
 }
 
-async function executeApprovalAction(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeApprovalAction(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   // Trigger approval workflow
   const { target, parameters: actionParams } = action;
   
@@ -918,7 +930,7 @@ async function executeApprovalAction(action: WorkflowAction, parameters: Record<
   return { success: true, message: 'Approval triggered', target };
 }
 
-async function executeNotificationAction(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeNotificationAction(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   // Send notification
   const { target, parameters: actionParams } = action;
   
@@ -928,7 +940,7 @@ async function executeNotificationAction(action: WorkflowAction, parameters: Rec
   return { success: true, message: 'Notification sent', target };
 }
 
-async function executeDocumentAction(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeDocumentAction(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   // Perform document action
   const { target, parameters: actionParams } = action;
   
@@ -937,7 +949,7 @@ async function executeDocumentAction(action: WorkflowAction, parameters: Record<
   return { success: true, message: 'Document action executed', target };
 }
 
-async function executeMeetingAction(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeMeetingAction(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   // Perform meeting action
   const { target, parameters: actionParams } = action;
   
@@ -946,7 +958,7 @@ async function executeMeetingAction(action: WorkflowAction, parameters: Record<s
   return { success: true, message: 'Meeting action executed', target };
 }
 
-async function executeApiCall(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeApiCall(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   // Make API call
   const { target, parameters: actionParams } = action;
   
@@ -975,7 +987,7 @@ async function executeApiCall(action: WorkflowAction, parameters: Record<string,
   }
 }
 
-async function executeNavigationAction(action: WorkflowAction, parameters: Record<string, any>): Promise<any> {
+async function executeNavigationAction(action: WorkflowAction, parameters: Record<string, unknown>): Promise<ActionResult> {
   // Trigger navigation (this would be handled client-side)
   const { target, parameters: actionParams } = action;
   
@@ -989,7 +1001,7 @@ async function executeNavigationAction(action: WorkflowAction, parameters: Recor
   };
 }
 
-function evaluateCondition(condition: any, parameters: Record<string, any>): boolean {
+function evaluateCondition(condition: { field: string; operator: string; value: unknown }, parameters: Record<string, unknown>): boolean {
   const { field, operator, value } = condition;
   const fieldValue = parameters[field];
   
