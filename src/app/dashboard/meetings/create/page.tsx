@@ -50,13 +50,12 @@ export default function CreateMeetingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <CreateMeetingWizard
-        isOpen={true}
-        onClose={handleClose}
-        onComplete={handleCreateMeeting}
-        organizationId={currentOrganization.id}
-      />
-    </div>
+    <CreateMeetingWizard
+      isOpen={true}
+      onClose={handleClose}
+      onComplete={handleCreateMeeting}
+      organizationId={currentOrganization.id}
+      isFullPage={true}
+    />
   );
 }

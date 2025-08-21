@@ -24,8 +24,8 @@ import {
   XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import CreateMeetingWizard, { type MeetingWizardData } from '@/features/meetings/CreateMeetingWizard';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useRouter } from 'next/navigation';
 
 // Mock meeting data
 const MOCK_MEETINGS = [
@@ -124,13 +124,13 @@ const MEETING_STATUS_CONFIG = {
 };
 
 export default function MeetingsPage() {
-  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const { currentOrganization } = useOrganization();
+  const router = useRouter();
 
   const filteredMeetings = MOCK_MEETINGS.filter(meeting => {
     const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,19 +141,8 @@ export default function MeetingsPage() {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const handleCreateMeeting = async (data: MeetingWizardData) => {
-    try {
-      console.log('Creating meeting with data:', data);
-      // TODO: Implement actual API call to create meeting
-      // await meetingService.createMeeting(data);
-      
-      // Close wizard and refresh meetings list
-      setIsCreateWizardOpen(false);
-      // TODO: Refresh meetings list from API
-    } catch (error) {
-      console.error('Failed to create meeting:', error);
-      throw error;
-    }
+  const handleCreateMeeting = () => {
+    router.push('/dashboard/meetings/create');
   };
 
   const formatDateTime = (dateString: string) => {
@@ -195,7 +184,7 @@ export default function MeetingsPage() {
           </p>
         </div>
         <Button
-          onClick={() => setIsCreateWizardOpen(true)}
+          onClick={handleCreateMeeting}
           className="flex items-center space-x-2"
         >
           <Plus className="h-4 w-4" />
@@ -430,7 +419,7 @@ export default function MeetingsPage() {
                 }
               </p>
               {(!searchTerm && filterStatus === 'all' && filterType === 'all') && (
-                <Button onClick={() => setIsCreateWizardOpen(true)}>
+                <Button onClick={handleCreateMeeting}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Meeting
                 </Button>
@@ -440,13 +429,6 @@ export default function MeetingsPage() {
         )}
       </div>
 
-      {/* Create Meeting Wizard */}
-      <CreateMeetingWizard
-        isOpen={isCreateWizardOpen}
-        onClose={() => setIsCreateWizardOpen(false)}
-        onComplete={handleCreateMeeting}
-        organizationId={currentOrganization?.id || ''}
-      />
     </div>
   );
 }

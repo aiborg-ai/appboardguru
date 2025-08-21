@@ -118,19 +118,21 @@ export interface MeetingWizardData {
 }
 
 interface CreateMeetingWizardProps {
-  isOpen: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   onComplete: (data: MeetingWizardData) => Promise<void>;
   organizationId: string;
   className?: string;
+  isFullPage?: boolean;
 }
 
 export default function CreateMeetingWizard({ 
-  isOpen, 
+  isOpen = true, 
   onClose, 
   onComplete,
   organizationId,
-  className 
+  className,
+  isFullPage = false
 }: CreateMeetingWizardProps) {
   const [currentStep, setCurrentStep] = useState<MeetingWizardStep>('type');
   const [wizardData, setWizardData] = useState<MeetingWizardData>({
@@ -217,29 +219,53 @@ export default function CreateMeetingWizard({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className={cn(
+      isFullPage 
+        ? "min-h-screen bg-gray-50" 
+        : "fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+    )}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: isFullPage ? 1 : 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        exit={{ opacity: 0, scale: isFullPage ? 1 : 0.95 }}
         className={cn(
-          "bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden",
+          isFullPage 
+            ? "w-full max-w-6xl mx-auto p-6" 
+            : "bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden",
           className
         )}
       >
-        {/* Header */}
-        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+        {isFullPage && (
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Create New Meeting</h1>
+            <p className="text-gray-600 mt-2">Set up your board meeting, AGM, or committee session with our step-by-step wizard.</p>
+          </div>
+        )}
+        
+        <div className={cn(
+          isFullPage ? "bg-white rounded-xl shadow-lg overflow-hidden" : "",
+          "flex flex-col h-full"
+        )}>
+          {/* Header */}
+          <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Create New Meeting
-            </h2>
+            {!isFullPage && (
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Create New Meeting
+              </h2>
+            )}
+            {isFullPage && (
+              <h2 className="text-xl font-semibold text-gray-900">
+                Meeting Setup Wizard
+              </h2>
+            )}
             <Button 
               variant="ghost" 
               size="sm"
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
             >
-              ✕
+              {isFullPage ? '← Back to Meetings' : '✕'}
             </Button>
           </div>
           
@@ -330,8 +356,8 @@ export default function CreateMeetingWizard({
           </AnimatePresence>
         </div>
 
-        {/* Footer */}
-        <div className="border-t bg-gray-50 px-6 py-4">
+          {/* Footer */}
+          <div className="border-t bg-gray-50 px-6 py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
@@ -368,6 +394,7 @@ export default function CreateMeetingWizard({
                 </Button>
               )}
             </div>
+          </div>
           </div>
         </div>
       </motion.div>
