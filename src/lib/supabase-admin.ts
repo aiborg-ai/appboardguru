@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { env } from '@/config/environment'
+import { env, getAppUrl } from '@/config/environment'
 
 if (!env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations')
@@ -184,25 +184,42 @@ export async function createUserForApprovedRegistration(email: string, fullName:
  */
 export async function generatePasswordSetupMagicLink(email: string) {
   try {
+    const appUrl = getAppUrl()
+    const redirectUrl = `${appUrl}/auth/set-password`
+    
+    console.log(`🔗 Generating magic link for ${email} with redirect: ${redirectUrl}`)
+    
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/set-password`
+        redirectTo: redirectUrl
       }
     })
 
     if (error) {
-      console.error('Error generating magic link:', error)
+      console.error('❌ Supabase magic link generation error:', error)
       throw error
     }
 
+    if (!data?.properties?.action_link) {
+      console.error('❌ Magic link generation returned no action_link')
+      throw new Error('Magic link generation failed - no action_link returned')
+    }
+
+    const magicLink = data.properties.action_link
     console.log(`✅ Generated magic link for ${email}`)
-    return { magicLink: data.properties?.action_link, success: true }
+    console.log(`🔗 Magic link URL: ${magicLink.substring(0, 100)}...`)
+    
+    return { magicLink, success: true }
 
   } catch (error) {
-    console.error('Failed to generate magic link:', error)
-    return { magicLink: null, success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    console.error('❌ Failed to generate magic link:', error)
+    return { 
+      magicLink: null, 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }
   }
 }
 

@@ -127,16 +127,26 @@ async function handleApprovalRequest(request: NextRequest) {
       }
 
       // Generate magic link for password setup (fallback option)
+      console.log(`🔗 Attempting magic link generation for ${registrationRequest.email}`)
       const { magicLink: generatedMagicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(
         registrationRequest.email
       )
 
       if (linkSuccess && generatedMagicLink) {
         magicLink = generatedMagicLink
-        debugLogger.magicLinkGenerate(registrationRequest.email, true, { hasLink: true })
+        debugLogger.magicLinkGenerate(registrationRequest.email, true, { 
+          hasLink: true,
+          linkLength: generatedMagicLink.length,
+          linkPreview: generatedMagicLink.substring(0, 100) + '...'
+        })
+        console.log(`✅ Magic link successfully generated for ${registrationRequest.email}`)
       } else {
-        debugLogger.magicLinkGenerate(registrationRequest.email, false, { error: linkError })
-        console.error('Failed to generate magic link:', linkError)
+        debugLogger.magicLinkGenerate(registrationRequest.email, false, { 
+          error: linkError,
+          hasOtp: !!otpCode
+        })
+        console.error('❌ Failed to generate magic link:', linkError)
+        console.log(`📱 OTP available as fallback: ${!!otpCode}`)
         // Continue - if we have OTP, that's the primary method now
       }
       
@@ -281,6 +291,9 @@ async function handleApprovalRequest(request: NextRequest) {
     }
 
     // Redirect to beautiful success page
+    console.log(`✅ Approval process completed for ${registrationRequest.email}`)
+    console.log(`📧 Approval email sent: ${!!magicLink || !!otpCode}`)
+    
     const successUrl = `${getAppUrl()}/approval-result?type=success&title=Registration Approved&message=${encodeURIComponent(`${registrationRequest.full_name} has been successfully approved for access to BoardGuru`)}&details=An approval email with login instructions has been sent&name=${encodeURIComponent(registrationRequest.full_name)}&email=${encodeURIComponent(registrationRequest.email)}&company=${encodeURIComponent(registrationRequest.company)}&position=${encodeURIComponent(registrationRequest.position)}`
     
     const response = NextResponse.redirect(successUrl, 302)

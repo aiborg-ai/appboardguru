@@ -16,34 +16,34 @@ export function useDropdownOptions(category: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchOptions = async () => {
-      setLoading(true)
-      setError(null)
+  const fetchOptions = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/cms/dropdown-options?category=${category}`)
+      const result = await response.json()
       
-      try {
-        const response = await fetch(`/api/cms/dropdown-options?category=${category}`)
-        const result = await response.json()
-        
-        if (response.ok) {
-          setOptions(result.data || [])
-        } else {
-          setError(result.error || 'Failed to fetch options')
-        }
-      } catch (err) {
-        console.error('Error fetching dropdown options:', err)
-        setError('Failed to fetch options')
-        // Fallback to static options for critical categories
-        setOptions(getStaticOptions(category))
-      } finally {
-        setLoading(false)
+      if (response.ok) {
+        setOptions(result.data || [])
+      } else {
+        setError(result.error || 'Failed to fetch options')
       }
+    } catch (err) {
+      console.error('Error fetching dropdown options:', err)
+      setError('Failed to fetch options')
+      // Fallback to static options for critical categories
+      setOptions(getStaticOptions(category))
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchOptions()
   }, [category])
 
-  return { options, loading, error, refetch: () => fetchOptions() }
+  return { options, loading, error, refetch: fetchOptions }
 }
 
 // Static fallback options

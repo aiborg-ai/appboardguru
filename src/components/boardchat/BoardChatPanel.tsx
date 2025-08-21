@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import {
   Dialog,
   DialogContent,
@@ -209,8 +210,16 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-8"
+            className="pl-10 pr-10 h-8"
           />
+          <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
+            <VoiceInputButton
+              onTranscription={(text) => setSearchQuery(prev => prev + (prev ? ' ' : '') + text)}
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+            />
+          </div>
         </div>
       </CardHeader>
 
@@ -355,10 +364,17 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className="pr-20"
+                      className="pr-28"
                       disabled={isSendingMessage}
                     />
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                      <VoiceInputButton
+                        onTranscription={(text) => setNewMessage(prev => prev + (prev ? ' ' : '') + text)}
+                        disabled={isSendingMessage}
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                      />
                       <Button variant="ghost" size="sm">
                         <Smile className="h-4 w-4" />
                       </Button>

@@ -2,22 +2,22 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonProps } from '@/components/ui/button';
 import { useToast } from '@/features/shared/ui/use-toast';
 import { cn } from '@/lib/utils';
 
 interface VoiceInputButtonProps {
   onTranscription: (text: string) => void;
   disabled?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'outline' | 'ghost' | 'destructive';
+  size?: ButtonProps['size'];
+  variant?: ButtonProps['variant'];
   className?: string;
 }
 
 export function VoiceInputButton({
   onTranscription,
   disabled = false,
-  size = 'md',
+  size = 'default',
   variant = 'outline',
   className,
 }: VoiceInputButtonProps) {
