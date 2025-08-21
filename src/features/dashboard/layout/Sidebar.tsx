@@ -25,7 +25,8 @@ import {
   Zap,
   Folder as FolderIcon,
   Building2,
-  Plus
+  Plus,
+  Package
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -43,6 +44,43 @@ const menuItems: MenuItem[] = [
     label: 'Home',
     icon: Home,
     href: '/dashboard'
+  },
+  {
+    id: 'organizations',
+    label: 'Organizations',
+    icon: Building2,
+    children: [
+      {
+        id: 'view-organizations',
+        label: 'My Organizations',
+        icon: Building2,
+        href: '/dashboard/organizations'
+      },
+      {
+        id: 'create-organization',
+        label: 'Create Organization',
+        icon: Plus,
+        href: '/dashboard/organizations/create'
+      }
+    ]
+  },
+  {
+    id: 'vaults',
+    label: 'Vaults',
+    icon: Package,
+    href: '/dashboard/vaults'
+  },
+  {
+    id: 'assets',
+    label: 'Assets',
+    icon: FolderIcon,
+    href: '/dashboard/assets'
+  },
+  {
+    id: 'meetings',
+    label: 'Meetings',
+    icon: Calendar,
+    href: '/dashboard/meetings'
   },
   {
     id: 'instruments',
@@ -106,18 +144,6 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    id: 'meetings',
-    label: 'Meetings',
-    icon: Calendar,
-    href: '/dashboard/meetings'
-  },
-  {
-    id: 'assets',
-    label: 'Assets',
-    icon: FolderIcon,
-    href: '/dashboard/assets'
-  },
-  {
     id: 'boardmates',
     label: 'BoardMates',
     icon: Users,
@@ -135,31 +161,6 @@ const menuItems: MenuItem[] = [
         href: '/dashboard/boardmates/create'
       }
     ]
-  },
-  {
-    id: 'organizations',
-    label: 'Organizations',
-    icon: Building2,
-    children: [
-      {
-        id: 'view-organizations',
-        label: 'My Organizations',
-        icon: Building2,
-        href: '/dashboard/organizations'
-      },
-      {
-        id: 'create-organization',
-        label: 'Create Organization',
-        icon: Plus,
-        href: '/dashboard/organizations/create'
-      }
-    ]
-  },
-  {
-    id: 'ai-assistant',
-    label: 'AI Assistant',
-    icon: MessageSquare,
-    href: '/dashboard/ai-chat'
   },
   {
     id: 'settings',
