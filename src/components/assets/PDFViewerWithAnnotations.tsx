@@ -1,136 +1,73 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { PdfHighlighter, Highlight, Popup, AreaHighlight } from 'react-pdf-highlighter-extended'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 
 interface PDFViewerWithAnnotationsProps {
   assetId: string
   filePath: string
   annotationMode: 'select' | 'highlight' | 'comment'
-  zoom: number
-  rotation: number
-  onAnnotationCreate?: (annotation: any) => void
+  onAnnotationChange?: () => void
 }
 
-interface AnnotationData {
+interface Annotation {
   id: string
-  content: string
-  user: {
-    id: string
-    name: string
-    email: string
+  asset_id: string
+  created_by: string
+  user?: {
+    full_name: string
+    avatar_url?: string
   }
-  createdAt: string
+  annotation_type: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
+  content: {
+    text?: string
+    image?: string
+  }
   position: any
-  type: 'highlight' | 'area' | 'comment'
+  selected_text?: string
+  comment_text?: string
+  color: string
+  opacity: number
+  created_at: string
+  is_resolved: boolean
+  replies?: Array<{
+    id: string
+    reply_text: string
+    user: {
+      full_name: string
+      avatar_url?: string
+    }
+    created_at: string
+  }>
 }
 
 export function PDFViewerWithAnnotations({
   assetId,
   filePath,
   annotationMode,
-  zoom,
-  rotation,
-  onAnnotationCreate
+  onAnnotationChange
 }: PDFViewerWithAnnotationsProps) {
-  const [annotations, setAnnotations] = useState<AnnotationData[]>([])
-  const [highlights, setHighlights] = useState<any[]>([])
+  const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const supabase = createSupabaseBrowserClient()
 
-  // Fetch existing annotations
+  // Fetch annotations from API
   const fetchAnnotations = useCallback(async () => {
     try {
       const response = await fetch(`/api/assets/${assetId}/annotations`)
-      const result = await response.json()
+      const data = await response.json()
       
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch annotations')
+      if (response.ok) {
+        setAnnotations(data.annotations || [])
       }
-
-      setAnnotations(result.data || [])
-      
-      // Transform annotations to highlights format for react-pdf-highlighter
-      const transformedHighlights = (result.data || []).map((annotation: AnnotationData) => ({
-        id: annotation.id,
-        content: {
-          text: annotation.content,
-          image: null
-        },
-        position: annotation.position,
-        comment: {
-          text: annotation.content,
-          emoji: annotation.type === 'highlight' ? '💡' : '💬'
-        }
-      }))
-      
-      setHighlights(transformedHighlights)
-    } catch (err) {
-      console.error('Error fetching annotations:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load annotations')
+    } catch (error) {
+      console.error('Error fetching annotations:', error)
     } finally {
       setLoading(false)
     }
   }, [assetId])
 
-  // Create new annotation
-  const handleCreateAnnotation = async (highlight: any, content: string) => {
-    try {
-      const response = await fetch(`/api/assets/${assetId}/annotations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          pageNumber: highlight.position.pageNumber,
-          annotationType: annotationMode === 'highlight' ? 'highlight' : 'comment',
-          content: content,
-          position: highlight.position,
-          style: {
-            color: annotationMode === 'highlight' ? '#ffff00' : '#00ff00',
-            opacity: 0.3
-          }
-        })
-      })
-
-      const result = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create annotation')
-      }
-
-      // Add new highlight to state
-      const newHighlight = {
-        id: result.data.id,
-        content: { text: content },
-        position: highlight.position,
-        comment: {
-          text: content,
-          emoji: annotationMode === 'highlight' ? '💡' : '💬'
-        }
-      }
-
-      setHighlights(prev => [...prev, newHighlight])
-      
-      // Refresh annotations to get latest data
-      fetchAnnotations()
-      
-      // Notify parent component
-      onAnnotationCreate?.(result.data)
-    } catch (error) {
-      console.error('Error creating annotation:', error)
-    }
-  }
-
-  // Handle annotation selection
-  const handleAnnotationClick = (highlight: any) => {
-    console.log('Annotation clicked:', highlight)
-    // Could open annotation details or focus on sidebar
-  }
-
-  // Real-time annotation updates via Supabase subscription
+  // Subscribe to real-time annotation updates
   useEffect(() => {
     const channel = supabase
       .channel(`annotations:${assetId}`)
@@ -139,12 +76,11 @@ export function PDFViewerWithAnnotations({
         {
           event: '*',
           schema: 'public',
-          table: 'annotations',
-          filter: `asset_id=eq.${assetId}`
+          table: 'asset_annotations',
+          filter: `asset_id=eq.${assetId}`,
         },
-        (payload) => {
-          console.log('Annotation change:', payload)
-          fetchAnnotations() // Refresh annotations on any change
+        () => {
+          fetchAnnotations()
         }
       )
       .subscribe()
@@ -152,123 +88,39 @@ export function PDFViewerWithAnnotations({
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [assetId, fetchAnnotations, supabase])
+  }, [assetId, supabase, fetchAnnotations])
 
-  // Load annotations on mount
+  // Initial fetch
   useEffect(() => {
     fetchAnnotations()
   }, [fetchAnnotations])
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading document...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={fetchAnnotations}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="h-full relative">
-      <PdfHighlighter
-        pdfUrl={filePath}
-        enableAreaSelection={(event) => annotationMode === 'comment'}
-        onScrollChange={() => {}}
-        scrollRef={(scrollTo) => {
-          // Handle programmatic scrolling
-        }}
-        onSelectionFinished={(
-          position,
-          content,
-          hideTipAndSelection,
-          transformSelection
-        ) => {
-          if (annotationMode === 'select') return
-
-          // Show popup for annotation input
-          return (
-            <Popup
-              onOpen={transformSelection}
-              onConfirm={(content) => {
-                handleCreateAnnotation({ position }, content.text)
-                hideTipAndSelection()
-              }}
-              onCancel={hideTipAndSelection}
-              style={{
-                background: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                padding: '16px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-              }}
-            />
-          )
-        }}
-        highlightTransform={(
-          highlight,
-          index,
-          setTip,
-          hideTip,
-          viewportToScaled,
-          screenshot,
-          isScrolledTo
-        ) => {
-          const isHighlight = highlight.content?.text
-          const Component = isHighlight ? Highlight : AreaHighlight
-
-          return (
-            <Component
-              key={index}
-              isScrolledTo={isScrolledTo}
-              position={highlight.position}
-              comment={highlight.comment}
-              onMouseOver={(event) => {
-                setTip({
-                  position: highlight.position,
-                  content: (
-                    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg max-w-xs">
-                      <p className="text-sm text-gray-900">{highlight.comment?.text}</p>
-                      <div className="mt-2 text-xs text-gray-500">
-                        Click to view details
-                      </div>
-                    </div>
-                  )
-                })
-              }}
-              onMouseOut={hideTip}
-              onClick={() => handleAnnotationClick(highlight)}
-              style={{
-                background: annotationMode === 'highlight' ? '#ffff0050' : '#00ff0030',
-                cursor: 'pointer'
-              }}
-            />
-          )
-        }}
-        highlights={highlights}
-        style={{
-          height: '100%',
-          transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-          transformOrigin: 'center center'
-        }}
+    <div className="w-full h-full relative">
+      {/* Simple PDF iframe viewer for now */}
+      <iframe
+        src={filePath}
+        className="w-full h-full border-0"
+        title="PDF Viewer"
       />
+      
+      {/* Annotation overlay - placeholder for now */}
+      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4">
+        <p className="text-sm text-gray-600">
+          Annotations: {annotations.length}
+        </p>
+        <p className="text-xs text-gray-500">
+          Mode: {annotationMode}
+        </p>
+      </div>
     </div>
   )
 }

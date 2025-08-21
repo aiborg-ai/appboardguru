@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const conversationId = params.id
+    const { id: conversationId } = await params; // placeholder
     const body = await request.json()
     const { message_id } = body // Optional: mark as read up to this message
 

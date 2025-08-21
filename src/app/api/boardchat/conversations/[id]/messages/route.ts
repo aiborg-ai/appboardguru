@@ -20,9 +20,10 @@ const sendMessageSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createSupabaseServerClient()
     
     // Get authenticated user
@@ -30,8 +31,6 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const conversationId = params.id
     const url = new URL(request.url)
     const limit = parseInt(url.searchParams.get('limit') || '50')
     const before = url.searchParams.get('before') // For pagination
@@ -196,9 +195,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createSupabaseServerClient()
     
     // Get authenticated user
@@ -207,15 +207,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const conversationId = params.id
-
     // Parse and validate request body
     const body = await request.json()
     const validation = sendMessageSchema.safeParse(body)
     
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid message data', details: validation.error.errors },
+        { error: 'Invalid message data', details: validation.error.issues },
         { status: 400 }
       )
     }

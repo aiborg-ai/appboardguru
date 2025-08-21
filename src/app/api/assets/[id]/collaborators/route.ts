@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -25,7 +25,7 @@ export async function GET(
       }
     )
     
-    const assetId = params.id
+    const assetId = (await params).id
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

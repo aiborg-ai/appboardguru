@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.errors },
+        { error: 'Invalid request data', details: validation.error.issues },
         { status: 400 }
       )
     }
@@ -249,12 +249,12 @@ export async function POST(request: NextRequest) {
       }))
     ]
 
-    const { error: participantsError } = await supabase
+    const { error: insertParticipantsError } = await supabase
       .from('chat_participants')
       .insert(participantInserts)
 
-    if (participantsError) {
-      console.error('Participants creation error:', participantsError)
+    if (insertParticipantsError) {
+      console.error('Participants creation error:', insertParticipantsError)
       // Try to clean up conversation
       await supabase.from('chat_conversations').delete().eq('id', conversation.id)
       return NextResponse.json({ error: 'Failed to add participants' }, { status: 500 })

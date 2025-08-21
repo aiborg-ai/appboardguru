@@ -528,6 +528,21 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                             : "bg-gray-100 text-gray-900"
                         )}
                       >
+                        {/* Context scope indicator for messages */}
+                        {message.contextScope && message.contextScope !== 'boardguru' && (
+                          <div className={cn(
+                            "flex items-center space-x-1 text-xs mb-2 pb-1 border-b",
+                            message.role === 'user' 
+                              ? "text-blue-100 border-blue-400" 
+                              : "text-gray-500 border-gray-300"
+                          )}>
+                            {React.createElement(
+                              CONTEXT_SCOPE_OPTIONS.find(o => o.id === message.contextScope)?.icon || Bot,
+                              { className: "h-3 w-3" }
+                            )}
+                            <span>{getContextScopeLabel(message.contextScope)}</span>
+                          </div>
+                        )}
                         <p>{message.content}</p>
                         <div className={cn(
                           "text-xs mt-1 flex items-center justify-between",

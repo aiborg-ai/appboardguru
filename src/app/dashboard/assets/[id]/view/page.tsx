@@ -250,11 +250,9 @@ export default function FullPagePDFViewer() {
             assetId={assetId}
             filePath={asset.file_path}
             annotationMode={annotationMode}
-            zoom={zoom}
-            rotation={rotation}
-            onAnnotationCreate={(annotation) => {
+            onAnnotationChange={() => {
               // Handle new annotation creation
-              console.log('New annotation:', annotation)
+              console.log('Annotation changed')
             }}
           />
         </div>
