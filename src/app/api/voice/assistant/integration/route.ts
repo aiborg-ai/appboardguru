@@ -12,7 +12,8 @@ import {
   VaultWithAssets,
   DocumentSummary,
   Meeting,
-  MeetingPreparation
+  MeetingPreparation,
+  ConversationEntry
 } from '@/types/voice';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -37,15 +38,6 @@ export interface IntegrationContext {
   organizationContext?: OrganizationContext;
 }
 
-export interface ConversationEntry {
-  id: string;
-  timestamp: string;
-  source: string;
-  type: 'user_input' | 'system_response' | 'insight' | 'recommendation';
-  content: string;
-  metadata: Record<string, unknown>;
-  confidence: number;
-}
 
 export interface DocumentContext {
   id: string;
@@ -839,15 +831,30 @@ async function processFullContextSync(
 }
 
 // Helper functions
+function mapEntryType(originalType: string): 'user_voice' | 'user_text' | 'assistant_voice' | 'assistant_text' | 'system_insight' {
+  switch (originalType) {
+    case 'user_input':
+      return 'user_text';
+    case 'system_response':
+      return 'assistant_text';
+    case 'insight':
+    case 'recommendation':
+      return 'system_insight';
+    default:
+      return 'system_insight';
+  }
+}
+
 async function enhanceContextForChat(contextData: IntegrationContext): Promise<EnhancedChatContext> {
   // Enhance conversation context for chat system
   return {
     enhancedHistory: (contextData.conversationHistory?.map(entry => ({
       ...entry,
+      type: mapEntryType((entry as any).type),
       chatOptimized: true,
       intelligentSuggestions: generateChatSuggestions(entry.content),
       confidence: (entry as any).confidence ?? 0.8
-    })) || []) as ConversationEntry[],
+    })) || []),
     documentContext: contextData.activeDocuments?.map(doc => ({
       ...doc,
       chatRelevant: true,
