@@ -16,7 +16,7 @@ interface AssociationUpdate {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -29,7 +29,8 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organization_id');
-    const boardmateId = params.id;
+    const resolvedParams = await params;
+    const boardmateId = resolvedParams.id;
 
     if (!organizationId) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
@@ -84,7 +85,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -97,7 +98,8 @@ export async function PUT(
 
     const body = await request.json();
     const { organization_id, updates }: { organization_id: string; updates: AssociationUpdate[] } = body;
-    const boardmateId = params.id;
+    const resolvedParams = await params;
+    const boardmateId = resolvedParams.id;
 
     if (!organization_id || !Array.isArray(updates)) {
       return NextResponse.json({
