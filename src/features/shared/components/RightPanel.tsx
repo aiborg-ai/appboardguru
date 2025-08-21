@@ -40,7 +40,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useEnhancedChatSession } from '@/lib/api/enhanced-openrouter-client';
-import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat } from '@/features/ai-chat/ai/ScopeSelector';
+import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat, type ContextScopeOption } from '@/features/ai-chat/ai/ScopeSelectorTypes';
 
 interface RightPanelProps {
   className?: string;
@@ -142,7 +142,7 @@ const LOG_LEVEL_CONFIG = {
 
 export default function RightPanel({ className, externalControl }: RightPanelProps) {
   // Organization context
-  const { currentOrganization, currentVault } = useOrganization();
+  const { currentOrganization, currentVault, organizations } = useOrganization();
   
   // Internal state - always start closed to prevent auto-opening
   const [internalIsOpen, setInternalIsOpen] = useState(false);

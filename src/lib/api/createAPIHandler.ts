@@ -309,7 +309,7 @@ async function validateRequest<T>(
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new APIError(400, 'VALIDATION_ERROR', 'Invalid request data', error.errors)
+      throw new APIError(400, 'VALIDATION_ERROR', 'Invalid request data', error.issues)
     }
     throw error
   }

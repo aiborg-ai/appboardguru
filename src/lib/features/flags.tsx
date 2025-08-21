@@ -2,6 +2,7 @@
  * Feature Flag System
  * Enables gradual rollout of new features and safe migrations
  */
+'use client'
 
 import React, { useState, useEffect } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'

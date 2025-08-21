@@ -22,21 +22,19 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
-interface Organization {
+// Define the organization type from context 
+type Organization = {
   id: string;
   name: string;
   slug: string;
-  description?: string;
-  industry?: string;
-  website?: string;
-  created_at: string;
-  member_count: number;
-  vault_count: number;
-  settings: {
-    organization_size?: string;
-  };
-}
+  description?: string | null;
+  industry?: string | null;
+  website?: string | null;
+  userRole: 'owner' | 'admin' | 'member' | 'viewer';
+  membershipStatus: 'active' | 'suspended' | 'pending_activation';
+};
 
 interface OrganizationStepProps {
   data: VaultWizardData;
@@ -59,10 +57,9 @@ const INDUSTRIES = [
 ];
 
 export default function OrganizationStep({ data, onUpdate }: OrganizationStepProps) {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const { organizations, isLoadingOrganizations } = useOrganization();
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [createFormData, setCreateFormData] = useState({
     name: '',
     description: '',
@@ -70,28 +67,8 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
     website: '',
   });
 
-  // Load organizations
-  useEffect(() => {
-    loadOrganizations();
-  }, []);
-
-  const loadOrganizations = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/organizations');
-      if (response.ok) {
-        const data = await response.json();
-        setOrganizations(data.organizations || []);
-      }
-    } catch (error) {
-      console.error('Failed to load organizations:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Filter organizations based on search
-  const filteredOrganizations = organizations.filter(org =>
+  const filteredOrganizations = (organizations as Organization[]).filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     org.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -279,7 +256,7 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
             transition={{ duration: 0.3 }}
             className="space-y-4"
           >
-            {isLoading ? (
+            {isLoadingOrganizations ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(4)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
@@ -290,6 +267,24 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            ) : !isLoadingOrganizations && organizations.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-600 mb-2">
+                  No Organizations Available
+                </h4>
+                <p className="text-gray-500 mb-4">
+                  You need to create an organization first to proceed with vault creation.
+                </p>
+                <Button
+                  variant="default"
+                  onClick={handleToggleCreateForm}
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Organization</span>
+                </Button>
               </div>
             ) : filteredOrganizations.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -330,11 +325,7 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
                           <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-1">
                               <Users className="w-3 h-3" />
-                              <span>{org.member_count} members</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Building2 className="w-3 h-3" />
-                              <span>{org.vault_count} vaults</span>
+                              <span>Organization</span>
                             </div>
                           </div>
                           {org.industry && (

@@ -5,6 +5,7 @@ export interface ChatScope {
   id: string
   label: string
   description?: string
+  metadata?: Record<string, any>
 }
 
 export interface ContextScopeOption {

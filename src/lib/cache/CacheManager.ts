@@ -5,6 +5,14 @@
 
 import { createHash } from 'crypto'
 
+// Database cache item interface
+interface CacheItem {
+  key: string
+  value?: any
+  expires_at?: string
+  created_at?: string
+}
+
 // Cache layer interface
 export interface CacheLayer {
   name: string
@@ -230,9 +238,9 @@ export class DatabaseCache implements CacheLayer {
 
       if (data) {
         const regex = new RegExp(pattern.replace('*', '.*'))
-        const keysToDelete = data
-          .filter(item => regex.test(item.key))
-          .map(item => item.key)
+        const keysToDelete = (data as CacheItem[])
+          .filter((item: CacheItem) => regex.test(item.key))
+          .map((item: CacheItem) => item.key)
 
         if (keysToDelete.length > 0) {
           await this.supabase

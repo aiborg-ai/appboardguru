@@ -7,7 +7,8 @@
 
 const fs = require('fs').promises
 const path = require('path')
-const { program } = require('commander')
+const { Command } = require('commander')
+const program = new Command()
 const { createClient } = require('@supabase/supabase-js')
 
 program
@@ -67,7 +68,7 @@ program
     }
   })
 
-program.parse()
+program.parse(process.argv)
 
 /**
  * Run migrations

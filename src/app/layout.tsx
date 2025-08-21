@@ -1,5 +1,5 @@
-import './globals.css'
-import './disable-overlays.css'
+// import './globals.css' // Temporarily disabled due to PostCSS configuration issue
+// import './disable-overlays.css' // Temporarily disabled due to CSS parsing errors
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 

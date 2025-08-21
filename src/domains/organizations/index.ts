@@ -1,20 +1,17 @@
 /**
- * Domain Module Template
- * Copy this template to create new domain modules
- * 
- * Replace 'Template' with your domain name throughout this file
+ * Organizations Domain Module
+ * Complete domain implementation for organization management
  */
 
 // Types
 export * from './types/entity.types'
 export * from './types/dto.types'
-// export * from './types/api.types'
 
-// Repository (disabled - template code with issues)
-// export { TemplateRepository } from './repository/template.repository'
+// Repository
+export { OrganizationRepository } from './repository/organization.repository'
 
-// Service (disabled - template code with issues)
-// export { TemplateService } from './services/template.service'
+// Service
+export { OrganizationService } from './services/organization.service'
 
 // API Handlers
 // export * from './api/handlers'

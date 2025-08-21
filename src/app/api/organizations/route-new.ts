@@ -55,10 +55,7 @@ export const GET = createAPIHandler<any, any>(
         throw new Error(result.error || 'Failed to get organization')
       }
 
-      return {
-        success: true,
-        data: result.organization
-      }
+      return result.organization
     } else {
       // Get user's organizations
       const result = await listUserOrganizations(userId)
@@ -68,11 +65,8 @@ export const GET = createAPIHandler<any, any>(
       }
 
       return {
-        success: true,
-        data: {
-          organizations: result.organizations || [],
-          total: result.organizations?.length || 0
-        }
+        organizations: result.organizations || [],
+        total: result.organizations?.length || 0
       }
     }
   }
@@ -94,11 +88,7 @@ export const POST = createCRUDHandler.create(
       throw new Error(result.error || 'Failed to create organization')
     }
 
-    return {
-      success: true,
-      data: result.organization,
-      message: 'Organization created successfully'
-    }
+    return result.organization
   }
 )
 

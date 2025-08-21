@@ -53,15 +53,18 @@ div[style*="backdrop-filter: blur"] {
   display: none !important;
 }
 
-/* Hide any development mode indicators */
+/* Hide any development mode indicators - commented out invalid selectors */
+/*
 div:has-text("Error"),
 div:has-text("Warning"),
 div:has-text("Failed to compile"),
 div:has-text("Compiling") {
   display: none !important;
 }
+*/
 
-/* Global rule to hide any element containing error text in development */
+/* Global rule to hide any element containing error text in development - commented out invalid selectors */
+/*
 *:not(code):not(pre):not(script) {
   &:has-text("Unhandled Runtime Error"),
   &:has-text("Error occurred"),
@@ -70,3 +73,4 @@ div:has-text("Compiling") {
     display: none !important;
   }
 }
+*/

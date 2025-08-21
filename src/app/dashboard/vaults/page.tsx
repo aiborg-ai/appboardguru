@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
+import Link from 'next/link'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
@@ -14,7 +15,12 @@ import {
   AlertTriangle,
   MoreVertical,
   Building2,
-  FolderOpen
+  FolderOpen,
+  Search,
+  Filter,
+  Calendar,
+  Shield,
+  Zap
 } from 'lucide-react'
 import { Button } from '@/features/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
@@ -25,7 +31,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/features/shared/ui/dropdown-menu'
+import { ViewToggle } from '@/features/shared/components/views/ViewToggle'
+import { ItemCard } from '@/features/shared/components/views/ItemCard'
+import { ItemList } from '@/features/shared/components/views/ItemList'
+import { ItemDetails } from '@/features/shared/components/views/ItemDetails'
+import { EmptyState } from '@/features/shared/components/views/EmptyState'
+import { FilterBar } from '@/features/shared/components/views/FilterBar'
+import { useViewPreferences } from '@/features/shared/components/views/ViewToggle'
 import { cn } from '@/lib/utils'
+
+type ViewMode = 'card' | 'list' | 'details'
 
 export default function VaultsPage() {
   const { 
@@ -35,6 +50,14 @@ export default function VaultsPage() {
     selectVault,
     isLoadingVaults 
   } = useOrganization()
+
+  const { viewMode, setViewMode } = useViewPreferences('card', 'vaults-view')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [priorityFilter, setPriorityFilter] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [selectedVault, setSelectedVault] = useState<any>(null)
 
   const getVaultStatusColor = (status: string) => {
     switch (status) {
@@ -70,15 +93,266 @@ export default function VaultsPage() {
 
   const handleVaultSelect = (vault: any) => {
     selectVault(vault)
-    window.location.href = `/dashboard/vaults/${vault.id}`
+    if (viewMode === 'details') {
+      setSelectedVault(vault)
+    } else {
+      window.location.href = `/dashboard/vaults/${vault.id}`
+    }
+  }
+
+  const filteredAndSortedVaults = useMemo(() => {
+    let filtered = vaults || []
+
+    if (searchQuery) {
+      filtered = filtered.filter(vault => 
+        vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vault.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter(vault => statusFilter.includes(vault.status))
+    }
+
+    if (priorityFilter.length > 0) {
+      filtered = filtered.filter(vault => priorityFilter.includes(vault.priority))
+    }
+
+    filtered.sort((a, b) => {
+      let aValue, bValue
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name
+          bValue = b.name
+          break
+        case 'status':
+          aValue = a.status
+          bValue = b.status
+          break
+        case 'priority':
+          aValue = a.priority
+          bValue = b.priority
+          break
+        case 'lastActivity':
+          aValue = new Date(a.lastActivityAt || a.createdAt)
+          bValue = new Date(b.lastActivityAt || b.createdAt)
+          break
+        case 'members':
+          aValue = a.memberCount || 0
+          bValue = b.memberCount || 0
+          break
+        case 'assets':
+          aValue = a.assetCount || 0
+          bValue = b.assetCount || 0
+          break
+        default:
+          aValue = a.name
+          bValue = b.name
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return filtered
+  }, [vaults, searchQuery, statusFilter, priorityFilter, sortBy, sortOrder])
+
+  const filterConfigs = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'draft', label: 'Draft' },
+        { value: 'archived', label: 'Archived' },
+        { value: 'expired', label: 'Expired' },
+        { value: 'cancelled', label: 'Cancelled' }
+      ],
+      selectedValues: statusFilter,
+      onChange: setStatusFilter
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      options: [
+        { value: 'urgent', label: 'Urgent' },
+        { value: 'high', label: 'High' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'low', label: 'Low' }
+      ],
+      selectedValues: priorityFilter,
+      onChange: setPriorityFilter
+    }
+  ]
+
+  const sortOptions = [
+    { value: 'name', label: 'Name' },
+    { value: 'status', label: 'Status' },
+    { value: 'priority', label: 'Priority' },
+    { value: 'lastActivity', label: 'Last Activity' },
+    { value: 'members', label: 'Members' },
+    { value: 'assets', label: 'Assets' }
+  ]
+
+  const renderVaultCard = (vault: any) => {
+    const StatusIcon = getVaultStatusIcon(vault.status)
+    const isSelected = currentVault?.id === vault.id
+    
+    return (
+      <ItemCard
+        key={vault.id}
+        title={vault.name}
+        subtitle={vault.description}
+        icon={StatusIcon}
+        iconColor={getVaultStatusColor(vault.status)}
+        isSelected={isSelected}
+        onClick={() => handleVaultSelect(vault)}
+        className="group hover:shadow-xl transition-all duration-300"
+      >
+        <div className="flex items-center gap-2 flex-wrap mb-3">
+          <Badge 
+            variant="secondary" 
+            className={cn("text-xs", 
+              vault.status === 'active' ? 'bg-green-100 text-green-800' :
+              vault.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+              vault.status === 'archived' ? 'bg-gray-100 text-gray-600' :
+              'bg-red-100 text-red-800'
+            )}
+          >
+            {vault.status}
+          </Badge>
+          {vault.priority !== 'medium' && (
+            <Badge 
+              variant="outline" 
+              className={cn("text-xs", getPriorityColor(vault.priority))}
+            >
+              {vault.priority}
+            </Badge>
+          )}
+          {isSelected && (
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+              Current
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {vault.memberCount || 0}
+            </span>
+            <span className="flex items-center gap-1">
+              <FolderOpen className="h-4 w-4" />
+              {vault.assetCount || 0}
+            </span>
+          </div>
+        </div>
+        
+        {vault.lastActivityAt && (
+          <div className="text-xs text-gray-400">
+            Last activity: {new Date(vault.lastActivityAt).toLocaleDateString()}
+          </div>
+        )}
+        
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-green-600" />
+            <span className="text-xs text-green-700 font-medium">Secure</span>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation()
+                window.location.href = `/dashboard/vaults/${vault.id}/settings`
+              }}>
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation()
+                window.location.href = `/dashboard/vaults/${vault.id}`
+              }}>
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Open Vault
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ItemCard>
+    )
+  }
+
+  const renderVaultList = (vault: any) => {
+    const StatusIcon = getVaultStatusIcon(vault.status)
+    const isSelected = currentVault?.id === vault.id
+    
+    return (
+      <ItemList
+        key={vault.id}
+        title={vault.name}
+        subtitle={vault.description}
+        icon={StatusIcon}
+        iconColor={getVaultStatusColor(vault.status)}
+        isSelected={isSelected}
+        onClick={() => handleVaultSelect(vault)}
+        metadata={[
+          { label: 'Status', value: vault.status },
+          { label: 'Priority', value: vault.priority },
+          { label: 'Members', value: vault.memberCount || 0 },
+          { label: 'Assets', value: vault.assetCount || 0 },
+          { label: 'Last Activity', value: vault.lastActivityAt ? new Date(vault.lastActivityAt).toLocaleDateString() : 'Never' }
+        ]}
+        badges={[
+          {
+            text: vault.status,
+            variant: vault.status === 'active' ? 'success' : 
+                    vault.status === 'draft' ? 'secondary' :
+                    vault.status === 'archived' ? 'secondary' : 'destructive'
+          },
+          ...(vault.priority !== 'medium' ? [{
+            text: vault.priority,
+            variant: vault.priority === 'urgent' ? 'destructive' :
+                    vault.priority === 'high' ? 'warning' : 'secondary'
+          }] : []),
+          ...(isSelected ? [{ text: 'Current', variant: 'outline' }] : [])
+        ]}
+        actions={[
+          {
+            label: 'Open Vault',
+            icon: FolderOpen,
+            onClick: (e) => {
+              e.stopPropagation()
+              window.location.href = `/dashboard/vaults/${vault.id}`
+            }
+          },
+          {
+            label: 'Settings',
+            icon: Settings,
+            onClick: (e) => {
+              e.stopPropagation()
+              window.location.href = `/dashboard/vaults/${vault.id}/settings`
+            }
+          }
+        ]}
+      />
+    )
   }
 
   if (isLoadingVaults) {
     return (
       <DashboardLayout>
-        <div className="p-6">
+        <div className="p-6 space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="h-10 bg-gray-200 rounded mb-4"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map(i => (
                 <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
@@ -92,9 +366,9 @@ export default function VaultsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Package className="h-7 w-7 text-blue-600" />
@@ -110,157 +384,249 @@ export default function VaultsPage() {
               </div>
             )}
           </div>
-          <Button 
-            onClick={() => window.location.href = '/dashboard/vaults/create'} 
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Create Vault
-          </Button>
+          <Link href="/dashboard/vaults/create">
+            <Button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+              <Plus className="h-4 w-4" />
+              Create Vault
+            </Button>
+          </Link>
         </div>
 
-        {/* Vaults Grid */}
-        {vaults.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Vaults Yet</h3>
-            <p className="text-gray-600 mb-6">
-              {currentOrganization 
-                ? `Create your first vault in ${currentOrganization.name} to securely store and share documents`
-                : 'Select an organization first, then create your first vault to get started'
-              }
-            </p>
-            {currentOrganization ? (
-              <Button 
-                onClick={() => window.location.href = '/dashboard/vaults/create'} 
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create Vault
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => window.location.href = '/dashboard/organizations'} 
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Building2 className="h-4 w-4" />
-                Go to Organizations
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {vaults.map((vault) => {
-              const StatusIcon = getVaultStatusIcon(vault.status)
-              const isSelected = currentVault?.id === vault.id
-              
-              return (
-                <Card 
-                  key={vault.id} 
-                  className={cn(
-                    "relative cursor-pointer transition-all duration-200 hover:shadow-lg",
-                    isSelected ? 'ring-2 ring-blue-500 shadow-md' : ''
-                  )}
-                  onClick={() => handleVaultSelect(vault)}
+        {/* View Controls */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+          <FilterBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search vaults..."
+            filters={filterConfigs}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortChange={(sort, order) => {
+              setSortBy(sort)
+              setSortOrder(order)
+            }}
+            sortOptions={sortOptions}
+          />
+        </div>
+
+        {/* Content Area */}
+        {filteredAndSortedVaults.length === 0 ? (
+          <EmptyState
+            icon={vaults.length === 0 ? Package : Search}
+            title={vaults.length === 0 ? "No Vaults Yet" : "No Vaults Found"}
+            description={
+              vaults.length === 0
+                ? (currentOrganization 
+                    ? `Create your first vault in ${currentOrganization.name} to securely store and share documents`
+                    : 'Select an organization first, then create your first vault to get started')
+                : "Try adjusting your search or filters to find the vaults you're looking for"
+            }
+            action={
+              vaults.length === 0 ? (
+                currentOrganization ? (
+                  <Link href="/dashboard/vaults/create">
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create Vault
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/dashboard/organizations">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Go to Organizations
+                    </Button>
+                  </Link>
+                )
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setStatusFilter([])
+                    setPriorityFilter([])
+                  }}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                  Clear Filters
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <>
+            {viewMode === 'details' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-16rem)]">
+                <div className="lg:col-span-1 space-y-2 overflow-y-auto">
+                  {filteredAndSortedVaults.map((vault) => {
+                    const StatusIcon = getVaultStatusIcon(vault.status)
+                    const isSelected = selectedVault?.id === vault.id || (!selectedVault && currentVault?.id === vault.id)
+                    
+                    return (
+                      <div
+                        key={vault.id}
+                        className={cn(
+                          "p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                          isSelected 
+                            ? "border-blue-500 bg-blue-50 shadow-md" 
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        )}
+                        onClick={() => {
+                          setSelectedVault(vault)
+                          selectVault(vault)
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
                           <StatusIcon className={cn(
-                            "h-5 w-5",
+                            "h-5 w-5 flex-shrink-0",
                             getVaultStatusColor(vault.status)
                           )} />
-                          <CardTitle className="text-lg font-semibold text-gray-900">
-                            {vault.name}
-                          </CardTitle>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge 
-                            variant="secondary" 
-                            className={cn("text-xs", 
-                              vault.status === 'active' ? 'bg-green-100 text-green-800' :
-                              vault.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                              vault.status === 'archived' ? 'bg-gray-100 text-gray-600' :
-                              'bg-red-100 text-red-800'
-                            )}
-                          >
-                            {vault.status}
-                          </Badge>
-                          {vault.priority !== 'medium' && (
-                            <Badge 
-                              variant="outline" 
-                              className={cn("text-xs", getPriorityColor(vault.priority))}
-                            >
-                              {vault.priority}
-                            </Badge>
-                          )}
-                          {isSelected && (
-                            <Badge variant="outline" className="text-xs">
-                              Current
-                            </Badge>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">{vault.name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge 
+                                variant="secondary" 
+                                className={cn("text-xs", 
+                                  vault.status === 'active' ? 'bg-green-100 text-green-800' :
+                                  vault.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                                  vault.status === 'archived' ? 'bg-gray-100 text-gray-600' :
+                                  'bg-red-100 text-red-800'
+                                )}
+                              >
+                                {vault.status}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                {vault.assetCount || 0} assets
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation()
-                            window.location.href = `/dashboard/vaults/${vault.id}/settings`
-                          }}>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Settings
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation()
-                            window.location.href = `/dashboard/vaults/${vault.id}`
-                          }}>
-                            <FolderOpen className="h-4 w-4 mr-2" />
-                            Open Vault
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {vault.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {vault.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {vault.memberCount || 0} members
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FolderOpen className="h-4 w-4" />
-                          {vault.assetCount || 0} assets
-                        </span>
+                    )
+                  })}
+                </div>
+                
+                <div className="lg:col-span-2">
+                  <ItemDetails
+                    item={selectedVault || (currentVault && filteredAndSortedVaults.find(v => v.id === currentVault.id)) || filteredAndSortedVaults[0]}
+                    title="Vault Details"
+                    icon={Package}
+                    renderContent={(vault) => (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Name</label>
+                              <p className="mt-1 text-gray-900">{vault.name}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Description</label>
+                              <p className="mt-1 text-gray-600">{vault.description || 'No description provided'}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Status</label>
+                              <div className="mt-1">
+                                <Badge 
+                                  variant="secondary" 
+                                  className={cn(
+                                    vault.status === 'active' ? 'bg-green-100 text-green-800' :
+                                    vault.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                                    vault.status === 'archived' ? 'bg-gray-100 text-gray-600' :
+                                    'bg-red-100 text-red-800'
+                                  )}
+                                >
+                                  {vault.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Priority</label>
+                              <div className="mt-1">
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(getPriorityColor(vault.priority))}
+                                >
+                                  {vault.priority}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Statistics</label>
+                              <div className="mt-2 grid grid-cols-2 gap-4">
+                                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                  <Users className="h-5 w-5 text-gray-600 mx-auto mb-1" />
+                                  <p className="text-lg font-semibold text-gray-900">{vault.memberCount || 0}</p>
+                                  <p className="text-xs text-gray-600">Members</p>
+                                </div>
+                                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                  <FolderOpen className="h-5 w-5 text-gray-600 mx-auto mb-1" />
+                                  <p className="text-lg font-semibold text-gray-900">{vault.assetCount || 0}</p>
+                                  <p className="text-xs text-gray-600">Assets</p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Activity</label>
+                              <div className="mt-2 space-y-2">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Calendar className="h-4 w-4 text-gray-500" />
+                                  <span className="text-gray-600">Created:</span>
+                                  <span className="text-gray-900">{new Date(vault.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                {vault.lastActivityAt && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Zap className="h-4 w-4 text-gray-500" />
+                                    <span className="text-gray-600">Last activity:</span>
+                                    <span className="text-gray-900">{new Date(vault.lastActivityAt).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="pt-4 space-y-2">
+                              <Link href={`/dashboard/vaults/${vault.id}`}>
+                                <Button className="w-full flex items-center gap-2">
+                                  <FolderOpen className="h-4 w-4" />
+                                  Open Vault
+                                </Button>
+                              </Link>
+                              <Link href={`/dashboard/vaults/${vault.id}/settings`}>
+                                <Button variant="outline" className="w-full flex items-center gap-2">
+                                  <Settings className="h-4 w-4" />
+                                  Vault Settings
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    {vault.lastActivityAt && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        Last activity: {new Date(vault.lastActivityAt).toLocaleDateString()}
-                      </div>
                     )}
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className={cn(
+                viewMode === 'card' 
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+                  : "space-y-2"
+              )}>
+                {filteredAndSortedVaults.map((vault) => 
+                  viewMode === 'card' 
+                    ? renderVaultCard(vault)
+                    : renderVaultList(vault)
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {/* Current Vault Info */}
-        {currentVault && (
-          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        {currentVault && viewMode !== 'details' && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-3">
               <Package className="h-5 w-5 text-blue-600" />
               <div>

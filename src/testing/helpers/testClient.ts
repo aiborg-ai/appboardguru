@@ -3,7 +3,7 @@
  * Provides utilities for making HTTP requests in tests
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
 export interface TestClientConfig {
   baseURL?: string
@@ -31,7 +31,7 @@ export class TestClient {
 
     // Add request/response interceptors for debugging
     this.client.interceptors.request.use(
-      (config) => {
+      (config: InternalAxiosRequestConfig) => {
         if (process.env.NODE_ENV === 'test' && process.env.DEBUG_API_TESTS) {
           console.log(`→ ${config.method?.toUpperCase()} ${config.url}`, {
             headers: config.headers,
@@ -40,11 +40,11 @@ export class TestClient {
         }
         return config
       },
-      (error) => Promise.reject(error)
+      (error: any) => Promise.reject(error)
     )
 
     this.client.interceptors.response.use(
-      (response) => {
+      (response: AxiosResponse) => {
         if (process.env.NODE_ENV === 'test' && process.env.DEBUG_API_TESTS) {
           console.log(`← ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`, {
             data: response.data
@@ -52,7 +52,7 @@ export class TestClient {
         }
         return response
       },
-      (error) => {
+      (error: any) => {
         if (process.env.NODE_ENV === 'test' && process.env.DEBUG_API_TESTS) {
           console.error('API Error:', error.response?.data || error.message)
         }
@@ -217,8 +217,10 @@ export class TestClient {
     if (file instanceof File) {
       formData.append(fieldName, file)
     } else {
-      // For Node.js Buffer
-      formData.append(fieldName, file, 'test-file.txt')
+      // For Node.js Buffer - convert to Uint8Array first, then to Blob
+      const uint8Array = new Uint8Array(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
+      const blob = new Blob([uint8Array], { type: 'application/octet-stream' })
+      formData.append(fieldName, blob, 'test-file.txt')
     }
 
     if (additionalFields) {

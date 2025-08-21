@@ -3,14 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import { ChevronDown, Globe, Building, Calendar, FileText, Users, Search } from 'lucide-react'
 import { Button } from '@/features/shared/ui/button'
+import { type ChatScope } from './ScopeSelectorTypes'
 
-export type ChatScope = {
-  id: string
-  type: 'global' | 'organization' | 'meeting' | 'document' | 'team'
-  label: string
-  description?: string
-  metadata?: Record<string, any>
-}
+export type { ChatScope }
 
 interface ScopeSelectorProps {
   selectedScope: ChatScope

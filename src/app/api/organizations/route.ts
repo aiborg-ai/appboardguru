@@ -1,364 +1,186 @@
-import { NextRequest } from 'next/server'
-import { 
-  createOrganization,
-  listUserOrganizations,
-  updateOrganization,
-  deleteOrganization,
-  getOrganization,
-  type CreateOrganizationData,
-  type UpdateOrganizationData
-} from '@/lib/services/organization'
-import { RateLimiter } from '@/lib/security'
-import {
-  createSuccessResponse,
-  createErrorResponse,
-  createValidationErrorResponse,
-  createRateLimitErrorResponse,
-  withErrorHandling,
-  addSecurityHeaders,
-  validateRequestMethod,
-  getClientIP
-} from '@/lib/api-response'
+import { createAPIHandler } from '@/lib/api/createAPIHandler'
+import { OrganizationService } from '@/domains/organizations'
+import type { 
+  CreateOrganizationDTO, 
+  UpdateOrganizationDTO, 
+  OrganizationListFilters 
+} from '@/domains/organizations'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { z } from 'zod'
 
-// Rate limiters
-const createOrgRateLimiter = new RateLimiter(10, 5, 60 * 60 * 1000) // 5 per hour per IP
-const listOrgRateLimiter = new RateLimiter(50, 30, 60 * 1000) // 30 per minute per IP
+// Validation schemas
+const CreateOrganizationSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be at most 100 characters'),
+  slug: z.string()
+    .min(2, 'Slug must be at least 2 characters')
+    .max(50, 'Slug must be at most 50 characters')
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
+  logo_url: z.string().url('Logo URL must be a valid URL').optional(),
+  website: z.string().url('Website must be a valid URL').optional(),
+  industry: z.string().optional(),
+  organization_size: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
+  settings: z.record(z.string(), z.any()).optional(),
+  compliance_settings: z.record(z.string(), z.any()).optional(),
+  billing_settings: z.record(z.string(), z.any()).optional()
+})
 
-/**
- * Get device information from request
- */
-function getDeviceInfo(request: NextRequest) {
-  return {
-    userAgent: request.headers.get('user-agent') || 'Unknown',
-    fingerprint: request.headers.get('x-device-fingerprint') || 'unknown',
-    ip: getClientIP(request)
-  }
-}
+const UpdateOrganizationSchema = CreateOrganizationSchema.partial().omit({ slug: true })
 
-/**
- * Validate organization data
- */
-function validateCreateOrganizationData(data: any): { isValid: boolean; errors: string[]; sanitizedData?: CreateOrganizationData } {
-  const errors: string[] = []
+const OrganizationListFiltersSchema = z.object({
+  page: z.number().int().min(1).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  search: z.string().optional(),
+  status: z.union([
+    z.enum(['active', 'inactive']),
+    z.array(z.enum(['active', 'inactive']))
+  ]).optional(),
+  created_by: z.string().uuid().optional(),
+  organization_size: z.union([
+    z.enum(['startup', 'small', 'medium', 'large', 'enterprise']),
+    z.array(z.enum(['startup', 'small', 'medium', 'large', 'enterprise']))
+  ]).optional(),
+  industry: z.string().optional(),
+  created_after: z.string().datetime().optional(),
+  created_before: z.string().datetime().optional(),
+  updated_after: z.string().datetime().optional(),
+  updated_before: z.string().datetime().optional(),
+  sort_by: z.enum(['name', 'created_at', 'updated_at', 'status', 'member_count']).optional(),
+  sort_order: z.enum(['asc', 'desc']).optional()
+})
 
-  if (!data.name || typeof data.name !== 'string') {
-    errors.push('Organization name is required')
-  } else if (data.name.length < 2 || data.name.length > 100) {
-    errors.push('Organization name must be between 2 and 100 characters')
-  }
-
-  if (!data.slug || typeof data.slug !== 'string') {
-    errors.push('Organization slug is required')
-  } else if (!/^[a-z0-9-]+$/.test(data.slug)) {
-    errors.push('Organization slug must contain only lowercase letters, numbers, and hyphens')
-  } else if (data.slug.length < 2 || data.slug.length > 50) {
-    errors.push('Organization slug must be between 2 and 50 characters')
-  }
-
-  if (data.description && (typeof data.description !== 'string' || data.description.length > 500)) {
-    errors.push('Description must be a string with maximum 500 characters')
-  }
-
-  if (data.website && typeof data.website !== 'string') {
-    errors.push('Website must be a string')
-  }
-
-  if (data.industry && typeof data.industry !== 'string') {
-    errors.push('Industry must be a string')
-  }
-
-  if (data.organizationSize && !['startup', 'small', 'medium', 'large', 'enterprise'].includes(data.organizationSize)) {
-    errors.push('Invalid organization size')
-  }
-
-  if (errors.length > 0) {
-    return { isValid: false, errors }
-  }
-
-  return {
-    isValid: true,
-    errors: [],
-    sanitizedData: {
-      name: data.name.trim(),
-      slug: data.slug.toLowerCase().trim(),
-      description: data.description?.trim(),
-      website: data.website?.trim(),
-      industry: data.industry?.trim(),
-      organization_size: data.organizationSize
+// Helper function to create Supabase client
+async function createSupabase() {
+  const cookieStore = await cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        }
+      }
     }
-  }
+  )
 }
 
 /**
  * POST /api/organizations - Create a new organization
  */
-async function handleCreateOrganization(request: NextRequest) {
-  const deviceInfo = getDeviceInfo(request)
+export const POST = createAPIHandler({
+  validation: { body: CreateOrganizationSchema },
+  authenticate: true,
+  rateLimit: { requests: 5, window: '1h' }, // 5 per hour
+  featureFlag: 'USE_NEW_API_LAYER'
+}, async (req) => {
+  const supabase = await createSupabase()
+  const organizationService = new OrganizationService(supabase)
   
-  // Rate limiting
-  if (!createOrgRateLimiter.isAllowed(deviceInfo.ip)) {
-    return createRateLimitErrorResponse(60 * 60) // 1 hour
+  const organization = await organizationService.create(req.validatedBody!, req.user!.id)
+  
+  return {
+    data: organization,
+    message: 'Organization created successfully'
   }
-
-  let body: any
-  try {
-    body = await request.json()
-  } catch (error) {
-    return createErrorResponse('Invalid JSON in request body', 400)
-  }
-
-  // Validate user ID
-  if (!body.createdBy || typeof body.createdBy !== 'string') {
-    return createValidationErrorResponse(['User ID is required'])
-  }
-
-  // Validate organization data
-  const validation = validateCreateOrganizationData(body)
-  if (!validation.isValid) {
-    return createValidationErrorResponse(validation.errors)
-  }
-
-  const { sanitizedData } = validation
-  if (!sanitizedData) {
-    return createErrorResponse('Data validation failed', 500)
-  }
-
-  try {
-    const result = await createOrganization(sanitizedData, body.createdBy)
-
-    if (!result.success) {
-      return createErrorResponse(result.error || 'Failed to create organization', 400)
-    }
-
-    const response = createSuccessResponse(
-      result.organization,
-      'Organization created successfully'
-    )
-
-    return addSecurityHeaders(response)
-  } catch (error) {
-    console.error('Error creating organization:', error)
-    return createErrorResponse('Internal server error', 500)
-  }
-}
+})
 
 /**
  * GET /api/organizations - List user's organizations or get single organization
  */
-async function handleGetOrganizations(request: NextRequest) {
-  const deviceInfo = getDeviceInfo(request)
+export const GET = createAPIHandler({
+  validation: { query: OrganizationListFiltersSchema },
+  authenticate: true,
+  rateLimit: { requests: 30, window: '1m' }, // 30 per minute
+  cache: { ttl: 300 }, // 5 minutes
+  featureFlag: 'USE_NEW_API_LAYER'
+}, async (req) => {
+  const supabase = await createSupabase()
+  const organizationService = new OrganizationService(supabase)
   
-  // Rate limiting
-  if (!listOrgRateLimiter.isAllowed(deviceInfo.ip)) {
-    return createRateLimitErrorResponse(60) // 1 minute
-  }
-
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get('userId')
+  const { searchParams } = new URL(req.url)
   const organizationId = searchParams.get('id')
-
-  if (!userId) {
-    return createValidationErrorResponse(['User ID is required'])
-  }
-
-  try {
-    if (organizationId) {
-      // Get single organization
-      const result = await getOrganization(organizationId, userId)
-      
-      if (!result.success) {
-        return createErrorResponse(result.error || 'Failed to get organization', 400)
-      }
-
-      const response = createSuccessResponse(
-        result.organization,
-        'Organization retrieved successfully'
-      )
-
-      return addSecurityHeaders(response)
-    } else {
-      // Get user's organizations
-      const result = await listUserOrganizations(userId)
-
-      if (!result.success) {
-        return createErrorResponse(result.error || 'Failed to list organizations', 400)
-      }
-
-      const response = createSuccessResponse(
-        {
-          organizations: result.organizations || [],
-          total: result.organizations?.length || 0
-        },
-        'Organizations retrieved successfully'
-      )
-
-      return addSecurityHeaders(response)
+  
+  if (organizationId) {
+    // Get single organization
+    const organization = await organizationService.getById(organizationId, req.user!.id)
+    
+    return {
+      data: organization,
+      message: 'Organization retrieved successfully'
     }
-  } catch (error) {
-    console.error('Error getting organizations:', error)
-    return createErrorResponse('Internal server error', 500)
+  } else {
+    // List user's organizations with filters
+    const result = await organizationService.listForUser(req.user!.id)
+    
+    return {
+      data: result,
+      message: 'Organizations retrieved successfully'
+    }
   }
-}
+})
 
 /**
  * PUT /api/organizations - Update organization
  */
-async function handleUpdateOrganization(request: NextRequest) {
-  const deviceInfo = getDeviceInfo(request)
+export const PUT = createAPIHandler({
+  validation: { body: UpdateOrganizationSchema.extend({
+    organizationId: z.string().uuid('Organization ID must be a valid UUID')
+  }) },
+  authenticate: true,
+  rateLimit: { requests: 10, window: '1h' }, // 10 per hour
+  featureFlag: 'USE_NEW_API_LAYER'
+}, async (req) => {
+  const supabase = await createSupabase()
+  const organizationService = new OrganizationService(supabase)
   
-  // Rate limiting
-  if (!createOrgRateLimiter.isAllowed(deviceInfo.ip)) {
-    return createRateLimitErrorResponse(60 * 60) // 1 hour
-  }
-
-  let body: any
-  try {
-    body = await request.json()
-  } catch (error) {
-    return createErrorResponse('Invalid JSON in request body', 400)
-  }
-
-  if (!body.organizationId || typeof body.organizationId !== 'string') {
-    return createValidationErrorResponse(['Organization ID is required'])
-  }
-
-  if (!body.userId || typeof body.userId !== 'string') {
-    return createValidationErrorResponse(['User ID is required'])
-  }
-
-  // Extract update data
-  const updateData: UpdateOrganizationData = {}
+  const { organizationId, ...updateData } = req.validatedBody!
+  const organization = await organizationService.update(organizationId, updateData, req.user!.id)
   
-  if (body.name !== undefined) {
-    if (typeof body.name !== 'string' || body.name.length < 2 || body.name.length > 100) {
-      return createValidationErrorResponse(['Organization name must be between 2 and 100 characters'])
-    }
-    updateData.name = body.name.trim()
+  return {
+    data: organization,
+    message: 'Organization updated successfully'
   }
-
-  if (body.description !== undefined) {
-    if (body.description !== null && (typeof body.description !== 'string' || body.description.length > 500)) {
-      return createValidationErrorResponse(['Description must be a string with maximum 500 characters'])
-    }
-    updateData.description = body.description?.trim()
-  }
-
-  if (body.website !== undefined) {
-    updateData.website = body.website?.trim()
-  }
-
-  if (body.industry !== undefined) {
-    updateData.industry = body.industry?.trim()
-  }
-
-  if (body.organizationSize !== undefined) {
-    if (body.organizationSize && !['startup', 'small', 'medium', 'large', 'enterprise'].includes(body.organizationSize)) {
-      return createValidationErrorResponse(['Invalid organization size'])
-    }
-    updateData.organization_size = body.organizationSize
-  }
-
-  if (body.logoUrl !== undefined) {
-    updateData.logo_url = body.logoUrl?.trim()
-  }
-
-  try {
-    const result = await updateOrganization(
-      body.organizationId,
-      updateData,
-      body.userId
-    )
-
-    if (!result.success) {
-      return createErrorResponse(result.error || 'Failed to update organization', 400)
-    }
-
-    const response = createSuccessResponse(
-      result.organization,
-      'Organization updated successfully'
-    )
-
-    return addSecurityHeaders(response)
-  } catch (error) {
-    console.error('Error updating organization:', error)
-    return createErrorResponse('Internal server error', 500)
-  }
-}
+})
 
 /**
  * DELETE /api/organizations - Delete organization
  */
-async function handleDeleteOrganization(request: NextRequest) {
-  const deviceInfo = getDeviceInfo(request)
+const DeleteOrganizationSchema = z.object({
+  organizationId: z.string().uuid('Organization ID must be a valid UUID'),
+  immediate: z.boolean().optional()
+})
+
+export const DELETE = createAPIHandler({
+  validation: { query: DeleteOrganizationSchema },
+  authenticate: true,
+  rateLimit: { requests: 5, window: '1h' }, // 5 per hour
+  featureFlag: 'USE_NEW_API_LAYER'
+}, async (req) => {
+  const supabase = await createSupabase()
+  const organizationService = new OrganizationService(supabase)
   
-  const { searchParams } = new URL(request.url)
+  const { searchParams } = new URL(req.url)
   const organizationId = searchParams.get('id')
-  const userId = searchParams.get('userId')
-  const deleteImmediately = searchParams.get('immediate') === 'true'
-
+  const immediate = searchParams.get('immediate') === 'true'
+  
   if (!organizationId) {
-    return createValidationErrorResponse(['Organization ID is required'])
+    throw new Error('Organization ID is required')
   }
-
-  if (!userId) {
-    return createValidationErrorResponse(['User ID is required'])
+  
+  await organizationService.delete(organizationId, req.user!.id, immediate)
+  
+  return {
+    data: { 
+      organizationId, 
+      scheduledDeletion: !immediate
+    },
+    message: immediate ? 'Organization deleted immediately' : 'Organization scheduled for deletion'
   }
-
-  try {
-    const result = await deleteOrganization(
-      organizationId,
-      userId
-    )
-
-    if (!result.success) {
-      return createErrorResponse(result.error || 'Failed to delete organization', 400)
-    }
-
-    const response = createSuccessResponse(
-      { 
-        organizationId, 
-        scheduledDeletion: !deleteImmediately
-      },
-      deleteImmediately ? 'Organization deleted immediately' : 'Organization scheduled for deletion'
-    )
-
-    return addSecurityHeaders(response)
-  } catch (error) {
-    console.error('Error deleting organization:', error)
-    return createErrorResponse('Internal server error', 500)
-  }
-}
-
-/**
- * Route handlers
- */
-async function handleOrganizations(request: NextRequest) {
-  const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE']
-  if (!validateRequestMethod(request, allowedMethods)) {
-    return createErrorResponse('Method not allowed', 405)
-  }
-
-  try {
-    switch (request.method) {
-      case 'POST':
-        return await handleCreateOrganization(request)
-      case 'GET':
-        return await handleGetOrganizations(request)
-      case 'PUT':
-        return await handleUpdateOrganization(request)
-      case 'DELETE':
-        return await handleDeleteOrganization(request)
-      default:
-        return createErrorResponse('Method not allowed', 405)
-    }
-  } catch (error) {
-    console.error('Unexpected error in organizations API:', error)
-    return createErrorResponse('Internal server error', 500)
-  }
-}
-
-// Export route handlers
-export const GET = withErrorHandling(handleOrganizations)
-export const POST = withErrorHandling(handleOrganizations)
-export const PUT = withErrorHandling(handleOrganizations)
-export const DELETE = withErrorHandling(handleOrganizations)
+})

@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic'
 import React, { useState } from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { EnhancedAIChat } from '@/features/ai-chat/ai/EnhancedAIChat'
-import { type ChatScope } from '@/features/ai-chat/ai/ScopeSelector'
-import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat } from '@/features/ai-chat/ai/ScopeSelector'
+import { ScopeSelector, type ChatScope } from '@/features/ai-chat/ai/ScopeSelector'
+import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat } from '@/features/ai-chat/ai/ScopeSelectorTypes'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   MessageSquare,
