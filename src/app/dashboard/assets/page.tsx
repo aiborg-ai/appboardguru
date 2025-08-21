@@ -25,7 +25,14 @@ import {
   Download,
   MoreHorizontal,
   SortAsc,
-  Settings
+  Settings,
+  FileText,
+  Calendar,
+  Edit,
+  DollarSign,
+  Shield,
+  Monitor,
+  File
 } from 'lucide-react'
 import { Button } from '@/features/shared/ui/button'
 import { Input } from '@/features/shared/ui/input'
@@ -256,13 +263,15 @@ export default function AssetsPage() {
   }
 
   const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'board-documents', label: 'Board Documents' },
-    { value: 'financial', label: 'Financial Reports' },
-    { value: 'legal', label: 'Legal Documents' },
-    { value: 'presentations', label: 'Presentations' },
-    { value: 'policies', label: 'Policies & Procedures' },
-    { value: 'meeting-materials', label: 'Meeting Materials' }
+    { value: 'all', label: 'All Categories', icon: Folder, color: 'text-gray-600' },
+    { value: 'board_pack', label: 'Board Packs', icon: Folder, color: 'text-blue-600' },
+    { value: 'meeting_notes', label: 'Meeting Notes', icon: FileText, color: 'text-green-600' },
+    { value: 'agenda', label: 'Agenda', icon: Calendar, color: 'text-purple-600' },
+    { value: 'notes', label: 'Notes', icon: Edit, color: 'text-orange-600' },
+    { value: 'financial_report', label: 'Financial Reports', icon: DollarSign, color: 'text-emerald-600' },
+    { value: 'legal_document', label: 'Legal Documents', icon: Shield, color: 'text-red-600' },
+    { value: 'presentation', label: 'Presentations', icon: Monitor, color: 'text-indigo-600' },
+    { value: 'other', label: 'Other', icon: File, color: 'text-gray-500' }
   ]
 
   const folders = [
@@ -375,15 +384,29 @@ export default function AssetsPage() {
                 />
               </div>
               
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white pr-8"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  {(() => {
+                    const selectedCat = categories.find(c => c.value === selectedCategory)
+                    const IconComponent = selectedCat?.icon || Folder
+                    return <IconComponent className={`h-4 w-4 ${selectedCat?.color || 'text-gray-400'}`} />
+                  })()}
+                </div>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
               
               <select
                 value={selectedFolder}

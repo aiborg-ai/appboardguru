@@ -300,6 +300,7 @@ export interface Database {
           metadata: any | null
           archived_at: string | null
           auto_archive_date: string | null
+          category: 'board_pack' | 'meeting_notes' | 'agenda' | 'notes' | 'financial_report' | 'legal_document' | 'presentation' | 'other'
         }
         Insert: {
           id?: string
@@ -322,6 +323,7 @@ export interface Database {
           metadata?: any | null
           archived_at?: string | null
           auto_archive_date?: string | null
+          category?: 'board_pack' | 'meeting_notes' | 'agenda' | 'notes' | 'financial_report' | 'legal_document' | 'presentation' | 'other'
         }
         Update: {
           id?: string
@@ -344,6 +346,7 @@ export interface Database {
           metadata?: any | null
           archived_at?: string | null
           auto_archive_date?: string | null
+          category?: 'board_pack' | 'meeting_notes' | 'agenda' | 'notes' | 'financial_report' | 'legal_document' | 'presentation' | 'other'
         }
       }
       board_pack_permissions: {
@@ -1341,6 +1344,278 @@ export interface Database {
       notification_type: 'invitation' | 'reminder' | 'agenda_update' | 'document_added' | 'meeting_cancelled' | 'meeting_rescheduled' | 'rsvp_reminder' | 'pre_meeting_task'
       notification_status: 'pending' | 'sent' | 'failed' | 'cancelled'
       notification_channel: 'email' | 'push' | 'sms' | 'in_app'
+      chat_conversation_type: 'direct' | 'group' | 'vault_group'
+      chat_message_type: 'text' | 'file' | 'image' | 'system' | 'reply' | 'forward'
+      chat_participant_role: 'admin' | 'moderator' | 'member'
+      chat_participant_status: 'active' | 'muted' | 'left' | 'removed'
+      chat_delivery_status: 'sent' | 'delivered' | 'read' | 'failed'
+    }
+    Tables: {
+      chat_conversations: {
+        Row: {
+          id: string
+          organization_id: string | null
+          name: string | null
+          description: string | null
+          conversation_type: 'direct' | 'group' | 'vault_group'
+          vault_id: string | null
+          is_private: boolean
+          is_archived: boolean
+          archived_at: string | null
+          archived_by: string | null
+          allow_file_sharing: boolean
+          allow_mentions: boolean
+          message_retention_days: number | null
+          created_by: string
+          created_at: string
+          updated_at: string
+          last_message_at: string
+          total_messages: number
+          total_participants: number
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          name?: string | null
+          description?: string | null
+          conversation_type: 'direct' | 'group' | 'vault_group'
+          vault_id?: string | null
+          is_private?: boolean
+          is_archived?: boolean
+          archived_at?: string | null
+          archived_by?: string | null
+          allow_file_sharing?: boolean
+          allow_mentions?: boolean
+          message_retention_days?: number | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          last_message_at?: string
+          total_messages?: number
+          total_participants?: number
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          name?: string | null
+          description?: string | null
+          conversation_type?: 'direct' | 'group' | 'vault_group'
+          vault_id?: string | null
+          is_private?: boolean
+          is_archived?: boolean
+          archived_at?: string | null
+          archived_by?: string | null
+          allow_file_sharing?: boolean
+          allow_mentions?: boolean
+          message_retention_days?: number | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          last_message_at?: string
+          total_messages?: number
+          total_participants?: number
+        }
+      }
+      chat_participants: {
+        Row: {
+          id: string
+          conversation_id: string
+          user_id: string
+          role: 'admin' | 'moderator' | 'member'
+          can_add_participants: boolean
+          can_remove_participants: boolean
+          can_edit_conversation: boolean
+          can_delete_messages: boolean
+          status: 'active' | 'muted' | 'left' | 'removed'
+          joined_at: string
+          left_at: string | null
+          notifications_enabled: boolean
+          notification_sound: boolean
+          custom_name: string | null
+          last_read_at: string
+          last_read_message_id: string | null
+          added_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          user_id: string
+          role?: 'admin' | 'moderator' | 'member'
+          can_add_participants?: boolean
+          can_remove_participants?: boolean
+          can_edit_conversation?: boolean
+          can_delete_messages?: boolean
+          status?: 'active' | 'muted' | 'left' | 'removed'
+          joined_at?: string
+          left_at?: string | null
+          notifications_enabled?: boolean
+          notification_sound?: boolean
+          custom_name?: string | null
+          last_read_at?: string
+          last_read_message_id?: string | null
+          added_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          user_id?: string
+          role?: 'admin' | 'moderator' | 'member'
+          can_add_participants?: boolean
+          can_remove_participants?: boolean
+          can_edit_conversation?: boolean
+          can_delete_messages?: boolean
+          status?: 'active' | 'muted' | 'left' | 'removed'
+          joined_at?: string
+          left_at?: string | null
+          notifications_enabled?: boolean
+          notification_sound?: boolean
+          custom_name?: string | null
+          last_read_at?: string
+          last_read_message_id?: string | null
+          added_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          message_type: 'text' | 'file' | 'image' | 'system' | 'reply' | 'forward'
+          reply_to_message_id: string | null
+          thread_root_id: string | null
+          file_url: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          is_edited: boolean
+          edited_at: string | null
+          is_deleted: boolean
+          deleted_at: string | null
+          deleted_by: string | null
+          delivered_at: string
+          read_by: any
+          metadata: any
+          mentions: any
+          created_at: string
+          updated_at: string
+          expires_at: string | null
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          message_type?: 'text' | 'file' | 'image' | 'system' | 'reply' | 'forward'
+          reply_to_message_id?: string | null
+          thread_root_id?: string | null
+          file_url?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          is_edited?: boolean
+          edited_at?: string | null
+          is_deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+          delivered_at?: string
+          read_by?: any
+          metadata?: any
+          mentions?: any
+          created_at?: string
+          updated_at?: string
+          expires_at?: string | null
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          sender_id?: string
+          content?: string
+          message_type?: 'text' | 'file' | 'image' | 'system' | 'reply' | 'forward'
+          reply_to_message_id?: string | null
+          thread_root_id?: string | null
+          file_url?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          is_edited?: boolean
+          edited_at?: string | null
+          is_deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+          delivered_at?: string
+          read_by?: any
+          metadata?: any
+          mentions?: any
+          created_at?: string
+          updated_at?: string
+          expires_at?: string | null
+        }
+      }
+      chat_message_reactions: {
+        Row: {
+          id: string
+          message_id: string
+          user_id: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          user_id: string
+          emoji: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          user_id?: string
+          emoji?: string
+          created_at?: string
+        }
+      }
+      chat_message_delivery: {
+        Row: {
+          id: string
+          message_id: string
+          user_id: string
+          status: 'sent' | 'delivered' | 'read' | 'failed'
+          delivered_at: string | null
+          read_at: string | null
+          failed_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          user_id: string
+          status?: 'sent' | 'delivered' | 'read' | 'failed'
+          delivered_at?: string | null
+          read_at?: string | null
+          failed_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          user_id?: string
+          status?: 'sent' | 'delivered' | 'read' | 'failed'
+          delivered_at?: string | null
+          read_at?: string | null
+          failed_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

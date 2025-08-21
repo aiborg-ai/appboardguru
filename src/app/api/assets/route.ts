@@ -38,24 +38,19 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'updated_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     
-    // Build query for user's accessible assets
+    // Build query for user's accessible board packs/assets
     let query = supabase
-      .from('assets')
+      .from('board_packs')
       .select(`
         *,
-        owner:users!assets_owner_id_fkey(id, name, email),
-        asset_shares!inner(
-          id,
-          shared_with_user_id,
-          permission_level,
-          shared_by_user_id,
-          users!asset_shares_shared_with_user_id_fkey(id, name, email)
-        )
+        uploaded_by_user:users!uploaded_by(id, full_name, email)
       `)
-      .eq('is_deleted', false)
+      .is('archived_at', null)
 
-    // Filter by ownership or shared access
-    query = query.or(`owner_id.eq.${user.id},asset_shares.shared_with_user_id.eq.${user.id}`)
+    // Filter by user access (uploaded by user or organization member)
+    if (user) {
+      query = query.or(`uploaded_by.eq.${user.id},organization_id.in.(SELECT organization_id FROM organization_members WHERE user_id = '${user.id}' AND status = 'active')`)
+    }
 
     // Apply filters
     if (category && category !== 'all') {
@@ -67,7 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,file_name.ilike.%${search}%,tags.cs.{${search}}`)
+      query = query.or(`title.ilike.%${search}%,file_name.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
     // Apply sorting
@@ -97,18 +92,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 })
     }
 
-    // Transform data to include sharing information
+    // Transform data for frontend consumption
     const transformedAssets = assets?.map(asset => ({
       ...asset,
-      isOwner: asset.owner_id === user.id,
-      sharedWith: asset.asset_shares?.filter((share: any) => 
-        share.shared_with_user_id !== user.id
-      ).map((share: any) => ({
-        userId: share.shared_with_user_id,
-        userName: share.users?.name || '',
-        permission: share.permission_level
-      })) || [],
-      isShared: (asset.asset_shares?.length || 0) > 0
+      isOwner: asset.uploaded_by === user.id,
+      owner: asset.uploaded_by_user,
+      sharedWith: [], // TODO: Implement sharing system
+      isShared: false // TODO: Implement sharing system
     }))
 
     return NextResponse.json({
@@ -175,26 +165,21 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Create asset record
+    // Create board pack record
     const { data: asset, error } = await supabase
-      .from('assets')
+      .from('board_packs')
       .insert({
-        owner_id: user.id,
+        uploaded_by: user.id,
         title,
         description,
         file_name: fileName,
-        original_file_name: originalFileName || fileName,
         file_path: filePath,
         file_size: fileSize,
         file_type: fileType,
-        mime_type: mimeType || 'application/octet-stream',
-        category: category || 'general',
-        folder_path: folderPath || '/',
+        category: category || 'other',
         tags: tags || [],
-        thumbnail_url: thumbnailUrl,
-        preview_url: previewUrl,
-        is_processed: true,
-        processing_status: 'completed'
+        status: 'ready',
+        watermark_applied: false
       })
       .select()
       .single()
@@ -206,15 +191,23 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     await supabase
-      .from('asset_activity_log')
+      .from('audit_logs')
       .insert({
-        asset_id: asset.id,
         user_id: user.id,
-        activity_type: 'upload',
-        activity_details: {
+        organization_id: asset.organization_id,
+        event_type: 'data_modification',
+        event_category: 'asset_management',
+        action: 'upload',
+        resource_type: 'board_pack',
+        resource_id: asset.id,
+        event_description: `Uploaded new asset: ${title}`,
+        outcome: 'success',
+        severity: 'low',
+        details: {
           file_name: fileName,
           file_size: fileSize,
-          file_type: fileType
+          file_type: fileType,
+          category: category || 'other'
         }
       })
 

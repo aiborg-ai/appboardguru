@@ -20,9 +20,21 @@ import {
   Copy,
   Download,
   Trash2,
-  Filter
+  Filter,
+  Globe,
+  Building2,
+  Folder,
+  FileIcon,
+  ChevronDown
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/features/shared/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface RightPanelProps {
   className?: string;
@@ -36,12 +48,22 @@ interface RightPanelProps {
 
 type PanelTab = 'ai-chat' | 'logs';
 
+type ContextScope = 'general' | 'boardguru' | 'organization' | 'vault' | 'asset';
+
+interface ContextScopeOption {
+  id: ContextScope;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
 interface ChatMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
   status?: 'sending' | 'sent' | 'error';
+  contextScope?: ContextScope;
 }
 
 interface LogEntry {
@@ -119,7 +141,44 @@ const LOG_LEVEL_CONFIG = {
   debug: { color: 'text-gray-600 bg-gray-50', label: 'DEBUG' }
 };
 
+const CONTEXT_SCOPE_OPTIONS: ContextScopeOption[] = [
+  {
+    id: 'general',
+    label: 'General',
+    description: 'Full access to all information and online resources',
+    icon: Globe
+  },
+  {
+    id: 'boardguru',
+    label: 'BoardGuru',
+    description: 'Limited to BoardGuru platform knowledge and features',
+    icon: Bot
+  },
+  {
+    id: 'organization',
+    label: 'Organization',
+    description: 'Scoped to current organization data and context',
+    icon: Building2
+  },
+  {
+    id: 'vault',
+    label: 'Current Vault',
+    description: 'Limited to selected vault content and assets',
+    icon: Folder
+  },
+  {
+    id: 'asset',
+    label: 'Current Asset',
+    description: 'Focused on specific asset analysis and insights',
+    icon: FileIcon
+  }
+];
+
 export default function RightPanel({ className, externalControl }: RightPanelProps) {
+  // Organization context
+  const { currentOrganization, currentVault } = useOrganization();
+  
+  // Internal state - always start closed to prevent auto-opening
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [internalActiveTab, setInternalActiveTab] = useState<PanelTab>('ai-chat');
   
@@ -129,10 +188,51 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   const setIsOpen = externalControl?.onOpenChange ?? setInternalIsOpen;
   const setActiveTab = externalControl?.onTabChange ?? setInternalActiveTab;
   const [isMinimized, setIsMinimized] = useState(false);
+  
+  // AI Chat state
+  const [contextScope, setContextScope] = useState<ContextScope>('boardguru');
   const [chatMessage, setChatMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_MESSAGES);
+  
+  // Logs state
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOG_ENTRIES);
   const [logFilter, setLogFilter] = useState<string>('all');
+
+  // Helper functions
+  const getAvailableScopes = (): ContextScopeOption[] => {
+    const availableScopes = [...CONTEXT_SCOPE_OPTIONS.filter(scope => 
+      scope.id === 'general' || scope.id === 'boardguru'
+    )];
+    
+    if (currentOrganization) {
+      availableScopes.push(CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'organization')!);
+    }
+    
+    if (currentVault) {
+      availableScopes.push(CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'vault')!);
+    }
+    
+    // Asset scope would be available when viewing a specific asset
+    // availableScopes.push(CONTEXT_SCOPE_OPTIONS.find(s => s.id === 'asset')!);
+    
+    return availableScopes;
+  };
+
+  const getContextScopeLabel = (scope: ContextScope): string => {
+    const baseOption = CONTEXT_SCOPE_OPTIONS.find(o => o.id === scope);
+    if (!baseOption) return 'Unknown';
+    
+    switch (scope) {
+      case 'organization':
+        return currentOrganization ? `${currentOrganization.name}` : 'Organization';
+      case 'vault':
+        return currentVault ? `Vault: ${currentVault.name}` : 'Current Vault';
+      case 'asset':
+        return 'Current Asset'; // Would show asset name when available
+      default:
+        return baseOption.label;
+    }
+  };
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;
@@ -142,13 +242,14 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
       content: chatMessage,
       role: 'user',
       timestamp: new Date(),
-      status: 'sending'
+      status: 'sending',
+      contextScope
     };
 
     setMessages(prev => [...prev, newMessage]);
     setChatMessage('');
 
-    // Simulate AI response
+    // Simulate AI response based on context scope
     setTimeout(() => {
       setMessages(prev => 
         prev.map(msg => 
@@ -156,12 +257,34 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
         )
       );
 
+      let aiResponseContent = '';
+      switch (contextScope) {
+        case 'general':
+          aiResponseContent = 'I have access to all information and online resources to help you with that query.';
+          break;
+        case 'boardguru':
+          aiResponseContent = 'I\'ll help you with BoardGuru-specific features and functionality.';
+          break;
+        case 'organization':
+          aiResponseContent = `I\'ll focus on information related to ${currentOrganization?.name || 'your organization'} to answer your question.`;
+          break;
+        case 'vault':
+          aiResponseContent = `I\'ll analyze the content and assets in the "${currentVault?.name || 'current vault'}" to provide insights.`;
+          break;
+        case 'asset':
+          aiResponseContent = 'I\'ll provide detailed analysis of the current asset you\'re viewing.';
+          break;
+        default:
+          aiResponseContent = 'I understand you need help with that. Let me analyze the information and provide you with insights.';
+      }
+
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: 'I understand you need help with that. Let me analyze the information and provide you with insights.',
+        content: aiResponseContent,
         role: 'assistant',
         timestamp: new Date(),
-        status: 'sent'
+        status: 'sent',
+        contextScope
       };
 
       setMessages(prev => [...prev, aiResponse]);
@@ -181,7 +304,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     logFilter === 'all' || log.level === logFilter
   );
 
-  const panelWidth = isMinimized ? 'w-12' : 'w-96';
+  const panelWidth = isMinimized ? 'w-12' : 'w-80';
 
   return (
     <>
@@ -309,7 +432,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
             {activeTab === 'ai-chat' && (
               <div className="flex flex-col h-full">
                 {/* Chat Header */}
-                <div className="p-3 border-b border-gray-100">
+                <div className="p-3 border-b border-gray-100 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -323,6 +446,67 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                       <Settings className="h-3 w-3" />
                     </Button>
+                  </div>
+                  
+                  {/* Context Scope Selector */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-700">Context Scope</label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-between text-xs h-8"
+                        >
+                          <div className="flex items-center space-x-2">
+                            {React.createElement(
+                              CONTEXT_SCOPE_OPTIONS.find(o => o.id === contextScope)?.icon || Bot,
+                              { className: "h-3 w-3" }
+                            )}
+                            <span>{getContextScopeLabel(contextScope)}</span>
+                          </div>
+                          <ChevronDown className="h-3 w-3 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-64" align="start">
+                        {getAvailableScopes().map((scopeOption) => {
+                          const Icon = scopeOption.icon;
+                          const isDisabled = 
+                            (scopeOption.id === 'organization' && !currentOrganization) ||
+                            (scopeOption.id === 'vault' && !currentVault) ||
+                            (scopeOption.id === 'asset' && false); // Would check for current asset
+                          
+                          return (
+                            <DropdownMenuItem
+                              key={scopeOption.id}
+                              onClick={() => !isDisabled && setContextScope(scopeOption.id)}
+                              disabled={isDisabled}
+                              className="flex flex-col items-start space-y-1 p-3"
+                            >
+                              <div className="flex items-center space-x-2 w-full">
+                                <Icon className="h-4 w-4" />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium">
+                                    {scopeOption.id === 'organization' && currentOrganization 
+                                      ? currentOrganization.name
+                                      : scopeOption.id === 'vault' && currentVault
+                                      ? `Vault: ${currentVault.name}`
+                                      : scopeOption.label
+                                    }
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {scopeOption.description}
+                                  </div>
+                                </div>
+                                {contextScope === scopeOption.id && (
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                                )}
+                              </div>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 

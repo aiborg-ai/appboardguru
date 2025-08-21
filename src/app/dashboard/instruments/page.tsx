@@ -13,6 +13,7 @@ import {
   TrendingUp,
   BarChart3,
   Play,
+  Calendar,
   Sparkles,
   PieChart,
   LineChart,
@@ -60,6 +61,24 @@ const INSTRUMENTS = [
     metrics: [
       { label: 'Reports Processed', value: '340+', icon: BookOpen },
       { label: 'Insights Generated', value: '1.2K+', icon: Sparkles }
+    ]
+  },
+  {
+    id: 'calendar',
+    title: 'Calendar',
+    description: 'Comprehensive meeting scheduling and calendar management with automated reminders and integrations.',
+    icon: Calendar,
+    iconColor: 'text-indigo-600',
+    href: '/dashboard/calendar',
+    category: 'Scheduling',
+    status: 'active' as const,
+    badges: [
+      { label: 'Real-time', color: 'bg-indigo-100 text-indigo-700' },
+      { label: 'Integrated', color: 'bg-blue-100 text-blue-700' }
+    ],
+    metrics: [
+      { label: 'Meetings Scheduled', value: '89', icon: Calendar },
+      { label: 'This Month', value: '12', icon: Activity }
     ]
   },
   {
@@ -239,7 +258,7 @@ export default function InstrumentsPage() {
         </div>
 
         {/* Category Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
           <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-100">
             <div className="flex items-center space-x-3">
               <Brain className="h-6 w-6 text-purple-600" />
@@ -259,6 +278,18 @@ export default function InstrumentsPage() {
                 <p className="text-sm font-medium text-green-900">Risk & Compliance</p>
                 <p className="text-xs text-green-600">
                   {INSTRUMENTS.filter(i => i.category === 'Risk & Compliance').length} instruments
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+            <div className="flex items-center space-x-3">
+              <Calendar className="h-6 w-6 text-indigo-600" />
+              <div>
+                <p className="text-sm font-medium text-indigo-900">Scheduling</p>
+                <p className="text-xs text-indigo-600">
+                  {INSTRUMENTS.filter(i => i.category === 'Scheduling').length} instrument
                 </p>
               </div>
             </div>

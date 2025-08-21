@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   
-  // Right panel state
+  // Right panel state - ensure panel is closed by default
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'ai-chat' | 'logs'>('ai-chat')
 
