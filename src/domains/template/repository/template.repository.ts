@@ -29,7 +29,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Find template by ID with optional relations
    */
-  @withQueryMonitoring
   async findById(
     id: string, 
     includeRelations = false
@@ -57,7 +56,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Find templates with filtering, sorting, and pagination
    */
-  @withQueryMonitoring
   async findMany(filters: TemplateListFilters = {}): Promise<TemplateListResponse> {
     try {
       const {
@@ -160,7 +158,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Create a new template
    */
-  @withQueryMonitoring
   async create(data: CreateTemplateDTO): Promise<TemplateEntity> {
     try {
       const userId = await this.getCurrentUserId()
@@ -190,7 +187,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Update an existing template
    */
-  @withQueryMonitoring
   async update(id: string, data: UpdateTemplateDTO): Promise<TemplateEntity> {
     try {
       const updateData = {
@@ -218,7 +214,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Delete a template (soft delete)
    */
-  @withQueryMonitoring
   async delete(id: string): Promise<void> {
     try {
       const { error } = await this.supabase
@@ -240,7 +235,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Hard delete a template (permanent)
    */
-  @withQueryMonitoring
   async hardDelete(id: string): Promise<void> {
     try {
       const { error } = await this.supabase
@@ -259,7 +253,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Bulk update templates
    */
-  @withQueryMonitoring
   async bulkUpdate(ids: string[], data: UpdateTemplateDTO): Promise<TemplateEntity[]> {
     try {
       const updateData = {
@@ -286,7 +279,6 @@ export class TemplateRepository extends BaseRepository {
   /**
    * Check if user has access to template
    */
-  @withQueryMonitoring
   async checkAccess(templateId: string, userId: string): Promise<boolean> {
     try {
       const { data, error } = await this.supabase
@@ -329,35 +321,4 @@ export class TemplateRepository extends BaseRepository {
   }
 }
 
-// Decorator factory for query monitoring
-function withQueryMonitoring(
-  target: any,
-  propertyKey: string,
-  descriptor: PropertyDescriptor
-) {
-  const originalMethod = descriptor.value
-
-  descriptor.value = async function (...args: any[]) {
-    const start = Date.now()
-    try {
-      const result = await originalMethod.apply(this, args)
-      const duration = Date.now() - start
-      
-      // Track query performance
-      const { monitor } = await import('@/lib/monitoring')
-      monitor.trackDatabaseQuery(
-        `${target.constructor.name}.${propertyKey}`,
-        duration,
-        { args: args.length }
-      )
-      
-      return result
-    } catch (error) {
-      const { monitor } = await import('@/lib/monitoring')
-      monitor.trackError(`${target.constructor.name}.${propertyKey}`, error as Error)
-      throw error
-    }
-  }
-
-  return descriptor
-}
+// TODO: Add proper query monitoring decorator

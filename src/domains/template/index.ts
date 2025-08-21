@@ -8,7 +8,7 @@
 // Types
 export * from './types/entity.types'
 export * from './types/dto.types'
-export * from './types/api.types'
+// export * from './types/api.types'
 
 // Repository
 export { TemplateRepository } from './repository/template.repository'
@@ -17,25 +17,26 @@ export { TemplateRepository } from './repository/template.repository'
 export { TemplateService } from './services/template.service'
 
 // API Handlers
-export * from './api/handlers'
+// export * from './api/handlers'
 
 // React Hooks
-export * from './hooks/useList'
-export * from './hooks/useDetail'
-export * from './hooks/useCreate'
-export * from './hooks/useUpdate'
-export * from './hooks/useDelete'
+// export * from './hooks/useList'
+// export * from './hooks/useDetail'
+// export * from './hooks/useCreate'
+// export * from './hooks/useUpdate'
+// export * from './hooks/useDelete'
 
 // Components
-export { TemplateList } from './components/List'
-export { TemplateDetail } from './components/Detail'
-export { TemplateForm } from './components/Form'
-export { TemplateCard } from './components/Card'
+// export { TemplateList } from './components/List'
+// export { TemplateDetail } from './components/Detail'
+// export { TemplateForm } from './components/Form'
+// export { TemplateCard } from './components/Card'
 
 // Utils
-export * from './utils/template.utils'
+// export * from './utils/template.utils'
 
-// Domain Module Interface
+// Domain Module Interface (Template - uncomment when implementing)
+/*
 export interface TemplateDomainModule {
   // Repository
   repository: typeof import('./repository/template.repository').TemplateRepository
@@ -72,7 +73,7 @@ export interface TemplateDomainModule {
   }
 }
 
-// Export the complete domain module
+// Export the complete domain module (Template - uncomment when implementing)
 export const templateDomain: TemplateDomainModule = {
   repository: require('./repository/template.repository').TemplateRepository,
   service: require('./services/template.service').TemplateService,
@@ -92,3 +93,4 @@ export const templateDomain: TemplateDomainModule = {
   },
   types: {} as any // Types are compile-time only
 }
+*/

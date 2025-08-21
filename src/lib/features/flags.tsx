@@ -3,6 +3,7 @@
  * Enables gradual rollout of new features and safe migrations
  */
 
+import React, { useState, useEffect } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 
 export interface FeatureFlags {
@@ -313,9 +314,6 @@ export const featureFlags = FeatureManager.getInstance()
 /**
  * React hook for using feature flags
  */
-import { useState, useEffect } from 'react'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
-
 export function useFeatureFlag(flag: keyof FeatureFlags) {
   const [isEnabled, setIsEnabled] = useState(false)
   const [loading, setLoading] = useState(true)

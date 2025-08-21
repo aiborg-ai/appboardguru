@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic'
 import React, { useState } from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { EnhancedAIChat } from '@/features/ai-chat/ai/EnhancedAIChat'
-import { ScopeSelector, type ChatScope } from '@/features/ai-chat/ai/ScopeSelector'
+import { type ChatScope } from '@/features/ai-chat/ai/ScopeSelector'
+import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat } from '@/features/ai-chat/ai/ScopeSelector'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { 
   MessageSquare,
@@ -143,10 +144,9 @@ export default function AIChatPage() {
             
             {/* Scope Selector */}
             <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <ScopeSelector
-                selectedScope={selectedScope}
-                onScopeChange={setSelectedScope}
-              />
+              <div className="text-sm text-gray-600">
+                Scope: {selectedScope?.label || 'General'}
+              </div>
             </div>
 
             {/* Chat Content - This would be the full-screen chat interface */}
@@ -213,10 +213,9 @@ export default function AIChatPage() {
             {/* Current Scope */}
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Chat Scope</h2>
-              <ScopeSelector
-                selectedScope={selectedScope}
-                onScopeChange={setSelectedScope}
-              />
+              <div className="text-sm text-gray-600">
+                Scope selector placeholder
+              </div>
               <div className="mt-3 text-sm text-gray-600">
                 <p>Current context: <span className="font-medium">{selectedScope.label}</span></p>
                 {selectedScope.description && (

@@ -37,43 +37,46 @@ const QuerySchema = z.object({
 /**
  * GET /api/organizations - List user's organizations or get single organization
  */
-export const GET = createCRUDHandler.list(async (req) => {
-  const { userId, id } = req.validatedQuery
-  
-  if (id) {
-    // Get single organization
-    const result = await getOrganization(id, userId)
+export const GET = createAPIHandler<any, any>(
+  { 
+    authenticate: true, 
+    cache: { ttl: 300 },
+    rateLimit: { requests: 100, window: '1m' },
+    validation: { query: QuerySchema }
+  },
+  async (req) => {
+    const { userId, id } = req.validatedQuery
     
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to get organization')
-    }
+    if (id) {
+      // Get single organization
+      const result = await getOrganization(id, userId)
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get organization')
+      }
 
-    return {
-      success: true,
-      data: result.organization,
-      message: 'Organization retrieved successfully'
-    }
-  } else {
-    // Get user's organizations
-    const result = await listUserOrganizations(userId)
+      return {
+        success: true,
+        data: result.organization
+      }
+    } else {
+      // Get user's organizations
+      const result = await listUserOrganizations(userId)
 
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to list organizations')
-    }
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to list organizations')
+      }
 
-    return {
-      success: true,
-      data: {
-        organizations: result.organizations || [],
-        total: result.organizations?.length || 0
-      },
-      message: 'Organizations retrieved successfully'
+      return {
+        success: true,
+        data: {
+          organizations: result.organizations || [],
+          total: result.organizations?.length || 0
+        }
+      }
     }
   }
-})
-
-// Apply query validation to GET handler
-GET.validation = { query: QuerySchema }
+)
 
 /**
  * POST /api/organizations - Create a new organization
