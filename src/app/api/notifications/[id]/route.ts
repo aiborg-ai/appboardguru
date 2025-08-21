@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
@@ -16,10 +16,11 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const { data: notification, error } = await supabase
       .from('notifications')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
       .single()
 
@@ -52,6 +53,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const updateData = {
       ...body,
       updated_at: new Date().toISOString()
@@ -68,7 +70,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const { data, error } = await supabase
       .from('notifications')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
       .select()
       .single()
@@ -101,10 +103,11 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const { error } = await supabase
       .from('notifications')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
 
     if (error) {
