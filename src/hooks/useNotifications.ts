@@ -10,6 +10,7 @@ interface NotificationsResponse {
   total: number
   limit: number
   offset: number
+  error?: string
 }
 
 interface NotificationCounts {
@@ -17,6 +18,7 @@ interface NotificationCounts {
   total: number
   critical_unread: number
   high_unread: number
+  error?: string
 }
 
 interface UseNotificationsOptions {
