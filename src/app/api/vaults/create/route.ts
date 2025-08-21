@@ -272,51 +272,42 @@ export async function POST(request: NextRequest) {
         console.log(`${invitationResults.length} invitation emails need to be sent`);
       }
 
-      // Step 7: Log audit events
-      const auditEvents = [
+      // Step 7: Log activities using comprehensive logging system
+      const { logVaultActivity, logOrganizationActivity, getRequestContext } = await import('@/lib/services/activity-logger')
+      const requestContext = getRequestContext(request)
+
+      // Log vault creation
+      await logVaultActivity(
+        user.id,
+        organizationId,
+        'created',
+        vault.id,
+        vault.name,
         {
-          organization_id: organizationId,
-          user_id: user.id,
-          event_type: 'user_action',
-          event_category: 'vaults',
-          action: 'create_vault',
-          resource_type: 'vault',
-          resource_id: vault.id,
-          event_description: `Created vault "${vault.name}"`,
-          outcome: 'success',
-          details: {
-            vault_type: vault.vault_type,
-            access_level: vault.access_level,
-            assets_count: data.selectedAssets.length,
-            boardmates_count: data.selectedBoardMates.length,
-            invitations_count: data.newBoardMates.length,
-            created_organization: !!createdOrganization,
-          },
+          ...requestContext,
+          vault_type: vault.vault_type,
+          access_level: vault.access_level,
+          assets_count: data.selectedAssets.length,
+          boardmates_count: data.selectedBoardMates.length,
+          invitations_count: data.newBoardMates.length
         }
-      ];
+      )
 
+      // Log organization creation if applicable
       if (createdOrganization) {
-        auditEvents.push({
-          organization_id: organizationId,
-          user_id: user.id,
-          event_type: 'user_action',
-          event_category: 'organizations',
-          action: 'create_organization',
-          resource_type: 'organization',
-          resource_id: organizationId,
-          event_description: `Created organization "${createdOrganization.name}"`,
-          outcome: 'success',
-          details: {
-            name: createdOrganization.name,
+        await logOrganizationActivity(
+          user.id,
+          organizationId,
+          'created',
+          createdOrganization.name,
+          {
+            ...requestContext,
             slug: createdOrganization.slug,
-            website: createdOrganization.website,
-          } as any,
-        });
+            industry: createdOrganization.industry,
+            website: createdOrganization.website
+          }
+        )
       }
-
-      await supabase
-        .from('audit_logs')
-        .insert(auditEvents);
 
       // Return success response
       return NextResponse.json({

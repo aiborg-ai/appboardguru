@@ -44,9 +44,16 @@ import {
   Image as ImageIcon,
   Download,
   Reply,
-  Trash2
+  Trash2,
+  Bell,
+  Activity,
+  AlertCircle,
+  Calendar,
+  Shield,
+  User
 } from 'lucide-react'
 import { useBoardChat, ChatConversation, ChatMessage } from '@/hooks/useBoardChat'
+import { useNotifications } from '@/hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
 
 interface BoardChatPanelProps {
@@ -68,10 +75,13 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
     isSendingMessage
   } = useBoardChat()
 
+  const { counts: notificationCounts } = useNotifications({ autoRefresh: true })
+
   const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showNewChatDialog, setShowNewChatDialog] = useState(false)
   const [newChatType, setNewChatType] = useState<'direct' | 'group'>('direct')
+  const [activeTab, setActiveTab] = useState<'chat' | 'notifications' | 'logs'>('chat')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
@@ -145,10 +155,10 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-blue-600" />
-            BoardChat
-            {totalUnread > 0 && (
+            Board Hub
+            {(totalUnread > 0 || notificationCounts.unread > 0) && (
               <Badge variant="destructive" className="px-1 py-0 text-xs">
-                {totalUnread}
+                {totalUnread + notificationCounts.unread}
               </Badge>
             )}
           </CardTitle>
@@ -202,8 +212,50 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
             </Button>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-3">
+          <Button
+            variant={activeTab === 'chat' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('chat')}
+            className="flex-1"
+          >
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Chat
+            {totalUnread > 0 && (
+              <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[16px] h-4">
+                {totalUnread > 9 ? '9+' : totalUnread}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'notifications' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('notifications')}
+            className="flex-1"
+          >
+            <Bell className="h-4 w-4 mr-1" />
+            Alerts
+            {notificationCounts.unread > 0 && (
+              <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[16px] h-4">
+                {notificationCounts.unread > 9 ? '9+' : notificationCounts.unread}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'logs' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('logs')}
+            className="flex-1"
+          >
+            <Activity className="h-4 w-4 mr-1" />
+            Logs
+          </Button>
+        </div>
         
-        {/* Search */}
+        {/* Search - Only show for chat and notifications */}
+        {(activeTab === 'chat' || activeTab === 'notifications') && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -221,9 +273,12 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
             />
           </div>
         </div>
+        )}
       </CardHeader>
 
       <CardContent className="flex-1 flex min-h-0 p-0">
+        {activeTab === 'chat' && (
+        <>
         {/* Conversations List */}
         <div className="w-32 border-r flex-shrink-0">
           <ScrollArea className="h-full">
@@ -410,6 +465,16 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
             </div>
           )}
         </div>
+        </>
+        )}
+
+        {activeTab === 'notifications' && (
+          <NotificationsContent />
+        )}
+
+        {activeTab === 'logs' && (
+          <LogsContent />
+        )}
       </CardContent>
     </Card>
   )
@@ -540,6 +605,251 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({ message, is
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Notifications Content Component
+const NotificationsContent: React.FC = () => {
+  const {
+    notifications,
+    counts,
+    loading,
+    error,
+    hasMore,
+    markAsRead,
+    archiveNotification,
+    loadMore
+  } = useNotifications({ limit: 20, autoRefresh: true })
+
+  const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
+
+  const handleNotificationClick = async (notification: any) => {
+    if (notification.status === 'unread') {
+      await markAsRead(notification.id)
+    }
+    if (notification.action_url) {
+      window.open(notification.action_url, '_blank')
+    }
+  }
+
+  const getNotificationIcon = (notification: any) => {
+    switch (notification.type) {
+      case 'meeting': return <Calendar className="h-4 w-4" />
+      case 'chat': return <MessageSquare className="h-4 w-4" />
+      case 'asset': 
+      case 'vault': return <FileText className="h-4 w-4" />
+      case 'security': return <Shield className="h-4 w-4" />
+      case 'user': return <User className="h-4 w-4" />
+      default: return <Bell className="h-4 w-4" />
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'text-red-600'
+      case 'high': return 'text-orange-600'
+      case 'medium': return 'text-blue-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="p-3 border-b bg-gray-50">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-700">
+            Notifications ({counts.unread} unread)
+          </h3>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 p-3">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {loading && notifications.length === 0 ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : notifications.length > 0 ? (
+          <div className="space-y-2">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-3 rounded-lg border transition-colors cursor-pointer ${
+                  notification.status === 'unread' 
+                    ? 'bg-blue-50 border-blue-200' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-1 rounded-full ${getPriorityColor(notification.priority)}`}>
+                    {getNotificationIcon(notification)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                        {notification.title}
+                      </h4>
+                      {notification.status === 'unread' && (
+                        <div className="h-2 w-2 bg-blue-600 rounded-full flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 line-clamp-2 mb-1">
+                      {notification.message}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </span>
+                      {notification.priority !== 'medium' && (
+                        <Badge 
+                          variant="outline" 
+                          className={`px-1 py-0 text-xs ${getPriorityColor(notification.priority)}`}
+                        >
+                          {notification.priority}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {hasMore && (
+              <div className="text-center py-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadMore}
+                  disabled={loading}
+                >
+                  {loading ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications</h3>
+            <p className="text-sm text-gray-500">
+              You're all caught up! No new notifications.
+            </p>
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  )
+}
+
+// Logs Content Component  
+const LogsContent: React.FC = () => {
+  const [logs] = useState([
+    {
+      id: '1',
+      timestamp: new Date().toISOString(),
+      type: 'system',
+      action: 'User Login',
+      description: 'User logged in successfully',
+      user: 'John Doe',
+      severity: 'info'
+    },
+    {
+      id: '2', 
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      type: 'asset',
+      action: 'File Upload',
+      description: 'Board pack uploaded: Q3 Financial Report',
+      user: 'Jane Smith',
+      severity: 'info'
+    },
+    {
+      id: '3',
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+      type: 'security',
+      action: 'Failed Login',
+      description: 'Multiple failed login attempts detected',
+      user: 'Unknown',
+      severity: 'warning'
+    }
+  ])
+
+  const getLogIcon = (type: string) => {
+    switch (type) {
+      case 'system': return <Settings className="h-4 w-4" />
+      case 'asset': return <FileText className="h-4 w-4" />
+      case 'security': return <Shield className="h-4 w-4" />
+      case 'user': return <User className="h-4 w-4" />
+      default: return <Activity className="h-4 w-4" />
+    }
+  }
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'error': return 'text-red-600'
+      case 'warning': return 'text-orange-600'
+      case 'info': return 'text-blue-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="p-3 border-b bg-gray-50">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-700">
+            Activity Logs
+          </h3>
+          <Button variant="ghost" size="sm">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-2">
+          {logs.map((log) => (
+            <div key={log.id} className="p-3 rounded-lg border bg-white hover:bg-gray-50 transition-colors">
+              <div className="flex items-start gap-3">
+                <div className={`p-1 rounded-full ${getSeverityColor(log.severity)}`}>
+                  {getLogIcon(log.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="text-sm font-medium text-gray-900">
+                      {log.action}
+                    </h4>
+                    <Badge variant="outline" className={`px-1 py-0 text-xs ${getSeverityColor(log.severity)}`}>
+                      {log.severity}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-1">
+                    {log.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{log.user}</span>
+                    <span>•</span>
+                    <span>
+                      {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   )
 }

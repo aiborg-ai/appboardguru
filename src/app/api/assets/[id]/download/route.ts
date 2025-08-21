@@ -102,22 +102,25 @@ export async function GET(
         .eq('shared_with_user_id', user.id)
     }
 
-    // Log activity
-    await supabase
-      .from('asset_activity_log')
-      .insert({
-        asset_id: assetId,
-        user_id: user.id,
-        activity_type: 'download',
-        activity_details: {
-          file_name: asset.file_name,
-          file_size: asset.file_size,
-          user_agent: request.headers.get('user-agent') || undefined,
-          ip_address: request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     undefined
-        }
-      })
+    // Log activity using comprehensive logging system
+    const { logAssetActivity, getRequestContext } = await import('@/lib/services/activity-logger')
+    const requestContext = getRequestContext(request)
+    
+    await logAssetActivity(
+      user.id,
+      asset.organization_id || '',
+      'downloaded',
+      assetId,
+      asset.title,
+      {
+        ...requestContext,
+        file_name: asset.file_name,
+        file_size: asset.file_size,
+        file_type: asset.file_type,
+        download_count: asset.download_count + 1,
+        is_shared_access: !isOwner
+      }
+    )
 
     // Convert blob to buffer
     const buffer = await fileData.arrayBuffer()

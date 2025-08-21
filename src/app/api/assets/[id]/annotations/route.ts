@@ -222,27 +222,27 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create annotation' }, { status: 500 });
     }
 
-    // Log activity for the annotation creator
-    await supabase
-      .from('audit_logs')
-      .insert({
-        organization_id: asset.organization_id,
-        user_id: user.id,
-        event_type: 'user_action',
-        event_category: 'annotations',
-        action: 'create_annotation',
-        resource_type: 'asset_annotation',
-        resource_id: annotation.id,
-        event_description: `Created annotation on "${asset.title}"`,
-        outcome: 'success',
-        details: {
-          asset_id: assetId,
-          asset_title: asset.title,
-          annotation_type: annotationData.annotation_type,
-          page_number: annotationData.page_number,
-          has_comment: !!annotationData.comment_text,
-        },
-      });
+    // Log annotation creation activity using comprehensive logging system
+    const { logAnnotationActivity, getRequestContext } = await import('@/lib/services/activity-logger')
+    const requestContext = getRequestContext(request)
+    
+    await logAnnotationActivity(
+      user.id,
+      asset.organization_id,
+      'created',
+      annotation.id,
+      asset.title,
+      {
+        ...requestContext,
+        annotation_type: annotationData.annotation_type,
+        page_number: annotationData.page_number,
+        has_selected_text: !!annotationData.selected_text,
+        comment_text: annotationData.comment_text,
+        color: annotationData.color,
+        opacity: annotationData.opacity,
+        is_private: annotationData.is_private
+      }
+    )
 
     // Get all organization members to notify them about the annotation
     const { data: orgMembers } = await supabase

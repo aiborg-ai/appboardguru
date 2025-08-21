@@ -11,6 +11,9 @@ export interface Database {
           status: 'pending' | 'approved' | 'rejected'
           company: string | null
           position: string | null
+          designation: string | null
+          linkedin_url: string | null
+          bio: string | null
           created_at: string
           updated_at: string
           approved_by: string | null
@@ -26,6 +29,9 @@ export interface Database {
           status?: 'pending' | 'approved' | 'rejected'
           company?: string | null
           position?: string | null
+          designation?: string | null
+          linkedin_url?: string | null
+          bio?: string | null
           created_at?: string
           updated_at?: string
           approved_by?: string | null
@@ -41,6 +47,9 @@ export interface Database {
           status?: 'pending' | 'approved' | 'rejected'
           company?: string | null
           position?: string | null
+          designation?: string | null
+          linkedin_url?: string | null
+          bio?: string | null
           created_at?: string
           updated_at?: string
           approved_by?: string | null
@@ -1388,6 +1397,669 @@ export interface Database {
           updated_at?: string
         }
       }
+      calendar_events: {
+        Row: {
+          id: string
+          meeting_id: string | null
+          user_id: string
+          organization_id: string | null
+          title: string
+          description: string | null
+          start_datetime: string
+          end_datetime: string
+          timezone: string
+          all_day: boolean
+          event_type: 'meeting' | 'personal' | 'reminder' | 'deadline' | 'holiday'
+          status: 'confirmed' | 'tentative' | 'cancelled'
+          visibility: 'public' | 'organization' | 'private'
+          color: string
+          category: string | null
+          tags: string[]
+          location: string | null
+          virtual_meeting_url: string | null
+          is_recurring: boolean
+          recurrence_rule: any | null
+          parent_event_id: string | null
+          created_at: string
+          updated_at: string
+          created_by: string
+        }
+        Insert: {
+          id?: string
+          meeting_id?: string | null
+          user_id: string
+          organization_id?: string | null
+          title: string
+          description?: string | null
+          start_datetime: string
+          end_datetime: string
+          timezone?: string
+          all_day?: boolean
+          event_type?: 'meeting' | 'personal' | 'reminder' | 'deadline' | 'holiday'
+          status?: 'confirmed' | 'tentative' | 'cancelled'
+          visibility?: 'public' | 'organization' | 'private'
+          color?: string
+          category?: string | null
+          tags?: string[]
+          location?: string | null
+          virtual_meeting_url?: string | null
+          is_recurring?: boolean
+          recurrence_rule?: any | null
+          parent_event_id?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string | null
+          user_id?: string
+          organization_id?: string | null
+          title?: string
+          description?: string | null
+          start_datetime?: string
+          end_datetime?: string
+          timezone?: string
+          all_day?: boolean
+          event_type?: 'meeting' | 'personal' | 'reminder' | 'deadline' | 'holiday'
+          status?: 'confirmed' | 'tentative' | 'cancelled'
+          visibility?: 'public' | 'organization' | 'private'
+          color?: string
+          category?: string | null
+          tags?: string[]
+          location?: string | null
+          virtual_meeting_url?: string | null
+          is_recurring?: boolean
+          recurrence_rule?: any | null
+          parent_event_id?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string
+        }
+      }
+      calendar_views: {
+        Row: {
+          id: string
+          user_id: string
+          default_view: 'day' | 'week' | 'month' | 'year' | 'agenda'
+          week_start_day: number
+          time_format: '12h' | '24h'
+          timezone: string
+          show_weekends: boolean
+          show_declined_events: boolean
+          compact_view: boolean
+          work_start_time: string
+          work_end_time: string
+          work_days: number[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          default_view?: 'day' | 'week' | 'month' | 'year' | 'agenda'
+          week_start_day?: number
+          time_format?: '12h' | '24h'
+          timezone?: string
+          show_weekends?: boolean
+          show_declined_events?: boolean
+          compact_view?: boolean
+          work_start_time?: string
+          work_end_time?: string
+          work_days?: number[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          default_view?: 'day' | 'week' | 'month' | 'year' | 'agenda'
+          week_start_day?: number
+          time_format?: '12h' | '24h'
+          timezone?: string
+          show_weekends?: boolean
+          show_declined_events?: boolean
+          compact_view?: boolean
+          work_start_time?: string
+          work_end_time?: string
+          work_days?: number[]
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      calendar_reminders: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          reminder_type: 'email' | 'push' | 'in_app' | 'sms'
+          minutes_before: number
+          is_sent: boolean
+          sent_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          reminder_type: 'email' | 'push' | 'in_app' | 'sms'
+          minutes_before: number
+          is_sent?: boolean
+          sent_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          reminder_type?: 'email' | 'push' | 'in_app' | 'sms'
+          minutes_before?: number
+          is_sent?: boolean
+          sent_at?: string | null
+          created_at?: string
+        }
+      }
+      calendar_attendees: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          email: string
+          role: 'organizer' | 'presenter' | 'participant' | 'optional'
+          rsvp_status: 'pending' | 'accepted' | 'declined' | 'tentative'
+          rsvp_responded_at: string | null
+          rsvp_note: string | null
+          can_edit: boolean
+          can_invite_others: boolean
+          invited_at: string
+          invited_by: string | null
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          email: string
+          role?: 'organizer' | 'presenter' | 'participant' | 'optional'
+          rsvp_status?: 'pending' | 'accepted' | 'declined' | 'tentative'
+          rsvp_responded_at?: string | null
+          rsvp_note?: string | null
+          can_edit?: boolean
+          can_invite_others?: boolean
+          invited_at?: string
+          invited_by?: string | null
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          email?: string
+          role?: 'organizer' | 'presenter' | 'participant' | 'optional'
+          rsvp_status?: 'pending' | 'accepted' | 'declined' | 'tentative'
+          rsvp_responded_at?: string | null
+          rsvp_note?: string | null
+          can_edit?: boolean
+          can_invite_others?: boolean
+          invited_at?: string
+          invited_by?: string | null
+        }
+      }
+      calendar_subscriptions: {
+        Row: {
+          id: string
+          subscriber_id: string
+          calendar_owner_id: string
+          organization_id: string | null
+          name: string
+          description: string | null
+          subscription_type: 'user' | 'organization' | 'external'
+          permission_level: 'read' | 'write' | 'admin'
+          is_visible: boolean
+          color: string
+          status: 'active' | 'paused' | 'cancelled'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          subscriber_id: string
+          calendar_owner_id: string
+          organization_id?: string | null
+          name: string
+          description?: string | null
+          subscription_type?: 'user' | 'organization' | 'external'
+          permission_level?: 'read' | 'write' | 'admin'
+          is_visible?: boolean
+          color?: string
+          status?: 'active' | 'paused' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          subscriber_id?: string
+          calendar_owner_id?: string
+          organization_id?: string | null
+          name?: string
+          description?: string | null
+          subscription_type?: 'user' | 'organization' | 'external'
+          permission_level?: 'read' | 'write' | 'admin'
+          is_visible?: boolean
+          color?: string
+          status?: 'active' | 'paused' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      calendar_availability: {
+        Row: {
+          id: string
+          user_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          timezone: string
+          availability_type: 'available' | 'busy' | 'tentative'
+          effective_from: string | null
+          effective_until: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          timezone?: string
+          availability_type?: 'available' | 'busy' | 'tentative'
+          effective_from?: string | null
+          effective_until?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          timezone?: string
+          availability_type?: 'available' | 'busy' | 'tentative'
+          effective_from?: string | null
+          effective_until?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      boards: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          board_type: 'main_board' | 'advisory_board' | 'subsidiary_board' | 'committee_board'
+          organization_id: string
+          parent_board_id: string | null
+          status: 'active' | 'inactive' | 'dissolved'
+          established_date: string | null
+          dissolution_date: string | null
+          meeting_frequency: string | null
+          next_meeting_date: string | null
+          meeting_location: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+          settings: any
+          tags: string[]
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          board_type?: 'main_board' | 'advisory_board' | 'subsidiary_board' | 'committee_board'
+          organization_id: string
+          parent_board_id?: string | null
+          status?: 'active' | 'inactive' | 'dissolved'
+          established_date?: string | null
+          dissolution_date?: string | null
+          meeting_frequency?: string | null
+          next_meeting_date?: string | null
+          meeting_location?: string | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          settings?: any
+          tags?: string[]
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          board_type?: 'main_board' | 'advisory_board' | 'subsidiary_board' | 'committee_board'
+          organization_id?: string
+          parent_board_id?: string | null
+          status?: 'active' | 'inactive' | 'dissolved'
+          established_date?: string | null
+          dissolution_date?: string | null
+          meeting_frequency?: string | null
+          next_meeting_date?: string | null
+          meeting_location?: string | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          settings?: any
+          tags?: string[]
+        }
+      }
+      committees: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          committee_type: 'audit' | 'compensation' | 'governance' | 'risk' | 'nomination' | 'strategy' | 'technology' | 'investment' | 'ethics' | 'executive' | 'other'
+          organization_id: string
+          board_id: string
+          status: 'active' | 'inactive' | 'dissolved' | 'temporary'
+          established_date: string | null
+          dissolution_date: string | null
+          is_permanent: boolean
+          charter_document_url: string | null
+          responsibilities: string[]
+          authority_level: string | null
+          meeting_frequency: string | null
+          next_meeting_date: string | null
+          meeting_location: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+          settings: any
+          tags: string[]
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          committee_type?: 'audit' | 'compensation' | 'governance' | 'risk' | 'nomination' | 'strategy' | 'technology' | 'investment' | 'ethics' | 'executive' | 'other'
+          organization_id: string
+          board_id: string
+          status?: 'active' | 'inactive' | 'dissolved' | 'temporary'
+          established_date?: string | null
+          dissolution_date?: string | null
+          is_permanent?: boolean
+          charter_document_url?: string | null
+          responsibilities?: string[]
+          authority_level?: string | null
+          meeting_frequency?: string | null
+          next_meeting_date?: string | null
+          meeting_location?: string | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          settings?: any
+          tags?: string[]
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          committee_type?: 'audit' | 'compensation' | 'governance' | 'risk' | 'nomination' | 'strategy' | 'technology' | 'investment' | 'ethics' | 'executive' | 'other'
+          organization_id?: string
+          board_id?: string
+          status?: 'active' | 'inactive' | 'dissolved' | 'temporary'
+          established_date?: string | null
+          dissolution_date?: string | null
+          is_permanent?: boolean
+          charter_document_url?: string | null
+          responsibilities?: string[]
+          authority_level?: string | null
+          meeting_frequency?: string | null
+          next_meeting_date?: string | null
+          meeting_location?: string | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          settings?: any
+          tags?: string[]
+        }
+      }
+      board_members: {
+        Row: {
+          id: string
+          board_id: string
+          user_id: string
+          organization_id: string
+          role: 'chairman' | 'vice_chairman' | 'ceo' | 'cfo' | 'cto' | 'independent_director' | 'executive_director' | 'non_executive_director' | 'board_member' | 'board_observer'
+          status: 'active' | 'inactive' | 'resigned' | 'terminated'
+          is_voting_member: boolean
+          appointed_date: string
+          appointed_by: string | null
+          term_start_date: string | null
+          term_end_date: string | null
+          term_length_months: number | null
+          resigned_date: string | null
+          termination_date: string | null
+          termination_reason: string | null
+          annual_compensation: number | null
+          compensation_currency: string | null
+          equity_compensation: any | null
+          meetings_attended: number
+          meetings_total: number
+          attendance_rate: number | null
+          expertise_areas: string[]
+          skills: any | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          board_id: string
+          user_id: string
+          organization_id: string
+          role?: 'chairman' | 'vice_chairman' | 'ceo' | 'cfo' | 'cto' | 'independent_director' | 'executive_director' | 'non_executive_director' | 'board_member' | 'board_observer'
+          status?: 'active' | 'inactive' | 'resigned' | 'terminated'
+          is_voting_member?: boolean
+          appointed_date?: string
+          appointed_by?: string | null
+          term_start_date?: string | null
+          term_end_date?: string | null
+          term_length_months?: number | null
+          resigned_date?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          annual_compensation?: number | null
+          compensation_currency?: string | null
+          equity_compensation?: any | null
+          meetings_attended?: number
+          meetings_total?: number
+          expertise_areas?: string[]
+          skills?: any | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          board_id?: string
+          user_id?: string
+          organization_id?: string
+          role?: 'chairman' | 'vice_chairman' | 'ceo' | 'cfo' | 'cto' | 'independent_director' | 'executive_director' | 'non_executive_director' | 'board_member' | 'board_observer'
+          status?: 'active' | 'inactive' | 'resigned' | 'terminated'
+          is_voting_member?: boolean
+          appointed_date?: string
+          appointed_by?: string | null
+          term_start_date?: string | null
+          term_end_date?: string | null
+          term_length_months?: number | null
+          resigned_date?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          annual_compensation?: number | null
+          compensation_currency?: string | null
+          equity_compensation?: any | null
+          meetings_attended?: number
+          meetings_total?: number
+          expertise_areas?: string[]
+          skills?: any | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      committee_members: {
+        Row: {
+          id: string
+          committee_id: string
+          user_id: string
+          board_id: string
+          organization_id: string
+          role: 'chair' | 'vice_chair' | 'member' | 'secretary' | 'advisor' | 'observer'
+          status: 'active' | 'inactive' | 'resigned' | 'terminated'
+          is_voting_member: boolean
+          appointed_date: string
+          appointed_by: string | null
+          term_start_date: string | null
+          term_end_date: string | null
+          resigned_date: string | null
+          termination_date: string | null
+          termination_reason: string | null
+          meetings_attended: number
+          meetings_total: number
+          attendance_rate: number | null
+          relevant_expertise: string[]
+          contributions: string[]
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          committee_id: string
+          user_id: string
+          board_id: string
+          organization_id: string
+          role?: 'chair' | 'vice_chair' | 'member' | 'secretary' | 'advisor' | 'observer'
+          status?: 'active' | 'inactive' | 'resigned' | 'terminated'
+          is_voting_member?: boolean
+          appointed_date?: string
+          appointed_by?: string | null
+          term_start_date?: string | null
+          term_end_date?: string | null
+          resigned_date?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          meetings_attended?: number
+          meetings_total?: number
+          relevant_expertise?: string[]
+          contributions?: string[]
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          committee_id?: string
+          user_id?: string
+          board_id?: string
+          organization_id?: string
+          role?: 'chair' | 'vice_chair' | 'member' | 'secretary' | 'advisor' | 'observer'
+          status?: 'active' | 'inactive' | 'resigned' | 'terminated'
+          is_voting_member?: boolean
+          appointed_date?: string
+          appointed_by?: string | null
+          term_start_date?: string | null
+          term_end_date?: string | null
+          resigned_date?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          meetings_attended?: number
+          meetings_total?: number
+          relevant_expertise?: string[]
+          contributions?: string[]
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          type: 'system' | 'meeting' | 'chat' | 'asset' | 'vault' | 'user' | 'security' | 'reminder'
+          category: string
+          title: string
+          message: string
+          priority: 'low' | 'medium' | 'high' | 'critical'
+          status: 'unread' | 'read' | 'archived' | 'dismissed'
+          action_url: string | null
+          action_text: string | null
+          icon: string | null
+          color: string | null
+          resource_type: string | null
+          resource_id: string | null
+          sender_id: string | null
+          metadata: any | null
+          scheduled_for: string | null
+          delivered_at: string | null
+          read_at: string | null
+          archived_at: string | null
+          expires_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          type: 'system' | 'meeting' | 'chat' | 'asset' | 'vault' | 'user' | 'security' | 'reminder'
+          category: string
+          title: string
+          message: string
+          priority?: 'low' | 'medium' | 'high' | 'critical'
+          status?: 'unread' | 'read' | 'archived' | 'dismissed'
+          action_url?: string | null
+          action_text?: string | null
+          icon?: string | null
+          color?: string | null
+          resource_type?: string | null
+          resource_id?: string | null
+          sender_id?: string | null
+          metadata?: any | null
+          scheduled_for?: string | null
+          delivered_at?: string | null
+          read_at?: string | null
+          archived_at?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          type?: 'system' | 'meeting' | 'chat' | 'asset' | 'vault' | 'user' | 'security' | 'reminder'
+          category?: string
+          title?: string
+          message?: string
+          priority?: 'low' | 'medium' | 'high' | 'critical'
+          status?: 'unread' | 'read' | 'archived' | 'dismissed'
+          action_url?: string | null
+          action_text?: string | null
+          icon?: string | null
+          color?: string | null
+          resource_type?: string | null
+          resource_id?: string | null
+          sender_id?: string | null
+          metadata?: any | null
+          scheduled_for?: string | null
+          delivered_at?: string | null
+          read_at?: string | null
+          archived_at?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -1425,6 +2097,19 @@ export interface Database {
       chat_participant_role: 'admin' | 'moderator' | 'member'
       chat_participant_status: 'active' | 'muted' | 'left' | 'removed'
       chat_delivery_status: 'sent' | 'delivered' | 'read' | 'failed'
+      calendar_event_type: 'meeting' | 'personal' | 'reminder' | 'deadline' | 'holiday'
+      calendar_event_status: 'confirmed' | 'tentative' | 'cancelled'
+      calendar_view_type: 'day' | 'week' | 'month' | 'year' | 'agenda'
+      calendar_reminder_type: 'email' | 'push' | 'in_app' | 'sms'
+      calendar_attendee_role: 'organizer' | 'presenter' | 'participant' | 'optional'
+      calendar_rsvp_status: 'pending' | 'accepted' | 'declined' | 'tentative'
+      calendar_subscription_type: 'user' | 'organization' | 'external'
+      calendar_permission_level: 'read' | 'write' | 'admin'
+      calendar_subscription_status: 'active' | 'paused' | 'cancelled'
+      calendar_availability_type: 'available' | 'busy' | 'tentative'
+      notification_type_general: 'system' | 'meeting' | 'chat' | 'asset' | 'vault' | 'user' | 'security' | 'reminder'
+      notification_priority: 'low' | 'medium' | 'high' | 'critical'
+      notification_status_general: 'unread' | 'read' | 'archived' | 'dismissed'
     }
   }
 }

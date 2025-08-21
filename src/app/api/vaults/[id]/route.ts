@@ -55,15 +55,15 @@ export async function GET(
       .from('vaults')
       .select(`
         *,
-        organization:organizations!vaults_organization_id_fkey(
+        organization:organizations(
           id, name, slug, logo_url, description, website
         ),
-        created_by_user:auth.users!vaults_created_by_fkey(
+        created_by_user:users(
           id, email
         ),
         vault_members(
           id, role, status, joined_at, last_accessed_at, access_count,
-          user:auth.users!vault_members_user_id_fkey(
+          user:users(
             id, email
           )
         )
@@ -87,6 +87,24 @@ export async function GET(
     if (!userMembership) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
+
+    // Log vault access activity
+    const { logVaultActivity, getRequestContext } = await import('@/lib/services/activity-logger')
+    const requestContext = getRequestContext(request)
+    
+    await logVaultActivity(
+      user.id,
+      vault.organization_id,
+      'opened',
+      vaultId,
+      vault.name,
+      {
+        ...requestContext,
+        vault_type: vault.vault_type,
+        access_level: vault.access_level,
+        user_role: userMembership.role
+      }
+    )
 
     // Get vault assets
     const { data: vaultAssets, error: assetsError } = await supabase

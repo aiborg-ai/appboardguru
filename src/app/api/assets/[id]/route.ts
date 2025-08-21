@@ -82,15 +82,23 @@ export async function GET(
       .update({ view_count: (asset.view_count || 0) + 1 })
       .eq('id', assetId)
 
-    // Log activity
-    await supabase
-      .from('asset_activity_log')
-      .insert({
-        asset_id: assetId,
-        user_id: user.id,
-        activity_type: 'view',
-        activity_details: { timestamp: new Date().toISOString() }
-      })
+    // Log activity using comprehensive logging system
+    const { logAssetActivity, getRequestContext } = await import('@/lib/services/activity-logger')
+    const requestContext = getRequestContext(request)
+    
+    await logAssetActivity(
+      user.id,
+      asset.organization_id || '',
+      'opened',
+      assetId,
+      asset.title,
+      {
+        ...requestContext,
+        asset_type: asset.file_type,
+        asset_size: asset.file_size,
+        view_count: asset.view_count + 1
+      }
+    )
 
     // Transform data
     const transformedAsset = {

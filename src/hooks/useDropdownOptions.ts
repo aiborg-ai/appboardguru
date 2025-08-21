@@ -28,6 +28,8 @@ export function useDropdownOptions(category: string) {
         setOptions(result.data || [])
       } else {
         setError(result.error || 'Failed to fetch options')
+        // Fallback to static options when API call fails
+        setOptions(getStaticOptions(category))
       }
     } catch (err) {
       console.error('Error fetching dropdown options:', err)

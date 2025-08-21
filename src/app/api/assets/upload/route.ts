@@ -219,25 +219,26 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Log upload activity
-    await supabase
-      .from('asset_activity_log')
-      .insert({
-        asset_id: asset.id,
-        user_id: user.id,
-        activity_type: 'upload',
-        activity_details: {
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          category,
-          folder_path: folderPath
-        },
-        ip_address: request.headers.get('x-forwarded-for') || 
-                   request.headers.get('x-real-ip') || 
-                   null,
-        user_agent: request.headers.get('user-agent') || null
-      })
+    // Log upload activity using comprehensive logging system
+    const { logAssetActivity, getRequestContext } = await import('@/lib/services/activity-logger')
+    const requestContext = getRequestContext(request)
+    
+    await logAssetActivity(
+      user.id,
+      asset.organization_id || '',
+      'uploaded',
+      asset.id,
+      asset.title,
+      {
+        ...requestContext,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        category,
+        folder_path: folderPath,
+        original_file_name: file.name
+      }
+    )
 
     // Transform response data
     const responseAsset = {
