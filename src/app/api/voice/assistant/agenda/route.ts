@@ -5,18 +5,18 @@ import {
   MeetingDetails as ImportedMeetingDetails, 
   MeetingAttendee as ImportedMeetingAttendee, 
   AgendaAnalysis as ImportedAgendaAnalysis, 
-  DocumentPackage, 
-  StakeholderPreparation, 
-  MeetingRiskAssessment, 
-  ComplianceReview, 
-  DiscussionGuide, 
-  DecisionPoint, 
-  FollowUpAction, 
-  ContextualInsight, 
-  PreparationTimeline,
-  VoiceBriefing,
-  PreparationRecommendation,
-  PreparationAlert,
+ 
+  StakeholderPreparation as ImportedStakeholderPreparation, 
+  MeetingRiskAssessment as ImportedMeetingRiskAssessment, 
+  ComplianceReview as ImportedComplianceReview, 
+  DiscussionGuide as ImportedDiscussionGuide, 
+  DecisionPoint as ImportedDecisionPoint, 
+  FollowUpAction as ImportedFollowUpAction, 
+  ContextualInsight as ImportedContextualInsight, 
+  PreparationTimeline as ImportedPreparationTimeline,
+  VoiceBriefing as ImportedVoiceBriefing,
+  PreparationRecommendation as ImportedPreparationRecommendation,
+  PreparationAlert as ImportedPreparationAlert,
   Meeting,
   MeetingContext,
   SupabaseClient
@@ -39,9 +39,9 @@ export interface AgendaPreparationRequest {
 export interface AgendaPreparationResponse {
   success: boolean;
   preparation: MeetingPreparation;
-  voiceBriefing?: VoiceBriefing;
-  recommendations: PreparationRecommendation[];
-  alerts: PreparationAlert[];
+  voiceBriefing?: ImportedVoiceBriefing;
+  recommendations: ImportedPreparationRecommendation[];
+  alerts: ImportedPreparationAlert[];
   error?: string;
 }
 
@@ -50,14 +50,14 @@ export interface MeetingPreparation {
   meetingDetails: MeetingDetails;
   agendaAnalysis: ImportedAgendaAnalysis;
   documentPackage: DocumentPackage;
-  stakeholderPreparation: StakeholderPreparation;
-  riskAssessment: MeetingRiskAssessment;
-  complianceReview: ComplianceReview;
-  discussionGuides: DiscussionGuide[];
-  keyDecisionPoints: DecisionPoint[];
-  followUpActions: FollowUpAction[];
-  contextualInsights: ContextualInsight[];
-  preparationTimeline: PreparationTimeline;
+  stakeholderPreparation: ImportedStakeholderPreparation;
+  riskAssessment: ImportedMeetingRiskAssessment;
+  complianceReview: ImportedComplianceReview;
+  discussionGuides: ImportedDiscussionGuide[];
+  keyDecisionPoints: ImportedDecisionPoint[];
+  followUpActions: ImportedFollowUpAction[];
+  contextualInsights: ImportedContextualInsight[];
+  preparationTimeline: ImportedPreparationTimeline;
   generatedAt: string;
 }
 
@@ -127,7 +127,7 @@ export interface AgendaDependency {
 
 export interface DocumentPackage {
   totalDocuments: number;
-  categorizedDocuments: CategorizedDocuments;
+  categorizedDocuments: LocalCategorizedDocuments;
   readingTime: ReadingTimeEstimate;
   keyInsights: DocumentInsight[];
   missingDocuments: string[];
@@ -135,15 +135,15 @@ export interface DocumentPackage {
   priorityOrder: string[];
 }
 
-export interface CategorizedDocuments {
-  pre_read: DocumentSummary[];
-  reference: DocumentSummary[];
-  supporting: DocumentSummary[];
-  background: DocumentSummary[];
-  appendices: DocumentSummary[];
+export interface LocalCategorizedDocuments {
+  pre_read: LocalDocumentSummary[];
+  reference: LocalDocumentSummary[];
+  supporting: LocalDocumentSummary[];
+  background: LocalDocumentSummary[];
+  appendices: LocalDocumentSummary[];
 }
 
-export interface DocumentSummary {
+export interface LocalDocumentSummary {
   id: string;
   title: string;
   type: string;
@@ -688,7 +688,7 @@ async function fetchMeetingContext(
   ] = await Promise.all([
     fetchRelatedDocuments(supabase, meeting, organizationId),
     fetchPreviousMeetings(supabase, meeting, organizationId),
-    fetchAttendeeProfiles(supabase, meeting.attendees || []),
+    fetchAttendeeProfiles(supabase, (meeting.attendees as ImportedMeetingAttendee[]) || []),
     supabase.from('organizations').select('*').eq('id', organizationId).single(),
     supabase.from('compliance_workflows').select('*').eq('organization_id', organizationId),
     supabase.from('risk_assessments').select('*').eq('organization_id', organizationId)
@@ -701,7 +701,8 @@ async function fetchMeetingContext(
     attendeeProfiles: attendeeProfiles || [],
     organization: organizationData.data,
     compliance: complianceData.data || [],
-    risks: riskData.data || []
+    risks: riskData.data || [],
+    lookbackDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
   };
 }
 
@@ -736,10 +737,10 @@ async function fetchPreviousMeetings(supabase: SupabaseClient, meeting: Meeting,
     .limit(5);
 }
 
-async function fetchAttendeeProfiles(supabase: SupabaseClient, attendees: MeetingAttendee[]) {
+async function fetchAttendeeProfiles(supabase: SupabaseClient, attendees: ImportedMeetingAttendee[]) {
   if (!attendees.length) return [];
 
-  const userIds = attendees.map(a => a.id || a.user_id).filter(Boolean);
+  const userIds = attendees.map(a => a.id || (a as any).user_id).filter(Boolean);
   if (!userIds.length) return attendees;
 
   const { data: profiles } = await supabase
@@ -749,7 +750,7 @@ async function fetchAttendeeProfiles(supabase: SupabaseClient, attendees: Meetin
 
   return attendees.map(attendee => ({
     ...attendee,
-    profile: profiles?.find((p: any) => p.user_id === (attendee.id || attendee.user_id))
+    profile: profiles?.find((p: any) => p.user_id === (attendee.id || (attendee as any).user_id))
   }));
 }
 
@@ -757,19 +758,22 @@ async function analyzeAgenda(meeting: Meeting, context: MeetingContext): Promise
   const agendaItems = meeting.agenda_items as unknown[] || [];
   const totalItems = agendaItems.length;
   
-  const itemBreakdown = agendaItems.map((item: unknown, index: number) => ({
-    id: item.id || `item_${index}`,
-    title: item.title || item.description || `Agenda Item ${index + 1}`,
-    type: item.type || 'discussion',
-    estimatedTime: item.estimated_time || 15,
-    priority: item.priority || 'medium',
-    complexity: item.complexity || 'moderate',
-    requiredPreparation: item.preparation || [],
-    keyStakeholders: item.stakeholders || [],
-    prerequisites: item.prerequisites || [],
-    expectedDeliverables: item.deliverables || [],
-    riskFactors: item.risks || []
-  }));
+  const itemBreakdown = agendaItems.map((item: unknown, index: number) => {
+    const itemAny = item as any;
+    return {
+      id: itemAny.id || `item_${index}`,
+      title: itemAny.title || itemAny.description || `Agenda Item ${index + 1}`,
+      type: itemAny.type || 'discussion',
+      estimatedTime: itemAny.estimated_time || 15,
+      priority: itemAny.priority || 'medium',
+      complexity: itemAny.complexity || 'moderate',
+      requiredPreparation: itemAny.preparation || [],
+      keyStakeholders: itemAny.stakeholders || [],
+      prerequisites: itemAny.prerequisites || [],
+      expectedDeliverables: itemAny.deliverables || [],
+      riskFactors: itemAny.risks || []
+    };
+  });
 
   const estimatedDuration = itemBreakdown.reduce((sum: number, item: any) => sum + item.estimatedTime, 0);
 
@@ -803,7 +807,7 @@ async function prepareDocumentPackage(
   const totalDocuments = documents.length;
 
   // Categorize documents
-  const categorizedDocuments: CategorizedDocuments = {
+  const categorizedDocuments: LocalCategorizedDocuments = {
     pre_read: [],
     reference: [],
     supporting: [],
@@ -813,7 +817,7 @@ async function prepareDocumentPackage(
 
   // Simple categorization logic - would be enhanced with AI
   for (const doc of documents) {
-    const docSummary: DocumentSummary = {
+    const docSummary: LocalDocumentSummary = {
       id: doc.id,
       title: doc.title,
       type: doc.file_type,
@@ -850,7 +854,7 @@ async function prepareDocumentPackage(
 
   return {
     totalDocuments,
-    categorizedDocuments,
+    categorizedDocuments: categorizedDocuments as any,
     readingTime,
     keyInsights: [], // Would analyze document content for insights
     missingDocuments: [], // Would identify gaps in documentation
@@ -1212,7 +1216,7 @@ async function createPreparationTimeline(
   };
 }
 
-async function generateVoiceBriefing(preparation: LocalMeetingPreparation): Promise<VoiceBriefing> {
+async function generateVoiceBriefing(preparation: MeetingPreparation): Promise<ImportedVoiceBriefing> {
   const executiveSummary = `Meeting preparation for ${preparation.meetingDetails.title} scheduled for ${new Date(preparation.meetingDetails.date).toLocaleDateString()}. ${preparation.documentPackage.totalDocuments} documents require review with estimated ${preparation.documentPackage.readingTime.total} minutes of reading time. ${preparation.keyDecisionPoints.length} key decisions expected.`;
 
   const keyTalkingPoints = [
@@ -1255,8 +1259,8 @@ async function generateVoiceBriefing(preparation: LocalMeetingPreparation): Prom
   };
 }
 
-async function generatePreparationRecommendations(preparation: LocalMeetingPreparation): Promise<PreparationRecommendation[]> {
-  const recommendations: PreparationRecommendation[] = [];
+async function generatePreparationRecommendations(preparation: MeetingPreparation): Promise<ImportedPreparationRecommendation[]> {
+  const recommendations: ImportedPreparationRecommendation[] = [];
 
   if (preparation.documentPackage.readingTime.total > 120) {
     recommendations.push({
@@ -1289,8 +1293,8 @@ async function generatePreparationRecommendations(preparation: LocalMeetingPrepa
   return recommendations;
 }
 
-async function generatePreparationAlerts(preparation: LocalMeetingPreparation): Promise<PreparationAlert[]> {
-  const alerts: PreparationAlert[] = [];
+async function generatePreparationAlerts(preparation: MeetingPreparation): Promise<ImportedPreparationAlert[]> {
+  const alerts: ImportedPreparationAlert[] = [];
   const meetingDate = new Date(preparation.meetingDetails.date);
   const daysUntilMeeting = Math.ceil((meetingDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
 
@@ -1324,7 +1328,7 @@ async function generatePreparationAlerts(preparation: LocalMeetingPreparation): 
 
 async function storePreparationData(
   supabase: SupabaseClient,
-  preparation: LocalMeetingPreparation,
+  preparation: MeetingPreparation,
   organizationId: string,
   userId: string
 ): Promise<void> {
