@@ -16,7 +16,7 @@ const updateRsvpSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -26,6 +26,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const { data: attendees, error } = await supabase
       .from('calendar_attendees')
       .select(`
@@ -33,7 +34,7 @@ export async function GET(
         user:users(id, full_name, email, avatar_url),
         invited_by_user:users!calendar_attendees_invited_by_fkey(id, full_name, email)
       `)
-      .eq('event_id', params.id)
+      .eq('event_id', resolvedParams.id)
       .order('invited_at', { ascending: true })
 
     if (error) {
@@ -51,7 +52,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -61,6 +62,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const body = await request.json()
     const validatedData = addAttendeeSchema.parse(body)
 
@@ -68,7 +70,7 @@ export async function POST(
     const { data: event, error: eventError } = await supabase
       .from('calendar_events')
       .select('user_id')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (eventError || !event) {
@@ -83,7 +85,7 @@ export async function POST(
       const { data: attendee } = await supabase
         .from('calendar_attendees')
         .select('can_invite_others')
-        .eq('event_id', params.id)
+        .eq('event_id', resolvedParams.id)
         .eq('user_id', user.id)
         .single()
 
@@ -102,7 +104,7 @@ export async function POST(
       .single()
 
     const attendeeData = {
-      event_id: params.id,
+      event_id: resolvedParams.id,
       user_id: invitedUser?.id || user.id, // Fallback if email not found
       email: validatedData.email,
       role: validatedData.role,
@@ -148,7 +150,7 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -158,6 +160,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const body = await request.json()
     const validatedData = updateRsvpSchema.parse(body)
 
@@ -169,7 +172,7 @@ export async function PUT(
         rsvp_note: validatedData.rsvp_note,
         rsvp_responded_at: new Date().toISOString()
       })
-      .eq('event_id', params.id)
+      .eq('event_id', resolvedParams.id)
       .eq('user_id', user.id)
       .select(`
         *,
@@ -206,7 +209,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -216,6 +219,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const resolvedParams = await params;
     const { searchParams } = new URL(request.url)
     const attendeeEmail = searchParams.get('email')
 
@@ -227,7 +231,7 @@ export async function DELETE(
     const { data: event, error: eventError } = await supabase
       .from('calendar_events')
       .select('user_id')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (eventError || !event) {
@@ -244,7 +248,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('calendar_attendees')
       .delete()
-      .eq('event_id', params.id)
+      .eq('event_id', resolvedParams.id)
       .eq('email', attendeeEmail)
 
     if (deleteError) {
