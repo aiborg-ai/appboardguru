@@ -363,8 +363,8 @@ async function generateRevenueTrendAnalysis(
   // Extract revenue metrics from financial data
   const revenueData = orgData.financials.filter(f => f.metric_type === 'revenue');
   
-  const currentRevenue = revenueData.length > 0 ? revenueData[revenueData.length - 1].value : 0;
-  const previousRevenue = revenueData.length > 1 ? revenueData[revenueData.length - 2].value : 0;
+  const currentRevenue = revenueData.length > 0 ? (revenueData[revenueData.length - 1]?.value ?? 0) : 0;
+  const previousRevenue = revenueData.length > 1 ? (revenueData[revenueData.length - 2]?.value ?? 0) : 0;
   const revenueChange = currentRevenue - previousRevenue;
   const revenueChangePercent = previousRevenue > 0 ? (revenueChange / previousRevenue) * 100 : 0;
 
@@ -480,7 +480,7 @@ async function generateRiskAssessmentAnalysis(
     trends: [],
     comparisons: [],
     riskFactors: risks.map(r => ({
-      category: r.category || 'operational',
+      category: (r.category || 'operational') as 'compliance' | 'financial' | 'strategic' | 'operational' | 'reputation',
       description: r.description || 'Risk description not available',
       likelihood: r.likelihood || 'medium',
       impact: r.impact || 'medium',
