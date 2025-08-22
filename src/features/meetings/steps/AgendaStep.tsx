@@ -167,13 +167,13 @@ export default function AgendaStep({ data, onUpdate }: AgendaStepProps) {
   //   onUpdate({ agendaItems: updatedItems });
   // };
 
-  const handleFileUpload = (event: React.ChangeEvent<Element>) => {
-    const files = Array.from((event.target as any).files || []);
-    const newDocuments = files.map(file => ({
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const newDocuments = files.map((file: File) => ({
       id: `doc-${Date.now()}-${Math.random()}`,
-      name: file.name,
+      name: (file as File).name,
       file,
-      category: 'supporting' as any,
+      category: 'supporting' as const,
       isConfidential: false,
     }));
     
