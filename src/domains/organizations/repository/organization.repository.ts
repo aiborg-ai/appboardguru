@@ -133,7 +133,7 @@ export class OrganizationRepository extends BaseRepository {
         return []
       }
 
-      return (data as any[])?.map(item: unknown) => ({
+      return (data as any[])?.map((item: unknown) => ({
         ...item.organizations,
         user_role: item.role,
         user_status: item.status,

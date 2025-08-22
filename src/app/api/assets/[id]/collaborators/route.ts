@@ -113,7 +113,7 @@ export async function GET(
     }, {}) || {}
 
     // Transform data
-    const collaborators = collaboratorsData?.map(item: unknown) => {
+    const collaborators = collaboratorsData?.map((item: unknown) => {
       const user = item.users
       const userId = user.id
       const role = item.role || item.permission_level || 'viewer'

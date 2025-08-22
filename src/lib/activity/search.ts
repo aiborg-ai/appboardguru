@@ -752,7 +752,7 @@ export class ActivitySearchEngine {
   }
 
   private static transformToSearchResults(data: any[]): SearchResult[] {
-    return data.map(item: unknown) => ({
+    return data.map((item: unknown) => ({
       id: item.id,
       type: `${item.event_category}:${item.action}`,
       title: item.event_description,

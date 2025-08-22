@@ -103,7 +103,7 @@ export function AnnotationPanel({
   }, [annotations, filters, currentPage])
 
   // Handlers
-  const handleCreateAnnotation = async data: unknown) => {
+  const handleCreateAnnotation = async (data: unknown) => {
     const annotationData = {
       annotationType: annotationMode === 'select' ? 'textbox' : annotationMode,
       content: { text: data.content },

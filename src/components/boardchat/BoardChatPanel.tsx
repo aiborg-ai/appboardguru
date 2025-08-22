@@ -488,7 +488,7 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
       </CardContent>
     </Card>
   )
-}
+})
 
 // Chat Message Component
 interface ChatMessageComponentProps {
@@ -776,7 +776,7 @@ const NotificationsContent = React.memo(() => {
       </ScrollArea>
     </div>
   )
-}
+})
 
 // Logs Content Component  
 const LogsContent: React.FC = () => {

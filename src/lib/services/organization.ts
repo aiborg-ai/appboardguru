@@ -400,7 +400,7 @@ export async function listUserOrganizations(
       return { success: false, error: error.message }
     }
 
-    const formattedOrganizations = organizations?.map(item: unknown) => ({
+    const formattedOrganizations = organizations?.map((item: unknown) => ({
       ...item.organizations,
       user_role: item.role,
       user_status: item.status,

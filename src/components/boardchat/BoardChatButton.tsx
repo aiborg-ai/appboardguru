@@ -42,8 +42,6 @@ const BoardChatButton = React.memo(() => {
       <BoardChatPanel isOpen={isChatOpen} onToggle={toggleChat} />
     </>
   )
-}
-
 })
 
 BoardChatButton.displayName = 'BoardChatButton'

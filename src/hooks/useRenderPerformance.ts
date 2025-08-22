@@ -282,7 +282,7 @@ export function withRenderPerformance<P extends object>(
   return function<T extends React.ComponentType<P>>(Component: T): T {
     const WrappedComponent = React.forwardRef<any, P>((props, ref) => {
       useRenderPerformance(componentName, props, options)
-      return <Component {...props} ref={ref} />
+      return React.createElement(Component, { ...props, ref })
     }) as any
 
     WrappedComponent.displayName = `withRenderPerformance(${componentName})`
@@ -315,11 +315,7 @@ export const PerformanceProfiler: React.FC<{
     }
   }, [onRender])
 
-  return (
-    <React.Profiler id={id} onRender={handleRender}>
-      {children}
-    </React.Profiler>
-  )
+  return React.createElement(React.Profiler, { id, onRender: handleRender }, children)
 }
 
 export { performanceTracker }

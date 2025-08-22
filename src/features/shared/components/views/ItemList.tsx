@@ -38,16 +38,16 @@ export interface ListAction {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  onClick: item: unknown) => void;
+  onClick: (item: unknown) => void;
   variant?: 'default' | 'destructive';
-  disabled?: item: unknown) => boolean;
+  disabled?: (item: unknown) => boolean;
 }
 
 export interface ItemListProps {
   items: any[];
   columns: ListColumn[];
   actions?: ListAction[];
-  onItemClick?: item: unknown) => void;
+  onItemClick?: (item: unknown) => void;
   onSelectionChange?: (selectedIds: string[]) => void;
   selectedIds?: string[];
   sortBy?: string;
