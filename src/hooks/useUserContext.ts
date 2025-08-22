@@ -66,18 +66,18 @@ export function useUserContext(): UserContextResult {
     const accountType = determineAccountType(user, currentOrganization)
     
     // Aggregate loading states
-    const isLoading = authStore.isLoading || 
-                     authStore.loading.initialize ||
-                     !authStore.isInitialized
+    const isLoading = authStore?.isLoading || 
+                     authStore?.loading?.initialize ||
+                     !authStore?.isInitialized
     
     // Check for errors
-    const hasError = !!(authStore.errors.initialize || 
-                       authStore.errors.signIn ||
-                       authStore.errors.signUp)
+    const hasError = !!(authStore?.errors?.initialize || 
+                       authStore?.errors?.signIn ||
+                       authStore?.errors?.signUp)
     
-    const errorMessage = authStore.errors.initialize ||
-                        authStore.errors.signIn ||
-                        authStore.errors.signUp ||
+    const errorMessage = authStore?.errors?.initialize ||
+                        authStore?.errors?.signIn ||
+                        authStore?.errors?.signUp ||
                         null
     
     return {
@@ -95,7 +95,7 @@ export function useUserContext(): UserContextResult {
   }, [user, isAuthenticated, currentOrganization, organizations, authStore])
   
   // Apply Result pattern for comprehensive error handling
-  if (!isAuthenticated && authStore.isInitialized) {
+  if (!isAuthenticated && authStore?.isInitialized) {
     return {
       success: false,
       error: {
