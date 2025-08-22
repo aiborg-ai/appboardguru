@@ -58,7 +58,7 @@ async function handleRegistrationEmail(request: NextRequest) {
 
   try {
     // Check if email already has a registration request
-    const { data: existingRequest, error: checkError } = await supabase
+    const { data: existingRequest, error: checkError } = await (supabase as any)
       .from('registration_requests')
       .select('*')
       .eq('email', sanitizedData.email)

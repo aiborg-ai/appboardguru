@@ -45,7 +45,7 @@ export async function GET(
     const assetId = (await params).assetId
 
     // Check vault access
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('vault_members')
       .select('id, role, status')
       .eq('vault_id', vaultId)
@@ -58,7 +58,7 @@ export async function GET(
     }
 
     // Get vault asset details
-    const { data: vaultAsset, error: assetError } = await supabase
+    const { data: vaultAsset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select(`
         id, folder_path, display_order, is_featured, is_required_reading,
@@ -82,7 +82,7 @@ export async function GET(
     }
 
     // Increment view count
-    await supabase
+    await (supabase as any)
       .from('vault_assets')
       .update({ 
         view_count: (vaultAsset as any).view_count + 1 
@@ -90,7 +90,7 @@ export async function GET(
       .eq('id', (vaultAsset as any).id)
 
     // Log access activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
@@ -184,7 +184,7 @@ export async function PUT(
     const updates: UpdateVaultAssetRequest = await request.json()
 
     // Check vault access and permissions
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('vault_members')
       .select('id, role, status, organization_id')
       .eq('vault_id', vaultId)
@@ -204,7 +204,7 @@ export async function PUT(
     }
 
     // Check if vault asset exists
-    const { data: existingAsset, error: existingError } = await supabase
+    const { data: existingAsset, error: existingError } = await (supabase as any)
       .from('vault_assets')
       .select('id, asset_id, folder_path, display_order, is_featured, is_required_reading')
       .eq('vault_id', vaultId)
@@ -233,7 +233,7 @@ export async function PUT(
     }
 
     // Update vault asset
-    const { data: updatedAsset, error: updateError } = await supabase
+    const { data: updatedAsset, error: updateError } = await (supabase as any)
       .from('vault_assets')
       .update(updateData)
       .eq('id', existingAsset.id)
@@ -250,7 +250,7 @@ export async function PUT(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
@@ -328,7 +328,7 @@ export async function DELETE(
     const assetId = (await params).assetId
 
     // Check vault access and permissions
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('vault_members')
       .select('id, role, status, organization_id')
       .eq('vault_id', vaultId)
@@ -348,7 +348,7 @@ export async function DELETE(
     }
 
     // Get asset details before deletion for logging
-    const { data: vaultAsset, error: assetError } = await supabase
+    const { data: vaultAsset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select(`
         id, folder_path, 
@@ -363,7 +363,7 @@ export async function DELETE(
     }
 
     // Remove asset from vault
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('vault_assets')
       .delete()
       .eq('id', (vaultAsset as any).id)
@@ -374,7 +374,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,

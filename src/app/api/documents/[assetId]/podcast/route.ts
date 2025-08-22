@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -17,25 +18,25 @@ export async function POST(
     const { assetId } = params
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await (supabase as any)
+    const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if ((asset as any)?.vaults?.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Check if podcast already exists and is recent
-    const { data: existingPodcast, error: podcastError } = await (supabase as any)
+    const { data: existingPodcast, error: podcastError } = await supabase
       .from('document_podcasts')
       .select('*')
-      .eq('asset_id', assetId)
+      .eq('document_id', assetId)
       .order('created_at', { ascending: false })
       .limit(1)
 
@@ -45,8 +46,8 @@ export async function POST(
 
     // If podcast exists and is recent (less than 24 hours), return it
     if (existingPodcast && existingPodcast.length > 0) {
-      const podcast = (existingPodcast as any[])[0]
-      const createdAt = new Date((podcast as any)?.created_at)
+      const podcast = existingPodcast[0]
+      const createdAt = new Date((podcast as any)?.created_at || '')
       const now = new Date()
       const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
 
@@ -54,7 +55,7 @@ export async function POST(
         return NextResponse.json({
           id: (podcast as any)?.id,
           title: (podcast as any)?.title,
-          duration: (podcast as any)?.duration,
+          duration: (podcast as any)?.duration_seconds,
           audioUrl: (podcast as any)?.audio_url,
           transcript: (podcast as any)?.transcript,
           generatedAt: (podcast as any)?.created_at
@@ -66,16 +67,18 @@ export async function POST(
     const generatedPodcast = await generateDocumentPodcast(asset)
 
     // Save generated podcast to database
-    const { data: savedPodcast, error: saveError } = await (supabase as any)
+    const podcastData: Database['public']['Tables']['document_podcasts']['Insert'] = {
+      document_id: assetId,
+      title: generatedPodcast.title,
+      audio_url: generatedPodcast.audioUrl,
+      generated_by: user.id,
+      ...(generatedPodcast.duration ? { duration_seconds: generatedPodcast.duration } : {}),
+      ...(generatedPodcast.transcript ? { transcript: generatedPodcast.transcript } : {}),
+    }
+
+    const { data: savedPodcast, error: saveError } = await supabase
       .from('document_podcasts')
-      .insert({
-        asset_id: assetId,
-        title: (generatedPodcast as any)?.title,
-        duration: (generatedPodcast as any)?.duration,
-        audio_url: (generatedPodcast as any)?.audioUrl,
-        transcript: (generatedPodcast as any)?.transcript,
-        user_id: user.id
-      } as any)
+      .insert(podcastData)
       .select()
       .single()
 
@@ -88,7 +91,7 @@ export async function POST(
     return NextResponse.json({
       id: (savedPodcast as any)?.id,
       title: (savedPodcast as any)?.title,
-      duration: (savedPodcast as any)?.duration,
+      duration: (savedPodcast as any)?.duration_seconds,
       audioUrl: (savedPodcast as any)?.audio_url,
       transcript: (savedPodcast as any)?.transcript,
       generatedAt: (savedPodcast as any)?.created_at
@@ -111,7 +114,7 @@ async function generateDocumentPodcast(asset: any) {
   // 3. Use text-to-speech AI to generate the audio
   // 4. Upload the audio file to storage and return the URL
 
-  const documentType = (asset as any)?.name?.toLowerCase() || ''
+  const documentType = asset?.name?.toLowerCase() || ''
   let title = "Document Podcast"
   let transcript = ""
 

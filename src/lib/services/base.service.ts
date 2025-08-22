@@ -1,6 +1,6 @@
-import { RepositoryFactory } from '@/lib/repositories'
+import { RepositoryFactory } from '../repositories'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '../../types/database'
 
 export abstract class BaseService {
   protected repositories: RepositoryFactory
@@ -59,7 +59,7 @@ export abstract class BaseService {
         details,
         severity: 'low',
         outcome: 'success',
-      })
+      } as any)
     } catch (error) {
       console.error('Failed to log activity:', error)
     }

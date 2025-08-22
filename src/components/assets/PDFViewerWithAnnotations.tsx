@@ -23,7 +23,13 @@ interface Annotation {
     text?: string
     image?: string
   }
-  position: any
+  position: {
+    x: number
+    y: number
+    width: number
+    height: number
+    page?: number
+  }
   selected_text?: string
   comment_text?: string
   color: string

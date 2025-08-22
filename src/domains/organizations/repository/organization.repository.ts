@@ -19,7 +19,7 @@ import {
 } from '../types/dto.types'
 
 export class OrganizationRepository extends BaseRepository {
-  protected tableName = 'organizations'
+  protected tableName = 'organizations' as const
   
   constructor(supabase: SupabaseClient<Database>) {
     super(supabase)
@@ -33,7 +33,7 @@ export class OrganizationRepository extends BaseRepository {
     includeRelations = false
   ): Promise<OrganizationEntityWithRelations | null> {
     try {
-      let query = this.supabase
+      let query = (this.supabase as any)
         .from(this.tableName)
         .select(this.buildSelectString(includeRelations))
         .eq('id', id)
@@ -45,11 +45,13 @@ export class OrganizationRepository extends BaseRepository {
       if (error) {
         if (error.code === 'PGRST116') return null
         this.handleError(error, 'findById')
+        return null
       }
 
       return data as any as OrganizationEntityWithRelations
     } catch (error) {
       this.handleError(error, 'findById')
+      return null
     }
   }
 
@@ -68,11 +70,13 @@ export class OrganizationRepository extends BaseRepository {
       if (error) {
         if (error.code === 'PGRST116') return null
         this.handleError(error, 'findBySlug')
+        return null
       }
 
       return data as any as OrganizationEntityWithRelations
     } catch (error) {
       this.handleError(error, 'findBySlug')
+      return null
     }
   }
 
@@ -114,6 +118,7 @@ export class OrganizationRepository extends BaseRepository {
 
       if (error) {
         this.handleError(error, 'findByUserId')
+        return []
       }
 
       return (data as any[])?.map((item: any) => ({
@@ -125,6 +130,7 @@ export class OrganizationRepository extends BaseRepository {
       })) || []
     } catch (error) {
       this.handleError(error, 'findByUserId')
+      return []
     }
   }
 
@@ -150,7 +156,7 @@ export class OrganizationRepository extends BaseRepository {
       } = filters
 
       // Build the query
-      let query = this.supabase
+      let query = (this.supabase as any)
         .from(this.tableName)
         .select(this.buildSelectString(true), { count: 'exact' })
         .eq('is_active', true)
@@ -213,6 +219,18 @@ export class OrganizationRepository extends BaseRepository {
 
       if (error) {
         this.handleError(error, 'findMany')
+        return {
+          items: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            total_pages: 0,
+            has_next: false,
+            has_prev: false
+          },
+          filters
+        }
       }
 
       const total = count || 0
@@ -232,6 +250,18 @@ export class OrganizationRepository extends BaseRepository {
       }
     } catch (error) {
       this.handleError(error, 'findMany')
+      return {
+        items: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          total_pages: 0,
+          has_next: false,
+          has_prev: false
+        },
+        filters
+      }
     }
   }
 
@@ -262,6 +292,7 @@ export class OrganizationRepository extends BaseRepository {
       return organization as OrganizationEntity
     } catch (error) {
       this.handleError(error, 'create')
+      throw error
     }
   }
 
@@ -290,6 +321,7 @@ export class OrganizationRepository extends BaseRepository {
       return organization as OrganizationEntity
     } catch (error) {
       this.handleError(error, 'update')
+      throw error
     }
   }
 
@@ -316,6 +348,7 @@ export class OrganizationRepository extends BaseRepository {
       }
     } catch (error) {
       this.handleError(error, 'delete')
+      throw error
     }
   }
 
@@ -334,6 +367,7 @@ export class OrganizationRepository extends BaseRepository {
       }
     } catch (error) {
       this.handleError(error, 'hardDelete')
+      throw error
     }
   }
 
@@ -352,11 +386,13 @@ export class OrganizationRepository extends BaseRepository {
 
       if (error && error.code !== 'PGRST116') {
         this.handleError(error, 'checkUserAccess')
+        return false
       }
 
       return !!data
     } catch (error) {
       this.handleError(error, 'checkUserAccess')
+      return false
     }
   }
 
@@ -383,6 +419,7 @@ export class OrganizationRepository extends BaseRepository {
 
       if (error) {
         this.handleError(error, 'getMembers')
+        return []
       }
 
       return (data as any[])?.map((member: any) => ({
@@ -392,6 +429,7 @@ export class OrganizationRepository extends BaseRepository {
       })) || []
     } catch (error) {
       this.handleError(error, 'getMembers')
+      return []
     }
   }
 
@@ -400,7 +438,7 @@ export class OrganizationRepository extends BaseRepository {
    */
   async isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
     try {
-      let query = this.supabase
+      let query = (this.supabase as any)
         .from(this.tableName)
         .select('id')
         .eq('slug', slug)
@@ -414,12 +452,14 @@ export class OrganizationRepository extends BaseRepository {
 
       if (error && error.code !== 'PGRST116') {
         this.handleError(error, 'isSlugAvailable')
+        return false
       }
 
       // If no organization found with this slug, it's available
       return !data
     } catch (error) {
       this.handleError(error, 'isSlugAvailable')
+      return false
     }
   }
 

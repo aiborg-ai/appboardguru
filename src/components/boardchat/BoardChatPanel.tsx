@@ -693,7 +693,7 @@ const NotificationsContent: React.FC = () => {
                 onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`p-1 rounded-full ${getPriorityColor(notification.priority)}`}>
+                  <div className={`p-1 rounded-full ${getPriorityColor(notification.priority || 'medium')}`}>
                     {getNotificationIcon(notification)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -710,12 +710,12 @@ const NotificationsContent: React.FC = () => {
                     </p>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <span>
-                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(notification.created_at || new Date()), { addSuffix: true })}
                       </span>
                       {notification.priority !== 'medium' && (
                         <Badge 
                           variant="outline" 
-                          className={`px-1 py-0 text-xs ${getPriorityColor(notification.priority)}`}
+                          className={`px-1 py-0 text-xs ${getPriorityColor(notification.priority || 'medium')}`}
                         >
                           {notification.priority}
                         </Badge>

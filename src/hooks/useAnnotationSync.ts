@@ -113,7 +113,11 @@ export function useAnnotationSync({
   onAnnotationChange,
   onReplyChange,
   onUserPresence,
-}: UseAnnotationSyncProps) {
+}: UseAnnotationSyncProps): {
+  isConnected: boolean;
+  activeUsers: UserPresenceData[];
+  syncAnnotations: () => Promise<any[] | null>;
+} {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [activeUsers, setActiveUsers] = useState<UserPresenceData[]>([]);
@@ -123,16 +127,21 @@ export function useAnnotationSync({
   // Update user presence
   const updatePresence = useCallback(async () => {
     try {
-      // Update user presence in the asset
-      await supabase
-        .from('user_asset_presence')
-        .upsert({
-          user_id: currentUserId,
-          asset_id: assetId,
-          organization_id: organizationId,
-          last_seen: new Date().toISOString(),
-          is_active: true,
-        });
+      // Update user presence in the asset (table may not exist yet)
+      try {
+        await (supabase as any)
+          .from('user_asset_presence')
+          .upsert({
+            user_id: currentUserId,
+            asset_id: assetId,
+            organization_id: organizationId,
+            last_seen: new Date().toISOString(),
+            is_active: true,
+          });
+      } catch (presenceError) {
+        // Ignore if presence table doesn't exist
+        console.debug('User presence table not available:', presenceError);
+      }
     } catch (error) {
       console.error('Error updating presence:', error);
     }
@@ -144,7 +153,7 @@ export function useAnnotationSync({
     let replyChannel: RealtimeChannel | null = null;
     let presenceChannel: RealtimeChannel | null = null;
 
-    const setupSubscriptions = async () => {
+    const setupSubscriptions = async (): Promise<() => void> => {
       try {
         // Subscribe to annotation changes
         annotationChannel = supabase
@@ -161,22 +170,22 @@ export function useAnnotationSync({
               if (payload.new && 'created_by' in payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the annotation
                 const { data: userInfo } = await supabase
-                  .from('users')
+                  .from('profiles')
                   .select('id, full_name, avatar_url')
                   .eq('id', payload.new.created_by)
                   .single();
 
-                const annotationData: AnnotationData = {
+                const annotationData = {
                   ...payload.new,
                   user: userInfo,
-                } as AnnotationData;
+                } as unknown as AnnotationData;
 
                 if (payload.eventType === 'INSERT') {
                   onAnnotationChange?.(annotationData, 'created');
                   
                   toast({
                     title: 'New Annotation',
-                    description: `${userInfo?.full_name || 'Someone'} added an annotation`,
+                    description: `${(userInfo as any)?.full_name || 'Someone'} added an annotation`,
                   });
                 } else if (payload.eventType === 'UPDATE') {
                   onAnnotationChange?.(annotationData, 'updated');
@@ -203,22 +212,22 @@ export function useAnnotationSync({
               if (payload.new && 'created_by' in payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the reply
                 const { data: userInfo } = await supabase
-                  .from('users')
+                  .from('profiles')
                   .select('id, full_name, avatar_url')
                   .eq('id', payload.new.created_by)
                   .single();
 
-                const replyData: AnnotationReply = {
+                const replyData = {
                   ...payload.new,
                   user: userInfo,
-                } as AnnotationReply;
+                } as unknown as AnnotationReply;
 
                 if (payload.eventType === 'INSERT') {
                   onReplyChange?.(replyData, 'created');
                   
                   toast({
                     title: 'New Reply',
-                    description: `${userInfo?.full_name || 'Someone'} replied to an annotation`,
+                    description: `${(userInfo as any)?.full_name || 'Someone'} replied to an annotation`,
                   });
                 } else if (payload.eventType === 'UPDATE') {
                   onReplyChange?.(replyData, 'updated');
@@ -277,13 +286,18 @@ export function useAnnotationSync({
         setIsConnected(false);
         return () => {}; // Return empty cleanup function
       }
-      return () => {}; // Default return for successful setup
     };
 
-    setupSubscriptions();
+    let cleanupFunction: (() => void) | undefined;
+    setupSubscriptions().then((cleanup) => {
+      cleanupFunction = cleanup;
+    });
 
     // Cleanup on unmount
     return () => {
+      if (cleanupFunction) {
+        cleanupFunction();
+      }
       if (annotationChannel) {
         supabase.removeChannel(annotationChannel);
       }

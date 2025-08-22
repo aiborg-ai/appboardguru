@@ -230,7 +230,7 @@ export class CalendarService {
       allDay: event.all_day,
       backgroundColor: event.color,
       borderColor: event.color,
-      textColor: this.getContrastColor(event.color),
+      textColor: this.getContrastColor(event.color || '#000000'),
       extendedProps: {
         description: event.description,
         location: event.location,

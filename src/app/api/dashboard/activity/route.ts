@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 /**
  * GET /api/dashboard/activity
@@ -147,7 +148,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, title, description, resource_type, resource_id, metadata } = body
+    const { type, title, description, resource_type, resource_id, metadata } = body as {
+      type: string
+      title: string
+      description?: string
+      resource_type?: string
+      resource_id?: string
+      metadata?: Record<string, unknown>
+    }
 
     // Validate required fields
     if (!type || !title) {

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -19,15 +20,15 @@ export async function GET(
     // Verify user has access to this asset
     const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -46,12 +47,12 @@ export async function GET(
     // If TOC exists and is recent (less than 24 hours), return it
     if (existingToc && existingToc.length > 0) {
       const toc = existingToc[0]
-      const createdAt = new Date(toc.created_at)
+      const createdAt = new Date((toc as any)?.created_at || '')
       const now = new Date()
       const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
 
       if (hoursDiff < 24) {
-        return NextResponse.json(toc.content)
+        return NextResponse.json((toc as any)?.content)
       }
     }
 
@@ -59,13 +60,15 @@ export async function GET(
     const generatedToc = await generateTableOfContents(asset)
 
     // Save generated TOC to database
+    const tocData: Database['public']['Tables']['document_table_of_contents']['Insert'] = {
+      asset_id: assetId,
+      content: generatedToc,
+      user_id: user.id
+    }
+
     const { data: savedToc, error: saveError } = await supabase
       .from('document_table_of_contents')
-      .insert({
-        asset_id: assetId,
-        content: generatedToc,
-        user_id: user.id
-      })
+      .insert(tocData)
       .select()
       .single()
 

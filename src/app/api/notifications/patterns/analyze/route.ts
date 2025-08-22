@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
           .eq('status', 'active')
           .limit(50) // Limit to prevent performance issues
 
-        userIds = orgMembers?.map(m => m.user_id) || []
+        userIds = orgMembers?.map((m: any) => m.user_id) || []
       }
 
       const profiles = await patternRecognitionEngine.generateUserEngagementProfiles(
@@ -230,12 +230,13 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       totalPatterns: patternStats?.length || 0,
-      byType: patternStats?.reduce((acc, pattern) => {
-        acc[pattern.pattern_type] = (acc[pattern.pattern_type] || 0) + 1
+      byType: patternStats?.reduce((acc: Record<string, number>, pattern: any) => {
+        const patternType = pattern.pattern_type
+        acc[patternType] = (acc[patternType] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {},
       averageConfidence: patternStats?.length 
-        ? patternStats.reduce((sum, p) => sum + p.confidence_score, 0) / patternStats.length 
+        ? patternStats.reduce((sum, p: any) => sum + p.confidence_score, 0) / patternStats.length 
         : 0
     }
 
@@ -290,7 +291,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Soft delete the pattern (set is_active to false)
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('notification_patterns')
       .update({
         is_active: false,

@@ -3,7 +3,7 @@
  * Handles access control, permission checking, and security enforcement
  */
 
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { supabaseAdmin } from '../supabase-admin'
 
 export type OrganizationRole = 'owner' | 'admin' | 'member' | 'viewer'
 export type BoardPackAction = 'view' | 'download' | 'comment' | 'share' | 'edit_metadata' | 'delete'
@@ -16,7 +16,7 @@ export type OrganizationAction =
 export interface UserRoleInfo {
   role: OrganizationRole
   status: string
-  customPermissions: Record<string, any>
+  customPermissions: Record<string, unknown>
   joined_at: string
   last_accessed: string
 }
@@ -317,9 +317,9 @@ export async function getUserOrganizationRoles(
     }
 
     const organizations = memberships?.map((membership: any) => ({
-      id: membership.organization_id,
+      id: membership.organization_id as string,
       role: membership.role as OrganizationRole,
-      status: membership.status,
+      status: membership.status as string,
     })) || []
 
     return { success: true, organizations }
@@ -338,12 +338,12 @@ export async function getUserOrganizationRoles(
 function checkRolePermission(
   role: OrganizationRole,
   action: OrganizationAction,
-  customPermissions: Record<string, any> = {}
+  customPermissions: Record<string, unknown> = {}
 ): boolean {
   // Check custom permissions first
   const customKey = `can_${action}`
   if (customKey in customPermissions) {
-    return customPermissions[customKey]
+    return Boolean(customPermissions[customKey])
   }
 
   // Default role-based permissions
@@ -415,8 +415,8 @@ function checkRolePermission(
 function buildBoardPackPermissionInfo(
   role: OrganizationRole,
   isUploader: boolean,
-  specificPermission: any,
-  rolePermission: any
+  specificPermission: Record<string, unknown> | null,
+  rolePermission: Record<string, unknown> | null
 ): BoardPackPermissionInfo {
   // Start with role-based defaults
   const basePermissions = getBoardPackBasePermissions(role, isUploader)
@@ -429,30 +429,30 @@ function buildBoardPackPermissionInfo(
   // Apply role-based permissions from database
   if (rolePermission) {
     permissions = {
-      can_view: rolePermission.can_view || permissions.can_view,
-      can_download: rolePermission.can_download || permissions.can_download,
-      can_comment: rolePermission.can_comment || permissions.can_comment,
-      can_share: rolePermission.can_share || permissions.can_share,
-      can_edit_metadata: rolePermission.can_edit_metadata || permissions.can_edit_metadata,
+      can_view: Boolean((rolePermission as any).can_view) || permissions.can_view,
+      can_download: Boolean((rolePermission as any).can_download) || permissions.can_download,
+      can_comment: Boolean((rolePermission as any).can_comment) || permissions.can_comment,
+      can_share: Boolean((rolePermission as any).can_share) || permissions.can_share,
+      can_edit_metadata: Boolean((rolePermission as any).can_edit_metadata) || permissions.can_edit_metadata,
     }
-    if (rolePermission.expires_at) {
-      expires_at = rolePermission.expires_at
+    if ((rolePermission as any).expires_at) {
+      expires_at = (rolePermission as any).expires_at as string
     }
   }
 
   // Apply specific user permissions (these override role permissions)
   if (specificPermission) {
     permissions = {
-      can_view: specificPermission.can_view,
-      can_download: specificPermission.can_download,
-      can_comment: specificPermission.can_comment,
-      can_share: specificPermission.can_share,
-      can_edit_metadata: specificPermission.can_edit_metadata,
+      can_view: Boolean((specificPermission as any).can_view),
+      can_download: Boolean((specificPermission as any).can_download),
+      can_comment: Boolean((specificPermission as any).can_comment),
+      can_share: Boolean((specificPermission as any).can_share),
+      can_edit_metadata: Boolean((specificPermission as any).can_edit_metadata),
     }
     grantedByRole = false
     grantedBySpecificPermission = true
     if (specificPermission.expires_at) {
-      expires_at = specificPermission.expires_at
+      expires_at = (specificPermission.expires_at as string) || ''
     }
   }
 

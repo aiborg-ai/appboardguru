@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         .eq('is_organization_wide', true);
 
       if (terminology) {
-        customTerminology = terminology.reduce((acc, term) => {
+        customTerminology = terminology.reduce((acc: any, term: any) => {
           acc[term.term] = term.translations;
           return acc;
         }, {} as Record<string, any>);

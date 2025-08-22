@@ -92,8 +92,8 @@ export class ComplianceEngine {
 
       const signatureHash = await this.generateTamperProofSignature(reportData)
 
-      // Store compliance snapshot
-      const { data: snapshot } = await supabase
+      // Store compliance snapshot with proper casting for Supabase operations
+      const { data: snapshot } = await (supabase as any)
         .from('activity_snapshots')
         .insert({
           organization_id: organizationId,
@@ -114,7 +114,7 @@ export class ComplianceEngine {
         period_start,
         period_end,
         generated_at: new Date().toISOString(),
-        status: 'draft',
+        status: 'draft' as ComplianceReportStatus,
         findings,
         summary,
         evidence,
@@ -142,8 +142,8 @@ export class ComplianceEngine {
     try {
       const supabase = supabaseAdmin
 
-      // Get the last block in the chain
-      const { data: lastBlock } = await supabase
+      // Get the last block in the chain with proper casting
+      const { data: lastBlock } = await (supabase as any)
         .from('audit_logs')
         .select('id, signature_hash, created_at')
         .eq('organization_id', organizationId)
@@ -183,8 +183,8 @@ export class ComplianceEngine {
         verification_status: 'pending'
       }
 
-      // Store the immutable entry
-      await supabase
+      // Store the immutable entry with proper casting
+      await (supabase as any)
         .from('audit_logs')
         .update({
           signature_hash: currentHash,
@@ -219,7 +219,7 @@ export class ComplianceEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      let query = supabase
+      let query = (supabase as any)
         .from('audit_logs')
         .select('id, signature_hash, metadata, created_at')
         .eq('organization_id', organizationId)
@@ -313,7 +313,7 @@ export class ComplianceEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get relevant audit data without exposing sensitive details
-      const { data: auditData } = await supabase
+      const { data: auditData } = await (supabase as any)
         .from('audit_logs')
         .select('event_type, event_category, outcome, severity, created_at')
         .eq('organization_id', organizationId)
@@ -327,10 +327,10 @@ export class ComplianceEngine {
       // Create aggregated proof inputs (no sensitive data)
       const publicInputs = {
         totalEvents: auditData.length,
-        successfulEvents: auditData.filter(e => e.outcome === 'success').length,
-        failedEvents: auditData.filter(e => e.outcome === 'failure').length,
-        criticalEvents: auditData.filter(e => e.severity === 'critical').length,
-        eventCategories: Array.from(new Set(auditData.map(e => e.event_category))),
+        successfulEvents: auditData.filter((e: any) => e.outcome === 'success').length,
+        failedEvents: auditData.filter((e: any) => e.outcome === 'failure').length,
+        criticalEvents: auditData.filter((e: any) => e.severity === 'critical').length,
+        eventCategories: Array.from(new Set(auditData.map((e: any) => e.event_category))),
         timeRange,
         organizationId: organizationId.substring(0, 8) + '...' // Partial ID for privacy
       }
@@ -368,7 +368,7 @@ export class ComplianceEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: session } = await supabase
+      const { data: session } = await (supabase as any)
         .from('activity_sessions')
         .insert({
           user_id: userId,
@@ -406,7 +406,7 @@ export class ComplianceEngine {
       let archivedEntries = 0
 
       // Get organization's retention policies
-      const { data: org } = await supabase
+      const { data: org } = await (supabase as any)
         .from('organizations')
         .select('compliance_settings')
         .eq('id', organizationId)
@@ -420,7 +420,7 @@ export class ComplianceEngine {
 
       // Enforce audit log retention
       const auditRetentionDate = this.calculateRetentionCutoff(retentionPolicies.audit_logs)
-      const { count: deletedAuditLogs } = await supabase
+      const { count: deletedAuditLogs } = await (supabase as any)
         .from('audit_logs')
         .delete({ count: 'exact' })
         .eq('organization_id', organizationId)
@@ -431,7 +431,7 @@ export class ComplianceEngine {
 
       // Archive old activity sessions
       const sessionRetentionDate = this.calculateRetentionCutoff(retentionPolicies.activity_sessions)
-      const { count: archivedSessions } = await supabase
+      const { count: archivedSessions } = await (supabase as any)
         .from('activity_sessions')
         .update({ 
           events_data: null, // Clear detailed event data
@@ -470,7 +470,7 @@ export class ComplianceEngine {
       const holdId = `hold-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
       // Apply legal hold to audit logs
-      const { count: affectedEntries } = await supabase
+      const { count: affectedEntries } = await (supabase as any)
         .from('audit_logs')
         .update({
           legal_hold: true,
@@ -487,7 +487,7 @@ export class ComplianceEngine {
         .lte('created_at', affectedTimeRange.end)
 
       // Apply to snapshots
-      await supabase
+      await (supabase as any)
         .from('activity_snapshots')
         .update({ is_locked: true })
         .eq('organization_id', organizationId)
@@ -864,7 +864,7 @@ export class ComplianceEngine {
       const evidence: ComplianceEvidence[] = []
 
       // Collect relevant audit logs
-      const { data: auditLogs } = await supabase
+      const { data: auditLogs } = await (supabase as any)
         .from('audit_logs')
         .select('*')
         .eq('organization_id', organizationId)
@@ -916,7 +916,7 @@ export class ComplianceEngine {
     // Calculate risk score based on severity
     const riskScore = findings.reduce((score, finding) => {
       const riskWeights = { low: 1, medium: 3, high: 7, critical: 15 }
-      return score + (riskWeights[finding.risk_level] || 0)
+      return score + (riskWeights[finding.risk_level as keyof typeof riskWeights] || 0)
     }, 0)
 
     return {
@@ -969,7 +969,7 @@ export class ComplianceEngine {
       custom: 5 // 5 years default
     }
 
-    const years = retentionPeriods[report_type] || 5
+    const years = retentionPeriods[report_type as keyof typeof retentionPeriods] || 5
     return new Date(Date.now() + years * 365 * 24 * 60 * 60 * 1000).toISOString()
   }
 
@@ -979,7 +979,7 @@ export class ComplianceEngine {
     period_end: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<number> {
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('audit_logs')
       .select('id', { count: 'exact' })
       .eq('organization_id', organizationId)
@@ -997,7 +997,7 @@ export class ComplianceEngine {
     period_end: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<number> {
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('audit_logs')
       .select('id', { count: 'exact' })
       .eq('organization_id', organizationId)
@@ -1021,7 +1021,7 @@ export class ComplianceEngine {
     const requiredEventTypes = ['authentication', 'authorization', 'data_access', 'data_modification']
     
     for (const eventType of requiredEventTypes) {
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('audit_logs')
         .select('id', { count: 'exact' })
         .eq('organization_id', organizationId)
@@ -1109,7 +1109,7 @@ export class ComplianceEngine {
 
   private static async getOrganizationProfile(organizationId: string): Promise<Record<string, unknown> | null> {
     const supabase = await createSupabaseServerClient()
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('organizations')
       .select('*')
       .eq('id', organizationId)
@@ -1141,7 +1141,7 @@ export class ComplianceEngine {
     readonly successRate: number
   }> {
     const supabase = await createSupabaseServerClient()
-    const { data, count } = await supabase
+    const { data, count } = await (supabase as any)
       .from('audit_logs')
       .select('event_type, outcome', { count: 'exact' })
       .eq('organization_id', organizationId)
@@ -1150,8 +1150,8 @@ export class ComplianceEngine {
 
     return {
       totalEvents: count || 0,
-      eventTypes: data ? Array.from(new Set(data.map(d => d.event_type))) : [],
-      successRate: data ? (data.filter(d => d.outcome === 'success').length / data.length) * 100 : 100
+      eventTypes: data ? Array.from(new Set(data.map((d: any) => d.event_type))) : [],
+      successRate: data ? (data.filter((d: any) => d.outcome === 'success').length / data.length) * 100 : 100
     }
   }
 }
@@ -1182,7 +1182,7 @@ export class PrivacyEngine {
       const fields = fieldsToAnonymize[anonymizationLevel]
 
       // Get audit logs to anonymize
-      const { data: auditLogs } = await supabase
+      const { data: auditLogs } = await (supabase as any)
         .from('audit_logs')
         .select('id, metadata')
         .eq('organization_id', organizationId)
@@ -1204,7 +1204,7 @@ export class PrivacyEngine {
           if (field === 'request_headers') updateData.request_headers = null
         })
 
-        await supabase
+        await (supabase as any)
           .from('audit_logs')
           .update(updateData)
           .eq('id', log.id)
@@ -1239,7 +1239,7 @@ export class PrivacyEngine {
       const supabase = await createSupabaseServerClient()
 
       // Analyze data processing activities
-      const { data: dataProcessing } = await supabase
+      const { data: dataProcessing } = await (supabase as any)
         .from('audit_logs')
         .select('event_category, action, created_at, details')
         .eq('organization_id', organizationId)
@@ -1312,7 +1312,7 @@ export class PrivacyEngine {
   ): Promise<readonly ComplianceViolation[]> {
     const supabase = await createSupabaseServerClient()
     
-    const { data: incidents } = await supabase
+    const { data: incidents } = await (supabase as any)
       .from('audit_logs')
       .select('*')
       .eq('organization_id', organizationId)

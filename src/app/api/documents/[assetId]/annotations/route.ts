@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -17,28 +18,36 @@ export async function GET(
     const { assetId } = params
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await (supabase as any)
+    const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if ((asset as any)?.vaults?.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get annotations for this asset
-    const { data: annotations, error: annotationsError } = await (supabase as any)
+    // Get annotations for this asset  
+    const { data: annotations, error: annotationsError } = await supabase
       .from('document_annotations')
       .select(`
-        *,
-        replies:document_annotation_replies(*)
+        id,
+        document_id,
+        user_id,
+        annotation_type,
+        content,
+        position_data,
+        highlighted_text,
+        page_number,
+        created_at,
+        updated_at
       `)
-      .eq('asset_id', assetId)
+      .eq('document_id', assetId)
       .order('created_at', { ascending: false })
 
     if (annotationsError) {
@@ -47,39 +56,24 @@ export async function GET(
     }
 
     // Transform to match the expected format
-    const transformedAnnotations = (annotations as any[])?.map((annotation: any) => ({
+    const transformedAnnotations = annotations?.map((annotation: any) => ({
       id: annotation.id,
-      type: annotation.type,
+      type: annotation.annotation_type as 'comment' | 'question' | 'note' | 'voice',
       content: annotation.content,
-      voiceUrl: annotation.voice_url,
+      voiceUrl: undefined, // Not available in current schema
       sectionReference: {
-        page: annotation.page,
-        coordinates: annotation.coordinates,
-        text: annotation.reference_text
+        page: annotation.page_number || 1,
+        coordinates: annotation.position_data ? (annotation.position_data as any) : undefined,
+        text: annotation.highlighted_text || undefined
       },
       userId: annotation.user_id,
-      userName: annotation.user_name,
-      createdAt: annotation.created_at,
-      updatedAt: annotation.updated_at,
-      isShared: annotation.is_shared,
-      sharedWith: annotation.shared_with || [],
-      replies: (annotation.replies as any[])?.map((reply: any) => ({
-        id: reply.id,
-        type: 'comment',
-        content: reply.content,
-        sectionReference: {
-          page: annotation.page,
-          coordinates: annotation.coordinates,
-          text: annotation.reference_text
-        },
-        userId: reply.user_id,
-        userName: reply.user_name,
-        createdAt: reply.created_at,
-        updatedAt: reply.updated_at,
-        isShared: false,
-        sharedWith: []
-      })) || []
-    }))
+      userName: 'Unknown User', // Would need join with profiles table
+      createdAt: annotation.created_at || new Date().toISOString(),
+      updatedAt: annotation.updated_at || new Date().toISOString(),
+      isShared: false, // Not available in current schema
+      sharedWith: [], // Not available in current schema
+      replies: [] // Would need separate table/query
+    })) || []
 
     return NextResponse.json(transformedAnnotations)
 
@@ -97,7 +91,7 @@ export async function POST(
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -109,45 +103,44 @@ export async function POST(
     const body = await request.json()
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await (supabase as any)
+    const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if ((asset as any)?.vaults?.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Get user profile for display name
-    const { data: profile } = await (supabase as any)
+    const { data: profile } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('id', user.id)
       .single()
 
-    const userName = profile?.full_name || user.email?.split('@')[0] || 'Unknown User'
+    const userName = (profile as any)?.full_name || user.email?.split('@')[0] || 'Unknown User'
+
+    // Create annotation insert data with proper optional properties
+    const insertData: Database['public']['Tables']['document_annotations']['Insert'] = {
+      document_id: assetId,
+      user_id: user.id,
+      annotation_type: body.type || 'comment',
+      content: body.content,
+      ...( body.sectionReference?.page ? { page_number: body.sectionReference.page } : {} ),
+      ...( body.sectionReference?.coordinates ? { position_data: body.sectionReference.coordinates } : {} ),
+      ...( body.sectionReference?.text ? { highlighted_text: body.sectionReference.text } : {} ),
+    }
 
     // Create annotation
-    const { data: newAnnotation, error: createError } = await (supabase as any)
+    const { data: newAnnotation, error: createError } = await supabase
       .from('document_annotations')
-      .insert({
-        asset_id: assetId,
-        user_id: user.id,
-        user_name: userName,
-        type: body.type,
-        content: body.content,
-        voice_url: body.voiceUrl,
-        page: body.sectionReference?.page,
-        coordinates: body.sectionReference?.coordinates,
-        reference_text: body.sectionReference?.text,
-        is_shared: body.isShared || false,
-        shared_with: body.sharedWith || []
-      } as any)
+      .insert(insertData)
       .select()
       .single()
 
@@ -158,21 +151,21 @@ export async function POST(
 
     // Transform to match the expected format
     const transformedAnnotation = {
-      id: (newAnnotation as any)?.id,
-      type: (newAnnotation as any)?.type,
-      content: (newAnnotation as any)?.content,
-      voiceUrl: (newAnnotation as any)?.voice_url,
+      id: (newAnnotation as any).id,
+      type: (newAnnotation as any).annotation_type as 'comment' | 'question' | 'note' | 'voice',
+      content: (newAnnotation as any).content,
+      voiceUrl: undefined, // Not available in current schema
       sectionReference: {
-        page: (newAnnotation as any)?.page,
-        coordinates: (newAnnotation as any)?.coordinates,
-        text: (newAnnotation as any)?.reference_text
+        page: (newAnnotation as any).page_number || 1,
+        coordinates: (newAnnotation as any).position_data ? ((newAnnotation as any).position_data as any) : undefined,
+        text: (newAnnotation as any).highlighted_text || undefined
       },
-      userId: (newAnnotation as any)?.user_id,
-      userName: (newAnnotation as any)?.user_name,
-      createdAt: (newAnnotation as any)?.created_at,
-      updatedAt: (newAnnotation as any)?.updated_at,
-      isShared: (newAnnotation as any)?.is_shared,
-      sharedWith: (newAnnotation as any)?.shared_with || [],
+      userId: (newAnnotation as any).user_id,
+      userName: userName,
+      createdAt: (newAnnotation as any).created_at || new Date().toISOString(),
+      updatedAt: (newAnnotation as any).updated_at || new Date().toISOString(),
+      isShared: false, // Not available in current schema
+      sharedWith: [], // Not available in current schema
       replies: []
     }
 

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const transcriptionData = await transcriptionResponse.json();
     
     // Log the transcription activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,

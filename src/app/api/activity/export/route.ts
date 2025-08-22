@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 // import { ComplianceEngine } from '@/lib/activity/compliance'
+
+type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,13 +14,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(user as any)?.organization_id) {
+    if (!userOrgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -28,7 +33,17 @@ export async function POST(request: NextRequest) {
       reportType = 'activity',
       includeMetadata = false,
       filters = {}
-    } = body
+    } = body as {
+      format?: string
+      timeRange?: string
+      reportType?: string
+      includeMetadata?: boolean
+      filters?: {
+        eventTypes?: string[]
+        entityTypes?: string[]
+        userIds?: string[]
+      }
+    }
 
     let startDate: Date
     const endDate = new Date()
@@ -53,7 +68,7 @@ export async function POST(request: NextRequest) {
         startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000)
     }
 
-    let exportData: any
+    let exportData: Record<string, unknown>
 
     switch (reportType) {
       case 'activity': {
@@ -71,21 +86,21 @@ export async function POST(request: NextRequest) {
             ip_address,
             user_agent,
             source,
-            users!inner(id, name, email)
+            user_id
           `)
-          .eq('organization_id', (user as any)?.organization_id)
+          .eq('organization_id', userOrgMember.organization_id)
           .gte('timestamp', startDate.toISOString())
           .lte('timestamp', endDate.toISOString())
           .order('timestamp', { ascending: false })
 
-        if ((filters as any)?.eventTypes?.length) {
-          query = query.in('event_type', (filters as any).eventTypes)
+        if (filters.eventTypes?.length) {
+          query = query.in('event_type', filters.eventTypes)
         }
-        if ((filters as any)?.entityTypes?.length) {
-          query = query.in('entity_type', (filters as any).entityTypes)
+        if (filters.entityTypes?.length) {
+          query = query.in('entity_type', filters.entityTypes)
         }
-        if ((filters as any)?.userIds?.length) {
-          query = query.in('user_id', (filters as any).userIds)
+        if (filters.userIds?.length) {
+          query = query.in('user_id', filters.userIds)
         }
 
         const { data: activities, error } = await query
@@ -94,32 +109,28 @@ export async function POST(request: NextRequest) {
 
         exportData = {
           reportType: 'Activity Log',
-          organizationId: (user as any)?.organization_id,
+          organizationId: userOrgMember.organization_id,
           timeRange: {
             start: startDate.toISOString(),
             end: endDate.toISOString(),
             label: timeRange
           },
-          totalEvents: (activities as any)?.length || 0,
-          activities: (activities as any)?.map((activity: any) => ({
-            id: (activity as any)?.id,
-            timestamp: (activity as any)?.timestamp,
-            eventType: (activity as any)?.event_type,
-            entityType: (activity as any)?.entity_type,
-            entityId: (activity as any)?.entity_id,
-            user: {
-              id: (activity as any)?.users?.id || 'unknown',
-              name: (activity as any)?.users?.name || 'Unknown User',
-              email: (activity as any)?.users?.email || 'unknown'
-            },
-            ...(includeMetadata && {
-              metadata: (activity as any)?.metadata,
-              correlationId: (activity as any)?.correlation_id,
-              sessionId: (activity as any)?.session_id,
-              ipAddress: (activity as any)?.ip_address,
-              userAgent: (activity as any)?.user_agent,
-              source: (activity as any)?.source
-            })
+          totalEvents: activities?.length || 0,
+          activities: activities?.map((activity: any) => ({
+            id: activity.id,
+            timestamp: activity.timestamp,
+            eventType: activity.event_type,
+            entityType: activity.entity_type,
+            entityId: activity.entity_id,
+            userId: activity.user_id,
+            ...(includeMetadata ? {
+              metadata: activity.metadata,
+              correlationId: activity.correlation_id,
+              sessionId: activity.session_id,
+              ipAddress: activity.ip_address,
+              userAgent: activity.user_agent,
+              source: activity.source
+            } : {})
           })) || []
         }
         break
@@ -130,20 +141,20 @@ export async function POST(request: NextRequest) {
         exportData = {
           message: 'Compliance report generation not implemented yet',
           timestamp: new Date().toISOString(),
-          organization_id: (user as any)?.organization_id
+          organization_id: userOrgMember.organization_id
         }
         break
       }
 
       case 'security': {
-        if ((user as any)?.role !== 'admin') {
+        if (userOrgMember.role !== 'admin') {
           return NextResponse.json({ error: 'Admin access required for security reports' }, { status: 403 })
         }
 
         const { data: securityEvents } = await (supabase as any)
           .from('audit_logs')
           .select('*')
-          .eq('organization_id', (user as any)?.organization_id)
+          .eq('organization_id', userOrgMember.organization_id)
           .in('event_type', ['user_login', 'user_logout', 'failed_login', 'permission_change', 'security_alert'])
           .gte('timestamp', startDate.toISOString())
           .lte('timestamp', endDate.toISOString())
@@ -151,14 +162,14 @@ export async function POST(request: NextRequest) {
 
         exportData = {
           reportType: 'Security Activity Report',
-          organizationId: (user as any)?.organization_id,
+          organizationId: userOrgMember.organization_id,
           timeRange: { start: startDate.toISOString(), end: endDate.toISOString() },
-          securityEvents: (securityEvents as any) || [],
+          securityEvents: securityEvents || [],
           summary: {
-            totalSecurityEvents: (securityEvents as any)?.length || 0,
-            uniqueUsers: [...new Set((securityEvents as any)?.map((e: any) => (e as any)?.user_id))].length,
-            loginAttempts: (securityEvents as any)?.filter((e: any) => (e as any)?.event_type === 'user_login').length || 0,
-            failedLogins: (securityEvents as any)?.filter((e: any) => (e as any)?.event_type === 'failed_login').length || 0
+            totalSecurityEvents: securityEvents?.length || 0,
+            uniqueUsers: [...new Set(securityEvents?.map((e: any) => e.user_id))].length,
+            loginAttempts: securityEvents?.filter((e: any) => e.event_type === 'user_login').length || 0,
+            failedLogins: securityEvents?.filter((e: any) => e.event_type === 'failed_login').length || 0
           }
         }
         break
@@ -176,19 +187,30 @@ export async function POST(request: NextRequest) {
         let csvContent = ''
         
         if (reportType === 'activity') {
+          const headers = 'Timestamp,User ID,Event Type,Entity Type,Entity ID' + (includeMetadata ? ',Metadata,IP Address,Session ID' : '')
+          const activities = exportData.activities as Array<{
+            timestamp: string
+            userId: string
+            eventType: string
+            entityType: string
+            entityId: string
+            metadata?: unknown
+            ipAddress?: string
+            sessionId?: string
+          }>
+          
           csvContent = [
-            'Timestamp,User Name,User Email,Event Type,Entity Type,Entity ID' + (includeMetadata ? ',Metadata,IP Address,Session ID' : ''),
-            ...(exportData as any)?.activities?.map((activity: any) => [
-              (activity as any)?.timestamp,
-              (activity as any)?.user?.name,
-              (activity as any)?.user?.email,
-              (activity as any)?.eventType,
-              (activity as any)?.entityType,
-              (activity as any)?.entityId,
+            headers,
+            ...activities.map((activity) => [
+              activity.timestamp,
+              activity.userId,
+              activity.eventType,
+              activity.entityType,
+              activity.entityId,
               ...(includeMetadata ? [
-                JSON.stringify((activity as any)?.metadata).replace(/"/g, '""'),
-                (activity as any)?.ipAddress,
-                (activity as any)?.sessionId
+                JSON.stringify(activity.metadata).replace(/"/g, '""'),
+                activity.ipAddress || '',
+                activity.sessionId || ''
               ] : [])
             ].join(','))
           ].join('\n')

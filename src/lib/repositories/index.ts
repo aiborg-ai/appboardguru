@@ -7,7 +7,7 @@ export { OrganizationRepository } from './organization.repository'
 
 // Repository factory for dependency injection
 import { SupabaseClient } from '@supabase/supabase-js'
-import { Database } from '@/types/database'
+import { Database } from '../../types/database'
 import { UserRepository } from './user.repository'
 import { VaultRepository } from './vault.repository'
 import { AssetRepository } from './asset.repository'

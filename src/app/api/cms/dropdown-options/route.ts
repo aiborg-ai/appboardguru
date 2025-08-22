@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get dropdown options for the specified category
-    const { data: options, error } = await supabase
+    const { data: options, error } = await (supabase as any)
       .from('dropdown_options')
       .select(`
         id,
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await (supabase as any)
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const { category, value, label, description, metadata, sort_order } = body
 
     // Get category ID
-    const { data: categoryData, error: categoryError } = await supabase
+    const { data: categoryData, error: categoryError } = await (supabase as any)
       .from('dropdown_option_categories')
       .select('id')
       .eq('name', category)
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new option
-    const { data: option, error } = await supabase
+    const { data: option, error } = await (supabase as any)
       .from('dropdown_options')
       .insert({
         category_id: categoryData.id,

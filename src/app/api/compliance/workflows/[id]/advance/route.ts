@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Verify user is a participant in this workflow
-    const { data: participant } = await supabase
+    const { data: participant } = await (supabase as any)
       .from('compliance_participants')
       .select(`
         *,

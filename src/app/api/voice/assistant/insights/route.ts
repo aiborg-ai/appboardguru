@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { Database } from '@/types/database';
 import {
   ProactiveInsight,
   ProactiveInsightRequest,
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient() as any;
     
     // Verify user authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -102,12 +103,12 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         organization_id: body.organizationId,
         event_type: 'system_action',
-        event_category: 'proactive_insights',
         action: 'generate_insights',
         resource_type: 'proactive_insights',
-        event_description: `Generated ${insights.length} proactive insights`,
-        outcome: 'success',
         details: {
+          event_category: 'proactive_insights',
+          outcome: 'success',
+          event_description: `Generated ${insights.length} proactive insights`,
           insight_types: body.insightTypes,
           total_insights: insights.length,
           critical_insights: insights.filter(i => i.urgency === 'critical').length,
@@ -935,7 +936,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      insights: (insights || []).map(insight => JSON.parse(insight.insight_data))
+      insights: (insights || []).map((insight: any) => insight.insight_data ? JSON.parse(insight.insight_data) : insight)
     });
 
   } catch (error) {

@@ -110,7 +110,7 @@ export function useVoiceTranslation(options: UseVoiceTranslationOptions = {}) {
       setState(prev => ({ ...prev, isProcessing: true }));
 
       const arrayBuffer = await audioBlob.arrayBuffer();
-      const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(arrayBuffer))));
+      const base64Audio = btoa(String.fromCharCode(...Array.from(new Uint8Array(arrayBuffer))));
 
       await translateAudio(base64Audio);
     } catch (error) {
@@ -418,9 +418,9 @@ export function useVoiceTranslation(options: UseVoiceTranslationOptions = {}) {
     translationCount: state.translations.length,
     lastTranslation: state.translations[0] || null,
     averageConfidence: state.translations.length > 0 
-      ? state.translations.reduce((sum, t) => {
-          const avgConfidence = Object.values(t.translations).reduce((s, trans: any) => s + (trans.confidence || 0), 0) / Object.keys(t.translations).length;
-          return sum + avgConfidence;
+      ? state.translations.reduce((sum: any, t: any) => {
+          const avgConfidence = Object.values(t.translations || {}).reduce((s: number, trans: any) => s + ((trans as any)?.confidence || 0), 0) / Math.max(Object.keys(t.translations || {}).length, 1);
+          return (sum as number) + (avgConfidence as number);
         }, 0) / state.translations.length
       : 0
   };

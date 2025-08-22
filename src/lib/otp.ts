@@ -47,6 +47,17 @@ export async function createOtpCode(
   expiryHours: number = 24
 ): Promise<OtpResult> {
   try {
+    // Get user_id from email
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (!user) {
+      return { success: false, error: 'User not found' }
+    }
+
     // Invalidate any existing OTP codes for this email and purpose
     await invalidateExistingOtpCodes(email, purpose)
 
@@ -55,11 +66,10 @@ export async function createOtpCode(
     const expiresAt = new Date(Date.now() + (expiryHours * 60 * 60 * 1000)).toISOString()
 
     const otpData: OtpInsert = {
-      email,
-      otp_code: otpCode,
-      purpose,
+      user_id: user.id,
+      code: otpCode,
       expires_at: expiresAt,
-      used: false
+      is_used: false
     }
 
     const { data, error } = await supabaseAdmin

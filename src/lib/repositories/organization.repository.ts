@@ -1,5 +1,5 @@
 import { BaseRepository } from './base.repository'
-import type { Database } from '@/types/database'
+import type { Database } from '../../types/database'
 
 type Organization = Database['public']['Tables']['organizations']['Row']
 type OrganizationInsert = Database['public']['Tables']['organizations']['Insert']
@@ -9,7 +9,7 @@ type OrganizationMember = Database['public']['Tables']['organization_members']['
 export class OrganizationRepository extends BaseRepository {
   async findById(id: string): Promise<Organization | null> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organizations')
         .select('*')
         .eq('id', id)
@@ -20,15 +20,15 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'findById')
       }
 
-      return data || null
-    } catch (error) {
+      return (data as any) || null
+    } catch (error: any) {
       this.handleError(error, 'findById')
     }
   }
 
   async findByUser(userId: string): Promise<Organization[]> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organizations')
         .select(`
           *,
@@ -49,15 +49,15 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'findByUser')
       }
 
-      return data || []
-    } catch (error) {
+      return (data as any) || []
+    } catch (error: any) {
       this.handleError(error, 'findByUser')
     }
   }
 
   async findBySlug(slug: string): Promise<Organization | null> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organizations')
         .select('*')
         .eq('slug', slug)
@@ -68,17 +68,17 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'findBySlug')
       }
 
-      return data || null
-    } catch (error) {
+      return (data as any) || null
+    } catch (error: any) {
       this.handleError(error, 'findBySlug')
     }
   }
 
   async create(organization: OrganizationInsert): Promise<Organization> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organizations')
-        .insert(organization as any)
+        .insert(organization)
         .select()
         .single()
 
@@ -86,20 +86,20 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'create')
       }
 
-      return data!
-    } catch (error) {
+      return (data as any)!
+    } catch (error: any) {
       this.handleError(error, 'create')
     }
   }
 
   async update(id: string, updates: OrganizationUpdate): Promise<Organization> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organizations')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', id)
         .select()
         .single()
@@ -108,8 +108,8 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'update')
       }
 
-      return data!
-    } catch (error) {
+      return (data as any)!
+    } catch (error: any) {
       this.handleError(error, 'update')
     }
   }
@@ -117,35 +117,35 @@ export class OrganizationRepository extends BaseRepository {
   async delete(id: string): Promise<void> {
     try {
       // Soft delete by marking as inactive
-      const { error } = await this.supabase
+      const { error } = await (this.supabase as any)
         .from('organizations')
         .update({
           is_active: false,
           deleted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', id)
 
       if (error) {
         this.handleError(error, 'delete')
       }
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error, 'delete')
     }
   }
 
-  async addMember(organizationId: string, userId: string, role: string = 'member', invitedBy?: string): Promise<OrganizationMember> {
+  async addMember(organizationId: string, userId: string, role: Database['public']['Enums']['organization_role'] = 'member', invitedBy?: string): Promise<OrganizationMember> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organization_members')
         .insert({
           organization_id: organizationId,
           user_id: userId,
-          role,
+          role: role as any,
           invited_by: invitedBy,
           joined_at: new Date().toISOString(),
-          status: 'active'
-        } as any)
+          status: 'active' as any
+        })
         .select()
         .single()
 
@@ -153,17 +153,17 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'addMember')
       }
 
-      return data!
-    } catch (error) {
+      return (data as any)!
+    } catch (error: any) {
       this.handleError(error, 'addMember')
     }
   }
 
-  async updateMemberRole(organizationId: string, userId: string, role: string): Promise<OrganizationMember> {
+  async updateMemberRole(organizationId: string, userId: string, role: Database['public']['Enums']['organization_role']): Promise<OrganizationMember> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organization_members')
-        .update({ role } as any)
+        .update({ role: role as any })
         .eq('organization_id', organizationId)
         .eq('user_id', userId)
         .select()
@@ -173,15 +173,15 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'updateMemberRole')
       }
 
-      return data!
-    } catch (error) {
+      return (data as any)!
+    } catch (error: any) {
       this.handleError(error, 'updateMemberRole')
     }
   }
 
   async removeMember(organizationId: string, userId: string): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await (this.supabase as any)
         .from('organization_members')
         .delete()
         .eq('organization_id', organizationId)
@@ -190,14 +190,14 @@ export class OrganizationRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'removeMember')
       }
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error, 'removeMember')
     }
   }
 
   async getMembers(organizationId: string): Promise<OrganizationMember[]> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organization_members')
         .select(`
           *,
@@ -211,15 +211,15 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'getMembers')
       }
 
-      return data || []
-    } catch (error) {
+      return (data as any) || []
+    } catch (error: any) {
       this.handleError(error, 'getMembers')
     }
   }
 
   async getMemberRole(organizationId: string, userId: string): Promise<string | null> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('organization_members')
         .select('role')
         .eq('organization_id', organizationId)
@@ -232,14 +232,14 @@ export class OrganizationRepository extends BaseRepository {
       }
 
       return (data as any)?.role || null
-    } catch (error) {
+    } catch (error: any) {
       return null
     }
   }
 
   async isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
     try {
-      let query = this.supabase
+      let query = (this.supabase as any)
         .from('organizations')
         .select('id')
         .eq('slug', slug)
@@ -254,8 +254,8 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'isSlugAvailable')
       }
 
-      return !data
-    } catch (error) {
+      return !(data as any)
+    } catch (error: any) {
       return false
     }
   }

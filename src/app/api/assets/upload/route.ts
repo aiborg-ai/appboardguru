@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create asset record in database
-    const { data: asset, error: dbError } = await supabase
+    const { data: asset, error: dbError } = await (supabase as any)
       .from('assets')
       .insert({
         owner_id: user.id,
@@ -337,7 +337,7 @@ export async function PUT(request: NextRequest) {
           }
 
           // Create asset record
-          const { data: asset, error: dbError } = await supabase
+          const { data: asset, error: dbError } = await (supabase as any)
             .from('assets')
             .insert({
               owner_id: user.id,
@@ -368,7 +368,7 @@ export async function PUT(request: NextRequest) {
           }
 
           // Log activity
-          await supabase
+          await (supabase as any)
             .from('asset_activity_log')
             .insert({
               asset_id: asset.id,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,16 +15,18 @@ export async function GET(request: NextRequest) {
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(orgMember as any)?.organization_id) {
+    if (!orgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
     const url = new URL(request.url)
     const organizationId = url.searchParams.get('organizationId')
 
-    if (organizationId !== (orgMember as any)?.organization_id && (orgMember as any)?.role !== 'admin') {
+    if (organizationId !== orgMember.organization_id && orgMember.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
         acknowledged_at,
         metadata
       `)
-      .eq('organization_id', (orgMember as any)?.organization_id)
+      .eq('organization_id', orgMember.organization_id)
       .order('triggered_at', { ascending: false })
       .limit(100)
 
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      alerts: (alerts as any) || []
+      alerts: alerts || []
     })
 
   } catch (error) {
@@ -74,14 +77,16 @@ export async function PATCH(request: NextRequest) {
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(orgMember as any)?.organization_id) {
+    if (!orgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
     const body = await request.json()
-    const { action, alertId } = body
+    const { action, alertId } = body as { action: string; alertId: string }
 
     switch (action) {
       case 'acknowledge': {
@@ -91,9 +96,9 @@ export async function PATCH(request: NextRequest) {
             acknowledged: true,
             acknowledged_by: authUser.id,
             acknowledged_at: new Date().toISOString()
-          } as any)
+          })
           .eq('id', alertId)
-          .eq('organization_id', (orgMember as any)?.organization_id)
+          .eq('organization_id', orgMember.organization_id)
 
         if (updateError) throw updateError
 
@@ -101,7 +106,7 @@ export async function PATCH(request: NextRequest) {
           .from('audit_logs')
           .insert({
             user_id: authUser.id,
-            organization_id: (orgMember as any)?.organization_id,
+            organization_id: orgMember.organization_id,
             event_type: 'alert_acknowledged',
             entity_type: 'alert',
             entity_id: alertId,
@@ -112,7 +117,7 @@ export async function PATCH(request: NextRequest) {
             ip_address: request.headers.get('x-forwarded-for') || 'unknown',
             user_agent: request.headers.get('user-agent') || 'unknown',
             source: 'activity_alerts'
-          } as any)
+          })
 
         return NextResponse.json({ success: true })
       }

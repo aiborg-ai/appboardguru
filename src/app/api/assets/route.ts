@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create board pack record
-    const { data: asset, error } = await supabase
+    const { data: asset, error } = await (supabase as any)
       .from('board_packs')
       .insert({
         uploaded_by: user.id,
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,

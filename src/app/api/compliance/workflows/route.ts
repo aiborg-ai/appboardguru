@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', user.id)
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)
@@ -159,7 +159,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if user can update this workflow
-    const { data: workflow } = await supabase
+    const { data: workflow } = await (supabase as any)
       .from('notification_workflows')
       .select(`
         *,

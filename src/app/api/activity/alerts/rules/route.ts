@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { z } from 'zod'
+import type { Database } from '@/types/database'
 
 const alertRuleSchema = z.object({
   name: z.string().min(1),
@@ -32,23 +33,25 @@ export async function GET() {
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(orgMember as any)?.organization_id) {
+    if (!orgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
     const { data: rules, error } = await (supabase as any)
       .from('activity_alert_rules')
       .select('*')
-      .eq('organization_id', (orgMember as any)?.organization_id)
+      .eq('organization_id', orgMember.organization_id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
     return NextResponse.json({
       success: true,
-      rules: (rules as any) || []
+      rules: rules || []
     })
 
   } catch (error) {
@@ -73,9 +76,11 @@ export async function POST(request: NextRequest) {
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(orgMember as any)?.organization_id || (orgMember as any)?.role !== 'admin') {
+    if (!orgMember?.organization_id || orgMember.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
@@ -85,17 +90,17 @@ export async function POST(request: NextRequest) {
     const { data: rule, error } = await (supabase as any)
       .from('activity_alert_rules')
       .insert({
-        organization_id: (orgMember as any)?.organization_id,
+        organization_id: orgMember.organization_id,
         created_by: authUser.id,
-        name: (validatedData as any)?.name,
-        description: (validatedData as any)?.description,
-        condition: (validatedData as any)?.condition,
-        actions: (validatedData as any)?.actions,
-        priority: (validatedData as any)?.priority,
+        name: validatedData.name,
+        description: validatedData.description,
+        condition: validatedData.condition,
+        actions: validatedData.actions,
+        priority: validatedData.priority,
         is_active: true,
         trigger_count: 0,
         created_at: new Date().toISOString()
-      } as any)
+      })
       .select()
       .single()
 
@@ -105,14 +110,14 @@ export async function POST(request: NextRequest) {
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
-        organization_id: (orgMember as any)?.organization_id,
+        organization_id: orgMember.organization_id,
         event_type: 'alert_rule_created',
         entity_type: 'alert_rule',
-        entity_id: (rule as any)?.id,
+        entity_id: rule?.id || '',
         metadata: {
-          ruleName: (validatedData as any)?.name,
-          priority: (validatedData as any)?.priority,
-          condition: (validatedData as any)?.condition
+          ruleName: validatedData.name,
+          priority: validatedData.priority,
+          condition: validatedData.condition
         },
         timestamp: new Date().toISOString(),
         correlation_id: `rule-create-${Date.now()}-${Math.random().toString(36).substring(2)}`,
@@ -120,11 +125,11 @@ export async function POST(request: NextRequest) {
         ip_address: request.headers.get('x-forwarded-for') || 'unknown',
         user_agent: request.headers.get('user-agent') || 'unknown',
         source: 'activity_alerts'
-      } as any)
+      })
 
     return NextResponse.json({
       success: true,
-      rule: rule as any
+      rule: rule
     })
 
   } catch (error) {
@@ -156,24 +161,30 @@ export async function PATCH(request: NextRequest) {
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(orgMember as any)?.organization_id || (orgMember as any)?.role !== 'admin') {
+    if (!orgMember?.organization_id || orgMember.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
     const body = await request.json()
-    const { ruleId, isActive, ...updates } = body
+    const { ruleId, isActive, ...updates } = body as {
+      ruleId: string
+      isActive: boolean
+      [key: string]: unknown
+    }
 
     const { error } = await (supabase as any)
       .from('activity_alert_rules')
       .update({
         is_active: isActive,
-        ...(updates as any),
+        ...updates,
         updated_at: new Date().toISOString()
-      } as any)
+      })
       .eq('id', ruleId)
-      .eq('organization_id', (orgMember as any)?.organization_id)
+      .eq('organization_id', orgMember.organization_id)
 
     if (error) throw error
 
@@ -181,18 +192,18 @@ export async function PATCH(request: NextRequest) {
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
-        organization_id: (orgMember as any)?.organization_id,
+        organization_id: orgMember.organization_id,
         event_type: 'alert_rule_updated',
         entity_type: 'alert_rule',
         entity_id: ruleId,
-        metadata: { isActive, updates: updates as any },
+        metadata: { isActive, updates },
         timestamp: new Date().toISOString(),
         correlation_id: `rule-update-${Date.now()}-${Math.random().toString(36).substring(2)}`,
         session_id: `session-${authUser.id}-${Date.now()}`,
         ip_address: request.headers.get('x-forwarded-for') || 'unknown',
         user_agent: request.headers.get('user-agent') || 'unknown',
         source: 'activity_alerts'
-      } as any)
+      })
 
     return NextResponse.json({ success: true })
 
@@ -218,9 +229,11 @@ export async function DELETE(request: NextRequest) {
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(orgMember as any)?.organization_id || (orgMember as any)?.role !== 'admin') {
+    if (!orgMember?.organization_id || orgMember.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
@@ -235,7 +248,7 @@ export async function DELETE(request: NextRequest) {
       .from('activity_alert_rules')
       .delete()
       .eq('id', ruleId)
-      .eq('organization_id', (orgMember as any)?.organization_id)
+      .eq('organization_id', orgMember.organization_id)
 
     if (error) throw error
 
@@ -243,7 +256,7 @@ export async function DELETE(request: NextRequest) {
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
-        organization_id: (orgMember as any)?.organization_id,
+        organization_id: orgMember.organization_id,
         event_type: 'alert_rule_deleted',
         entity_type: 'alert_rule',
         entity_id: ruleId,
@@ -254,7 +267,7 @@ export async function DELETE(request: NextRequest) {
         ip_address: request.headers.get('x-forwarded-for') || 'unknown',
         user_agent: request.headers.get('user-agent') || 'unknown',
         source: 'activity_alerts'
-      } as any)
+      })
 
     return NextResponse.json({ success: true })
 

@@ -1,5 +1,5 @@
 import { BaseRepository } from './base.repository'
-import type { Database } from '@/types/database'
+import type { Database } from '../../types/database'
 
 type User = Database['public']['Tables']['users']['Row']
 type UserInsert = Database['public']['Tables']['users']['Insert']
@@ -8,7 +8,7 @@ type UserUpdate = Database['public']['Tables']['users']['Update']
 export class UserRepository extends BaseRepository {
   async findById(id: string): Promise<User | null> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('users')
         .select('*')
         .eq('id', id)
@@ -18,15 +18,15 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'findById')
       }
 
-      return data || null
-    } catch (error) {
+      return (data as any) || null
+    } catch (error: any) {
       this.handleError(error, 'findById')
     }
   }
 
   async findByEmail(email: string): Promise<User | null> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('users')
         .select('*')
         .eq('email', email)
@@ -36,17 +36,17 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'findByEmail')
       }
 
-      return data || null
-    } catch (error) {
+      return (data as any) || null
+    } catch (error: any) {
       this.handleError(error, 'findByEmail')
     }
   }
 
   async create(user: UserInsert): Promise<User> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('users')
-        .insert(user as any)
+        .insert(user)
         .select()
         .single()
 
@@ -54,20 +54,20 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'create')
       }
 
-      return data!
-    } catch (error) {
+      return (data as any)!
+    } catch (error: any) {
       this.handleError(error, 'create')
     }
   }
 
   async update(id: string, updates: UserUpdate): Promise<User> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('users')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', id)
         .select()
         .single()
@@ -76,15 +76,15 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'update')
       }
 
-      return data!
-    } catch (error) {
+      return (data as any)!
+    } catch (error: any) {
       this.handleError(error, 'update')
     }
   }
 
   async delete(id: string): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await (this.supabase as any)
         .from('users')
         .delete()
         .eq('id', id)
@@ -92,14 +92,14 @@ export class UserRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'delete')
       }
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error, 'delete')
     }
   }
 
   async findByOrganization(organizationId: string): Promise<User[]> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from('users')
         .select(`
           *,
@@ -116,26 +116,26 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'findByOrganization')
       }
 
-      return data || []
-    } catch (error) {
+      return (data as any) || []
+    } catch (error: any) {
       this.handleError(error, 'findByOrganization')
     }
   }
 
   async updateLastAccess(id: string): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await (this.supabase as any)
         .from('organization_members')
         .update({
           last_accessed: new Date().toISOString(),
           access_count: 1 // Will be incremented via SQL trigger or separate query
-        } as any)
+        })
         .eq('user_id', id)
 
       if (error) {
         this.handleError(error, 'updateLastAccess')
       }
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error, 'updateLastAccess')
     }
   }

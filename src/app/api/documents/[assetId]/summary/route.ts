@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import type { Database } from '../../../../../types/database'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { assetId: string } }
+  { params }: { params: Promise<{ assetId: string }> }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const cookieStore = await cookies()
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options)
+            })
+          },
+        },
+      }
+    ) as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -14,20 +32,24 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { assetId } = params
+    const { assetId } = await params
 
     // Verify user has access to this asset
     const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select(`
+        *,
+        asset:assets!vault_assets_asset_id_fkey(*),
+        vault:vaults!inner(created_by)
+      `)
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vault?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -46,17 +68,17 @@ export async function POST(
     // If summary exists and is recent (less than 24 hours), return it
     if (existingSummary && existingSummary.length > 0) {
       const summary = existingSummary[0]
-      const createdAt = new Date(summary.created_at)
+      const createdAt = new Date((summary as any)?.created_at || '')
       const now = new Date()
       const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
 
       if (hoursDiff < 24) {
         return NextResponse.json({
-          id: summary.id,
-          title: summary.title,
-          keyPoints: summary.key_points,
-          generatedAt: summary.created_at,
-          wordCount: summary.word_count
+          id: (summary as any)?.id,
+          title: (summary as any)?.title,
+          keyPoints: (summary as any)?.key_points,
+          generatedAt: (summary as any)?.created_at,
+          wordCount: (summary as any)?.word_count
         })
       }
     }
@@ -65,15 +87,17 @@ export async function POST(
     const generatedSummary = await generateDocumentSummary(asset)
 
     // Save generated summary to database
+    const summaryData: Database['public']['Tables']['document_summaries']['Insert'] = {
+      asset_id: assetId,
+      title: generatedSummary.title,
+      key_points: generatedSummary.keyPoints,
+      word_count: generatedSummary.wordCount,
+      user_id: user.id
+    }
+
     const { data: savedSummary, error: saveError } = await supabase
       .from('document_summaries')
-      .insert({
-        asset_id: assetId,
-        title: generatedSummary.title,
-        key_points: generatedSummary.keyPoints,
-        word_count: generatedSummary.wordCount,
-        user_id: user.id
-      })
+      .insert(summaryData)
       .select()
       .single()
 
@@ -84,11 +108,11 @@ export async function POST(
     }
 
     return NextResponse.json({
-      id: savedSummary.id,
-      title: savedSummary.title,
-      keyPoints: savedSummary.key_points,
-      generatedAt: savedSummary.created_at,
-      wordCount: savedSummary.word_count
+      id: (savedSummary as any)?.id,
+      title: (savedSummary as any)?.title,
+      keyPoints: (savedSummary as any)?.key_points,
+      generatedAt: (savedSummary as any)?.created_at,
+      wordCount: (savedSummary as any)?.word_count
     })
 
   } catch (error) {
@@ -100,15 +124,21 @@ export async function POST(
   }
 }
 
-async function generateDocumentSummary(asset: any) {
+async function generateDocumentSummary(asset: any): Promise<{
+  id: string;
+  title: string;
+  keyPoints: string[];
+  generatedAt: string;
+  wordCount: number;
+}> {
   // This is a simplified summary generation for demonstration
   // In a real implementation, you would:
   // 1. Extract text from the PDF/document
   // 2. Use an LLM to analyze the content and generate a summary
   // 3. Parse the response into the required format
 
-  const documentType = asset.name.toLowerCase()
-  let title = "Document Summary"
+  const documentType = (asset?.asset?.file_name || asset?.name || 'document').toLowerCase()
+  let title: string = "Document Summary"
   let keyPoints: string[] = []
 
   if (documentType.includes('report')) {
@@ -141,7 +171,7 @@ async function generateDocumentSummary(asset: any) {
       "Strategic recommendations based on analytical findings"
     ]
   } else {
-    title = `${asset.name} - AI Summary`
+    title = `${asset?.asset?.file_name || 'Document'} - AI Summary`
     keyPoints = [
       "Document provides comprehensive coverage of the main topic areas",
       "Key concepts and methodologies are clearly explained and documented",
@@ -152,7 +182,7 @@ async function generateDocumentSummary(asset: any) {
     ]
   }
 
-  const wordCount = keyPoints.join(' ').split(' ').length + title.split(' ').length
+  const wordCount: number = keyPoints.join(' ').split(' ').length + title.split(' ').length
 
   // Simulate AI processing delay
   await new Promise(resolve => setTimeout(resolve, 2000))

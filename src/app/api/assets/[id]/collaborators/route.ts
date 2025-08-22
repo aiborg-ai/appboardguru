@@ -34,7 +34,7 @@ export async function GET(
     }
 
     // First, verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('board_packs')
       .select(`
         id,
@@ -100,7 +100,7 @@ export async function GET(
       c.user_id || c.shared_with_user_id
     ) || []
 
-    const { data: annotationCounts } = await supabase
+    const { data: annotationCounts } = await (supabase as any)
       .from('annotations')
       .select('created_by')
       .eq('asset_id', assetId)

@@ -4,10 +4,10 @@
  * and connection management
  */
 
-import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '../supabase-server'
+import { createSupabaseBrowserClient } from '../supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '../../types/database'
 
 export type DatabaseClient = SupabaseClient<Database>
 
@@ -57,9 +57,9 @@ export class DatabaseService {
   public async getServerClient(): Promise<DatabaseClient> {
     try {
       if (!this.serverClient) {
-        this.serverClient = await createSupabaseServerClient()
+        this.serverClient = await createSupabaseServerClient() as unknown as DatabaseClient
       }
-      return this.serverClient
+      return this.serverClient as DatabaseClient
     } catch (error) {
       console.error('Failed to create server client:', error)
       throw new Error('Database connection failed')
@@ -72,9 +72,9 @@ export class DatabaseService {
   public getBrowserClient(): DatabaseClient {
     try {
       if (!this.browserClient) {
-        this.browserClient = createSupabaseBrowserClient()
+        this.browserClient = createSupabaseBrowserClient() as unknown as DatabaseClient
       }
-      return this.browserClient
+      return this.browserClient as DatabaseClient
     } catch (error) {
       console.error('Failed to create browser client:', error)
       throw new Error('Database connection failed')
@@ -96,7 +96,7 @@ export class DatabaseService {
    * Execute a database query with proper error handling
    */
   public async executeQuery<T>(
-    queryFn: (client: DatabaseClient) => Promise<{ data: T | null; error: Error | null }>,
+    queryFn: (client: DatabaseClient) => Promise<{ data: T | null; error: any | null }>,
     options: QueryOptions = {}
   ): Promise<DatabaseResult<T>> {
     const { timeout = 30000, retries = 3, throwOnError = false } = options
@@ -159,7 +159,7 @@ export class DatabaseService {
    * Execute a transaction with automatic rollback on error
    */
   public async executeTransaction<T>(
-    operations: Array<(client: DatabaseClient) => Promise<{ data: T | null; error: Error | null }>>,
+    operations: Array<(client: DatabaseClient) => Promise<{ data: T | null; error: any | null }>>,
     options: QueryOptions = {}
   ): Promise<DatabaseResult<T[]>> {
     try {
@@ -176,7 +176,9 @@ export class DatabaseService {
         if (!result.success) {
           throw result.error || new Error('Transaction operation failed')
         }
-        results.push(result.data)
+        if (result.data !== null) {
+          results.push(result.data)
+        }
       }
 
       return {
@@ -211,7 +213,10 @@ export class DatabaseService {
   public async healthCheck(): Promise<boolean> {
     try {
       const result = await this.executeQuery(
-        (client) => client.from('users').select('id').limit(1),
+        async (client) => {
+          const { data, error } = await client.from('users').select('id').limit(1)
+          return { data, error }
+        },
         { timeout: 5000, retries: 1 }
       )
       return result.success
@@ -254,6 +259,6 @@ export const getServerClient = () => databaseService.getServerClient()
 export const getBrowserClient = () => databaseService.getBrowserClient()
 export const getClient = () => databaseService.getClient()
 export const executeQuery = <T>(
-  queryFn: (client: DatabaseClient) => Promise<{ data: T | null; error: Error | null }>,
+  queryFn: (client: DatabaseClient) => Promise<{ data: T | null; error: any | null }>,
   options?: QueryOptions
 ) => databaseService.executeQuery(queryFn, options)

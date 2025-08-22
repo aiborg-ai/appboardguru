@@ -52,7 +52,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Check if user is admin/owner in any organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '../supabase-server';
 
 // Language and dialect definitions
 export interface LanguageDefinition {

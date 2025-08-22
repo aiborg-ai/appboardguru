@@ -110,7 +110,7 @@ export class OptionUtils {
    * Create Option from array (first element)
    */
   static fromArray<T>(array: T[]): Option<T> {
-    return array.length > 0 ? Some(array[0]) : None
+    return array.length > 0 ? Some(array[0]!) : None
   }
 
   /**

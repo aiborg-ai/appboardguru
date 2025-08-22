@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 /**
  * GET /api/dashboard/insights
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get('limit') || '10')
 
     // Get user's primary organization
-    const { data: userOrg } = await supabase
+    const { data: userOrg } = await (supabase as any)
       .from('organization_members')
       .select('organization_id, organization:organizations(name)')
       .eq('user_id', user.id)
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
       .map(insight => ({
         ...insight,
         timeAgo: formatTimeAgo(new Date(insight.created_at)),
-        organization_id: (userOrg as any)?.organization_id
+        organization_id: userOrg?.organization_id
       }))
 
     // Calculate summary statistics
@@ -159,7 +160,7 @@ export async function GET(request: NextRequest) {
     const response = {
       insights,
       summary,
-      organization: (userOrg as any)?.organization,
+      organization: userOrg?.organization,
       user_id: user.id,
       fetched_at: new Date().toISOString()
     }
@@ -201,7 +202,17 @@ export async function POST(request: NextRequest) {
       action_required, 
       action_url, 
       metadata 
-    } = body
+    } = body as {
+      type: string
+      category: string
+      title: string
+      description: string
+      status?: string
+      severity?: string
+      action_required?: boolean
+      action_url?: string
+      metadata?: Record<string, unknown>
+    }
 
     // Validate required fields
     if (!type || !category || !title || !description) {
@@ -239,7 +250,7 @@ export async function POST(request: NextRequest) {
 
     // In a real implementation, insert into ai_insights table:
     /*
-    const { data: insight, error } = await supabase
+    const { data: insight, error } = await (supabase as any)
       .from('ai_insights')
       .insert({
         user_id: user.id,
@@ -270,7 +281,7 @@ export async function POST(request: NextRequest) {
       status: status || 'neutral',
       severity: severity || 'low',
       action_required: action_required || false,
-      action_url,
+      ...(action_url ? { action_url } : {}),
       metadata: metadata || {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const { data: membership } = await (supabase as any)
+    const { data: membership } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query for anomaly detections
-    let query = (supabase as any)
+    let query = supabase
       .from('anomaly_detections')
       .select(`
         *,
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count for pagination
-    let countQuery = (supabase as any)
+    let countQuery = supabase
       .from('anomaly_detections')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', organizationId)
@@ -103,12 +103,14 @@ export async function GET(request: NextRequest) {
 
     const summary = {
       total: count || 0,
-      bySeverity: summaryData?.reduce((acc, item) => {
-        acc[item.severity] = (acc[item.severity] || 0) + 1
+      bySeverity: summaryData?.reduce((acc: Record<string, number>, item: any) => {
+        const severity = item.severity
+        acc[severity] = (acc[severity] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {},
-      byStatus: summaryData?.reduce((acc, item) => {
-        acc[item.investigation_status] = (acc[item.investigation_status] || 0) + 1
+      byStatus: summaryData?.reduce((acc: Record<string, number>, item: any) => {
+        const status = item.investigation_status
+        acc[status] = (acc[status] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {}
     }
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const { data: membership } = await (supabase as any)
+    const { data: membership } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -337,7 +339,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify user has admin access to organization
-    const { data: membership } = await (supabase as any)
+    const { data: membership } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -345,12 +347,12 @@ export async function PUT(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
+    if (!membership || !['owner', 'admin'].includes((membership as any)?.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
     // Update the anomaly
-    const { data: updatedAnomaly, error } = await supabase
+    const { data: updatedAnomaly, error } = await (supabase as any)
       .from('anomaly_detections')
       .update({
         ...updates,
@@ -401,7 +403,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify user has admin access to organization
-    const { data: membership } = await (supabase as any)
+    const { data: membership } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -409,7 +411,7 @@ export async function DELETE(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
+    if (!membership || !['owner', 'admin'].includes((membership as any)?.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 

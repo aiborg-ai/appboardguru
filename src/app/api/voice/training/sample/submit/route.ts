@@ -277,7 +277,7 @@ async function processAudioSample(
 
   // In a real implementation, save to database
   /*
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('voice_training_samples')
     .insert(audioSample)
     .select()
@@ -290,7 +290,7 @@ async function processAudioSample(
 
   // Update session progress
   /*
-  await supabase
+  await (supabase as any)
     .from('voice_training_sessions')
     .update({
       progress: {

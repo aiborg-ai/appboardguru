@@ -276,7 +276,7 @@ async function handleGetAuditLogs(request: NextRequest) {
       ip,
       queryParams: query,
       isSystemAdmin: authResult.isSystemAdmin
-    }, 'medium', 'compliance')
+    }, 'medium', 'system_action')
 
     // Build database query
     let dbQuery = supabaseAdmin
@@ -399,7 +399,7 @@ async function handleGenerateSecurityReport(request: NextRequest) {
       organizationId: reportQuery.organizationId,
       timeRange: reportQuery.timeRange,
       format: reportQuery.format
-    }, 'low', 'compliance')
+    }, 'low', 'admin_action')
 
     // Generate the report
     const timeRange = reportQuery.timeRange ? {

@@ -34,7 +34,7 @@ export async function validateAuth(req: NextRequest): Promise<AuthContext> {
       email: user.email!,
       role: user.user_metadata?.role
     },
-    supabase
+    supabase: supabase as any
   }
 }
 
@@ -46,7 +46,7 @@ export async function validateOrgAccess(
   userId: string, 
   organizationId: string
 ): Promise<void> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('organization_members')
     .select('id')
     .eq('user_id', userId)
@@ -68,7 +68,7 @@ export async function validateRole(
   organizationId: string,
   requiredRole: 'owner' | 'admin' | 'member' | 'viewer'
 ): Promise<void> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('organization_members')
     .select('role')
     .eq('user_id', userId)

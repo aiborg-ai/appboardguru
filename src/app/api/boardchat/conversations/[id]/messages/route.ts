@@ -37,7 +37,7 @@ export async function GET(
     const after = url.searchParams.get('after')
 
     // Verify user is a participant in this conversation
-    const { data: participant } = await supabase
+    const { data: participant } = await (supabase as any)
       .from('chat_participants')
       .select('role, status, last_read_at')
       .eq('conversation_id', conversationId)
@@ -221,7 +221,7 @@ export async function POST(
     const messageData = validation.data
 
     // Verify user is a participant
-    const { data: participant } = await supabase
+    const { data: participant } = await (supabase as any)
       .from('chat_participants')
       .select('role, status')
       .eq('conversation_id', conversationId)
@@ -235,7 +235,7 @@ export async function POST(
 
     // In real implementation, use the send_chat_message function:
     /*
-    const { data: messageId, error: sendError } = await supabase
+    const { data: messageId, error: sendError } = await (supabase as any)
       .rpc('send_chat_message', {
         p_conversation_id: conversationId,
         p_sender_id: user.id,

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { Database } from '@/types/database'
+import { Database } from '../../types/database'
 
 export abstract class BaseRepository {
   protected supabase: SupabaseClient<Database>
@@ -17,8 +17,8 @@ export abstract class BaseRepository {
     // Supabase doesn't have native transactions yet, but we can implement
     // basic error handling and rollback mechanisms here in the future
     try {
-      return await callback(this.supabase)
-    } catch (error) {
+      return await callback(this.supabase as any)
+    } catch (error: any) {
       console.error('Transaction failed:', error)
       throw error
     }
@@ -36,10 +36,10 @@ export abstract class BaseRepository {
    * Get current user ID from auth context
    */
   protected async getCurrentUserId(): Promise<string> {
-    const { data: { user }, error } = await this.supabase.auth.getUser()
+    const { data: { user }, error } = await (this.supabase as any).auth.getUser()
     if (error || !user) {
       throw new Error('User not authenticated')
     }
-    return user.id
+    return (user as any).id
   }
 }

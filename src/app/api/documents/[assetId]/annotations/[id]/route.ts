@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { assetId: string; id: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -18,26 +19,26 @@ export async function PATCH(
     const updates = await request.json()
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await (supabase as any)
+    const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if ((asset as any)?.vaults?.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Verify annotation exists and belongs to user
-    const { data: annotation, error: annotationError } = await (supabase as any)
+    const { data: annotation, error: annotationError } = await supabase
       .from('document_annotations')
       .select('*')
       .eq('id', id)
-      .eq('asset_id', assetId)
+      .eq('document_id', assetId)
       .eq('user_id', user.id)
       .single()
 
@@ -45,21 +46,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Annotation not found' }, { status: 404 })
     }
 
-    // Prepare update data
-    const updateData: any = {
-      updated_at: new Date().toISOString()
+    // Prepare update data with proper optional properties
+    const updateData: Database['public']['Tables']['document_annotations']['Update'] = {
+      updated_at: new Date().toISOString(),
+      ...(updates.content !== undefined ? { content: updates.content } : {}),
+      ...(updates.type !== undefined ? { annotation_type: updates.type } : {}),
+      ...(updates.sectionReference?.page !== undefined ? { page_number: updates.sectionReference.page } : {}),
+      ...(updates.sectionReference?.coordinates !== undefined ? { position_data: updates.sectionReference.coordinates } : {}),
+      ...(updates.sectionReference?.text !== undefined ? { highlighted_text: updates.sectionReference.text } : {}),
     }
 
-    if (updates.content !== undefined) updateData.content = updates.content
-    if (updates.type !== undefined) updateData.type = updates.type
-    if (updates.voiceUrl !== undefined) updateData.voice_url = updates.voiceUrl
-    if (updates.isShared !== undefined) updateData.is_shared = updates.isShared
-    if (updates.sharedWith !== undefined) updateData.shared_with = updates.sharedWith
-
     // Update annotation
-    const { data: updatedAnnotation, error: updateError } = await (supabase as any)
+    const { data: updatedAnnotation, error: updateError } = await supabase
       .from('document_annotations')
-      .update(updateData as any)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
@@ -71,21 +71,21 @@ export async function PATCH(
 
     // Transform to match the expected format
     const transformedAnnotation = {
-      id: (updatedAnnotation as any)?.id,
-      type: (updatedAnnotation as any)?.type,
-      content: (updatedAnnotation as any)?.content,
-      voiceUrl: (updatedAnnotation as any)?.voice_url,
+      id: (updatedAnnotation as any).id,
+      type: (updatedAnnotation as any).annotation_type as 'comment' | 'question' | 'note' | 'voice',
+      content: (updatedAnnotation as any).content,
+      voiceUrl: undefined, // Not available in current schema
       sectionReference: {
-        page: (updatedAnnotation as any)?.page,
-        coordinates: (updatedAnnotation as any)?.coordinates,
-        text: (updatedAnnotation as any)?.reference_text
+        page: (updatedAnnotation as any).page_number || 1,
+        coordinates: (updatedAnnotation as any).position_data ? ((updatedAnnotation as any).position_data as any) : undefined,
+        text: (updatedAnnotation as any).highlighted_text || undefined
       },
-      userId: (updatedAnnotation as any)?.user_id,
-      userName: (updatedAnnotation as any)?.user_name,
-      createdAt: (updatedAnnotation as any)?.created_at,
-      updatedAt: (updatedAnnotation as any)?.updated_at,
-      isShared: (updatedAnnotation as any)?.is_shared,
-      sharedWith: (updatedAnnotation as any)?.shared_with || []
+      userId: (updatedAnnotation as any).user_id,
+      userName: 'Unknown User', // Would need join with profiles table
+      createdAt: (updatedAnnotation as any).created_at || new Date().toISOString(),
+      updatedAt: (updatedAnnotation as any).updated_at || new Date().toISOString(),
+      isShared: false, // Not available in current schema
+      sharedWith: [] // Not available in current schema
     }
 
     return NextResponse.json(transformedAnnotation)
@@ -104,7 +104,7 @@ export async function DELETE(
   { params }: { params: { assetId: string; id: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -115,26 +115,26 @@ export async function DELETE(
     const { assetId, id } = params
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await (supabase as any)
+    const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if ((asset as any)?.vaults?.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Verify annotation exists and belongs to user
-    const { data: annotation, error: annotationError } = await (supabase as any)
+    const { data: annotation, error: annotationError } = await supabase
       .from('document_annotations')
       .select('*')
       .eq('id', id)
-      .eq('asset_id', assetId)
+      .eq('document_id', assetId)
       .eq('user_id', user.id)
       .single()
 
@@ -142,18 +142,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Annotation not found' }, { status: 404 })
     }
 
-    // Delete annotation replies first (foreign key constraint)
-    const { error: repliesDeleteError } = await (supabase as any)
-      .from('document_annotation_replies')
-      .delete()
-      .eq('annotation_id', id)
-
-    if (repliesDeleteError) {
-      console.error('Error deleting annotation replies:', repliesDeleteError)
-    }
-
-    // Delete annotation
-    const { error: deleteError } = await (supabase as any)
+    // Note: No annotation replies table exists in current schema
+    // Delete annotation directly
+    const { error: deleteError } = await supabase
       .from('document_annotations')
       .delete()
       .eq('id', id)

@@ -61,7 +61,7 @@ async function handleResendOtp(request: NextRequest) {
     // For first_login, verify user exists and needs password setup
     if (purpose === 'first_login') {
       // Check if user exists in registration_requests as approved
-      const { data: registrationData, error: regError } = await supabase
+      const { data: registrationData, error: regError } = await (supabase as any)
         .from('registration_requests')
         .select('*')
         .eq('email', email)
@@ -73,7 +73,7 @@ async function handleResendOtp(request: NextRequest) {
       }
 
       // Check if user has already set password
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await (supabase as any)
         .from('users')
         .select('password_set')
         .eq('email', email)

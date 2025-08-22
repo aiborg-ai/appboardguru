@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ActivityAnalytics } from '@/lib/activity/analytics'
+import type { Database } from '@/types/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,13 +12,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(user as any)?.organization_id) {
+    if (!userOrgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -46,16 +49,16 @@ export async function GET(request: NextRequest) {
     }
 
     const metrics = await ActivityAnalytics.getOrganizationMetrics(
-      (user as any)?.organization_id,
+      userOrgMember.organization_id,
       { start: startDate.toISOString(), end: endDate.toISOString() }
     )
 
     return NextResponse.json({
       success: true,
-      data: metrics as any,
+      data: metrics,
       meta: {
         timeRange,
-        organizationId: (user as any)?.organization_id,
+        organizationId: userOrgMember.organization_id,
         generatedAt: new Date().toISOString()
       }
     })
@@ -78,18 +81,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(user as any)?.organization_id || (user as any)?.role !== 'admin') {
+    if (!userOrgMember?.organization_id || userOrgMember.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
     const body = await request.json()
-    const { action, data } = body
+    const { action, data } = body as {
+      action: string
+      data?: {
+        format?: string
+        timeRange?: string
+      }
+    }
 
     switch (action) {
       case 'recalculate':
@@ -97,7 +108,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'Metrics recalculation not implemented yet' })
 
       case 'export': {
-        const { format = 'json', timeRange = '30d' } = data
+        const { format = 'json', timeRange = '30d' } = data || {}
         let startDate: Date
         const endDate = new Date()
 
@@ -116,15 +127,15 @@ export async function POST(request: NextRequest) {
         }
 
         const exportData = await ActivityAnalytics.getOrganizationMetrics(
-          (user as any)?.organization_id,
+          userOrgMember.organization_id,
           { start: startDate.toISOString(), end: endDate.toISOString() }
         )
 
         if (format === 'csv') {
           const csv = [
             'Activity Type,Count,Trend',
-            ...((exportData as any)?.topActivities || []).map((activity: any) =>
-              `${(activity as any)?.type},${(activity as any)?.count},${(activity as any)?.trend}`
+            ...(exportData.topActivities || []).map((activity) =>
+              `${activity.type},${activity.count},${activity.trend}`
             )
           ].join('\n')
 
@@ -138,7 +149,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          data: exportData as any,
+          data: exportData,
           meta: {
             format,
             timeRange,

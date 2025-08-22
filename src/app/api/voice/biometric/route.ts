@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { requireAuth } from '@/lib/security/auth-guard';
+import { requireAuth, AuthenticatedUser } from '@/lib/security/auth-guard';
 import { logSecurityEvent } from '@/lib/security/audit';
 import { 
   SupabaseClient, 
@@ -169,28 +169,28 @@ export async function POST(request: NextRequest) {
     // Route to specific operation
     switch (operation) {
       case 'enroll':
-        return handleEnrollment(body, user as any, supabase);
+        return handleEnrollment(body, user, supabase);
       
       case 'authenticate':
-        return handleAuthentication(body, user as any, supabase);
+        return handleAuthentication(body, user, supabase);
       
       case 'verify':
-        return handleVerification(body, user as any, supabase);
+        return handleVerification(body, user, supabase);
       
       case 'emotion_analysis':
-        return handleEmotionAnalysis(body, user as any, supabase);
+        return handleEmotionAnalysis(body, user, supabase);
       
       case 'fraud_detection':
-        return handleFraudDetection(body, user as any, supabase);
+        return handleFraudDetection(body, user, supabase);
       
       case 'get_profile':
-        return handleGetProfile(user as any, supabase);
+        return handleGetProfile(user, supabase);
       
       case 'update_profile':
-        return handleUpdateProfile(body, user as any, supabase);
+        return handleUpdateProfile(body, user, supabase);
       
       case 'delete_profile':
-        return handleDeleteProfile(user as any, supabase);
+        return handleDeleteProfile(user, supabase);
       
       default:
         return NextResponse.json(
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
  */
 async function handleEnrollment(
   body: BiometricEnrollmentRequest,
-  user: User,
+  user: AuthenticatedUser,
   supabase: SupabaseClient
 ): Promise<NextResponse> {
   try {
@@ -306,7 +306,7 @@ async function handleEnrollment(
       const encryptedTemplate = await BiometricEncryption.encryptTemplate(
         decryptedTemplate,
         user.id,
-        (user as any).organizations?.[0]?.id || 'default'
+        user.organizations?.[0]?.id || 'default'
       );
 
       await supabase
@@ -417,7 +417,7 @@ async function handleEnrollment(
       const encryptedTemplate = await BiometricEncryption.encryptTemplate(
         newProfile,
         user.id,
-        (user as any).organizations?.[0]?.id || 'default'
+        user.organizations?.[0]?.id || 'default'
       );
 
       // Save to database
@@ -478,7 +478,7 @@ async function handleEnrollment(
  */
 async function handleAuthentication(
   body: VoiceAuthenticationRequest,
-  user: User,
+  user: AuthenticatedUser,
   supabase: SupabaseClient
 ): Promise<NextResponse> {
   try {
@@ -600,9 +600,9 @@ async function handleAuthentication(
       },
       biometricQuality: {
         templateQuality: BiometricUtils.calculateTemplateQuality(decryptedProfile.voiceCharacteristics),
-        signalQuality: Math.round((audioValidation.quality as any) === 'excellent' ? 95 : 
-                                (audioValidation.quality as any) === 'good' ? 80 :
-                                (audioValidation.quality as any) === 'fair' ? 65 : 45),
+        signalQuality: Math.round((audioValidation.quality as string) === 'excellent' ? 95 : 
+                                (audioValidation.quality as string) === 'good' ? 80 :
+                                (audioValidation.quality as string) === 'fair' ? 65 : 45),
         featureExtraction: Math.round(matchingResult.confidence * 100),
         matchingReliability: Math.round(matchingResult.confidence * 100)
       },
@@ -689,7 +689,7 @@ async function handleAuthentication(
 /**
  * Handle voice verification (for sensitive operations)
  */
-async function handleVerification(body: VoiceAuthenticationRequest, user: User, supabase: SupabaseClient): Promise<NextResponse> {
+async function handleVerification(body: VoiceAuthenticationRequest, user: AuthenticatedUser, supabase: SupabaseClient): Promise<NextResponse> {
   // Similar to authentication but with higher security requirements
   return handleAuthentication(body, user, supabase);
 }
@@ -699,7 +699,7 @@ async function handleVerification(body: VoiceAuthenticationRequest, user: User, 
  */
 async function handleEmotionAnalysis(
   body: EmotionAnalysisRequest,
-  user: User,
+  user: AuthenticatedUser,
   supabase: SupabaseClient
 ): Promise<NextResponse> {
   try {
@@ -758,7 +758,7 @@ async function handleEmotionAnalysis(
 /**
  * Handle fraud detection
  */
-async function handleFraudDetection(body: { audioData: string; context?: string }, user: User, supabase: SupabaseClient): Promise<NextResponse> {
+async function handleFraudDetection(body: { audioData: string; context?: string }, user: AuthenticatedUser, supabase: SupabaseClient): Promise<NextResponse> {
   try {
     const { audioData, context } = body;
 
@@ -805,7 +805,7 @@ async function handleFraudDetection(body: { audioData: string; context?: string 
 /**
  * Get user's biometric profile
  */
-async function handleGetProfile(user: User, supabase: SupabaseClient): Promise<NextResponse> {
+async function handleGetProfile(user: AuthenticatedUser, supabase: SupabaseClient): Promise<NextResponse> {
   try {
     const { data: profileData, error } = await supabase
       .from('voice_biometric_profiles')
@@ -849,7 +849,7 @@ async function handleGetProfile(user: User, supabase: SupabaseClient): Promise<N
 /**
  * Update user's biometric profile settings
  */
-async function handleUpdateProfile(body: { securitySettings?: unknown; personalizationSettings?: unknown }, user: User, supabase: SupabaseClient): Promise<NextResponse> {
+async function handleUpdateProfile(body: { securitySettings?: unknown; personalizationSettings?: unknown }, user: AuthenticatedUser, supabase: SupabaseClient): Promise<NextResponse> {
   try {
     const { securitySettings, personalizationSettings } = body;
 
@@ -893,7 +893,7 @@ async function handleUpdateProfile(body: { securitySettings?: unknown; personali
 /**
  * Delete user's biometric profile
  */
-async function handleDeleteProfile(user: User, supabase: SupabaseClient): Promise<NextResponse> {
+async function handleDeleteProfile(user: AuthenticatedUser, supabase: SupabaseClient): Promise<NextResponse> {
   try {
     await supabase
       .from('voice_biometric_profiles')

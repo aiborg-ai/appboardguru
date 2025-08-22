@@ -3,8 +3,8 @@
  * Integrates with external data sources for market intelligence, news, and regulatory updates
  */
 
-import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { Database } from '@/types/database'
+import { createSupabaseServerClient } from '../supabase-server'
+import { Database } from '../../types/database'
 import axios from 'axios'
 type AxiosInstance = any
 type AxiosRequestConfig = any
@@ -97,7 +97,7 @@ export class ExternalIntelligenceService {
 
   private async getSupabase() {
     if (!this.supabase) {
-      this.supabase = await createSupabaseServerClient()
+      this.supabase = (await createSupabaseServerClient()) as any
     }
     return this.supabase
   }
@@ -380,7 +380,10 @@ export class ExternalIntelligenceService {
     errors: string[]
   }> {
     try {
-      const { data: sources } = await (await this.getSupabase())
+      const supabase = await this.getSupabase()
+      if (!supabase) throw new Error('Failed to initialize database connection')
+      
+      const { data: sources } = await supabase
         .from('intelligence_sources')
         .select('*')
         .eq('is_active', true)
@@ -404,7 +407,7 @@ export class ExternalIntelligenceService {
             await (supabase as any)
               .from('intelligence_sources')
               .update({
-                last_updated_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
                 // next_update_at: nextUpdateTime.toISOString()
               })
               .eq('id', (source as any).id)
@@ -453,7 +456,7 @@ export class ExternalIntelligenceService {
       await (supabase as any)
         .from('intelligence_sources')
         .update({
-          current_usage_count: 1 // Simplified for now
+          updated_at: new Date().toISOString() // Use available column
         })
         .eq('id', sourceId)
     }

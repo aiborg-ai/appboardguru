@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     
     // If no query params, return user's own availability patterns
     if (!searchParams.has('user_ids')) {
-      const { data: availability, error } = await supabase
+      const { data: availability, error } = await (supabase as any)
         .from('calendar_availability')
         .select('*')
         .eq('user_id', user.id)
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
               p_end_datetime: queryData.end_datetime
             })
 
-          const { data: userInfo } = await supabase
+          const { data: userInfo } = await (supabase as any)
             .from('users')
             .select('id, full_name, email')
             .eq('id', userId)

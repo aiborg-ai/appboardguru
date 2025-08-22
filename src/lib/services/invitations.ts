@@ -4,8 +4,8 @@
  * Handles organization invitations, token validation, acceptance, and security measures
  */
 
-import { supabaseAdmin } from '@/lib/supabase-admin'
-import { generateSecureApprovalToken, RateLimiter } from '@/lib/security'
+import { supabaseAdmin } from '../supabase-admin'
+import { generateSecureApprovalToken, RateLimiter } from '../security'
 import crypto from 'crypto'
 
 // Types

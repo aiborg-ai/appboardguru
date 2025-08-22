@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 /**
  * GET /api/dashboard/recommendations
@@ -145,7 +146,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { recommendation_id, action } = body
+    const { recommendation_id, action } = body as {
+      recommendation_id: string
+      action: string
+    }
 
     if (!recommendation_id || !action) {
       return NextResponse.json(
@@ -180,7 +184,7 @@ export async function PATCH(request: NextRequest) {
         break
     }
 
-    const { data: recommendation, error } = await supabase
+    const { data: recommendation, error } = await (supabase as any)
       .from('user_recommendations')
       .update(updateData)
       .eq('id', recommendation_id)

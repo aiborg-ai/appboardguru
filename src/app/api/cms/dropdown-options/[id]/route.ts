@@ -34,7 +34,7 @@ export async function PUT(
     }
 
     // Check if user is admin
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await (supabase as any)
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -48,7 +48,7 @@ export async function PUT(
     const { value, label, description, sort_order, metadata } = body
 
     // Update option
-    const { data: option, error } = await supabase
+    const { data: option, error } = await (supabase as any)
       .from('dropdown_options')
       .update({
         value,
@@ -106,7 +106,7 @@ export async function DELETE(
     }
 
     // Check if user is admin
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await (supabase as any)
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -117,7 +117,7 @@ export async function DELETE(
     }
 
     // Check if option is system-protected
-    const { data: option } = await supabase
+    const { data: option } = await (supabase as any)
       .from('dropdown_options')
       .select('is_system')
       .eq('id', optionId)
@@ -128,7 +128,7 @@ export async function DELETE(
     }
 
     // Delete option
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('dropdown_options')
       .delete()
       .eq('id', optionId)

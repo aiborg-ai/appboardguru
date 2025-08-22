@@ -5,6 +5,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import type { Database } from '@/types/database'
 
 export interface MLPrediction {
   id: string
@@ -121,7 +122,7 @@ export class MLInsightsEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get user activity patterns
-      const { data: userData } = await (supabase as any)
+      const { data: userData } = await supabase
         .from('daily_activity_summary')
         .select('*')
         .eq('organization_id', organizationId)
@@ -131,11 +132,13 @@ export class MLInsightsEngine {
       if (!userData?.length) return predictions
 
       // Analyze each user for churn risk
-      const userGroups = userData.reduce((acc, record) => {
-        if (!acc[record.user_id]) {
-          acc[record.user_id] = []
+      const userGroups = (userData as any[]).reduce((acc: Record<string, any[]>, record: any) => {
+        if (!record.user_id) return acc
+        const userId = record.user_id
+        if (!acc[userId]) {
+          acc[userId] = []
         }
-        acc[record.user_id].push(record)
+        acc[userId].push(record)
         return acc
       }, {} as Record<string, any[]>)
 
@@ -332,14 +335,17 @@ export class MLInsightsEngine {
   /**
    * Predict user churn risk
    */
-  private static async predictChurnRisk(userId: string, userActivities: any[]): Promise<MLPrediction> {
+  private static async predictChurnRisk(
+    userId: string, 
+    userActivities: any[]
+  ): Promise<MLPrediction> {
     try {
       // Calculate activity trends
       const recentActivities = userActivities.slice(0, 7) // Last 7 days
       const previousActivities = userActivities.slice(7, 14) // Previous 7 days
       
-      const recentAvg = recentActivities.reduce((sum: number, day: any) => sum + day.total_activities, 0) / 7
-      const previousAvg = previousActivities.reduce((sum: number, day: any) => sum + day.total_activities, 0) / 7
+      const recentAvg = recentActivities.reduce((sum, day) => sum + (day.total_activities || 0), 0) / 7
+      const previousAvg = previousActivities.reduce((sum, day) => sum + (day.total_activities || 0), 0) / 7
       
       const activityTrend = previousAvg > 0 ? (recentAvg - previousAvg) / previousAvg : 0
       const daysSinceLastActivity = userActivities.length > 0 ? 
@@ -369,7 +375,7 @@ export class MLInsightsEngine {
           riskLevel: churnScore > 0.7 ? 'high' as const : churnScore > 0.4 ? 'medium' as const : 'low' as const,
           churnProbability: churnScore,
           estimatedTimeToChurn: daysSinceLastActivity > 14 ? '1-2 weeks' : '1-2 months'
-        } as any,
+        },
         reasoning,
         recommendedActions: [
           'Send personalized re-engagement email',
@@ -394,12 +400,15 @@ export class MLInsightsEngine {
   /**
    * Predict security threats
    */
-  private static async predictSecurityThreats(userId: string, userActivities: any[]): Promise<MLPrediction> {
+  private static async predictSecurityThreats(
+    userId: string, 
+    userActivities: any[]
+  ): Promise<MLPrediction> {
     try {
       const supabase = await createSupabaseServerClient()
 
       // Get detailed security events for this user
-      const { data: securityEvents } = await (supabase as any)
+      const { data: securityEvents } = await supabase
         .from('audit_logs')
         .select('*')
         .eq('user_id', userId)
@@ -411,8 +420,8 @@ export class MLInsightsEngine {
 
       if (securityEvents) {
         // Failed login attempts
-        const failedLogins = securityEvents.filter(e => 
-          e.action.includes('login') && e.outcome === 'failure'
+        const failedLogins = securityEvents.filter((e: any) => 
+          e.action?.includes('login') && e.outcome === 'failure'
         ).length
         
         if (failedLogins > 5) {
@@ -429,7 +438,7 @@ export class MLInsightsEngine {
 
         // Unusual activity times
         const afterHoursActivity = securityEvents.filter((e: any) => {
-          const hour = new Date(e.created_at).getHours()
+          const hour = new Date(e.created_at || '').getHours()
           return hour < 6 || hour > 22
         }).length
 
@@ -441,7 +450,7 @@ export class MLInsightsEngine {
 
       // Activity pattern analysis
       const recentActivity = userActivities.slice(0, 7)
-      const avgRecentActivity = recentActivity.reduce((sum, day) => sum + day.total_activities, 0) / 7
+      const avgRecentActivity = recentActivity.reduce((sum, day) => sum + (day.total_activities || 0), 0) / 7
       
       if (avgRecentActivity > 50) { // Unusually high activity
         threatScore += 0.15
@@ -458,7 +467,7 @@ export class MLInsightsEngine {
           threatLevel: threatScore > 0.7 ? 'critical' as const : threatScore > 0.4 ? 'high' as const : 'medium' as const,
           threatProbability: threatScore,
           mainConcerns: riskFactors
-        } as any,
+        },
         reasoning: riskFactors,
         recommendedActions: [
           'Require additional authentication',
@@ -492,7 +501,7 @@ export class MLInsightsEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get activity data for statistical analysis
-      const { data: activityData } = await (supabase as any)
+      const { data: activityData } = await supabase
         .from('daily_activity_summary')
         .select('*')
         .eq('organization_id', organizationId)
@@ -502,47 +511,48 @@ export class MLInsightsEngine {
 
       // Calculate baseline statistics
       const baseline = {
-        meanActivity: activityData.reduce((sum: number, day: any) => sum + day.total_activities, 0) / activityData.length,
-        meanUsers: activityData.reduce((sum: number, day: any) => sum + (day.unique_ip_addresses || 1), 0) / activityData.length
+        meanActivity: (activityData as any[]).reduce((sum: number, day: any) => sum + (day.total_activities || 0), 0) / activityData.length,
+        meanUsers: (activityData as any[]).reduce((sum: number, day: any) => sum + (day.active_users || 1), 0) / activityData.length
       }
 
       // Calculate standard deviations
-      const activityVariance = activityData.reduce((sum: number, day: any) => 
-        sum + Math.pow(day.total_activities - baseline.meanActivity, 2), 0
+      const activityVariance = (activityData as any[]).reduce((sum: number, day: any) => 
+        sum + Math.pow((day.total_activities || 0) - baseline.meanActivity, 2), 0
       ) / activityData.length
       const activityStdDev = Math.sqrt(activityVariance)
 
       // Find recent anomalies (last 7 days)
-      const recentData = activityData.filter((day: any) => 
+      const recentData = (activityData as any[]).filter((day: any) => 
         new Date(day.activity_date).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
       )
 
-      for (const day of recentData as any[]) {
-        const zScore = Math.abs((day.total_activities - baseline.meanActivity) / activityStdDev)
+      for (const day of recentData) {
+        const dayData = day as any
+        const zScore = Math.abs(((dayData.total_activities || 0) - baseline.meanActivity) / activityStdDev)
         
         if (zScore > 2.5) { // Significant anomaly
           anomalies.push({
             id: `statistical-${day.activity_date}-${Date.now()}`,
             anomalyType: 'statistical',
             severity: zScore > 3.5 ? 'critical' : zScore > 3 ? 'high' : 'medium',
-            description: `Unusual activity volume detected on ${day.activity_date}`,
+            description: `Unusual activity volume detected on ${dayData.activity_date}`,
             affectedEntities: [
               { type: 'organization', id: organizationId, name: 'Organization' },
-              { type: 'date', id: day.activity_date, name: day.activity_date }
+              { type: 'date', id: dayData.activity_date, name: dayData.activity_date }
             ],
             baseline: {
               averageActivity: baseline.meanActivity,
               standardDeviation: activityStdDev
             },
             detected: {
-              actualActivity: day.total_activities,
+              actualActivity: dayData.total_activities || 0,
               zScore: zScore
             },
             deviation: zScore,
             confidence: Math.min(0.95, zScore / 4), // Higher Z-score = higher confidence
             investigationRequired: zScore > 3,
             metadata: {
-              date: day.activity_date,
+              date: dayData.activity_date,
               expectedRange: {
                 min: baseline.meanActivity - 2 * activityStdDev,
                 max: baseline.meanActivity + 2 * activityStdDev
@@ -587,9 +597,9 @@ export class MLInsightsEngine {
         })
 
         if (userBehavior) {
-          const behavior = userBehavior as any
+          const behavior = userBehavior as Record<string, any>
 
-          if ((behavior as any).bulk_downloads && (behavior as any).downloads_today > 10) {
+          if (behavior.bulk_downloads && behavior.downloads_today > 10) {
             anomalies.push({
               id: `behavioral-bulk-${user.user_id}-${Date.now()}`,
               anomalyType: 'behavioral',
@@ -599,19 +609,19 @@ export class MLInsightsEngine {
                 { type: 'user', id: user.user_id, name: 'User' }
               ],
               baseline: { normalDownloads: 2 },
-              detected: { actualDownloads: (behavior as any).downloads_today },
-              deviation: (behavior as any).downloads_today / 2,
+              detected: { actualDownloads: behavior.downloads_today },
+              deviation: behavior.downloads_today / 2,
               confidence: 0.88,
               investigationRequired: true,
               metadata: {
                 userId: user.user_id,
-                downloadsToday: (behavior as any).downloads_today,
+                downloadsToday: behavior.downloads_today,
                 pattern: 'bulk_download'
               }
             })
           }
 
-          if ((behavior as any).unusual_hours && (behavior as any).unusual_hours_count > 5) {
+          if (behavior.unusual_hours && behavior.unusual_hours_count > 5) {
             anomalies.push({
               id: `behavioral-hours-${user.user_id}-${Date.now()}`,
               anomalyType: 'behavioral',
@@ -621,13 +631,13 @@ export class MLInsightsEngine {
                 { type: 'user', id: user.user_id, name: 'User' }
               ],
               baseline: { normalHours: 10 }, // 10 hours (8am-6pm)
-              detected: { afterHoursCount: (behavior as any).unusual_hours_count },
-              deviation: (behavior as any).unusual_hours_count,
+              detected: { afterHoursCount: behavior.unusual_hours_count },
+              deviation: behavior.unusual_hours_count,
               confidence: 0.75,
-              investigationRequired: (behavior as any).unusual_hours_count > 10,
+              investigationRequired: behavior.unusual_hours_count > 10,
               metadata: {
                 userId: user.user_id,
-                unusualHoursCount: (behavior as any).unusual_hours_count,
+                unusualHoursCount: behavior.unusual_hours_count,
                 pattern: 'unusual_hours'
               }
             })
@@ -665,8 +675,8 @@ export class MLInsightsEngine {
       if (!hourlyData) return anomalies
 
       // Group by hour
-      const hourlyActivity = hourlyData.reduce((acc: Record<number, number>, record: any) => {
-        const hour = new Date(record.created_at).getHours()
+      const hourlyActivity = (hourlyData as any[]).reduce((acc: Record<number, number>, record: any) => {
+        const hour = new Date(record.created_at || '').getHours()
         acc[hour] = (acc[hour] || 0) + 1
         return acc
       }, {} as Record<number, number>)
@@ -679,10 +689,10 @@ export class MLInsightsEngine {
         18: 0.04, 19: 0.02, 20: 0.02, 21: 0.01, 22: 0.01, 23: 0.01
       }
 
-      const totalActivity = Object.values(hourlyActivity).reduce((sum, count) => sum + count, 0)
+      const totalActivity = Object.values(hourlyActivity).reduce((sum: number, count: number) => sum + count, 0)
 
       for (let hour = 0; hour < 24; hour++) {
-        const actualPercentage = (hourlyActivity[hour] || 0) / totalActivity
+        const actualPercentage = (hourlyActivity[hour] || 0) / Math.max(1, totalActivity as number)
         const expectedPercentage = expectedPattern[hour as keyof typeof expectedPattern]
         const deviation = Math.abs(actualPercentage - expectedPercentage) / expectedPercentage
 
@@ -740,37 +750,42 @@ export class MLInsightsEngine {
       if (!ipData) return anomalies
 
       // Group by user and analyze IP patterns
-      const userIPPatterns = ipData.reduce((acc: Record<string, any>, record: any) => {
+      const userIPPatterns = (ipData as any[]).reduce((acc: Record<string, any>, record: any) => {
+        if (!record.user_id) return acc
+        
         if (!acc[record.user_id]) {
           acc[record.user_id] = {
             ips: new Set(),
             activities: []
           }
         }
-        acc[record.user_id].ips.add(record.ip_address)
+        if (record.ip_address) {
+          acc[record.user_id].ips.add(record.ip_address)
+        }
         acc[record.user_id].activities.push(record)
         return acc
       }, {} as Record<string, any>)
 
-      for (const [userId, pattern] of Object.entries(userIPPatterns) as [string, any][]) {
+      for (const [userId, pattern] of Object.entries(userIPPatterns)) {
+        const patternData = pattern as any
         // Multiple IP addresses in short time
-        if (pattern.ips.size > 5) {
+        if (patternData.ips.size > 5) {
           anomalies.push({
             id: `geospatial-multi-ip-${userId}-${Date.now()}`,
             anomalyType: 'geospatial',
-            severity: pattern.ips.size > 10 ? 'critical' : 'high',
-            description: `User accessing from ${pattern.ips.size} different IP addresses`,
+            severity: patternData.ips.size > 10 ? 'critical' : 'high',
+            description: `User accessing from ${patternData.ips.size} different IP addresses`,
             affectedEntities: [
-              { type: 'user', id: userId, name: (pattern.activities[0]?.users as any)?.full_name || 'Unknown' }
+              { type: 'user', id: userId, name: patternData.activities[0]?.users?.full_name || 'Unknown' }
             ],
             baseline: { normalIPCount: 2 },
-            detected: { actualIPCount: pattern.ips.size },
-            deviation: pattern.ips.size / 2,
+            detected: { actualIPCount: patternData.ips.size },
+            deviation: patternData.ips.size / 2,
             confidence: 0.85,
-            investigationRequired: pattern.ips.size > 8,
+            investigationRequired: patternData.ips.size > 8,
             metadata: {
               userId,
-              ipAddresses: Array.from(pattern.ips),
+              ipAddresses: Array.from(patternData.ips),
               timeSpan: timeRange
             }
           })
@@ -787,27 +802,27 @@ export class MLInsightsEngine {
     }
   }
 
-  private static async getOrganizationMetrics(organizationId: string, timeRange: any) {
+  private static async getOrganizationMetrics(organizationId: string, timeRange: any): Promise<any> {
     // Implementation for organization metrics
     return { averageEngagement: 25 } // Placeholder
   }
 
-  private static async getUserEngagementMetrics(organizationId: string, timeRange: any) {
+  private static async getUserEngagementMetrics(organizationId: string, timeRange: any): Promise<any> {
     // Implementation for user engagement metrics
     return { lowEngagementUsers: [] } // Placeholder
   }
 
-  private static async getSecurityMetrics(organizationId: string, timeRange: any) {
+  private static async getSecurityMetrics(organizationId: string, timeRange: any): Promise<any> {
     // Implementation for security metrics
     return { riskScore: 45 } // Placeholder
   }
 
-  private static async detectInefficiencies(organizationId: string, timeRange: any) {
+  private static async detectInefficiencies(organizationId: string, timeRange: any): Promise<any[]> {
     // Implementation for inefficiency detection
     return [] // Placeholder
   }
 
-  private static async detectComplianceGaps(organizationId: string, timeRange: any) {
+  private static async detectComplianceGaps(organizationId: string, timeRange: any): Promise<any[]> {
     // Implementation for compliance gap detection
     return [] // Placeholder
   }
@@ -822,7 +837,7 @@ export class MLInsightsEngine {
 
     // Deduct for high-risk predictions
     const highRiskPredictions = predictions.filter(p => 
-      p.prediction.riskLevel === 'high' || p.prediction.threatLevel === 'high'
+      (p.prediction as any).riskLevel === 'high' || (p.prediction as any).threatLevel === 'high'
     )
     score -= highRiskPredictions.length * 15
 
@@ -842,7 +857,7 @@ export class MLInsightsEngine {
     anomalies: AnomalyDetection[],
     recommendations: ActivityRecommendation[],
     healthScore: number
-  ) {
+  ): any {
     const keyInsights = []
     const urgentActions = []
 
@@ -901,13 +916,13 @@ export class MLInsightsEngine {
     userData: any[]
   ): Promise<MLPrediction> {
     // Analyze growth trends to predict resource needs
-    const totalActivity = userData.reduce((sum: number, day: any) => sum + day.total_activities, 0)
+    const totalActivity = userData.reduce((sum, day) => sum + (day.total_activities || 0), 0)
     const avgDaily = totalActivity / userData.length
     
     // Simple linear regression for growth prediction
     const trend = userData.length > 14 ? 
-      (userData.slice(0, 7).reduce((sum: number, day: any) => sum + day.total_activities, 0) / 7) -
-      (userData.slice(7, 14).reduce((sum: number, day: any) => sum + day.total_activities, 0) / 7) : 0
+      (userData.slice(0, 7).reduce((sum, day) => sum + (day.total_activities || 0), 0) / 7) -
+      (userData.slice(7, 14).reduce((sum, day) => sum + (day.total_activities || 0), 0) / 7) : 0
 
     const projectedGrowth = trend * 30 // 30 days ahead
     const confidence = Math.min(0.8, userData.length / 30) // More data = higher confidence
@@ -920,7 +935,7 @@ export class MLInsightsEngine {
         expectedGrowth: projectedGrowth,
         recommendedCapacity: Math.ceil(avgDaily * 1.5), // 50% buffer
         timeframe: '30 days'
-      } as any,
+      },
       reasoning: [
         `Current average: ${avgDaily.toFixed(1)} activities/day`,
         `Trend: ${trend > 0 ? 'increasing' : 'stable'} by ${Math.abs(trend).toFixed(1)}/day`,

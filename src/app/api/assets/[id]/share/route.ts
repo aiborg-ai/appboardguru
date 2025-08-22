@@ -49,7 +49,7 @@ export async function POST(
     }
 
     // Check if user owns the asset or has admin permission
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select(`
         *,
@@ -78,7 +78,7 @@ export async function POST(
     }
 
     // Validate that target users exist
-    const { data: targetUsers, error: usersError } = await supabase
+    const { data: targetUsers, error: usersError } = await (supabase as any)
       .from('users')
       .select('id, name, email')
       .in('id', userIds)
@@ -99,7 +99,7 @@ export async function POST(
     }))
 
     // Insert or update sharing records (upsert)
-    const { data: shares, error: shareError } = await supabase
+    const { data: shares, error: shareError } = await (supabase as any)
       .from('asset_shares')
       .upsert(sharingData, {
         onConflict: 'asset_id,shared_with_user_id',
@@ -127,7 +127,7 @@ export async function POST(
       }
     }))
 
-    await supabase
+    await (supabase as any)
       .from('asset_activity_log')
       .insert(activityLogs)
 
@@ -135,7 +135,7 @@ export async function POST(
     if (notifyUsers) {
       // In a real implementation, you would send email notifications here
       // For now, we'll just log it
-      console.log('Notification emails would be sent to:', targetUsers.map(u => u.email))
+      console.log('Notification emails would be sent to:', targetUsers.map((u: any) => u.email))
       
       // You could call an email service here:
       // await sendShareNotificationEmails(asset, targetUsers, user, permission, message)
@@ -198,7 +198,7 @@ export async function GET(
     const { id: assetId } = await params
 
     // Check if user has access to view sharing information
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select(`
         owner_id,
@@ -224,7 +224,7 @@ export async function GET(
     }
 
     // Get sharing details
-    const { data: shares, error: sharesError } = await supabase
+    const { data: shares, error: sharesError } = await (supabase as any)
       .from('asset_shares')
       .select(`
         *,
@@ -309,7 +309,7 @@ export async function DELETE(
     }
 
     // Check if user owns the asset or has admin permission
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select(`
         owner_id,
@@ -357,7 +357,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('asset_activity_log')
       .insert({
         asset_id: assetId,

@@ -143,12 +143,12 @@ class FeatureManager {
     try {
       const supabase = createSupabaseBrowserClient()
       
-      await supabase
+      await (supabase as any)
         .from('feature_flags')
         .upsert({
           flag_name: flag,
-          enabled: true,
-          enabled_for_users: [userId],
+          is_enabled: true,
+          target_audience: { enabled_for_users: [userId] },
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'flag_name'
@@ -168,11 +168,11 @@ class FeatureManager {
     try {
       const supabase = createSupabaseBrowserClient()
       
-      await supabase
+      await (supabase as any)
         .from('feature_flags')
         .upsert({
           flag_name: flag,
-          enabled: percentage > 0,
+          is_enabled: percentage > 0,
           rollout_percentage: Math.max(0, Math.min(100, percentage)),
           updated_at: new Date().toISOString()
         }, {
@@ -216,7 +216,7 @@ class FeatureManager {
     try {
       const supabase = createSupabaseBrowserClient()
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('feature_flags')
         .select('*')
         .eq('flag_name', flag)
@@ -224,15 +224,17 @@ class FeatureManager {
 
       if (error || !data) return null
 
+      const targetAudience = (data as any)?.target_audience || {}
+      
       return {
         flag,
-        enabled: data.enabled,
-        rolloutPercentage: data.rollout_percentage,
-        enabledForUsers: data.enabled_for_users || [],
-        enabledForOrganizations: data.enabled_for_organizations || [],
-        startDate: data.start_date ? new Date(data.start_date) : undefined,
-        endDate: data.end_date ? new Date(data.end_date) : undefined,
-        description: data.description
+        enabled: (data as any)?.is_enabled,
+        rolloutPercentage: (data as any)?.rollout_percentage,
+        enabledForUsers: targetAudience?.enabled_for_users || [],
+        enabledForOrganizations: targetAudience?.enabled_for_organizations || [],
+        startDate: targetAudience?.start_date ? new Date(targetAudience.start_date) : undefined,
+        endDate: targetAudience?.end_date ? new Date(targetAudience.end_date) : undefined,
+        description: (data as any)?.description
       }
     } catch (error) {
       console.error(`Error fetching config for flag ${flag}:`, error)

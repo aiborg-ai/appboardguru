@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has permission to create vaults in this organization
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', body.organizationId)
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create vault
-    const { data: vault, error: vaultError } = await supabase
+    const { data: vault, error: vaultError } = await (supabase as any)
       .from('vaults')
       .insert(vaultData)
       .select(`
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add creator as vault owner
-    const { error: memberError } = await supabase
+    const { error: memberError } = await (supabase as any)
       .from('vault_members')
       .insert({
         vault_id: (vault as any).id,
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: (vault as any).id,

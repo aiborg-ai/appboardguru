@@ -56,7 +56,7 @@ export async function GET(
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
 
     // Check vault access
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('vault_members')
       .select('id, role, status')
       .eq('vault_id', vaultId)
@@ -138,12 +138,12 @@ export async function GET(
     })) || []
 
     // Get folder structure
-    const { data: folders, error: foldersError } = await supabase
+    const { data: folders, error: foldersError } = await (supabase as any)
       .from('vault_assets')
       .select('folder_path')
       .eq('vault_id', vaultId)
 
-    const uniqueFolders = [...new Set(folders?.map(f => f.folder_path) || [])]
+    const uniqueFolders = [...new Set(folders?.map((f: any) => f.folder_path) || [])]
       .filter(path => path !== '/')
       .sort()
 
@@ -204,7 +204,7 @@ export async function POST(
     }
 
     // Check vault access and permissions
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('vault_members')
       .select(`
         id, role, status, organization_id,
@@ -227,7 +227,7 @@ export async function POST(
     }
 
     // Verify all assets exist and user has access
-    const { data: assets, error: assetsError } = await supabase
+    const { data: assets, error: assetsError } = await (supabase as any)
       .from('assets')
       .select('id, title, file_size, organization_id')
       .in('id', body.assetIds)
@@ -243,7 +243,7 @@ export async function POST(
     }
 
     // Check if any assets are already in the vault
-    const { data: existingAssets, error: existingError } = await supabase
+    const { data: existingAssets, error: existingError } = await (supabase as any)
       .from('vault_assets')
       .select('asset_id')
       .eq('vault_id', vaultId)
@@ -254,7 +254,7 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to check existing assets' }, { status: 500 })
     }
 
-    const existingAssetIds = existingAssets?.map(va => va.asset_id) || []
+    const existingAssetIds = existingAssets?.map((va: any) => va.asset_id) || []
     const newAssetIds = body.assetIds.filter(id => !existingAssetIds.includes(id))
 
     if (newAssetIds.length === 0) {
@@ -278,7 +278,7 @@ export async function POST(
     }))
 
     // Insert vault asset records
-    const { data: vaultAssets, error: insertError } = await supabase
+    const { data: vaultAssets, error: insertError } = await (supabase as any)
       .from('vault_assets')
       .insert(vaultAssetRecords)
       .select(`
@@ -294,7 +294,7 @@ export async function POST(
     }
 
     // Log activity for each asset added
-    const activityRecords = vaultAssets?.map(va => ({
+    const activityRecords = vaultAssets?.map((va: any) => ({
       vault_id: vaultId,
       organization_id: (membership as any).organization_id,
       activity_type: 'asset_added' as const,
@@ -311,7 +311,7 @@ export async function POST(
     })) || []
 
     if (activityRecords.length > 0) {
-      await supabase
+      await (supabase as any)
         .from('vault_activity_log')
         .insert(activityRecords)
     }
@@ -321,7 +321,7 @@ export async function POST(
       message: `${newAssetIds.length} assets added to vault`,
       addedCount: newAssetIds.length,
       skippedCount: existingAssetIds.length,
-      assets: vaultAssets?.map(va => ({
+      assets: vaultAssets?.map((va: any) => ({
         id: va.id,
         folderPath: va.folder_path,
         displayOrder: va.display_order,

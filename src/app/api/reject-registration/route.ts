@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the registration request with token verification
-    const { data: registrationRequest, error: fetchError } = await supabase
+    const { data: registrationRequest, error: fetchError } = await (supabase as any)
       .from('registration_requests')
       .select('*')
       .eq('id', id)

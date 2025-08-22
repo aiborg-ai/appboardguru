@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient() as any
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -25,15 +26,15 @@ export async function GET(
     // Verify user has access to this asset
     const { data: asset, error: assetError } = await supabase
       .from('vault_assets')
-      .select('*, vaults!inner(user_id)')
-      .eq('id', assetId)
+      .select('*, vaults!inner(created_by)')
+      .eq('asset_id', assetId)
       .single()
 
     if (assetError || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if ((asset as any).vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -52,21 +53,23 @@ export async function GET(
     }
 
     if (cachedResults && cachedResults.length > 0) {
-      return NextResponse.json(cachedResults[0]?.results || [])
+      return NextResponse.json((cachedResults[0] as any)?.results || [])
     }
 
     // Perform document search
     const searchResults = await performDocumentSearch(asset, query)
 
-    // Cache the search results
+    // Cache the search results  
+    const cacheData: Database['public']['Tables']['document_search_cache']['Insert'] = {
+      asset_id: assetId,
+      query: query.toLowerCase(),
+      results: searchResults,
+      user_id: user.id
+    }
+
     const { error: saveError } = await supabase
       .from('document_search_cache')
-      .insert({
-        asset_id: assetId,
-        query: query.toLowerCase(),
-        results: searchResults,
-        user_id: user.id
-      })
+      .insert(cacheData)
 
     if (saveError) {
       console.error('Error caching search results:', saveError)

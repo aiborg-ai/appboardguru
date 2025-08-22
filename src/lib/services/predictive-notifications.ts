@@ -4,7 +4,7 @@
  */
 
 import { databaseService, type DatabaseClient } from './database.service'
-import { Database } from '@/types/database'
+import { Database } from '../../types/database'
 import { NotificationService } from './notification.service'
 import { patternRecognitionEngine } from './pattern-recognition'
 import { nanoid } from 'nanoid'
@@ -117,13 +117,16 @@ export class PredictiveNotificationService {
       // Store prediction
       const predictionId = `pred_${nanoid()}`
       const prediction = await this.storePrediction({
-        prediction_id: predictionId,
         user_id: request.userId,
-        organization_id: request.organizationId,
-        predicted_type: request.type,
-        predicted_time: timingPrediction.recommendedTime.toISOString(),
+        prediction_type: request.type,
+        predicted_content: {
+          title: request.title,
+          message: request.message,
+          type: request.type,
+          priority: request.priority,
+          scheduled_time: timingPrediction.recommendedTime.toISOString()
+        } as any,
         confidence_score: timingPrediction.confidence,
-        priority_score: this.calculatePriorityScore(request.priority || 'medium'),
         prediction_data: {
           original_request: request,
           timing_reasoning: timingPrediction.reasoning,
@@ -132,9 +135,9 @@ export class PredictiveNotificationService {
             segment: userProfile[0].behaviorSegment,
             preferred_times: userProfile[0].preferredTimes,
             peak_days: userProfile[0].responsePatterns.peakEngagementDays
-          } : null
+          } : null,
+          model_version: this.modelVersion
         } as any,
-        model_version: this.modelVersion,
         is_sent: false
       })
 
@@ -382,7 +385,7 @@ export class PredictiveNotificationService {
       const predictionAccuracy: number = await this.calculatePredictionAccuracy(predictionId, outcome)
 
       const supabase = await this.getSupabase()
-      await (supabase as any)
+      await supabase
         .from('predicted_notifications')
         .update({
           actual_sent_at: new Date().toISOString(),
@@ -616,7 +619,7 @@ export class PredictiveNotificationService {
         userId: prediction.user_id,
         metadata: {
           ...originalRequest.metadata,
-          prediction_id: prediction.prediction_id,
+          prediction_id: prediction.id,
           confidence_score: prediction.confidence_score,
           is_ai_optimized: true
         }
@@ -632,7 +635,7 @@ export class PredictiveNotificationService {
 
   private async updatePredictionSent(predictionId: string, success: boolean): Promise<void> {
     const supabase = await this.getSupabase()
-    await (supabase as any)
+    await supabase
       .from('predicted_notifications')
       .update({
         actual_sent_at: new Date().toISOString(),
@@ -680,7 +683,7 @@ export class PredictiveNotificationService {
         action_type: 'notification_interaction',
         timestamp: new Date().toISOString(),
         context: {
-          notification_type: (prediction as PredictedNotification).predicted_type,
+          notification_type: (prediction as PredictedNotification).prediction_type,
           was_predicted: true,
           confidence_score: (prediction as PredictedNotification).confidence_score,
           prediction_id: predictionId

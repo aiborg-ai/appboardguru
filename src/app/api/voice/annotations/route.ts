@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { 
   VoiceAnnotation, 
   CreateVoiceAnnotationRequest,
@@ -15,11 +15,7 @@ import {
   AnnotationPosition
 } from '@/types/voice-collaboration';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Supabase client will be initialized per request for proper authentication
 
 // OpenRouter API for speech-to-text (using Whisper)
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -80,6 +76,7 @@ export async function POST(request: NextRequest) {
 
 async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { audioData, documentId, position, type, priority = 'medium', tags = [] } = params;
     const userId = 'default-user'; // TODO: Get from authenticated session
     const sessionId = 'default-session'; // TODO: Get from request context
@@ -95,7 +92,7 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
     }
 
     // Get user information
-    const { data: userData } = await supabase
+    const { data: userData } = await (supabase as any)
       .from('users')
       .select('id, full_name')
       .eq('id', userId)
@@ -155,7 +152,7 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
     };
 
     // Store annotation in database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await (supabase as any)
       .from('voice_annotations')
       .insert({
         id: annotationId,
@@ -215,6 +212,7 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
 
 async function getAnnotations(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { documentId, sessionId, type, status = 'active', limit = 50, offset = 0 } = params;
 
     let query = supabase
@@ -244,7 +242,7 @@ async function getAnnotations(params: any): Promise<NextResponse> {
 
     // Get thread messages for each annotation
     const annotationsWithThreads = await Promise.all(
-      (annotations || []).map(async (annotation) => {
+      (annotations || []).map(async (annotation: any) => {
         const { data: threadMessages } = await supabase
           .from('voice_annotation_replies')
           .select('*')
@@ -275,6 +273,7 @@ async function getAnnotations(params: any): Promise<NextResponse> {
 
 async function updateAnnotation(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { annotationId, updates } = params;
     const userId = params.userId || 'default-user';
 
@@ -317,6 +316,7 @@ async function updateAnnotation(params: any): Promise<NextResponse> {
 
 async function deleteAnnotation(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { annotationId } = params;
     const userId = params.userId || 'default-user';
 
@@ -357,6 +357,7 @@ async function deleteAnnotation(params: any): Promise<NextResponse> {
 
 async function createVoiceThread(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { documentId, sectionId, title, description } = params;
     const userId = params.userId || 'default-user';
 
@@ -417,6 +418,7 @@ async function createVoiceThread(params: any): Promise<NextResponse> {
 
 async function addThreadMessage(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { threadId, audioData, replyToId } = params;
     const userId = params.userId || 'default-user';
 
@@ -434,7 +436,7 @@ async function addThreadMessage(params: any): Promise<NextResponse> {
     const audioUrl = await storeAudioData(audioData, messageId);
     
     // Get user info
-    const { data: userData } = await supabase
+    const { data: userData } = await (supabase as any)
       .from('users')
       .select('full_name')
       .eq('id', userId)
@@ -494,6 +496,7 @@ async function addThreadMessage(params: any): Promise<NextResponse> {
 
 async function getThreadMessages(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { threadId, limit = 50, offset = 0 } = params;
 
     const { data: messages, error } = await supabase
@@ -538,6 +541,7 @@ async function transcribeAudio(params: any): Promise<NextResponse> {
 
 async function generateAnnotationSummary(params: any): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { annotationId } = params;
 
     const { data: annotation } = await supabase
@@ -722,6 +726,7 @@ async function getDocumentTitle(documentId?: string): Promise<string | undefined
   if (!documentId) return undefined;
   
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { data } = await supabase
       .from('assets')
       .select('name')
@@ -748,6 +753,7 @@ async function findRelatedAnnotations(keywords: string[], documentId?: string): 
   if (!documentId || keywords.length === 0) return [];
   
   try {
+    const supabase = await createSupabaseServerClient() as any;
     // Find annotations with similar keywords
     const { data: annotations } = await supabase
       .from('voice_annotations')
@@ -757,12 +763,12 @@ async function findRelatedAnnotations(keywords: string[], documentId?: string): 
     
     if (!annotations) return [];
     
-    const related = annotations.filter(annotation => {
+    const related = annotations.filter((annotation: any) => {
       const annotationKeywords = annotation.content?.keywords || [];
       return keywords.some(keyword => annotationKeywords.includes(keyword));
     });
     
-    return related.map(a => a.id).slice(0, 5);
+    return related.map((a: any) => a.id).slice(0, 5);
   } catch {
     return [];
   }

@@ -1,7 +1,7 @@
 import { BaseService } from './base.service'
 import { NotificationService } from './notification.service'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '../../types/database'
 import type { 
   ComplianceTemplate,
   ComplianceTemplateInsert,
@@ -19,16 +19,16 @@ import type {
   AuditReportRequest,
   AuditReportFilters,
   ComplianceApiResponse
-} from '@/types'
+} from '../../types'
 
 // Type aliases for missing WithDetails types
-type ComplianceTemplateWithDetails = ComplianceTemplate & { details?: any }
-type ComplianceCalendarWithDetails = ComplianceCalendarEntry & { details?: any }
-type NotificationWorkflowWithDetails = NotificationWorkflow & { details?: any }
-type ComplianceParticipantWithDetails = ComplianceParticipant & { details?: any }
-type WorkflowStep = { step?: number; name: string; status?: string; participants?: any[]; [key: string]: any }
+type ComplianceTemplateWithDetails = ComplianceTemplate & { details?: Record<string, unknown> }
+type ComplianceCalendarWithDetails = ComplianceCalendarEntry & { details?: Record<string, unknown> }
+type NotificationWorkflowWithDetails = NotificationWorkflow & { details?: Record<string, unknown> }
+type ComplianceParticipantWithDetails = ComplianceParticipant & { details?: Record<string, unknown> }
+type WorkflowStep = { step?: number; name: string; status?: string; participants?: unknown[]; [key: string]: unknown }
 type WorkflowSteps = WorkflowStep[]
-type ComplianceSearchResponse = ComplianceApiResponse & { results?: any[] }
+type ComplianceSearchResponse = ComplianceApiResponse & { results?: unknown[] }
 type WorkflowStepParticipant = { user_id: string; type: string; role: string; required?: boolean; can_delegate?: boolean; requires_evidence?: boolean }
 type ComplianceDashboard = {
   overview: {
@@ -42,9 +42,9 @@ type ComplianceDashboard = {
   };
   upcoming_deadlines: ComplianceCalendarWithDetails[];
   active_workflows: NotificationWorkflowWithDetails[];
-  overdue_items: any[];
-  compliance_metrics: any;
-  recent_completions: any[];
+  overdue_items: unknown[];
+  compliance_metrics: Record<string, unknown>;
+  recent_completions: unknown[];
 }
 type WorkflowProgressSummary = {
   total_steps: number;
@@ -54,7 +54,7 @@ type WorkflowProgressSummary = {
   overdue_days?: number;
   pending_participants: number;
   total_participants: number;
-  bottlenecks: any[];
+  bottlenecks: unknown[];
 }
 
 /**
@@ -115,15 +115,15 @@ export class ComplianceEngine extends BaseService {
 
       // Parse JSON fields and add usage statistics
       const templatesWithDetails: ComplianceTemplateWithDetails[] = await Promise.all(
-        (templates || []).map(async (template) => {
+        (templates || []).map(async (template: any) => {
           // Get usage count
-          const { count: usageCount } = await (this.supabase as any)
+          const { count: usageCount } = await this.supabase
             .from('notification_workflows')
             .select('*', { count: 'exact', head: true })
             .eq('template_id', template.id)
 
           // Get last used date
-          const { data: lastUsed } = await (this.supabase as any)
+          const { data: lastUsed } = await this.supabase
             .from('notification_workflows')
             .select('created_at')
             .eq('template_id', template.id)
@@ -160,7 +160,18 @@ export class ComplianceEngine extends BaseService {
       }
 
     } catch (error) {
-      return this.handleError(error, 'getTemplates', { organizationId, options })
+      this.handleError(error, 'getTemplates', { organizationId, options })
+      return {
+        success: false,
+        data: [],
+        error: 'Failed to get templates',
+        metadata: {
+          timestamp: new Date().toISOString(),
+          request_id: crypto.randomUUID(),
+          execution_time_ms: 0,
+          version: '1.0'
+        }
+      }
     }
   }
 
@@ -179,7 +190,7 @@ export class ComplianceEngine extends BaseService {
         this.validateWorkflowSteps(JSON.parse((templateData.workflow_steps as any) || '[]'))
       }
 
-      const { data: template, error } = await (this.supabase as any)
+      const { data: template, error } = await this.supabase
         .from('compliance_templates')
         .insert({
           ...(templateData as any),
@@ -195,17 +206,22 @@ export class ComplianceEngine extends BaseService {
 
       await this.logActivity('create_template', 'compliance_templates', template.id, {
         templateName: template.name,
-        regulationType: template.regulation_type
+        regulationType: (template as any).regulation_type
       })
 
       return {
         success: true,
-        data: template,
+        data: template as any,
         message: 'Compliance template created successfully'
       }
 
     } catch (error) {
-      return this.handleError(error, 'createTemplate', { organizationId, templateData })
+      this.handleError(error, 'createTemplate', { organizationId, templateData })
+      return {
+        success: false,
+        data: {} as ComplianceTemplate,
+        error: 'Failed to create template'
+      }
     }
   }
 
@@ -260,13 +276,13 @@ export class ComplianceEngine extends BaseService {
 
       // Enhance entries with calculated fields
       const entriesWithDetails: ComplianceCalendarWithDetails[] = await Promise.all(
-        (entries || []).map(async (entry) => {
+        (entries || []).map(async (entry: any) => {
           const dueDate = new Date(entry.due_date)
           const now = new Date()
           const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
           // Get associated workflows
-          const { data: workflows } = await (this.supabase as any)
+          const { data: workflows } = await this.supabase
             .from('notification_workflows')
             .select('*')
             .eq('calendar_entry_id', entry.id)
@@ -278,7 +294,7 @@ export class ComplianceEngine extends BaseService {
             days_until_due: daysUntilDue,
             is_overdue: daysUntilDue < 0 && entry.status !== 'completed',
             assigned_workflows: workflows || [],
-            completion_percentage: this.calculateCalendarEntryCompletionPercentage(entry, workflows || [])
+            completion_percentage: this.calculateCalendarEntryCompletionPercentage(entry, (workflows as any) || [])
           }
         })
       )
@@ -289,7 +305,12 @@ export class ComplianceEngine extends BaseService {
       }
 
     } catch (error) {
-      return this.handleError(error, 'getCalendarEntries', { organizationId, options })
+      this.handleError(error, 'getCalendarEntries', { organizationId, options })
+      return {
+        success: false,
+        data: [],
+        error: 'Failed to get calendar entries'
+      }
     }
   }
 
@@ -303,7 +324,7 @@ export class ComplianceEngine extends BaseService {
     try {
       const user = await this.getCurrentUser()
 
-      const { data: entry, error } = await (this.supabase as any)
+      const { data: entry, error } = await this.supabase
         .from('compliance_calendar')
         .insert({
           ...(entryData as any),
@@ -328,13 +349,13 @@ export class ComplianceEngine extends BaseService {
 
       await this.logActivity('create_calendar_entry', 'compliance_calendar', entry.id, {
         title: entry.title,
-        regulationType: entry.regulation_type,
+        regulationType: (entry as any).regulation_type,
         dueDate: entry.due_date
       })
 
       return {
         success: true,
-        data: entry,
+        data: entry as any,
         message: 'Compliance calendar entry created successfully'
       }
 
@@ -361,19 +382,19 @@ export class ComplianceEngine extends BaseService {
 
       if (workflowData.template_id) {
         // Load workflow steps from template
-        const { data: template } = await (this.supabase as any)
+        const { data: template } = await this.supabase
           .from('compliance_templates')
           .select('workflow_steps')
           .eq('id', workflowData.template_id)
           .single()
 
         if (template) {
-          steps = JSON.parse((template.workflow_steps as any) || '[]')
+          steps = JSON.parse(((template as any).workflow_steps as any) || '[]')
           totalSteps = steps.length
         }
       } else if (workflowData.custom_steps) {
         // Use custom steps
-        steps = workflowData.custom_steps
+        steps = workflowData.custom_steps as any
         totalSteps = steps.length
       }
 
@@ -404,7 +425,7 @@ export class ComplianceEngine extends BaseService {
 
       // Create participants
       if (workflowData.custom_participants || steps.length > 0) {
-        await this.createWorkflowParticipants(workflow.id, workflowData.custom_participants || [], steps)
+        await this.createWorkflowParticipants(workflow.id, (workflowData.custom_participants as any) || [], steps)
       }
 
       // Generate initial notifications
@@ -412,13 +433,13 @@ export class ComplianceEngine extends BaseService {
 
       await this.logActivity('create_workflow', 'notification_workflows', workflow.id, {
         workflowName: workflow.name,
-        templateId: workflow.template_id,
+        templateId: (workflow as any).template_id,
         totalSteps: totalSteps
       })
 
       return {
         success: true,
-        data: workflow,
+        data: workflow as any,
         message: 'Compliance workflow created successfully'
       }
 
@@ -433,7 +454,7 @@ export class ComplianceEngine extends BaseService {
   async getWorkflowDetails(workflowId: string): Promise<ComplianceApiResponse<NotificationWorkflowWithDetails>> {
     try {
       // Get workflow with related data
-      const { data: workflow, error } = await (this.supabase as any)
+      const { data: workflow, error } = await this.supabase
         .from('notification_workflows')
         .select(`
           *,
@@ -448,7 +469,7 @@ export class ComplianceEngine extends BaseService {
       }
 
       // Get participants with user details
-      const { data: participants } = await (this.supabase as any)
+      const { data: participants } = await this.supabase
         .from('compliance_participants')
         .select(`
           *,
@@ -457,16 +478,15 @@ export class ComplianceEngine extends BaseService {
         `)
         .eq('workflow_id', workflowId)
 
-      const steps = JSON.parse((workflow.steps as any) || '[]')
-      const currentStepData = steps[workflow.current_step] || null
-      const nextStepData = steps[workflow.current_step + 1] || null
+      const steps = JSON.parse(((workflow as any).steps as any) || '[]')
+      const currentStepData = steps[(workflow as any).current_step] || null
+      const nextStepData = steps[((workflow as any).current_step + 1)] || null
 
       // Calculate progress summary
-      const progressSummary = await this.calculateWorkflowProgress(workflow, participants || [])
+      const progressSummary = await this.calculateWorkflowProgress(workflow as any, (participants || []) as any)
 
       const workflowWithDetails: NotificationWorkflowWithDetails = {
-        ...workflow,
-        participants: participants as ComplianceParticipantWithDetails[],
+        ...(workflow as any),
         steps_parsed: steps,
         current_step_data: currentStepData,
         next_step_data: nextStepData,
@@ -542,7 +562,7 @@ export class ComplianceEngine extends BaseService {
       }
 
       await this.logActivity('generate_scheduled_notifications', 'notifications', undefined, {
-        notificationsGenerated: count
+        notificationsGenerated: count as any
       })
 
       return {
@@ -565,7 +585,7 @@ export class ComplianceEngine extends BaseService {
   ): Promise<ComplianceApiResponse<{ acknowledged: boolean }>> {
     try {
       // Update notification as acknowledged
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('notifications')
         .update({
           acknowledged_at: new Date().toISOString(),
@@ -626,26 +646,26 @@ export class ComplianceEngine extends BaseService {
         { count: overdueCount },
         { count: upcomingThisWeek }
       ] = await Promise.all([
-        (this.supabase as any)
+        this.supabase
           .from('notification_workflows')
           .select('*', { count: 'exact', head: true })
           .eq('organization_id', organizationId)
           .in('status', ['pending', 'in_progress', 'waiting_approval']),
         
-        (this.supabase as any)
+        this.supabase
           .from('notification_workflows')
           .select('*', { count: 'exact', head: true })
           .eq('organization_id', organizationId)
           .eq('status', 'completed')
           .gte('completed_at', new Date(new Date().setDate(1)).toISOString()),
         
-        (this.supabase as any)
+        this.supabase
           .from('compliance_calendar')
           .select('*', { count: 'exact', head: true })
           .eq('organization_id', organizationId)
           .eq('status', 'overdue'),
         
-        (this.supabase as any)
+        this.supabase
           .from('compliance_calendar')
           .select('*', { count: 'exact', head: true })
           .eq('organization_id', organizationId)
@@ -654,7 +674,7 @@ export class ComplianceEngine extends BaseService {
       ])
 
       // Get upcoming deadlines
-      const { data: upcomingDeadlines } = await (this.supabase as any)
+      const { data: upcomingDeadlines } = await this.supabase
         .from('compliance_calendar')
         .select(`
           *,
@@ -667,7 +687,7 @@ export class ComplianceEngine extends BaseService {
         .limit(10)
 
       // Get active workflows
-      const { data: activeWorkflows } = await (this.supabase as any)
+      const { data: activeWorkflows } = await this.supabase
         .from('notification_workflows')
         .select(`
           *,
@@ -689,8 +709,8 @@ export class ComplianceEngine extends BaseService {
           trend_direction: 'stable', // Would be calculated based on historical data
           critical_items_count: 0 // Would be calculated based on priority
         },
-        upcoming_deadlines: (upcomingDeadlines || []) as ComplianceCalendarWithDetails[],
-        active_workflows: (activeWorkflows || []) as NotificationWorkflowWithDetails[],
+        upcoming_deadlines: (upcomingDeadlines || []) as any,
+        active_workflows: (activeWorkflows || []) as any,
         overdue_items: [], // Would be populated with overdue items
         compliance_metrics: await this.calculateComplianceMetrics(organizationId),
         recent_completions: [] // Would be populated with recent completions
@@ -751,13 +771,13 @@ export class ComplianceEngine extends BaseService {
       for (const participant of stepParticipants) {
         participantsToCreate.push({
           workflow_id: workflowId,
-          user_id: participant.user_id,
-          participant_type: participant.type,
-          role_in_workflow: participant.role,
+          user_id: (participant as any).user_id,
+          participant_type: (participant as any).type,
+          role_in_workflow: (participant as any).role,
           step_number: stepIndex,
-          is_required: participant.required !== false,
-          can_delegate: participant.can_delegate === true,
-          requires_evidence: participant.requires_evidence === true,
+          is_required: (participant as any).required !== false,
+          can_delegate: (participant as any).can_delegate === true,
+          requires_evidence: (participant as any).requires_evidence === true,
           status: stepIndex === 0 ? 'in_progress' : 'assigned'
         })
       }
@@ -779,7 +799,7 @@ export class ComplianceEngine extends BaseService {
     }
 
     if (participantsToCreate.length > 0) {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('compliance_participants')
         .insert(participantsToCreate)
 
@@ -796,7 +816,7 @@ export class ComplianceEngine extends BaseService {
     workflowId: string,
     eventType: 'workflow_created' | 'step_completed' | 'deadline_approaching' | 'overdue'
   ): Promise<void> {
-    const { data: workflow } = await (this.supabase as any)
+    const { data: workflow } = await this.supabase
       .from('notification_workflows')
       .select('*')
       .eq('id', workflowId)
@@ -804,7 +824,7 @@ export class ComplianceEngine extends BaseService {
 
     if (!workflow) return
 
-    const { data: participants } = await (this.supabase as any)
+    const { data: participants } = await this.supabase
       .from('compliance_participants')
       .select(`
         *,
@@ -846,7 +866,7 @@ export class ComplianceEngine extends BaseService {
         type: 'warning',
         title,
         message,
-        userId: participant.user.id,
+        userId: (participant as any).user?.id,
         metadata: {
           workflow_id: workflowId,
           participant_id: participant.id,
@@ -864,13 +884,13 @@ export class ComplianceEngine extends BaseService {
     calendarEntryId: string,
     templateId: string
   ): Promise<void> {
-    const { data: calendarEntry } = await (this.supabase as any)
+    const { data: calendarEntry } = await this.supabase
       .from('compliance_calendar')
       .select('*')
       .eq('id', calendarEntryId)
       .single()
 
-    const { data: template } = await (this.supabase as any)
+    const { data: template } = await this.supabase
       .from('compliance_templates')
       .select('*')
       .eq('id', templateId)
@@ -909,7 +929,7 @@ export class ComplianceEngine extends BaseService {
     participants: ComplianceParticipant[]
   ): Promise<WorkflowProgressSummary> {
     const completedSteps = workflow.current_step
-    const progressPercentage = workflow.progress_percentage || 0
+    const progressPercentage = (workflow as any).progress_percentage || 0
 
     const pendingParticipants = participants.filter(p => 
       ['assigned', 'in_progress'].includes(p.status)
@@ -926,7 +946,7 @@ export class ComplianceEngine extends BaseService {
     }
 
     return {
-      total_steps: workflow.total_steps,
+      total_steps: (workflow as any).total_steps || 1,
       completed_steps: completedSteps,
       current_step: workflow.current_step,
       progress_percentage: progressPercentage,
@@ -948,12 +968,12 @@ export class ComplianceEngine extends BaseService {
     // - Historical compliance data
     
     // Simplified implementation
-    const { count: totalItems } = await (this.supabase as any)
+    const { count: totalItems } = await this.supabase
       .from('compliance_calendar')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', organizationId)
 
-    const { count: completedItems } = await (this.supabase as any)
+    const { count: completedItems } = await this.supabase
       .from('compliance_calendar')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', organizationId)

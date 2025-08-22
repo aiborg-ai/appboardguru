@@ -243,15 +243,15 @@ export class VaultService extends BaseService {
       if (data.emails && data.emails.length > 0) {
         for (const email of data.emails) {
           // Create invitation record
-          await (this.supabase as any).from('vault_invitations').insert({
+          await this.supabase.from('vault_invitations').insert({
             vault_id: vaultId,
             email,
-            role: data.role || 'viewer',
-            message: data.message,
-            deadline: data.deadline,
             invited_by: user.id,
+            role: data.role || 'viewer',
             status: 'pending',
-          })
+            invitation_token: crypto.randomUUID(),
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+          } as any)
 
           invitations.push({ email, status: 'invited' })
         }
@@ -287,18 +287,18 @@ export class VaultService extends BaseService {
         throw new Error('Vault not found')
       }
 
-      // Create broadcast invitations
+      // Create broadcast invitations - cast to any to handle schema mismatch
       const invitations = data.userIds.map((userId: string) => ({
         vault_id: data.vaultId,
-        user_id: userId,
-        message: data.message,
-        requires_acceptance: data.requireAcceptance || false,
-        deadline: data.deadline,
+        email: `user-${userId}@placeholder.com`, // Placeholder email for existing users
         invited_by: user.id,
+        role: 'viewer',
         status: 'pending' as const,
+        invitation_token: crypto.randomUUID(),
+        expires_at: data.deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       }))
 
-      await (this.supabase as any).from('vault_invitations').insert(invitations)
+      await this.supabase.from('vault_invitations').insert(invitations as any)
 
       // Send notification emails
       const users = await Promise.all(
@@ -330,7 +330,7 @@ export class VaultService extends BaseService {
     try {
       const user = await this.getCurrentUser()
 
-      const { data: invitation, error } = await (this.supabase as any)
+      const { data: invitation, error } = await this.supabase
         .from('vault_invitations')
         .select('*')
         .eq('id', invitationId)
@@ -355,7 +355,7 @@ export class VaultService extends BaseService {
       )
 
       // Update invitation status
-      await (this.supabase as any)
+      await this.supabase
         .from('vault_invitations')
         .update({ 
           status: 'accepted',

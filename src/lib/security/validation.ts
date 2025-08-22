@@ -560,10 +560,12 @@ export class EmailValidator {
 
       // Check suspicious patterns in local part
       const localPart = email.split('@')[0]
-      for (const pattern of this.SUSPICIOUS_PATTERNS) {
-        if (pattern.test(localPart)) {
-          risk = 'medium'
-          break
+      if (localPart) {
+        for (const pattern of this.SUSPICIOUS_PATTERNS) {
+          if (pattern.test(localPart)) {
+            risk = 'medium'
+            break
+          }
         }
       }
 

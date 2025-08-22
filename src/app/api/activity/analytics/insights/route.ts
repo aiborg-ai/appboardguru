@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { MLInsightsEngine } from '@/lib/activity/ml-insights'
+import type { Database } from '@/types/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,13 +12,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(user as any)?.organization_id) {
+    if (!userOrgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -43,22 +46,22 @@ export async function GET(request: NextRequest) {
     }
 
     const insights = await MLInsightsEngine.generateOrganizationInsights(
-      (user as any)?.organization_id,
+      userOrgMember.organization_id,
       {
         timeRange: { start: startDate.toISOString(), end: endDate.toISOString() },
-        includePredictions: (insightTypes as any)?.includes('predictions'),
-        includeAnomalies: (insightTypes as any)?.includes('anomalies'),
-        includeRecommendations: (insightTypes as any)?.includes('recommendations')
+        includePredictions: insightTypes.includes('predictions'),
+        includeAnomalies: insightTypes.includes('anomalies'),
+        includeRecommendations: insightTypes.includes('recommendations')
       }
     )
 
     return NextResponse.json({
       success: true,
-      data: insights as any,
+      data: insights,
       meta: {
         timeRange,
         insightTypes,
-        organizationId: (user as any)?.organization_id,
+        organizationId: userOrgMember.organization_id,
         generatedAt: new Date().toISOString()
       }
     })
@@ -81,18 +84,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(user as any)?.organization_id || (user as any)?.role !== 'admin') {
+    if (!userOrgMember?.organization_id || userOrgMember.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
     const body = await request.json()
-    const { action } = body
+    const { action } = body as { action: string }
 
     switch (action) {
       case 'feedback':

@@ -95,7 +95,7 @@ export async function createInvitationsAction(
     }
 
     // Verify user has permission to invite to this organization
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -117,7 +117,7 @@ export async function createInvitationsAction(
     for (const invitation of invitations) {
       try {
         // Check if user is already a member
-        const { data: existingMember } = await supabase
+        const { data: existingMember } = await (supabase as any)
           .from('organization_members')
           .select('id')
           .eq('organization_id', organizationId)
@@ -130,7 +130,7 @@ export async function createInvitationsAction(
         }
 
         // Check for existing pending invitation
-        const { data: existingInvitation } = await supabase
+        const { data: existingInvitation } = await (supabase as any)
           .from('organization_invitations')
           .select('id, status')
           .eq('organization_id', organizationId)
@@ -225,7 +225,7 @@ export async function updateInvitationAction(
     }
 
     // Get invitation details
-    const { data: invitation, error: invitationError } = await supabase
+    const { data: invitation, error: invitationError } = await (supabase as any)
       .from('organization_invitations')
       .select('organization_id, email')
       .eq('id', invitationId)
@@ -236,7 +236,7 @@ export async function updateInvitationAction(
     }
 
     // Verify permissions
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', (invitation as any)?.organization_id)
@@ -303,7 +303,7 @@ export async function bulkInvitationAction(
     }
 
     // Verify permissions
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)

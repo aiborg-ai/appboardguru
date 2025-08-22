@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this organization
-    const { data: orgMember, error: orgError } = await supabase
+    const { data: orgMember, error: orgError } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', organizationId)
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has admin access to this organization
-    const { data: orgMember, error: orgError } = await supabase
+    const { data: orgMember, error: orgError } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organization_id)

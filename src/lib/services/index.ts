@@ -10,7 +10,7 @@ export * from './email-templates'
 
 // Service factory for dependency injection
 import { SupabaseClient } from '@supabase/supabase-js'
-import { Database } from '@/types'
+import { Database } from '../../types'
 import { VaultService } from './vault.service'
 import { NotificationService } from './notification.service'
 

@@ -130,7 +130,7 @@ async function createSession(params: CreateVoiceSessionRequest): Promise<NextRes
     };
 
     // Store session in database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await (supabase as any)
       .from('voice_collaboration_sessions')
       .insert({
         id: sessionId,
@@ -194,7 +194,7 @@ async function joinSession(params: JoinVoiceSessionRequest): Promise<NextRespons
     // Get session from memory or database
     let session = activeSessions.get(sessionId);
     if (!session) {
-      const { data: sessionData, error } = await supabase
+      const { data: sessionData, error } = await (supabase as any)
         .from('voice_collaboration_sessions')
         .select('*')
         .eq('id', sessionId)
@@ -228,7 +228,7 @@ async function joinSession(params: JoinVoiceSessionRequest): Promise<NextRespons
     }
 
     // Get user information
-    const { data: userData } = await supabase
+    const { data: userData } = await (supabase as any)
       .from('users')
       .select('id, full_name, role')
       .eq('id', userId)
@@ -287,7 +287,7 @@ async function joinSession(params: JoinVoiceSessionRequest): Promise<NextRespons
       session.startedAt = new Date().toISOString();
       activeSessions.set(sessionId, session);
       
-      await supabase
+      await (supabase as any)
         .from('voice_collaboration_sessions')
         .update({ 
           status: 'active',
@@ -675,7 +675,7 @@ async function endSessionInternal(sessionId: string) {
     : 0;
 
   // Update database
-  await supabase
+  await (supabase as any)
     .from('voice_collaboration_sessions')
     .update({
       status: 'ended',
@@ -690,7 +690,7 @@ async function endSessionInternal(sessionId: string) {
   const analytics = generateBasicAnalytics(sessionId, participants, events);
 
   // Store analytics
-  await supabase
+  await (supabase as any)
     .from('voice_collaboration_analytics')
     .insert({
       session_id: sessionId,
@@ -873,7 +873,7 @@ async function sendSessionInvitations(sessionId: string, invitations: any[], hos
     sent_at: new Date().toISOString()
   }));
 
-  await supabase
+  await (supabase as any)
     .from('voice_session_invitations')
     .insert(invitationRecords);
 

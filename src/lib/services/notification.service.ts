@@ -6,7 +6,7 @@ import type {
   Notification,
   InviteUserRequest,
   VaultBroadcast 
-} from '@/types'
+} from '../../types'
 import type {
   NotificationPayload,
   NotificationChannel,
@@ -45,7 +45,7 @@ export class NotificationService extends BaseService {
   /**
    * Initialize email transporter
    */
-  private initializeTransporter() {
+  private initializeTransporter(): void {
     if (!emailConfig.features.enabled) {
       return
     }
@@ -252,14 +252,14 @@ export class NotificationService extends BaseService {
       if (data.userId) {
         // Store in database for in-app notifications
         await this.supabase.from('notifications').insert({
-          user_id: data.userId,
+          user_id: data.userId!,
           type: data.type,
           title: data.title,
           message: data.message,
           metadata: data.metadata as Record<string, any>,
           created_at: new Date().toISOString(),
           read_at: null,
-        })
+        } as any)
       }
 
       // Also send email if configured
@@ -305,7 +305,7 @@ export class NotificationService extends BaseService {
     notifications: any[]
     pagination: any
     unreadCount?: number
-  } | undefined> {
+  }> {
     try {
       const { page = 1, limit = 20, unreadOnly = false } = options
       const offset = (page - 1) * limit
@@ -926,7 +926,10 @@ This is an automated compliance notification from BoardGuru.
         if (notification.compliance_type) {
           stats.byType[notification.compliance_type] = (stats.byType[notification.compliance_type] || 0) + 1
         }
-        stats.byPriority[notification.priority] = (stats.byPriority[notification.priority] || 0) + 1
+        const priority = notification.priority
+        if (priority && typeof priority === 'string') {
+          stats.byPriority[priority] = (stats.byPriority[priority] || 0) + 1
+        }
       })
 
       return stats

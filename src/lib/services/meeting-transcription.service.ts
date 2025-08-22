@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '../supabase-server';
 import { MeetingDecision, AgendaItem, VotingResults } from '@/types/voice-translation';
 
 export interface SpeakerIdentification {
@@ -163,7 +163,7 @@ class MeetingTranscriptionService {
       if (transcriptionError) throw transcriptionError;
 
       // Log the start of transcription
-      await this.supabase
+      await (this.supabase as any)
         .from('audit_logs')
         .insert({
           user_id: userId,
@@ -265,7 +265,7 @@ class MeetingTranscriptionService {
         .eq('id', transcriptionId);
 
       // Store voice translation entry
-      await this.supabase
+      await (this.supabase as any)
         .from('voice_translations')
         .insert({
           session_id: sessionId,

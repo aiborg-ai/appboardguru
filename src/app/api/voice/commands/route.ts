@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the voice command activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -346,7 +346,7 @@ async function storeCommandInSession(
   // This could be implemented with a voice_command_sessions table
   try {
     // For now, we'll use the audit_logs table with a specific category
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: userId,

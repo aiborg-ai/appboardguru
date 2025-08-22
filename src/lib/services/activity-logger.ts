@@ -3,9 +3,9 @@
  * Provides user-friendly activity logging on top of the comprehensive audit system
  */
 
-import { supabaseAdmin } from '@/lib/supabase-admin'
-import { SecurityAuditLogger, logDataAccess, logDataModification } from '@/lib/security/audit'
-import { Database } from '@/types/database'
+import { supabaseAdmin } from '../supabase-admin'
+import { SecurityAuditLogger, logDataAccess, logDataModification } from '../security/audit'
+import { Database } from '../../types/database'
 
 type ActivityType = 
   | 'asset_opened' | 'asset_downloaded' | 'asset_uploaded' | 'asset_shared' | 'asset_deleted'

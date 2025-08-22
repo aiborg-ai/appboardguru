@@ -243,7 +243,7 @@ async function createTrainingSession(
 
   // In a real implementation, save to database
   /*
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('voice_training_sessions')
     .insert(session)
     .select()

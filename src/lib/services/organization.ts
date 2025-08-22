@@ -3,7 +3,7 @@
  * Handles core organization CRUD operations, membership management, and organization-level features
  */
 
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { supabaseAdmin } from '../supabase-admin'
 import { createClient } from '@supabase/supabase-js'
 
 // Organization types based on the database schema

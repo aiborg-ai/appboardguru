@@ -45,7 +45,7 @@ export interface TrainingDataSample {
   readonly actualOutcome: number
   readonly timestamp: Date
   readonly weight?: number // For weighted training
-  readonly metadata?: Record<string, any>
+  readonly metadata?: Record<string, unknown>
 }
 
 export interface MLTrainingConfig {
@@ -112,8 +112,8 @@ export class PredictionModel {
    * Predict optimal timing for notification
    */
   async predictOptimalTiming(
-    behaviorData: any[],
-    userProfile: any,
+    behaviorData: UserBehaviorData[],
+    userProfile: UserProfileData,
     notificationType: string
   ): Promise<TimingPrediction> {
     if (behaviorData.length < 10) {
@@ -272,7 +272,7 @@ export class PredictionModel {
 
   // Private helper methods
 
-  private extractTimingFeatures(behaviorData: any[], notificationType: string): any {
+  private extractTimingFeatures(behaviorData: UserBehaviorData[], notificationType: string): Record<string, number> {
     const features = {
       hourlyEngagement: Array(24).fill(0),
       dailyEngagement: Array(7).fill(0),
@@ -305,7 +305,7 @@ export class PredictionModel {
     // Calculate type-specific engagement
     const typeSpecificData = behaviorData.filter(d => 
       d.action_type === notificationType || 
-      d.metadata?.notification_type === notificationType
+      (d as any).metadata?.notification_type === notificationType
     )
     
     if (typeSpecificData.length > 0) {
@@ -329,12 +329,12 @@ export class PredictionModel {
       }
     })
 
-    return features
+    return features as any
   }
 
-  private extractEngagementFeatures(behaviorData: readonly UserBehaviorData[], notificationContext: any): any {
-    const hour = notificationContext.timing.getHours()
-    const dayOfWeek = notificationContext.timing.getDay()
+  private extractEngagementFeatures(behaviorData: readonly UserBehaviorData[], notificationContext: Record<string, unknown>): Record<string, number> {
+    const hour = (notificationContext.timing as any).getHours()
+    const dayOfWeek = (notificationContext.timing as any).getDay()
     
     // Historical performance at this time
     const sameHourData = [...behaviorData].filter(d => 
@@ -371,7 +371,7 @@ export class PredictionModel {
       // Notification context
       notificationPriority: notificationContext.priority === 'high' ? 1 : 
                            notificationContext.priority === 'medium' ? 0.5 : 0,
-      notificationTypeScore: this.getNotificationTypeScore(notificationContext.type),
+      notificationTypeScore: this.getNotificationTypeScore(notificationContext.type as any),
       
       // User fatigue indicators
       recentNotificationCount: this.countRecentNotifications(behaviorData, 1), // Last 24 hours
@@ -381,32 +381,35 @@ export class PredictionModel {
     return features
   }
 
-  private buildTimingModel(features: any): TimingModel {
+  private buildTimingModel(features: Record<string, number>): TimingModel {
     // Simple model based on historical engagement patterns
-    const hourlyWeights = features.hourlyEngagement.map((engagement: number, hour: number) => ({
+    const hourlyEngagement = (features as any).hourlyEngagement as number[]
+    const dailyEngagement = (features as any).dailyEngagement as number[]
+    
+    const hourlyWeights = hourlyEngagement.map((engagement: number, hour: number) => ({
       hour,
       weight: engagement,
-      normalized: engagement / Math.max(...features.hourlyEngagement)
+      normalized: engagement / Math.max(...hourlyEngagement)
     }))
 
-    const dailyWeights = features.dailyEngagement.map((engagement: number, day: number) => ({
+    const dailyWeights = dailyEngagement.map((engagement: number, day: number) => ({
       day,
       weight: engagement,
-      normalized: engagement / Math.max(...features.dailyEngagement)
+      normalized: engagement / Math.max(...dailyEngagement)
     }))
 
     return {
       type: 'timing_model',
-      hourlyWeights: hourlyWeights.sort((a: any, b: any) => b.weight - a.weight),
-      dailyWeights: dailyWeights.sort((a: any, b: any) => b.weight - a.weight),
-      typeSpecificMultiplier: features.typeSpecificEngagement,
-      responseTimeProfile: features.responseTimeBuckets,
+      hourlyWeights: hourlyWeights.sort((a: Record<string, number>, b: Record<string, number>) => (b.weight as number) - (a.weight as number)),
+      dailyWeights: dailyWeights.sort((a: Record<string, number>, b: Record<string, number>) => (b.weight as number) - (a.weight as number)),
+      typeSpecificMultiplier: (features as any).typeSpecificEngagement,
+      responseTimeProfile: (features as any).responseTimeBuckets,
       confidence: 0.7, // Base confidence
       lastUpdated: new Date()
-    } as TimingModel
+    } as any as TimingModel
   }
 
-  private buildEngagementModel(features: any): EngagementModel {
+  private buildEngagementModel(features: Record<string, number>): EngagementModel {
     // Linear regression model weights (learned from historical data)
     const weights = {
       hour: 0.15,
@@ -464,8 +467,8 @@ export class PredictionModel {
       const day = candidateTime.getDay()
 
       // Calculate score based on historical patterns
-      const hourlyScore = model.hourlyWeights?.find((h: any) => h.hour === hour)?.normalized ?? 0
-      const dailyScore = model.dailyWeights?.find((d: any) => d.day === day)?.normalized ?? 0
+      const hourlyScore = model.hourlyWeights?.find((h: Record<string, unknown>) => h.hour === hour)?.normalized as number ?? 0
+      const dailyScore = model.dailyWeights?.find((d: Record<string, unknown>) => d.day === day)?.normalized as number ?? 0
       
       // Combine scores
       let totalScore = (hourlyScore * 0.6 + dailyScore * 0.4) * model.typeSpecificMultiplier
@@ -564,7 +567,7 @@ export class PredictionModel {
     return { score, confidence }
   }
 
-  private analyzeEngagementFactors(features: any, prediction: any): Array<{
+  private analyzeEngagementFactors(features: Record<string, number>, prediction: Record<string, number>): Array<{
     factor: string
     impact: number
     reasoning: string
@@ -589,13 +592,13 @@ export class PredictionModel {
     }
 
     // Historical performance
-    if (features.hourlyEngagementAvg > 0.7) {
+    if (features.hourlyEngagementAvg && features.hourlyEngagementAvg > 0.7) {
       factors.push({
         factor: 'optimal_hour',
         impact: 0.2,
         reasoning: 'This hour has shown high historical engagement'
       })
-    } else if (features.hourlyEngagementAvg < 0.3) {
+    } else if (features.hourlyEngagementAvg && features.hourlyEngagementAvg < 0.3) {
       factors.push({
         factor: 'suboptimal_hour',
         impact: -0.15,
@@ -604,13 +607,13 @@ export class PredictionModel {
     }
 
     // Recent trends
-    if (features.recentEngagementTrend > 0.1) {
+    if (features.recentEngagementTrend && features.recentEngagementTrend > 0.1) {
       factors.push({
         factor: 'positive_trend',
         impact: 0.15,
         reasoning: 'User engagement has been increasing recently'
       })
-    } else if (features.recentEngagementTrend < -0.1) {
+    } else if (features.recentEngagementTrend && features.recentEngagementTrend < -0.1) {
       factors.push({
         factor: 'negative_trend',
         impact: -0.15,
@@ -619,7 +622,7 @@ export class PredictionModel {
     }
 
     // Notification fatigue
-    if (features.recentNotificationCount > 5) {
+    if (features.recentNotificationCount && features.recentNotificationCount > 5) {
       factors.push({
         factor: 'notification_fatigue',
         impact: -0.2,
@@ -628,7 +631,7 @@ export class PredictionModel {
     }
 
     // Priority impact
-    if (features.notificationPriority > 0.8) {
+    if (features.notificationPriority && features.notificationPriority > 0.8) {
       factors.push({
         factor: 'high_priority',
         impact: 0.1,
@@ -799,7 +802,7 @@ export class PredictionModel {
     }
   }
 
-  private calculateEngagementTrend(recentData: any[]): number {
+  private calculateEngagementTrend(recentData: UserBehaviorData[]): number {
     if (recentData.length < 3) return 0
 
     const engagementScores = recentData
@@ -814,7 +817,7 @@ export class PredictionModel {
     const y = engagementScores
 
     const meanX = x.reduce((sum, val) => sum + val, 0) / n
-    const meanY = y.reduce((sum, val) => sum + val, 0) / n
+    const meanY = (y as number[]).reduce((sum: number, val: number) => sum + (val ?? 0), 0) / n
 
     const numerator = x.reduce((sum, val, i) => sum + (val - meanX) * ((y[i] ?? 0) - meanY), 0)
     const denominator = x.reduce((sum, val) => sum + Math.pow(val - meanX, 2), 0)

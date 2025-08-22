@@ -336,7 +336,7 @@ async function searchVaults(
   limit: number
 ): Promise<VaultReference[]> {
   try {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('vaults')
       .select(`
         id,
@@ -381,7 +381,7 @@ async function searchMeetings(
   limit: number
 ): Promise<MeetingReference[]> {
   try {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('meetings')
       .select(`
         id,

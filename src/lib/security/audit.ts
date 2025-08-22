@@ -250,7 +250,7 @@ export class SecurityAuditLogger {
    */
   private static enhanceEvent(event: Partial<SecurityEvent>): SecurityEvent {
     const enhanced: SecurityEvent = {
-      eventType: 'security_event',
+      eventType: 'security_breach',
       eventCategory: 'unknown',
       action: 'unknown',
       resourceType: 'unknown',
@@ -307,12 +307,12 @@ export class SecurityAuditLogger {
     }
 
     // Security-related events
-    if (event.eventType === 'security_event') {
+    if (event.eventType === 'security_breach') {
       tags.push('SECURITY')
     }
 
     // Administrative actions
-    if (event.eventType === 'system_admin') {
+    if (event.eventType === 'admin_action') {
       tags.push('ADMIN')
     }
 
@@ -461,7 +461,7 @@ export async function logSecurityEvent(
   action: string,
   details: Record<string, any> = {},
   severity: AuditSeverity = 'medium',
-  eventType: AuditEventType = 'security_event'
+  eventType: AuditEventType = 'security_breach'
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
     eventType,
@@ -543,7 +543,7 @@ export async function logSuspiciousActivity(
   details: Record<string, any> = {}
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
-    eventType: 'security_event',
+    eventType: 'security_breach',
     eventCategory: SecurityEventCategories.SECURITY_EVENT.SUSPICIOUS_ACTIVITY,
     action: 'suspicious_activity',
     resourceType: 'application',

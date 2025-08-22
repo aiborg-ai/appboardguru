@@ -3,7 +3,7 @@
  * Handles organization membership management, role assignments, and member operations
  */
 
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { supabaseAdmin } from '../supabase-admin'
 
 // Re-export types from organization service
 export type OrganizationRole = 'owner' | 'admin' | 'member' | 'viewer'

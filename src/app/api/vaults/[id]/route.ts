@@ -51,7 +51,7 @@ export async function GET(
     const vaultId = (await params).id
 
     // Get vault with detailed information
-    const { data: vault, error: vaultError } = await supabase
+    const { data: vault, error: vaultError } = await (supabase as any)
       .from('vaults')
       .select(`
         *,
@@ -107,7 +107,7 @@ export async function GET(
     )
 
     // Get vault assets
-    const { data: vaultAssets, error: assetsError } = await supabase
+    const { data: vaultAssets, error: assetsError } = await (supabase as any)
       .from('vault_assets')
       .select(`
         id, folder_path, display_order, is_featured, is_required_reading,
@@ -129,7 +129,7 @@ export async function GET(
     }
 
     // Get recent activity
-    const { data: recentActivity, error: activityError } = await supabase
+    const { data: recentActivity, error: activityError } = await (supabase as any)
       .from('vault_activity_log')
       .select(`
         id, activity_type, activity_description, timestamp,
@@ -191,7 +191,7 @@ export async function GET(
         }
       })) || [],
       
-      assets: vaultAssets?.map(asset => ({
+      assets: vaultAssets?.map((asset: any) => ({
         id: (asset as any).id,
         folderPath: (asset as any).folder_path,
         displayOrder: (asset as any).display_order,
@@ -216,7 +216,7 @@ export async function GET(
         addedBy: (asset as any).added_by
       })) || [],
       
-      recentActivity: recentActivity?.map(activity => ({
+      recentActivity: recentActivity?.map((activity: any) => ({
         id: (activity as any).id,
         type: (activity as any).activity_type,
         description: (activity as any).activity_description,
@@ -228,7 +228,7 @@ export async function GET(
     }
 
     // Update last access time for the user
-    await supabase
+    await (supabase as any)
       .from('vault_members')
       .update({ 
         last_accessed_at: new Date().toISOString(),
@@ -238,7 +238,7 @@ export async function GET(
       .eq('user_id', user.id)
 
     // Log access activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
@@ -298,7 +298,7 @@ export async function PUT(
     const updates: UpdateVaultRequest = await request.json()
 
     // Check user's permission to update this vault
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await (supabase as any)
       .from('vault_members')
       .select('role, status, vault_id, organization_id')
       .eq('vault_id', vaultId)
@@ -342,7 +342,7 @@ export async function PUT(
     if (updates.expiresAt !== undefined) updateData.expires_at = updates.expiresAt ? new Date(updates.expiresAt).toISOString() : null
 
     // Update vault
-    const { data: updatedVault, error: updateError } = await supabase
+    const { data: updatedVault, error: updateError } = await (supabase as any)
       .from('vaults')
       .update(updateData)
       .eq('id', vaultId)
@@ -360,7 +360,7 @@ export async function PUT(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
@@ -447,7 +447,7 @@ export async function DELETE(
     const vaultId = (await params).id
 
     // Check user's permission to delete this vault
-    const { data: vault, error: vaultError } = await supabase
+    const { data: vault, error: vaultError } = await (supabase as any)
       .from('vaults')
       .select(`
         id, name, organization_id, created_by,
@@ -469,7 +469,7 @@ export async function DELETE(
 
     if (!canDelete) {
       // Check if user is org owner/admin
-      const { data: orgMembership } = await supabase
+      const { data: orgMembership } = await (supabase as any)
         .from('organization_members')
         .select('role')
         .eq('organization_id', (vault as any).organization_id)
@@ -485,7 +485,7 @@ export async function DELETE(
     }
 
     // Soft delete: Archive the vault instead of hard delete
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('vaults')
       .update({ 
         status: 'cancelled',
@@ -500,7 +500,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,

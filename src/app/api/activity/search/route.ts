@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ActivitySearchEngine } from '@/lib/activity/search'
+import type { Database } from '@/types/database'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,13 +12,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!user?.organization_id) {
+    if (!userOrgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -28,24 +31,35 @@ export async function POST(request: NextRequest) {
       filters = {},
       limit = 50,
       offset = 0
-    } = body
+    } = body as {
+      query: string
+      naturalLanguage?: boolean
+      filters?: Record<string, unknown>
+      limit?: number
+      offset?: number
+    }
 
     if (!query?.trim()) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    let searchResults
+    let searchResults: {
+      results: unknown[]
+      totalCount: number
+      parsedQuery?: unknown
+      confidence?: number
+    }
     if (naturalLanguage) {
       const nlResults = await ActivitySearchEngine.searchWithNaturalLanguage(
-        (user as any)?.organization_id,
+        userOrgMember.organization_id,
         query.trim(),
-        { limit, offset, ...(filters as any) }
+        { limit, offset, ...filters } as any
       )
       searchResults = {
-        results: (nlResults as any)?.results,
-        totalCount: (nlResults as any)?.results?.length || 0,
-        parsedQuery: (nlResults as any)?.parsedQuery,
-        confidence: (nlResults as any)?.confidence
+        results: nlResults?.results || [],
+        totalCount: nlResults?.results?.length || 0,
+        parsedQuery: nlResults?.parsedQuery,
+        confidence: nlResults?.confidence
       }
     } else {
       const supabaseQuery = (supabase as any)
@@ -58,9 +72,9 @@ export async function POST(request: NextRequest) {
           metadata,
           timestamp,
           correlation_id,
-          users!inner(id, name, email)
+          user_id
         `)
-        .eq('organization_id', (user as any)?.organization_id)
+        .eq('organization_id', userOrgMember.organization_id)
         .or(`event_type.ilike.%${query.trim()}%,entity_type.ilike.%${query.trim()}%,metadata->>'title'.ilike.%${query.trim()}%`)
         .order('timestamp', { ascending: false })
         .limit(limit)
@@ -69,24 +83,22 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
-      const results = (activities as any)?.map((activity: any) => ({
-        id: (activity as any)?.id,
-        eventType: (activity as any)?.event_type,
-        entityType: (activity as any)?.entity_type,
-        entityId: (activity as any)?.entity_id,
-        timestamp: (activity as any)?.timestamp,
-        userId: (activity as any)?.users?.id || 'unknown',
-        userName: (activity as any)?.users?.name || 'Unknown User',
-        userEmail: (activity as any)?.users?.email || 'unknown',
-        metadata: (activity as any)?.metadata,
+      const results = activities?.map((activity: any) => ({
+        id: activity.id,
+        eventType: activity.event_type,
+        entityType: activity.entity_type,
+        entityId: activity.entity_id,
+        timestamp: activity.timestamp,
+        userId: activity.user_id || 'unknown',
+        metadata: activity.metadata,
         relevanceScore: 0.8,
-        context: `${(activity as any)?.event_type} on ${(activity as any)?.entity_type}`,
-        correlationId: (activity as any)?.correlation_id
+        context: `${activity.event_type} on ${activity.entity_type}`,
+        correlationId: activity.correlation_id
       })) || []
 
       searchResults = {
         results,
-        totalCount: (results as any)?.length || 0
+        totalCount: results.length
       }
     }
 
@@ -94,7 +106,7 @@ export async function POST(request: NextRequest) {
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
-        organization_id: (user as any)?.organization_id,
+        organization_id: userOrgMember.organization_id,
         event_type: 'activity_search',
         entity_type: 'search_query',
         entity_id: `search-${Date.now()}`,
@@ -102,8 +114,8 @@ export async function POST(request: NextRequest) {
           query: query.trim(),
           naturalLanguage,
           filters,
-          resultCount: (searchResults as any)?.results?.length || 0,
-          confidence: naturalLanguage ? (searchResults as any)?.confidence : undefined
+          resultCount: searchResults.results.length,
+          ...(naturalLanguage && searchResults.confidence ? { confidence: searchResults.confidence } : {})
         },
         timestamp: new Date().toISOString(),
         correlation_id: `search-${Date.now()}-${Math.random().toString(36).substring(2)}`,
@@ -111,16 +123,16 @@ export async function POST(request: NextRequest) {
         ip_address: request.headers.get('x-forwarded-for') || 'unknown',
         user_agent: request.headers.get('user-agent') || 'unknown',
         source: 'activity_search'
-      } as any)
+      })
 
     return NextResponse.json({
       success: true,
-      ...(searchResults as any),
+      ...searchResults,
       meta: {
         query: query.trim(),
         naturalLanguage,
         filters,
-        organizationId: (user as any)?.organization_id,
+        organizationId: userOrgMember.organization_id,
         searchedAt: new Date().toISOString()
       }
     })
@@ -143,13 +155,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await (supabase as any)
-      .from('users')
+    const { data: userOrgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
+      .eq('is_primary', true)
+      .eq('status', 'active')
       .single()
 
-    if (!(user as any)?.organization_id) {
+    if (!userOrgMember?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -161,7 +175,7 @@ export async function GET(request: NextRequest) {
         const { data: customTemplates } = await (supabase as any)
           .from('activity_search_templates')
           .select('*')
-          .eq('organization_id', (user as any)?.organization_id)
+          .eq('organization_id', userOrgMember.organization_id)
           .eq('is_active', true)
           .order('usage_count', { ascending: false })
 
@@ -200,20 +214,20 @@ export async function GET(request: NextRequest) {
           success: true,
           templates: [
             ...builtInTemplates,
-            ...((customTemplates as any) || [])
+            ...(customTemplates || [])
           ]
         })
       }
 
       case 'suggestions': {
         const suggestions = await ActivitySearchEngine.getSearchSuggestions(
-          (user as any)?.organization_id,
+          userOrgMember.organization_id,
           url.searchParams.get('query') || ''
         )
         
         return NextResponse.json({
           success: true,
-          suggestions: suggestions as any
+          suggestions: suggestions
         })
       }
 

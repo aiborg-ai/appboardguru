@@ -245,7 +245,7 @@ export async function PUT(request: NextRequest) {
 
     // Verify user has permission to update this prediction
     const canUpdate = (prediction as any)?.user_id === user.id || 
-      ((prediction as any)?.organization_id && await hasOrgAccess(supabase, user.id, (prediction as any)?.organization_id))
+      ((prediction as any)?.organization_id && await hasOrgAccess(supabase, user.id, (prediction as any).organization_id))
 
     if (!canUpdate) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
@@ -257,7 +257,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: 'newTime required for reschedule' }, { status: 400 })
       }
 
-      await supabase
+      await (supabase as any)
         .from('predicted_notifications')
         .update({
           predicted_time: newTime,
@@ -268,7 +268,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ status: 'rescheduled', newTime })
 
     } else if (action === 'cancel') {
-      await supabase
+      await (supabase as any)
         .from('predicted_notifications')
         .update({
           is_sent: true,

@@ -517,7 +517,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization and meeting
-    const { data: orgAccess } = await supabase
+    const { data: orgAccess } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', body.organizationId)
@@ -529,7 +529,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get meeting details
-    const { data: meeting, error: meetingError } = await supabase
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .select('*')
       .eq('id', body.meetingId)
@@ -559,7 +559,7 @@ export async function POST(request: NextRequest) {
     await storePreparationData(supabase, preparation, body.organizationId, user.id);
 
     // Log preparation activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -714,7 +714,7 @@ async function fetchRelatedDocuments(supabase: SupabaseClient, meeting: Meeting,
     ...(meeting.agenda_items || []).join(' ').toLowerCase().split(' ')
   ].filter(term => term.length > 3);
 
-  return await supabase
+  return await (supabase as any)
     .from('assets')
     .select(`
       id, title, description, file_type, file_size, created_at, updated_at,
@@ -727,7 +727,7 @@ async function fetchRelatedDocuments(supabase: SupabaseClient, meeting: Meeting,
 }
 
 async function fetchPreviousMeetings(supabase: SupabaseClient, meeting: Meeting, organizationId: string) {
-  return await supabase
+  return await (supabase as any)
     .from('meetings')
     .select('*')
     .eq('organization_id', organizationId)
@@ -743,7 +743,7 @@ async function fetchAttendeeProfiles(supabase: SupabaseClient, attendees: Import
   const userIds = attendees.map(a => a.id || (a as any).user_id).filter(Boolean);
   if (!userIds.length) return attendees;
 
-  const { data: profiles } = await supabase
+  const { data: profiles } = await (supabase as any)
     .from('user_profiles')
     .select('*')
     .in('user_id', userIds);
@@ -1333,7 +1333,7 @@ async function storePreparationData(
   userId: string
 ): Promise<void> {
   try {
-    await supabase
+    await (supabase as any)
       .from('meeting_preparations')
       .insert({
         id: `prep_${preparation.meetingId}_${Date.now()}`,
@@ -1369,7 +1369,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'meetingId and organizationId are required' }, { status: 400 });
     }
 
-    const { data: preparation, error } = await supabase
+    const { data: preparation, error } = await (supabase as any)
       .from('meeting_preparations')
       .select('*')
       .eq('meeting_id', meetingId)

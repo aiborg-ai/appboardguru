@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { Database } from '@/types/database';
+
+type VoiceWorkflowTrigger = Database['public']['Tables']['voice_workflow_triggers']['Row'];
+type VoiceWorkflowTriggerInsert = Database['public']['Tables']['voice_workflow_triggers']['Insert'];
+type VoiceWorkflowTriggerUpdate = Database['public']['Tables']['voice_workflow_triggers']['Update'];
 
 export interface VoiceShortcut {
   id: string;
@@ -27,7 +32,7 @@ export interface CreateShortcutRequest {
 // GET - Retrieve user's voice shortcuts
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient() as any;
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -38,12 +43,11 @@ export async function GET(request: NextRequest) {
     const userId = url.searchParams.get('userId') || user.id;
     const organizationId = url.searchParams.get('organizationId');
 
-    // Fetch shortcuts from user behavior metrics table
-    let query = (supabase as any)
-      .from('user_behavior_metrics')
+    // Fetch shortcuts from voice workflow triggers table
+    let query = supabase
+      .from('voice_workflow_triggers')
       .select('*')
       .eq('user_id', userId)
-      .eq('action_type', 'voice_shortcut_definition')
       .order('created_at', { ascending: false });
 
     if (organizationId) {
@@ -57,17 +61,17 @@ export async function GET(request: NextRequest) {
     }
 
     const shortcuts: VoiceShortcut[] = (shortcutRecords || []).map((record: any) => ({
-      id: (record as any)?.id,
-      userId: (record as any)?.user_id,
-      organizationId: (record as any)?.organization_id,
-      phrase: (record as any)?.context?.phrase,
-      commandType: (record as any)?.context?.command_type,
-      parameters: (record as any)?.context?.parameters || {},
-      createdAt: new Date((record as any)?.created_at),
-      updatedAt: new Date((record as any)?.timestamp),
-      useCount: (record as any)?.engagement_score || 0,
-      ...((record as any)?.context?.last_used && { lastUsed: new Date((record as any)?.context?.last_used) }),
-      isActive: (record as any)?.context?.is_active !== false
+      id: record.id,
+      userId: record.user_id,
+      organizationId: record.organization_id,
+      phrase: record.trigger_phrase,
+      commandType: record.workflow_name,
+      parameters: (record.action_config as Record<string, any>) || {},
+      createdAt: new Date(record.created_at || ''),
+      updatedAt: new Date(record.updated_at || ''),
+      useCount: record.trigger_count || 0,
+      ...(record.last_triggered && { lastUsed: new Date(record.last_triggered) }),
+      isActive: record.is_active !== false
     }));
 
     return NextResponse.json({
@@ -86,7 +90,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new voice shortcut
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient() as any;
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -103,12 +107,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if phrase already exists for this user
-    const { data: existing } = await (supabase as any)
-      .from('user_behavior_metrics')
+    const { data: existing } = await supabase
+      .from('voice_workflow_triggers')
       .select('*')
       .eq('user_id', user.id)
-      .eq('action_type', 'voice_shortcut_definition')
-      .textSearch('context', `"${body.phrase.toLowerCase()}"`);
+      .eq('trigger_phrase', body.phrase.toLowerCase().trim());
 
     if (existing && existing.length > 0) {
       return NextResponse.json({ 
@@ -117,30 +120,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the shortcut record
-    const shortcutData = {
+    const shortcutData: VoiceWorkflowTriggerInsert = {
       user_id: user.id,
       organization_id: body.organizationId || null,
-      action_type: 'voice_shortcut_definition',
-      timestamp: new Date().toISOString(),
-      context: {
-        phrase: body.phrase.toLowerCase().trim(),
-        command_type: body.commandType,
-        parameters: body.parameters || {},
-        is_active: body.isActive !== false,
-        created_at: new Date().toISOString()
-      },
-      response_time_ms: null,
-      engagement_score: 0,
-      session_id: `shortcut_${Date.now()}`,
-      metadata: {
-        source: 'voice_shortcuts_manager',
-        version: '1.0'
-      }
+      workflow_name: body.commandType,
+      trigger_phrase: body.phrase.toLowerCase().trim(),
+      action_config: body.parameters || {},
+      is_active: body.isActive !== false,
+      trigger_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    const { data: shortcut, error: insertError } = await (supabase as any)
-      .from('user_behavior_metrics')
-      .insert(shortcutData as any)
+    const { data: shortcut, error: insertError } = await supabase
+      .from('voice_workflow_triggers')
+      .insert(shortcutData)
       .select()
       .single();
 
@@ -149,36 +143,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the activity
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: user.id,
         organization_id: body.organizationId || null,
         event_type: 'user_action',
-        event_category: 'voice',
         action: 'create_voice_shortcut',
         resource_type: 'voice_shortcut',
-        resource_id: (shortcut as any)?.id,
-        event_description: `User created voice shortcut: "${body.phrase}"`,
-        outcome: 'success',
+        resource_id: shortcut?.id,
         details: {
+          event_category: 'voice',
+          outcome: 'success',
+          event_description: `User created voice shortcut: "${body.phrase}"`,
           phrase: body.phrase,
           command_type: body.commandType,
           parameters: body.parameters
         },
-      } as any);
+      });
 
     const createdShortcut: VoiceShortcut = {
-      id: (shortcut as any)?.id,
-      userId: (shortcut as any)?.user_id,
-      organizationId: (shortcut as any)?.organization_id,
-      phrase: (shortcut as any)?.context?.phrase,
-      commandType: (shortcut as any)?.context?.command_type,
-      parameters: (shortcut as any)?.context?.parameters,
-      createdAt: new Date((shortcut as any)?.created_at),
-      updatedAt: new Date((shortcut as any)?.timestamp),
+      id: shortcut.id,
+      userId: shortcut.user_id,
+      organizationId: shortcut.organization_id,
+      phrase: shortcut.trigger_phrase,
+      commandType: shortcut.workflow_name,
+      parameters: (shortcut.action_config as Record<string, any>) || {},
+      createdAt: new Date(shortcut.created_at || ''),
+      updatedAt: new Date(shortcut.updated_at || ''),
       useCount: 0,
-      isActive: (shortcut as any)?.context?.is_active
+      isActive: shortcut.is_active !== false
     };
 
     return NextResponse.json({
@@ -197,7 +191,7 @@ export async function POST(request: NextRequest) {
 // PUT - Update shortcut usage statistics
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient() as any;
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -213,8 +207,8 @@ export async function PUT(request: NextRequest) {
 
     if (incrementUsage) {
       // Increment usage count
-      const { data: shortcut, error: fetchError } = await (supabase as any)
-        .from('user_behavior_metrics')
+      const { data: shortcut, error: fetchError } = await supabase
+        .from('voice_workflow_triggers')
         .select('*')
         .eq('id', shortcutId)
         .eq('user_id', user.id)
@@ -225,39 +219,40 @@ export async function PUT(request: NextRequest) {
       }
 
       // Update usage count and last used
-      const updatedContext = {
-        ...(shortcut as any)?.context,
-        last_used: new Date().toISOString()
+      const updateData: VoiceWorkflowTriggerUpdate = {
+        trigger_count: (shortcut.trigger_count || 0) + 1,
+        last_triggered: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
-      const { error: updateError } = await (supabase as any)
-        .from('user_behavior_metrics')
-        .update({
-          engagement_score: ((shortcut as any)?.engagement_score || 0) + 1,
-          context: updatedContext,
-          timestamp: new Date().toISOString()
-        } as any)
+      const { error: updateError } = await supabase
+        .from('voice_workflow_triggers')
+        .update(updateData)
         .eq('id', shortcutId);
 
       if (updateError) {
         throw updateError;
       }
 
-      // Log the usage
-      await (supabase as any)
-        .from('user_behavior_metrics')
+      // Log the usage in audit logs
+      await supabase
+        .from('audit_logs')
         .insert({
           user_id: user.id,
-          organization_id: (shortcut as any)?.organization_id,
-          action_type: 'voice_shortcut_used',
-          timestamp: new Date().toISOString(),
-          context: {
+          organization_id: shortcut.organization_id,
+          event_type: 'user_action',
+          action: 'use_voice_shortcut',
+          resource_type: 'voice_shortcut',
+          resource_id: shortcutId,
+          details: {
+            event_category: 'voice',
+            outcome: 'success',
+            event_description: `Voice shortcut used: "${shortcut.trigger_phrase}"`,
             shortcut_id: shortcutId,
-            phrase: (shortcut as any)?.context?.phrase,
-            command_type: (shortcut as any)?.context?.command_type
-          },
-          engagement_score: 1
-        } as any);
+            phrase: shortcut.trigger_phrase,
+            command_type: shortcut.workflow_name
+          }
+        });
     }
 
     return NextResponse.json({

@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
 
     if (!organizationId) {
       // Get all organizations the user has access to
-      const { data: userMemberships } = await supabase
+      const { data: userMemberships } = await (supabase as any)
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
         .eq('status', 'active');
 
-      const orgIds = userMemberships?.map(m => (m as any)?.organization_id) || [];
+      const orgIds = userMemberships?.map((m: any) => m?.organization_id) || [];
       
       if (orgIds.length === 0) {
         return NextResponse.json({ boards: [], total: 0 });
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this specific organization
-    const { data: orgMember, error: orgError } = await supabase
+    const { data: orgMember, error: orgError } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', organizationId)
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has admin access to this organization
-    const { data: orgMember, error: orgError } = await supabase
+    const { data: orgMember, error: orgError } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organization_id)

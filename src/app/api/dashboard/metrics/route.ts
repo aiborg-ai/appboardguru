@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/database'
 
 /**
  * GET /api/dashboard/metrics
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's primary organization
-    const { data: userOrg } = await supabase
+    const { data: userOrg } = await (supabase as any)
       .from('organization_members')
       .select('organization_id, organization:organizations(id, name)')
       .eq('user_id', user.id)
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    const organizationId = (userOrg as any)?.organization_id
+    const organizationId = userOrg?.organization_id
 
     // Calculate Board Packs count (accessible to user)
     const { count: boardPacksCount } = await supabase
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
     // Add metadata
     const response = {
       metrics,
-      organization: (userOrg as any)?.organization,
+      organization: userOrg?.organization,
       calculated_at: new Date().toISOString(),
       period: 'daily'
     }

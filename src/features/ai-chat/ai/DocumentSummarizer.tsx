@@ -25,7 +25,7 @@ export function DocumentSummarizer({ boardPack, content, onSummaryGenerated }: D
   const [summaryOptions, setSummaryOptions] = useState({
     includeKeyPoints: true,
     includeActionItems: true,
-    maxLength: 'medium' as const
+    maxLength: 'medium' as 'short' | 'medium' | 'long'
   })
 
   const generateSummary = async () => {
@@ -138,7 +138,7 @@ export function DocumentSummarizer({ boardPack, content, onSummaryGenerated }: D
                 <label className="block text-sm font-medium text-gray-700 mb-2">Summary Length</label>
                 <select
                   value={summaryOptions.maxLength}
-                  onChange={(e) => setSummaryOptions(prev => ({ ...prev, maxLength: e.target.value as any }))}
+                  onChange={(e) => setSummaryOptions(prev => ({ ...prev, maxLength: e.target.value as 'short' | 'medium' | 'long' }))}
                   className="block w-32 rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="short">Short</option>

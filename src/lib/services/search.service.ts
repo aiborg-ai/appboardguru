@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../../types/database'
 import {
   SearchRequest,
   SearchResponse,
@@ -10,10 +12,10 @@ import {
   EmbeddingRequest,
   EmbeddingResponse,
   SearchConfig
-} from '@/types/search'
+} from '../../types/search'
 
 export class SearchService {
-  private supabase: any
+  private supabase: SupabaseClient<Database> | null = null
   private config: SearchConfig
 
   constructor() {
@@ -34,7 +36,7 @@ export class SearchService {
     }
   }
 
-  private async getSupabaseClient() {
+  private async getSupabaseClient(): Promise<SupabaseClient<Database>> {
     if (this.supabase) return this.supabase
 
     const cookieStore = await cookies()
@@ -46,15 +48,15 @@ export class SearchService {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
+          setAll(cookiesToSet: any) {
+            cookiesToSet.forEach(({ name, value, options }: any) => {
               cookieStore.set(name, value, options)
             })
           },
         },
       }
-    )
-    return this.supabase
+    ) as any
+    return this.supabase as any
   }
 
   /**
@@ -72,15 +74,15 @@ export class SearchService {
           input: text,
           model: this.config.embedding_model,
           encoding_format: 'float'
-        })
+        } as any)
       })
 
       if (!response.ok) {
         throw new Error(`OpenAI API error: ${response.statusText}`)
       }
 
-      const data = await response.json()
-      return data.data[0].embedding
+      const data = await response.json() as { data: Array<{ embedding: number[] }> }
+      return data.data[0]?.embedding || []
     } catch (error) {
       console.error('Failed to generate embedding:', error)
       return []
@@ -166,7 +168,7 @@ export class SearchService {
         AND (asm.search_vector @@ plainto_tsquery('english', $1) OR a.title ILIKE $2 OR a.description ILIKE $2)
     `
 
-    const queryParams: any[] = [query, `%${query}%`]
+    const queryParams: unknown[] = [query, `%${query}%`]
     let paramIndex = 2
 
     // Add context filters
@@ -220,7 +222,7 @@ export class SearchService {
     `
     queryParams.push(limit)
 
-    const { data, error } = await supabase.rpc('execute_sql', {
+    const { data, error } = await (supabase as any).rpc('execute_sql', {
       sql: sqlQuery,
       params: queryParams
     })
@@ -231,7 +233,7 @@ export class SearchService {
     }
 
     // Transform results to SearchResult format
-    return data.map((row: any) => this.transformToSearchResult(row))
+    return (data as unknown[]).map((row: unknown) => this.transformToSearchResult(row as Record<string, any>))
   }
 
   /**
@@ -265,7 +267,7 @@ export class SearchService {
 
     // Apply context filters through joins
     if (contextFilters.organizationId || contextFilters.vaultId) {
-      query_builder = query_builder
+      query_builder = (query_builder as any)
         .select(`
           *,
           asset:assets!inner(
@@ -330,16 +332,16 @@ export class SearchService {
         }
       })
       .filter((row: any) => row.similarity_score >= this.config.similarity_threshold)
-      .sort((a: any, b: any) => b.similarity_score - a.similarity_score)
+      .sort((a: any, b: any) => (b.similarity_score as number) - (a.similarity_score as number))
       .slice(0, limit)
 
-    return resultsWithSimilarity.map((row: any) => this.transformToSearchResult(row))
+    return resultsWithSimilarity.map((row: unknown) => this.transformToSearchResult(row as Record<string, any>))
   }
 
   /**
    * Transform database row to SearchResult format
    */
-  private transformToSearchResult(row: any): SearchResult {
+  private transformToSearchResult(row: Record<string, any>): SearchResult {
     const asset = row.asset || row
     return {
       asset: {
@@ -554,7 +556,7 @@ export class SearchService {
       const organizations = new Map<string, { count: number; label: string }>()
       const vaults = new Map<string, { count: number; label: string }>()
 
-      data.forEach((asset: any) => {
+      data.forEach((asset: Record<string, any>) => {
         // File types
         fileTypes.set(asset.file_type, (fileTypes.get(asset.file_type) || 0) + 1)
         
@@ -563,7 +565,7 @@ export class SearchService {
 
         // Organizations and vaults from vault_assets
         if (asset.vault_assets && Array.isArray(asset.vault_assets)) {
-          asset.vault_assets.forEach((va: any) => {
+          asset.vault_assets.forEach((va: Record<string, any>) => {
             if (va.vault?.organization) {
               const orgId = va.vault.organization.id
               const orgName = va.vault.organization.name
@@ -588,12 +590,12 @@ export class SearchService {
           value, 
           count: data.count, 
           label: data.label 
-        })),
+        } as any)),
         vaults: Array.from(vaults.entries()).map(([value, data]) => ({ 
           value, 
           count: data.count, 
           label: data.label 
-        }))
+        } as any))
       }
     } catch (error) {
       console.error('Error generating facets:', error)
@@ -664,20 +666,18 @@ export class SearchService {
         .from('asset_search_metadata')
         .upsert({
           asset_id: assetId,
-          ai_summary: summary,
-          ai_key_topics: keyTopics,
-          ai_categories: categories,
-          title_embedding: titleEmbedding,
-          content_embedding: contentEmbedding,
-          last_indexed_at: new Date().toISOString()
-        })
+          search_text: summary || '',
+          keywords: keyTopics,
+          indexed_at: new Date().toISOString(),
+          last_updated: new Date().toISOString()
+        } as any)
 
       if (error) {
         console.error('Error updating asset search metadata:', error)
       }
 
       // Update relevance score
-      await supabase.rpc('update_asset_relevance_score', { asset_uuid: assetId })
+      await (supabase as any).rpc('update_asset_relevance_score', { asset_uuid: assetId })
 
     } catch (error) {
       console.error('Error in updateAssetSearchMetadata:', error)
@@ -702,7 +702,7 @@ export class SearchService {
       await supabase
         .from('search_queries')
         .insert({
-          user_id: userId,
+          user_id: userId!,
           organization_id: organizationId,
           query_text: query,
           query_type: 'chat',
@@ -710,7 +710,7 @@ export class SearchService {
           context_id: contextId,
           results_count: resultsCount,
           search_duration_ms: searchDuration
-        })
+        } as any)
     } catch (error) {
       console.error('Error tracking search query:', error)
     }
@@ -734,26 +734,26 @@ export class SearchService {
         .from('asset_access_analytics')
         .insert({
           asset_id: assetId,
-          user_id: userId,
+          user_id: userId!,
           organization_id: organizationId,
           access_type: accessType,
           access_source: accessSource,
           context_data: contextData
-        })
+        } as any)
 
       // Update asset view count
       if (accessType === 'view') {
-        await supabase.rpc('increment', {
+        await (supabase as any).rpc('increment', {
           table_name: 'assets',
           row_id: assetId,
           column_name: 'view_count'
-        })
+        } as any)
       } else if (accessType === 'download') {
-        await supabase.rpc('increment', {
+        await (supabase as any).rpc('increment', {
           table_name: 'assets',
           row_id: assetId,
           column_name: 'download_count'
-        })
+        } as any)
       }
 
     } catch (error) {

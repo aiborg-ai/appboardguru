@@ -34,7 +34,7 @@ export async function GET(
     const { id: assetId } = await params
 
     // Get asset with sharing information
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select(`
         *,
@@ -85,14 +85,14 @@ export async function GET(
     }
 
     // Update download count for the asset
-    await supabase
+    await (supabase as any)
       .from('assets')
       .update({ download_count: (asset.download_count || 0) + 1 })
       .eq('id', assetId)
 
     // Update download count for the specific share (if applicable)
     if (userShare) {
-      await supabase
+      await (supabase as any)
         .from('asset_shares')
         .update({ 
           download_count: (userShare.download_count || 0) + 1,
@@ -182,7 +182,7 @@ export async function POST(
     const { generateWatermark = false, watermarkText } = body
 
     // Get asset information
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select(`
         *,

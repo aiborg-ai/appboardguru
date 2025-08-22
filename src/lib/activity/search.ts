@@ -168,7 +168,7 @@ export class ActivitySearchEngine {
       if (!activities) return []
 
       // Transform to search results
-      return activities.map(activity => ({
+      return activities.map((activity: any) => ({
         id: activity.id,
         type: `${activity.event_category}:${activity.action}`,
         title: activity.event_description,
@@ -523,7 +523,7 @@ export class ActivitySearchEngine {
       const suggestions = []
 
       // Suggest searches based on user's top categories
-      const topCategory = Object.entries(categories).sort(([,a], [,b]) => b - a)[0]
+      const topCategory = Object.entries(categories).sort(([,a], [,b]) => (b as any) - (a as any))[0]
       if (topCategory) {
         suggestions.push({
           query: `Show me all ${topCategory[0]} activities from last week`,

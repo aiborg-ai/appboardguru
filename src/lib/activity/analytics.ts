@@ -5,6 +5,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import type { Database } from '@/types/database'
 
 export interface ActivityMetrics {
   totalActivities: number
@@ -61,10 +62,10 @@ export class ActivityAnalytics {
       // Get basic activity counts
       const { data: activityData } = await (supabase as any)
         .from('audit_logs')
-        .select('event_category, action, created_at, user_id')
+        .select('event_type, entity_type, timestamp, user_id')
         .eq('organization_id', organizationId)
-        .gte('created_at', timeRange.start)
-        .lte('created_at', timeRange.end)
+        .gte('timestamp', timeRange.start)
+        .lte('timestamp', timeRange.end)
 
       if (!activityData) {
         throw new Error('Failed to fetch activity data')
@@ -72,33 +73,39 @@ export class ActivityAnalytics {
 
       // Calculate metrics
       const totalActivities = activityData.length
-      const uniqueUsers = new Set(activityData.map(a => a.user_id)).size
+      const uniqueUsers = new Set(activityData.map((a: any) => a.user_id)).size
       
       // Calculate engagement rate (activities per unique user)
       const engagementRate = uniqueUsers > 0 ? totalActivities / uniqueUsers : 0
 
       // Top activities with trend calculation
-      const activityCounts = activityData.reduce((acc, activity) => {
-        const key = `${activity.event_category}:${activity.action}`
+      const activityCounts = activityData.reduce((acc: Record<string, number>, activity: any) => {
+        const key = `${activity.event_type}:${activity.entity_type}`
         acc[key] = (acc[key] || 0) + 1
         return acc
       }, {} as Record<string, number>)
 
       const topActivities = await Promise.all(
         Object.entries(activityCounts)
-          .sort(([,a], [,b]) => b - a)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
           .slice(0, 10)
           .map(async ([type, count]) => ({
             type,
-            count,
+            count: count as number,
             trend: await this.calculateTrend(organizationId, type, timeRange)
           }))
       )
 
       // Hourly distribution
+      const hourlyData: Record<number, number> = {}
+      activityData.forEach((activity: any) => {
+        const hour = new Date(activity.timestamp).getHours()
+        hourlyData[hour] = (hourlyData[hour] || 0) + 1
+      })
+      
       const hourlyDistribution = Array.from({ length: 24 }, (_, hour) => ({
         hour,
-        count: activityData.filter(a => 
+        count: activityData.filter((a: any) => 
           new Date(a.created_at).getHours() === hour
         ).length
       }))
@@ -111,7 +118,7 @@ export class ActivityAnalytics {
         totalActivities,
         uniqueUsers,
         engagementRate,
-        topActivities,
+        topActivities: topActivities as Array<{ type: string; count: number; trend: number }>,
         hourlyDistribution,
         departmentActivity: [], // TODO: Implement when department data is available
         riskScore,
@@ -157,7 +164,7 @@ export class ActivityAnalytics {
       if (!activityData) return []
 
       // Group by user and calculate engagement metrics
-      const userMetrics = activityData.reduce((acc, activity) => {
+      const userMetrics = activityData.reduce((acc: any, activity: any) => {
         const uid = activity.user_id
         if (!uid) return acc
 
@@ -185,12 +192,13 @@ export class ActivityAnalytics {
       const engagementData: UserEngagementData[] = []
 
       for (const [uid, userData] of Object.entries(userMetrics)) {
-        const activities = userData.activities
-        const activeDays = userData.activeDays.size
+        const userDataTyped = userData as any
+        const activities = userDataTyped.activities
+        const activeDays = userDataTyped.activeDays.size
         const totalActivities = activities.length
 
         // Calculate engagement score using the database function
-        const { data: engagementScore } = await supabase
+        const { data: engagementScore } = await (supabase as any)
           .rpc('calculate_user_engagement_score', {
             input_user_id: uid,
             input_org_id: organizationId,
@@ -198,9 +206,9 @@ export class ActivityAnalytics {
           })
 
         // Calculate risk level
-        const riskLevel = userData.riskEvents > 10 ? 'critical' :
-                         userData.riskEvents > 5 ? 'high' :
-                         userData.riskEvents > 2 ? 'medium' : 'low'
+        const riskLevel = userDataTyped.riskEvents > 10 ? 'critical' :
+                         userDataTyped.riskEvents > 5 ? 'high' :
+                         userDataTyped.riskEvents > 2 ? 'medium' : 'low'
 
         // Get top activity types
         const activityTypes = activities.reduce((acc: Record<string, number>, activity: any) => {
@@ -221,7 +229,7 @@ export class ActivityAnalytics {
 
         engagementData.push({
           userId: uid,
-          userName: userData.userName,
+          userName: userDataTyped.userName,
           engagementScore: engagementScore || 0,
           lastActive: lastActivity.toISOString(),
           activeDays,
@@ -705,7 +713,7 @@ export class ActivityAnalyticsJobs {
       const supabase = supabaseAdmin
 
       // Get all active organizations
-      const { data: organizations } = await supabase
+      const { data: organizations } = await (supabase as any)
         .from('organizations')
         .select('id, name')
 
@@ -716,7 +724,7 @@ export class ActivityAnalyticsJobs {
           // Calculate and store metrics
           const metrics = await ActivityAnalytics.getOrganizationMetrics(org.id)
           
-          await supabase
+          await (supabase as any)
             .from('activity_analytics')
             .insert({
               organization_id: org.id,
@@ -761,13 +769,13 @@ export class ActivityAnalyticsJobs {
       const supabase = supabaseAdmin
 
       // Remove expired analytics
-      await supabase
+      await (supabase as any)
         .from('activity_analytics')
         .delete()
         .lt('expires_at', new Date().toISOString())
 
       // Remove old insights (keep for 30 days)
-      await supabase
+      await (supabase as any)
         .from('activity_insights')
         .delete()
         .lt('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())

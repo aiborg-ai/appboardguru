@@ -398,7 +398,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
         {/* Notification Icon */}
         <div className="flex-shrink-0 mt-1">
-          <div className={`p-2 rounded-full ${getPriorityColor(notification.priority)}`}>
+          <div className={`p-2 rounded-full ${getPriorityColor(notification.priority || 'medium')}`}>
             {getIcon(notification)}
           </div>
         </div>
@@ -422,18 +422,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
               
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>
-                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(notification.created_at || new Date()), { addSuffix: true })}
                 </span>
                 <Badge 
                   variant="outline" 
-                  className={`px-1 py-0 text-xs ${getStatusBadgeColor(notification.status)}`}
+                  className={`px-1 py-0 text-xs ${getStatusBadgeColor(notification.status || 'unread')}`}
                 >
                   {notification.status}
                 </Badge>
                 {notification.priority !== 'medium' && (
                   <Badge 
                     variant="outline" 
-                    className={`px-1 py-0 text-xs ${getPriorityColor(notification.priority)}`}
+                    className={`px-1 py-0 text-xs ${getPriorityColor(notification.priority || 'medium')}`}
                   >
                     {notification.priority}
                   </Badge>

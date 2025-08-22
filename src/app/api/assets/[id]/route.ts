@@ -34,7 +34,7 @@ export async function GET(
     const { id: assetId } = await params
 
     // Get asset with sharing information
-    const { data: asset, error } = await supabase
+    const { data: asset, error } = await (supabase as any)
       .from('assets')
       .select(`
         *,
@@ -77,7 +77,7 @@ export async function GET(
     }
 
     // Increment view count
-    await supabase
+    await (supabase as any)
       .from('assets')
       .update({ view_count: (asset.view_count || 0) + 1 })
       .eq('id', assetId)
@@ -168,7 +168,7 @@ export async function PUT(
     const body = await request.json()
     
     // Check if user owns the asset or has edit permission
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select(`
         *,
@@ -202,7 +202,7 @@ export async function PUT(
     if (body.folderPath !== undefined) updateData.folder_path = body.folderPath
     if (body.tags !== undefined) updateData.tags = body.tags
 
-    const { data: updatedAsset, error: updateError } = await supabase
+    const { data: updatedAsset, error: updateError } = await (supabase as any)
       .from('assets')
       .update(updateData)
       .eq('id', assetId)
@@ -215,7 +215,7 @@ export async function PUT(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('asset_activity_log')
       .insert({
         asset_id: assetId,
@@ -264,7 +264,7 @@ export async function DELETE(
     const { id: assetId } = await params
 
     // Check if user owns the asset
-    const { data: asset, error: fetchError } = await supabase
+    const { data: asset, error: fetchError } = await (supabase as any)
       .from('assets')
       .select('owner_id, title, file_path')
       .eq('id', assetId)
@@ -280,7 +280,7 @@ export async function DELETE(
     }
 
     // Soft delete the asset
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('assets')
       .update({
         is_deleted: true,
@@ -294,7 +294,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('asset_activity_log')
       .insert({
         asset_id: assetId,

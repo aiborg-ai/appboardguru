@@ -118,7 +118,7 @@ export class ActivityStreamServer {
       if (error || !user) return null
 
       // Get user's organizations
-      const { data: memberships } = await supabase
+      const { data: memberships } = await (supabase as any)
         .from('organization_members')
         .select(`
           organization_id,

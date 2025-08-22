@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { Database } from '@/types/database';
 import { 
   SupabaseClient,
   VoiceWorkflowTrigger,
@@ -26,11 +27,9 @@ import {
   ActionResult
 } from '@/types/voice';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+type VoiceWorkflowTriggerRow = Database['public']['Tables']['voice_workflow_triggers']['Row'];
+
+// We'll initialize supabase per request for proper authentication
 
 // In-memory workflow execution cache
 const activeWorkflows = new Map<string, WorkflowExecution>();
@@ -100,12 +99,14 @@ async function triggerWorkflow(params: TriggerWorkflowRequest): Promise<NextResp
 
     console.log('Triggering workflow with phrase:', phrase);
 
+    const supabase = await createSupabaseServerClient();
+    
     // Get all active workflows for the organization
     const { data: workflows, error } = await supabase
       .from('voice_workflow_triggers')
       .select('*')
       .eq('organization_id', organizationId)
-      .eq('enabled', true)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -170,19 +171,26 @@ async function triggerWorkflow(params: TriggerWorkflowRequest): Promise<NextResp
       activeWorkflows.set(executionId, execution as any);
 
       // Store in database for persistence
-      await supabase
+      await (supabase as any)
         .from('workflow_executions')
         .insert({
           id: executionId,
-          user_id: userId,
-          organization_id: organizationId,
-          trigger_phrase: phrase,
-          matched_workflows: matchedWorkflows.map(w => w.id),
-          actions: triggeredActions,
+          workflow_id: matchedWorkflows[0]?.id || 'default',
+          execution_context: {
+            user_id: userId,
+            organization_id: organizationId,
+            trigger_phrase: phrase,
+            matched_workflows: matchedWorkflows.map(w => w.id),
+            actions: triggeredActions,
+            context,
+            parameters
+          },
           status: execution.status,
-          created_at: execution.createdAt,
-          context,
-          parameters
+          started_at: execution.createdAt,
+          execution_log: {
+            created_at: execution.createdAt,
+            trigger_phrase: phrase
+          }
         });
 
       // If no confirmation required, execute immediately
@@ -212,6 +220,7 @@ async function triggerWorkflow(params: TriggerWorkflowRequest): Promise<NextResp
 
 async function createWorkflow(params: WorkflowCreateRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const {
       name,
       description,
@@ -307,6 +316,7 @@ async function createWorkflow(params: WorkflowCreateRequest): Promise<NextRespon
 
 async function updateWorkflow(params: WorkflowUpdateRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { workflowId, updates } = params;
     const userId = params.userId || 'default-user';
 
@@ -349,6 +359,7 @@ async function updateWorkflow(params: WorkflowUpdateRequest): Promise<NextRespon
 
 async function deleteWorkflow(params: WorkflowDeleteRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { workflowId } = params;
     const userId = params.userId || 'default-user';
 
@@ -393,6 +404,7 @@ async function deleteWorkflow(params: WorkflowDeleteRequest): Promise<NextRespon
 
 async function getWorkflows(params: WorkflowListRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { organizationId, enabled, limit = 50, offset = 0 } = params;
     const userId = params.userId || 'default-user';
 
@@ -436,6 +448,7 @@ async function getWorkflows(params: WorkflowListRequest): Promise<NextResponse> 
 
 async function getWorkflow(params: WorkflowGetRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { workflowId } = params;
     const userId = params.userId || 'default-user';
 
@@ -516,6 +529,7 @@ async function executeAction(params: ActionExecuteRequest): Promise<NextResponse
 
 async function getExecutionHistory(params: ExecutionHistoryRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { organizationId, userId, limit = 50, offset = 0 } = params;
 
     let query = supabase
@@ -555,6 +569,7 @@ async function getExecutionHistory(params: ExecutionHistoryRequest): Promise<Nex
 
 async function confirmWorkflowExecution(params: ExecutionConfirmRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { executionId } = params;
     const userId = params.userId || 'default-user';
 
@@ -581,7 +596,7 @@ async function confirmWorkflowExecution(params: ExecutionConfirmRequest): Promis
     await executeWorkflowActions(executionId, execution.actions, execution.parameters || {});
 
     // Update database
-    await supabase
+    await (supabase as any)
       .from('workflow_executions')
       .update({
         status: 'executing',
@@ -603,6 +618,7 @@ async function confirmWorkflowExecution(params: ExecutionConfirmRequest): Promis
 
 async function cancelWorkflowExecution(params: ExecutionCancelRequest): Promise<NextResponse> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { executionId } = params;
     const userId = params.userId || 'default-user';
 
@@ -620,7 +636,7 @@ async function cancelWorkflowExecution(params: ExecutionCancelRequest): Promise<
     execution.cancelledAt = new Date().toISOString();
 
     // Update database
-    await supabase
+    await (supabase as any)
       .from('workflow_executions')
       .update({
         status: 'cancelled',
@@ -754,6 +770,7 @@ function hasPermissionToTrigger(userId: string, permissions: { canTrigger: strin
 
 async function getUserRole(userId: string): Promise<string> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { data: user } = await supabase
       .from('users')
       .select('role')
@@ -768,6 +785,7 @@ async function getUserRole(userId: string): Promise<string> {
 
 async function updateWorkflowUsage(workflowId: string): Promise<void> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     // Get current usage stats
     const { data: workflow } = await supabase
       .from('voice_workflow_triggers')
@@ -803,6 +821,7 @@ async function executeWorkflowActions(
   actions: WorkflowAction[],
   parameters: Record<string, unknown>
 ): Promise<void> {
+  const supabase = await createSupabaseServerClient() as any;
   const execution = activeWorkflows.get(executionId);
   if (!execution) return;
   
@@ -849,7 +868,7 @@ async function executeWorkflowActions(
     execution.results = results;
     
     // Update database
-    await supabase
+    await (supabase as any)
       .from('workflow_executions')
       .update({
         status: execution.status,
@@ -871,7 +890,7 @@ async function executeWorkflowActions(
     execution.status = 'failed';
     execution.error = error instanceof Error ? error.message : 'Unknown error';
     
-    await supabase
+    await (supabase as any)
       .from('workflow_executions')
       .update({
         status: 'failed',
@@ -1027,6 +1046,7 @@ async function updateWorkflowExecutionStats(
   executionTime: number
 ): Promise<void> {
   try {
+    const supabase = await createSupabaseServerClient() as any;
     const { data: workflow } = await supabase
       .from('voice_workflow_triggers')
       .select('usage')

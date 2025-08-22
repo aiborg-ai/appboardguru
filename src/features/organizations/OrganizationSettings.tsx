@@ -167,7 +167,7 @@ export function OrganizationSettings({
         description: organization.description || '',
         website: organization.website || '',
         industry: organization.industry || '',
-        organizationSize: organization.organization_size || undefined,
+        organizationSize: organization.organization_size as ("medium" | "small" | "startup" | "large" | "enterprise") || undefined,
       })
     }
   }, [organization, reset])

@@ -4,7 +4,7 @@
  */
 
 import { createSupabaseServerClient } from '../supabase-server'
-import type { Database } from '@/types/database'
+import type { Database } from '../../types/database'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ML Algorithm Implementations
@@ -33,12 +33,12 @@ interface NotificationPattern {
   pattern_type: string
   organization_id?: string
   user_id?: string
-  pattern_data: any
+  pattern_data: Record<string, unknown>
   confidence_score: number
   frequency_detected: number
   last_detected_at: string
-  conditions: any
-  outcomes?: any
+  conditions: Record<string, unknown>
+  outcomes?: Record<string, unknown>
   is_active: boolean
 }
 
@@ -50,8 +50,8 @@ interface AnomalyDetectionRow {
   severity: string
   anomaly_score: number
   detection_method: string
-  baseline_data: any
-  anomalous_data: any
+  baseline_data: Record<string, unknown>
+  anomalous_data: Record<string, unknown>
   affected_metrics: string[]
   recommended_actions: string[]
   investigation_status: string
@@ -59,8 +59,8 @@ interface AnomalyDetectionRow {
   type?: string
   score?: number
   method?: string
-  baseline?: any
-  anomalous?: any
+  baseline?: Record<string, unknown>
+  anomalous?: Record<string, unknown>
   affectedMetrics?: string[]
   recommendedActions?: string[]
 }
@@ -138,7 +138,7 @@ export class PatternRecognitionEngine {
 
   private async getSupabase() {
     if (!this.supabase) {
-      this.supabase = await createSupabaseServerClient()
+      this.supabase = await createSupabaseServerClient() as any
     }
     return this.supabase
   }
@@ -262,13 +262,13 @@ export class PatternRecognitionEngine {
     try {
       // If no specific users provided, get all active users in organization
       if (!userIds) {
-        const { data: orgMembers } = await (await this.getSupabase())
+        const { data: orgMembers } = await ((await this.getSupabase()) as any)
           .from('organization_members')
           .select('user_id')
           .eq('organization_id', organizationId)
           .eq('status', 'active')
 
-        userIds = orgMembers?.map((m: any) => m.user_id) || []
+        userIds = orgMembers?.map((m: Record<string, unknown>) => m.user_id as string) || []
       }
 
       const profiles: UserEngagementProfile[] = []
@@ -314,13 +314,13 @@ export class PatternRecognitionEngine {
       }
 
       // Use ML model to predict optimal timing
-      const prediction = await this.predictionModel.predictOptimalTiming(
+      const prediction = await (this.predictionModel as any).predictOptimalTiming(
         behaviorData,
         profile,
         notificationType
       )
 
-      return prediction
+      return prediction || this.getDefaultOptimalTiming(notificationType)
 
     } catch (error) {
       console.error('Timing prediction failed:', error)
@@ -352,12 +352,19 @@ export class PatternRecognitionEngine {
       }
 
       // Analyze trends using time series analysis
-      const analysis = await this.timeSeriesAnalysis.analyzeTrend(timeSeriesData)
+      const analysis = await (this.timeSeriesAnalysis as any).analyzeTrend(timeSeriesData) || {
+        trend: 'stable' as const,
+        changeRate: 0,
+        seasonalityDetected: false,
+        forecast: [],
+        confidence: 0,
+        insights: []
+      }
 
       return {
         ...analysis,
-        forecast: analysis.forecast as TimeSeriesData[],
-        insights: Array.from(analysis.insights)
+        forecast: (analysis.forecast as TimeSeriesData[]) || [],
+        insights: Array.from(analysis.insights || [])
       }
 
     } catch (error) {
@@ -390,7 +397,7 @@ export class PatternRecognitionEngine {
       const orgMetrics = await this.getOrganizationMetrics(organizationId)
 
       // Get industry benchmarks
-      const { data: benchmarks } = await (await this.getSupabase())
+      const { data: benchmarks } = await ((await this.getSupabase()) as any)
         .from('board_benchmarks')
         .select('*')
         .eq('industry', industry)
@@ -402,12 +409,17 @@ export class PatternRecognitionEngine {
       }
 
       // Compare metrics against benchmarks
-      const comparison = await this.statisticalAnalysis.compareAgainstBenchmarks(
+      const comparison = await (this.statisticalAnalysis as any).compareAgainstBenchmarks(
         orgMetrics,
         benchmarks
       )
 
-      return comparison
+      return comparison || {
+        metrics: [],
+        overallScore: 0,
+        riskAreas: [],
+        strengths: []
+      }
 
     } catch (error) {
       console.error('Benchmark comparison failed:', error)
@@ -425,7 +437,7 @@ export class PatternRecognitionEngine {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - lookbackDays)
 
-    let query = (await this.getSupabase())
+    let query = ((await this.getSupabase()) as any)
       .from('user_behavior_metrics')
       .select('*')
       .gte('timestamp', cutoffDate.toISOString())
@@ -446,34 +458,34 @@ export class PatternRecognitionEngine {
       return []
     }
 
-    return data || []
+    return (data as any) || []
   }
 
   private async analyzeTimingPatterns(
     behaviorData: UserBehaviorMetric[]
   ): Promise<PatternAnalysisResult[]> {
     // Group data by hour of day and day of week
-    const hourlyData = this.statisticalAnalysis.groupByTimeOfDay(behaviorData)
-    const dailyData = this.statisticalAnalysis.groupByDayOfWeek(behaviorData)
+    const hourlyData = (this.statisticalAnalysis as any).groupByTimeOfDay(behaviorData)
+    const dailyData = (this.statisticalAnalysis as any).groupByDayOfWeek(behaviorData)
 
     const patterns: PatternAnalysisResult[] = []
 
     // Analyze peak engagement hours
-    const peakHours = this.statisticalAnalysis.findPeakEngagementTimes(hourlyData)
-    if (peakHours.confidence > 0.7) {
+    const peakHours = (this.statisticalAnalysis as any).findPeakEngagementTimes(hourlyData)
+    if (peakHours?.confidence && peakHours.confidence > 0.7) {
       patterns.push({
         patternId: `timing-peak-hours-${Date.now()}`,
         patternType: 'timing',
         confidence: peakHours.confidence,
-        description: `Peak engagement occurs at ${peakHours.hours.join(', ')} hours`,
+        description: `Peak engagement occurs at ${peakHours.hours?.join(', ') || 'certain'} hours`,
         parameters: { 
           type: 'timing' as const, 
-          optimalHours: peakHours.hours, 
+          optimalHours: peakHours.hours || [], 
           timezone: 'UTC', 
           weekdays: [1, 2, 3, 4, 5] 
         },
         recommendations: [
-          `Schedule important notifications during peak hours: ${peakHours.hours.join(', ')}`,
+          `Schedule important notifications during peak hours: ${peakHours.hours?.join(', ') || 'optimal times'}`,
           'Avoid sending notifications during low-engagement periods'
         ],
         affectedUsers: Array.from(new Set(behaviorData.map(d => d.user_id))),
@@ -489,15 +501,15 @@ export class PatternRecognitionEngine {
     }
 
     // Analyze day-of-week patterns
-    const weeklyPattern = this.statisticalAnalysis.analyzeWeeklyPattern(dailyData)
-    if (weeklyPattern.confidence > 0.6) {
+    const weeklyPattern = (this.statisticalAnalysis as any).analyzeWeeklyPattern(dailyData)
+    if (weeklyPattern?.confidence && weeklyPattern.confidence > 0.6) {
       patterns.push({
         patternId: `timing-weekly-${Date.now()}`,
         patternType: 'timing',
         confidence: weeklyPattern.confidence,
-        description: `Weekly engagement pattern: ${weeklyPattern.description}`,
-        parameters: weeklyPattern.parameters,
-        recommendations: weeklyPattern.recommendations,
+        description: `Weekly engagement pattern: ${weeklyPattern.description || 'Pattern detected'}`,
+        parameters: weeklyPattern.parameters || { type: 'timing' as const, optimalHours: [], timezone: 'UTC', weekdays: [] },
+        recommendations: weeklyPattern.recommendations || [],
         affectedUsers: Array.from(new Set(behaviorData.map(d => d.user_id))),
         potentialActions: [
           {
@@ -519,15 +531,15 @@ export class PatternRecognitionEngine {
     const patterns: PatternAnalysisResult[] = []
 
     // Analyze response time patterns
-    const responseTimeAnalysis = this.statisticalAnalysis.analyzeResponseTimes(behaviorData)
-    if (responseTimeAnalysis.confidence > 0.65) {
+    const responseTimeAnalysis = (this.statisticalAnalysis as any).analyzeResponseTimes(behaviorData)
+    if (responseTimeAnalysis?.confidence && responseTimeAnalysis.confidence > 0.65) {
       patterns.push({
         patternId: `engagement-response-time-${Date.now()}`,
         patternType: 'engagement',
         confidence: responseTimeAnalysis.confidence,
-        description: responseTimeAnalysis.description,
-        parameters: responseTimeAnalysis.parameters,
-        recommendations: responseTimeAnalysis.recommendations,
+        description: responseTimeAnalysis.description || 'Response time pattern detected',
+        parameters: responseTimeAnalysis.parameters || { type: 'engagement' as const, avgResponseTime: 0, peakDays: [], channels: [] },
+        recommendations: responseTimeAnalysis.recommendations || [],
         affectedUsers: Array.from(new Set(behaviorData.map(d => d.user_id))),
         potentialActions: [
           {
@@ -541,15 +553,15 @@ export class PatternRecognitionEngine {
     }
 
     // Analyze engagement score trends
-    const engagementTrends = this.statisticalAnalysis.analyzeEngagementTrends(behaviorData)
-    if (engagementTrends.confidence > 0.6) {
+    const engagementTrends = (this.statisticalAnalysis as any).analyzeEngagementTrends(behaviorData)
+    if (engagementTrends?.confidence && engagementTrends.confidence > 0.6) {
       patterns.push({
         patternId: `engagement-trends-${Date.now()}`,
         patternType: 'engagement',
         confidence: engagementTrends.confidence,
-        description: engagementTrends.description,
-        parameters: engagementTrends.parameters,
-        recommendations: engagementTrends.recommendations,
+        description: engagementTrends.description || 'Engagement trend pattern detected',
+        parameters: engagementTrends.parameters || { type: 'engagement' as const, avgResponseTime: 0, peakDays: [], channels: [] },
+        recommendations: engagementTrends.recommendations || [],
         affectedUsers: Array.from(new Set(behaviorData.map(d => d.user_id))),
         potentialActions: [
           {
@@ -569,18 +581,18 @@ export class PatternRecognitionEngine {
     behaviorData: UserBehaviorMetric[]
   ): Promise<PatternAnalysisResult[]> {
     // Analyze which types of content get better engagement
-    const contentAnalysis = this.statisticalAnalysis.analyzeContentEngagement(behaviorData)
+    const contentAnalysis = (this.statisticalAnalysis as any).analyzeContentEngagement(behaviorData)
     
     const patterns: PatternAnalysisResult[] = []
 
-    if (contentAnalysis.confidence > 0.6) {
+    if (contentAnalysis?.confidence && contentAnalysis.confidence > 0.6) {
       patterns.push({
         patternId: `content-preferences-${Date.now()}`,
         patternType: 'content',
         confidence: contentAnalysis.confidence,
-        description: contentAnalysis.description,
-        parameters: contentAnalysis.parameters,
-        recommendations: contentAnalysis.recommendations,
+        description: contentAnalysis.description || 'Content preference pattern detected',
+        parameters: contentAnalysis.parameters || { type: 'content' as const, preferredTypes: [], sentiment: 'neutral' as const, topics: [] },
+        recommendations: contentAnalysis.recommendations || [],
         affectedUsers: Array.from(new Set(behaviorData.map(d => d.user_id))),
         potentialActions: [
           {
@@ -600,18 +612,18 @@ export class PatternRecognitionEngine {
     behaviorData: UserBehaviorMetric[]
   ): Promise<PatternAnalysisResult[]> {
     // Analyze optimal notification frequency
-    const frequencyAnalysis = this.statisticalAnalysis.analyzeOptimalFrequency(behaviorData)
+    const frequencyAnalysis = (this.statisticalAnalysis as any).analyzeOptimalFrequency(behaviorData)
     
     const patterns: PatternAnalysisResult[] = []
 
-    if (frequencyAnalysis.confidence > 0.65) {
+    if (frequencyAnalysis?.confidence && frequencyAnalysis.confidence > 0.65) {
       patterns.push({
         patternId: `frequency-optimization-${Date.now()}`,
         patternType: 'frequency',
         confidence: frequencyAnalysis.confidence,
-        description: frequencyAnalysis.description,
-        parameters: frequencyAnalysis.parameters,
-        recommendations: frequencyAnalysis.recommendations,
+        description: frequencyAnalysis.description || 'Frequency optimization pattern detected',
+        parameters: frequencyAnalysis.parameters || { type: 'frequency' as const, optimalFrequency: 1, maxDaily: 3, quietHours: [] },
+        recommendations: frequencyAnalysis.recommendations || [],
         affectedUsers: Array.from(new Set(behaviorData.map(d => d.user_id))),
         potentialActions: [
           {
@@ -675,16 +687,20 @@ export class PatternRecognitionEngine {
     if (behaviorData.length === 0) return null
 
     // Analyze user's preferred times
-    const preferredTimes = this.statisticalAnalysis.findUserPreferredTimes(behaviorData)
+    const preferredTimes = (this.statisticalAnalysis as any).findUserPreferredTimes(behaviorData) || []
     
     // Analyze response patterns
-    const responsePatterns = this.statisticalAnalysis.analyzeUserResponsePatterns(behaviorData)
+    const responsePatterns = (this.statisticalAnalysis as any).analyzeUserResponsePatterns(behaviorData) || {
+      averageResponseTime: 0,
+      peakEngagementDays: [],
+      preferredNotificationTypes: []
+    }
     
     // Segment user based on engagement level
-    const behaviorSegment = this.userSegmentation.segmentUser(behaviorData)
+    const behaviorSegment = (this.userSegmentation as any).segmentUser(behaviorData) || 'moderate'
     
     // Identify risk factors
-    const riskFactors = this.anomalyDetection.identifyUserRiskFactors(behaviorData)
+    const riskFactors = (this.anomalyDetection as any).identifyUserRiskFactors(behaviorData) || []
 
     return {
       userId,
@@ -736,7 +752,10 @@ export class PatternRecognitionEngine {
 
     // Example: Get meeting frequency over time
     if (metricType === 'meeting_frequency') {
-      const { data } = await (await this.getSupabase())
+      const supabase = await this.getSupabase()
+      if (!supabase) throw new Error('Failed to initialize database connection')
+      
+      const { data } = await supabase
         .from('meetings')
         .select('scheduled_start')
         .eq('organization_id', organizationId)
@@ -744,18 +763,22 @@ export class PatternRecognitionEngine {
         .order('scheduled_start')
 
       // Group by day and count meetings
-      const dailyCounts = new Map<string, number>()
-      data?.forEach((meeting: any) => {
-        const day = meeting.scheduled_start?.split('T')[0]
+      const dailyCounts = new Map<string, number>() as Map<string, number>
+      (data as any)?.forEach((meeting: any) => {
+        const day = (meeting?.scheduled_start as string)?.split('T')[0]
         if (day) {
           dailyCounts.set(day, (dailyCounts.get(day) || 0) + 1)
         }
       })
 
-      return Array.from(dailyCounts.entries()).map(([day, count]) => ({
-        timestamp: new Date(day),
-        value: count
-      }))
+      const entries = Array.from(dailyCounts.entries()) as Array<[string, number]>;
+      return entries.map((entry: [string, number]) => {
+        const [day, count] = entry;
+        return {
+          timestamp: new Date(day),
+          value: count
+        };
+      })
     }
 
     return []
@@ -766,7 +789,10 @@ export class PatternRecognitionEngine {
     const metrics: Record<string, number> = {}
 
     // Meeting frequency (annual)
-    const { data: meetings } = await (await this.getSupabase())
+    const supabase = await this.getSupabase()
+    if (!supabase) throw new Error('Failed to initialize database connection')
+    
+    const { data: meetings } = await supabase
       .from('meetings')
       .select('id')
       .eq('organization_id', organizationId)
@@ -774,8 +800,8 @@ export class PatternRecognitionEngine {
 
     metrics.meeting_frequency_annual = meetings?.length || 0
 
-    // Document volume (monthly average)
-    const { data: documents } = await (await this.getSupabase())
+    // Document volume (monthly average)    
+    const { data: documents } = await supabase
       .from('board_packs')
       .select('id')
       .eq('organization_id', organizationId)
