@@ -71,6 +71,10 @@ export class NotificationRepository extends BaseRepository {
     return ['title', 'message', 'type', 'category']
   }
 
+  protected getTableName(): string {
+    return 'notifications'
+  }
+
   async findById(id: NotificationId): Promise<Result<Notification>> {
     const { data, error } = await this.supabase
       .from('notifications')

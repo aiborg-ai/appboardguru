@@ -30,7 +30,22 @@ const CreateOrganizationSchema = z.object({
   organizationSize: undefined // Remove camelCase version
 }))
 
-const UpdateOrganizationSchema = CreateOrganizationSchema.partial().omit({ slug: true })
+const UpdateOrganizationSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be at most 100 characters').optional(),
+  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
+  logo_url: z.string().url('Logo URL must be a valid URL').optional(),
+  website: z.string().url('Website must be a valid URL').optional(),
+  industry: z.string().optional(),
+  organizationSize: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
+  organization_size: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
+  settings: z.record(z.string(), z.any()).optional(),
+  compliance_settings: z.record(z.string(), z.any()).optional(),
+  billing_settings: z.record(z.string(), z.any()).optional()
+}).transform((data) => ({
+  ...data,
+  organization_size: data.organizationSize || data.organization_size,
+  organizationSize: undefined
+}))
 
 const OrganizationListFiltersSchema = z.object({
   page: z.number().int().min(1).optional(),
@@ -102,9 +117,23 @@ export const GET = EnhancedHandlers.get(
 /**
  * PUT /api/organizations - Update organization
  */
-const UpdateOrganizationWithIdSchema = UpdateOrganizationSchema.extend({
+const UpdateOrganizationWithIdSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be at most 100 characters').optional(),
+  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
+  logo_url: z.string().url('Logo URL must be a valid URL').optional(),
+  website: z.string().url('Website must be a valid URL').optional(),
+  industry: z.string().optional(),
+  organizationSize: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
+  organization_size: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
+  settings: z.record(z.string(), z.any()).optional(),
+  compliance_settings: z.record(z.string(), z.any()).optional(),
+  billing_settings: z.record(z.string(), z.any()).optional(),
   organizationId: z.string().uuid('Organization ID must be a valid UUID')
-})
+}).transform((data) => ({
+  ...data,
+  organization_size: data.organizationSize || data.organization_size,
+  organizationSize: undefined
+}))
 
 export const PUT = EnhancedHandlers.put(
   UpdateOrganizationSchema,

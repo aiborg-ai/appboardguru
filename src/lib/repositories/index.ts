@@ -38,8 +38,8 @@ export {
   MemoryCache, 
   DatabaseCache,
   createCacheManager,
-  CachePresets,
-  CacheConfigBuilder
+  cached,
+  defaultCacheManager
 } from '../cache/CacheManager'
 
 // Type exports

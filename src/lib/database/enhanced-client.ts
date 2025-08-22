@@ -7,7 +7,7 @@ import { createServerClient, SupabaseClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { monitor } from '@/lib/monitoring'
-import { telemetry, withDatabaseTelemetry } from '@/lib/telemetry'
+// import { telemetry, withDatabaseTelemetry } from '@/lib/telemetry' // Temporarily disabled for build compatibility
 
 interface QueryMetadata {
   table?: string

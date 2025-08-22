@@ -33,12 +33,12 @@ export const OrganizationFactory = {
       billing_cycle: 'monthly',
       next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       // features_enabled: {
-        advanced_analytics: true,
-        voice_integration: true,
-        ai_insights: true,
-        compliance_tracking: true,
-        board_collaboration: true
-      },
+      //   advanced_analytics: true,
+      //   voice_integration: true,
+      //   ai_insights: true,
+      //   compliance_tracking: true,
+      //   board_collaboration: true
+      // },
       // compliance_requirements: ['sox', 'gdpr'],
       board_meeting_frequency: 'quarterly',
       fiscal_year_end: '12-31',
@@ -97,12 +97,12 @@ export const OrganizationFactory = {
       // compliance_requirements: ['sox', 'gdpr', 'hipaa'],
       subscription_tier: 'enterprise',
       // features_enabled: {
-        advanced_analytics: true,
-        voice_integration: true,
-        ai_insights: true,
-        compliance_tracking: true,
-        board_collaboration: true
-      },
+      //   advanced_analytics: true,
+      //   voice_integration: true,
+      //   ai_insights: true,
+      //   compliance_tracking: true,
+      //   board_collaboration: true
+      // },
       board_meeting_frequency: 'monthly',
       ...overrides,
     })

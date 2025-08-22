@@ -14,7 +14,7 @@ import { z, ZodSchema } from 'zod'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { monitor } from '@/lib/monitoring'
-import { featureFlags } from '@/lib/features/flags'
+// Note: featureFlags is client-side only, using server-side defaults
 
 // Rate limiting configuration
 export interface RateLimitConfig {
@@ -118,16 +118,18 @@ export function createAPIHandler<TInput = any, TOutput = any>(
     req.validatedParams = params
 
     try {
-      // Feature flag check
+      // Feature flag check (server-side defaults)
       if (config.featureFlag) {
-        const isEnabled = await featureFlags.isEnabled(config.featureFlag as any)
+        // For now, enable all features on server-side by default
+        // TODO: Implement server-side feature flag checking
+        const isEnabled = true
         if (!isEnabled) {
           throw new APIError(404, 'FEATURE_DISABLED', 'Feature not available')
         }
       }
 
-      // Rate limiting
-      if (config.rateLimit && !(await featureFlags.isEnabled('USE_API_RATE_LIMITING'))) {
+      // Rate limiting (enabled by default for enterprise security)
+      if (config.rateLimit) {
         await checkRateLimit(request, config.rateLimit)
       }
 

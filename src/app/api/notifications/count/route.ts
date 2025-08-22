@@ -1,84 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createNotificationController } from '@/lib/controllers/notification.controller'
 
-export async function GET(request: NextRequest) {
+// Initialize controller instance
+const controller = createNotificationController()
+
+/**
+ * GET /api/notifications/count - Get notification counts (legacy endpoint)
+ * 
+ * This endpoint provides a simplified view of notification counts for backward compatibility.
+ * For more comprehensive statistics, use /api/notifications/stats
+ * 
+ * Query Parameters:
+ * - organization_id?: string (UUID) - Filter counts by organization
+ * 
+ * Returns:
+ * {
+ *   unread: number
+ *   total: number
+ *   critical_unread: number
+ *   high_unread: number
+ * }
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createSupabaseServerClient()
+    // Get comprehensive stats from controller
+    const statsResponse = await controller.getStats(request)
+    const statsData = await statsResponse.json()
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!statsData.success) {
+      return statsResponse // Forward the error response
     }
-
-    const { count: unreadCount, error: unreadError } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'unread')
-
-    if (unreadError) {
-      console.error('Error fetching unread count:', unreadError)
-      return NextResponse.json(
-        { error: 'Failed to fetch notification count' },
-        { status: 500 }
-      )
+    
+    const stats = statsData.data
+    
+    // Transform to legacy count format
+    const counts = {
+      unread: stats.unread || 0,
+      total: stats.total || 0,
+      critical_unread: stats.byPriority?.critical || 0,
+      high_unread: stats.byPriority?.high || 0
     }
-
-    const { count: totalCount, error: totalError } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-
-    if (totalError) {
-      console.error('Error fetching total count:', totalError)
-      return NextResponse.json(
-        { error: 'Failed to fetch notification count' },
-        { status: 500 }
-      )
-    }
-
-    const { count: criticalCount, error: criticalError } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'unread')
-      .eq('priority', 'critical')
-
-    if (criticalError) {
-      console.error('Error fetching critical count:', criticalError)
-      return NextResponse.json(
-        { error: 'Failed to fetch notification count' },
-        { status: 500 }
-      )
-    }
-
-    const { count: highCount, error: highError } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'unread')
-      .eq('priority', 'high')
-
-    if (highError) {
-      console.error('Error fetching high count:', highError)
-      return NextResponse.json(
-        { error: 'Failed to fetch notification count' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      unread: unreadCount || 0,
-      total: totalCount || 0,
-      critical_unread: criticalCount || 0,
-      high_unread: highCount || 0
-    })
-
+    
+    return NextResponse.json(counts)
   } catch (error) {
     console.error('Notifications count API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+        category: 'server_error'
+      }
+    }, { status: 500 })
   }
 }

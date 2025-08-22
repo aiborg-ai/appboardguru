@@ -4,13 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createTypedSupabaseClient, type TypedSupabaseClient } from '@/lib/supabase-typed'
 import { predictiveNotificationService } from '@/lib/services/predictive-notifications'
 import { patternRecognitionEngine } from '@/lib/services/pattern-recognition'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createTypedSupabaseClient()
     const { searchParams } = new URL(request.url)
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -297,7 +297,7 @@ export async function PUT(request: NextRequest) {
 }
 
 // Helper function to check organization access
-async function hasOrgAccess(supabase: any, userId: string, organizationId: string): Promise<boolean> {
+async function hasOrgAccess(supabase: TypedSupabaseClient, userId: string, organizationId: string): Promise<boolean> {
   const { data: membership } = await supabase
     .from('organization_members')
     .select('role')

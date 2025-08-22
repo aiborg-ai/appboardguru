@@ -1,128 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { Database } from '@/types/database'
+import { createNotificationController } from '@/lib/controllers/notification.controller'
 
-type NotificationRow = Database['public']['Tables']['notifications']['Row']
-type NotificationInsert = Database['public']['Tables']['notifications']['Insert']
+// Initialize controller instance
+const controller = createNotificationController()
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createSupabaseServerClient()
-    const { searchParams } = new URL(request.url)
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
-    const status = searchParams.get('status')
-    const type = searchParams.get('type')
-    const priority = searchParams.get('priority')
-
-    let query = supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    if (type) {
-      query = query.eq('type', type)
-    }
-
-    if (priority) {
-      query = query.eq('priority', priority)
-    }
-
-    const { data: notifications, error } = await query
-
-    if (error) {
-      console.error('Error fetching notifications:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch notifications' },
-        { status: 500 }
-      )
-    }
-
-    const { count } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-
-    return NextResponse.json({
-      notifications,
-      total: count || 0,
-      limit,
-      offset
-    })
-
-  } catch (error) {
-    console.error('Notifications API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+/**
+ * GET /api/notifications - Get user notifications with filtering and pagination
+ * 
+ * Query Parameters:
+ * - limit: number (1-100, default: 50)
+ * - offset: number (default: 0) 
+ * - page: number (alternative to offset)
+ * - status: 'unread' | 'read' | 'dismissed' | 'archived'
+ * - type: string
+ * - category: string
+ * - priority: 'low' | 'medium' | 'high' | 'critical'
+ * - organization_id: string (UUID)
+ * - date_from: ISO date string
+ * - date_to: ISO date string
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  return controller.getNotifications(request)
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createSupabaseServerClient()
-    const body = await request.json()
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const notificationData: NotificationInsert = {
-      user_id: body.user_id || user.id,
-      organization_id: body.organization_id,
-      type: body.type,
-      category: body.category,
-      title: body.title,
-      message: body.message,
-      priority: body.priority || 'medium',
-      status: body.status || 'unread',
-      action_url: body.action_url,
-      action_text: body.action_text,
-      icon: body.icon,
-      color: body.color,
-      resource_type: body.resource_type,
-      resource_id: body.resource_id,
-      sender_id: user.id,
-      metadata: body.metadata,
-      scheduled_for: body.scheduled_for,
-      expires_at: body.expires_at
-    }
-
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert(notificationData)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating notification:', error)
-      return NextResponse.json(
-        { error: 'Failed to create notification' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json(data, { status: 201 })
-
-  } catch (error) {
-    console.error('Notifications POST API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+/**
+ * POST /api/notifications - Create a new notification
+ * 
+ * Request Body:
+ * {
+ *   user_id?: string (UUID, defaults to current user)
+ *   organization_id?: string (UUID)
+ *   type: string (required)
+ *   category: string (required)
+ *   title: string (required, max 255 chars)
+ *   message: string (required)
+ *   priority?: 'low' | 'medium' | 'high' | 'critical' (default: 'medium')
+ *   action_url?: string (URL)
+ *   action_text?: string (max 100 chars)
+ *   icon?: string (max 50 chars)
+ *   color?: string (hex color #RRGGBB)
+ *   resource_type?: string
+ *   resource_id?: string
+ *   metadata?: Record<string, any>
+ *   scheduled_for?: string (ISO datetime)
+ *   expires_at?: string (ISO datetime)
+ * }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  return controller.createNotification(request)
 }
