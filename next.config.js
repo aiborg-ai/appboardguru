@@ -1,24 +1,102 @@
 /** @type {import('next').NextConfig} */
+const path = require('path')
+
 const nextConfig = {
+  // Image optimization
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/^https?:\/\//, '') || ''],
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    dangerouslyAllowSVG: false,
   },
+  
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
   
-  
-  // Configure compiler options to disable overlay
+  // Production optimizations
   compiler: {
-    removeConsole: false,
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
   },
   
-  // Disable all development overlays and warnings
+  // Experimental features for performance
   experimental: {
-    // Disable overlay completely
-    optimizePackageImports: [],
+    optimizeCss: true,
+    scrollRestoration: true,
+    optimizePackageImports: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', 'lucide-react'],
+    serverActions: true,
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
+
+  // PWA and caching
+  ...(process.env.NODE_ENV === 'production' && {
+    async headers() {
+      return [
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'X-DNS-Prefetch-Control',
+              value: 'on'
+            },
+            {
+              key: 'Strict-Transport-Security',
+              value: 'max-age=63072000; includeSubDomains; preload'
+            },
+            {
+              key: 'X-Content-Type-Options',
+              value: 'nosniff',
+            },
+            {
+              key: 'X-Frame-Options',
+              value: 'SAMEORIGIN',
+            },
+            {
+              key: 'X-XSS-Protection',
+              value: '1; mode=block',
+            },
+            {
+              key: 'Referrer-Policy',
+              value: 'origin-when-cross-origin',
+            },
+          ],
+        },
+        {
+          source: '/static/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+        {
+          source: '/_next/static/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+        {
+          source: '/api/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'no-cache, no-store, must-revalidate',
+            },
+          ],
+        },
+      ]
+    },
+  }),
   
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {

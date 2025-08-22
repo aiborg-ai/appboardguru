@@ -129,7 +129,7 @@ export function useAnnotationSync({
     try {
       // Update user presence in the asset (table may not exist yet)
       try {
-        await (supabase as any)
+        await supabase
           .from('user_asset_presence')
           .upsert({
             user_id: currentUserId,
@@ -185,7 +185,7 @@ export function useAnnotationSync({
                   
                   toast({
                     title: 'New Annotation',
-                    description: `${(userInfo as any)?.full_name || 'Someone'} added an annotation`,
+                    description: `${userInfo?.full_name || 'Someone'} added an annotation`,
                   });
                 } else if (payload.eventType === 'UPDATE') {
                   onAnnotationChange?.(annotationData, 'updated');
@@ -227,7 +227,7 @@ export function useAnnotationSync({
                   
                   toast({
                     title: 'New Reply',
-                    description: `${(userInfo as any)?.full_name || 'Someone'} replied to an annotation`,
+                    description: `${userInfo?.full_name || 'Someone'} replied to an annotation`,
                   });
                 } else if (payload.eventType === 'UPDATE') {
                   onReplyChange?.(replyData, 'updated');

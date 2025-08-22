@@ -48,15 +48,15 @@ export class SearchService {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet: any) {
-            cookiesToSet.forEach(({ name, value, options }: any) => {
+          setAll(cookiesToSet: Array<{ name: string; value: string; options?: unknown }>) {
+            cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options)
             })
           },
         },
       }
-    ) as any
-    return this.supabase as any
+    )
+    return this.supabase
   }
 
   /**
@@ -74,7 +74,7 @@ export class SearchService {
           input: text,
           model: this.config.embedding_model,
           encoding_format: 'float'
-        } as any)
+        })
       })
 
       if (!response.ok) {
@@ -222,7 +222,7 @@ export class SearchService {
     `
     queryParams.push(limit)
 
-    const { data, error } = await (supabase as any).rpc('execute_sql', {
+    const { data, error } = await supabase.rpc('execute_sql', {
       sql: sqlQuery,
       params: queryParams
     })
@@ -233,7 +233,7 @@ export class SearchService {
     }
 
     // Transform results to SearchResult format
-    return (data as unknown[]).map((row: unknown) => this.transformToSearchResult(row as Record<string, any>))
+    return (data as unknown[]).map((row: unknown) => this.transformToSearchResult(row as Record<string, unknown>))
   }
 
   /**
@@ -267,7 +267,7 @@ export class SearchService {
 
     // Apply context filters through joins
     if (contextFilters.organizationId || contextFilters.vaultId) {
-      query_builder = (query_builder as any)
+      query_builder = query_builder
         .select(`
           *,
           asset:assets!inner(
@@ -311,7 +311,7 @@ export class SearchService {
 
     // Calculate similarities and rank results
     const resultsWithSimilarity = data
-      .map((row: any) => {
+      .map((row: Record<string, unknown>) => {
         const titleEmbedding = row.title_embedding
         const contentEmbedding = row.content_embedding
 
@@ -331,17 +331,17 @@ export class SearchService {
           similarity_score: maxSimilarity
         }
       })
-      .filter((row: any) => row.similarity_score >= this.config.similarity_threshold)
-      .sort((a: any, b: any) => (b.similarity_score as number) - (a.similarity_score as number))
+      .filter((row: Record<string, unknown> & { similarity_score: number }) => row.similarity_score >= this.config.similarity_threshold)
+      .sort((a: Record<string, unknown> & { similarity_score: number }, b: Record<string, unknown> & { similarity_score: number }) => b.similarity_score - a.similarity_score)
       .slice(0, limit)
 
-    return resultsWithSimilarity.map((row: unknown) => this.transformToSearchResult(row as Record<string, any>))
+    return resultsWithSimilarity.map((row: unknown) => this.transformToSearchResult(row as Record<string, unknown>))
   }
 
   /**
    * Transform database row to SearchResult format
    */
-  private transformToSearchResult(row: Record<string, any>): SearchResult {
+  private transformToSearchResult(row: Record<string, unknown>): SearchResult {
     const asset = row.asset || row
     return {
       asset: {

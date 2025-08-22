@@ -8,7 +8,7 @@ type UserUpdate = Database['public']['Tables']['users']['Update']
 export class UserRepository extends BaseRepository {
   async findById(id: string): Promise<User | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('users')
         .select('*')
         .eq('id', id)
@@ -18,15 +18,16 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'findById')
       }
 
-      return (data as any) || null
-    } catch (error: any) {
+      return data || null
+    } catch (error) {
       this.handleError(error, 'findById')
+      return null
     }
   }
 
   async findByEmail(email: string): Promise<User | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('users')
         .select('*')
         .eq('email', email)
@@ -36,15 +37,16 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'findByEmail')
       }
 
-      return (data as any) || null
-    } catch (error: any) {
+      return data || null
+    } catch (error) {
       this.handleError(error, 'findByEmail')
+      return null
     }
   }
 
   async create(user: UserInsert): Promise<User> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('users')
         .insert(user)
         .select()
@@ -54,15 +56,20 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'create')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      if (!data) {
+        throw new Error('Failed to create user: no data returned')
+      }
+
+      return data
+    } catch (error) {
       this.handleError(error, 'create')
+      throw error
     }
   }
 
   async update(id: string, updates: UserUpdate): Promise<User> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('users')
         .update({
           ...updates,
@@ -76,15 +83,20 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'update')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      if (!data) {
+        throw new Error('Failed to update user: no data returned')
+      }
+
+      return data
+    } catch (error) {
       this.handleError(error, 'update')
+      throw error
     }
   }
 
   async delete(id: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('users')
         .delete()
         .eq('id', id)
@@ -92,14 +104,14 @@ export class UserRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'delete')
       }
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, 'delete')
     }
   }
 
   async findByOrganization(organizationId: string): Promise<User[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('users')
         .select(`
           *,
@@ -116,15 +128,16 @@ export class UserRepository extends BaseRepository {
         this.handleError(error, 'findByOrganization')
       }
 
-      return (data as any) || []
-    } catch (error: any) {
+      return data || []
+    } catch (error) {
       this.handleError(error, 'findByOrganization')
+      return []
     }
   }
 
   async updateLastAccess(id: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('organization_members')
         .update({
           last_accessed: new Date().toISOString(),
@@ -135,7 +148,7 @@ export class UserRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'updateLastAccess')
       }
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, 'updateLastAccess')
     }
   }

@@ -135,7 +135,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       // Use saved org if found, otherwise use the first organization
       const defaultOrg = savedOrg || organizations[0]
       if (defaultOrg) {
-        setCurrentOrganization(defaultOrg as any)
+        setCurrentOrganization(defaultOrg)
       }
     }
   }, [organizations, currentOrganization])
@@ -306,7 +306,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     currentVault,
     
     // Data
-    organizations: organizations as any,
+    organizations,
     vaults,
     pendingInvitations,
     

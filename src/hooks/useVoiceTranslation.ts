@@ -418,9 +418,13 @@ export function useVoiceTranslation(options: UseVoiceTranslationOptions = {}) {
     translationCount: state.translations.length,
     lastTranslation: state.translations[0] || null,
     averageConfidence: state.translations.length > 0 
-      ? state.translations.reduce((sum: any, t: any) => {
-          const avgConfidence = Object.values(t.translations || {}).reduce((s: number, trans: any) => s + ((trans as any)?.confidence || 0), 0) / Math.max(Object.keys(t.translations || {}).length, 1);
-          return (sum as number) + (avgConfidence as number);
+      ? state.translations.reduce((sum: number, t: TranslateResponse) => {
+          const translations = Object.values(t.translations || {});
+          const avgConfidence = translations.reduce((s: number, trans: unknown) => {
+            const confidence = (trans as { confidence?: number })?.confidence || 0;
+            return s + confidence;
+          }, 0) / Math.max(translations.length, 1);
+          return sum + avgConfidence;
         }, 0) / state.translations.length
       : 0
   };

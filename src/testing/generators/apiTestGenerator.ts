@@ -19,9 +19,9 @@ export interface DomainTestConfig {
     delete: string
   }
   testData: {
-    valid: any
-    invalid: any[]
-    edge: any[]
+    valid: Record<string, unknown>
+    invalid: Record<string, unknown>[]
+    edge: Record<string, unknown>[]
   }
   permissions?: {
     roles: string[]
@@ -50,10 +50,10 @@ import { setupTestDatabase, cleanupTestDatabase } from '../helpers/testDatabase'
 ${generateImports(config)}
 
 describe('${config.entityName} API', () => {
-  let testClient: any
-  let testUser: any
-  let testOrganization: any
-  let testDb: any
+  let testClient: unknown
+  let testUser: unknown
+  let testOrganization: unknown
+  let testDb: unknown
 
   beforeAll(async () => {
     testDb = await setupTestDatabase()
@@ -280,8 +280,8 @@ function generatePermissionTests(config: DomainTestConfig): string {
 
   const roleTests = config.permissions.scenarios.map(scenario => `
     describe('${scenario.role} permissions', () => {
-      let roleUser: any
-      let roleClient: any
+      let roleUser: unknown
+      let roleClient: unknown
 
       beforeEach(async () => {
         roleUser = await createTestUser(testDb, { 
@@ -496,7 +496,7 @@ function generateSecurityTests(config: DomainTestConfig): string {
       const results = await Promise.allSettled(requests)
       const rateLimitedResponses = results.filter(
         result => result.status === 'fulfilled' && 
-        (result.value as any).status === 429
+        (result.value as { status: number }).status === 429
       )
       
       // Some requests should be rate limited

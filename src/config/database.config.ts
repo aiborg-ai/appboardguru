@@ -119,7 +119,7 @@ export const createSupabaseClient = () => {
   )
 }
 
-export const createSupabaseServerClient = (cookies: any) => {
+export const createSupabaseServerClient = (cookies: { get: (name: string) => string | undefined; set: (name: string, value: string, options?: any) => void }) => {
   return createServerClient<Database>(
     databaseConfig.supabase.url,
     databaseConfig.supabase.anonKey,
@@ -161,8 +161,8 @@ export const isValidFileSize = (size: number) => {
   return size <= databaseConfig.storage.maxFileSize
 }
 
-export const isValidMimeType = (mimeType: string) => {
-  return databaseConfig.storage.allowedMimeTypes.includes(mimeType as any)
+export const isValidMimeType = (mimeType: string): mimeType is typeof databaseConfig.storage.allowedMimeTypes[number] => {
+  return (databaseConfig.storage.allowedMimeTypes as readonly string[]).includes(mimeType)
 }
 
 // Connection health check

@@ -9,7 +9,7 @@ type OrganizationMember = Database['public']['Tables']['organization_members']['
 export class OrganizationRepository extends BaseRepository {
   async findById(id: string): Promise<Organization | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organizations')
         .select('*')
         .eq('id', id)
@@ -20,15 +20,16 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'findById')
       }
 
-      return (data as any) || null
-    } catch (error: any) {
+      return data || null
+    } catch (error) {
       this.handleError(error, 'findById')
+      return null
     }
   }
 
   async findByUser(userId: string): Promise<Organization[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organizations')
         .select(`
           *,
@@ -49,15 +50,16 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'findByUser')
       }
 
-      return (data as any) || []
-    } catch (error: any) {
+      return data || []
+    } catch (error) {
       this.handleError(error, 'findByUser')
+      return []
     }
   }
 
   async findBySlug(slug: string): Promise<Organization | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organizations')
         .select('*')
         .eq('slug', slug)
@@ -68,9 +70,10 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'findBySlug')
       }
 
-      return (data as any) || null
-    } catch (error: any) {
+      return data || null
+    } catch (error) {
       this.handleError(error, 'findBySlug')
+      return null
     }
   }
 
@@ -86,9 +89,13 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'create')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      if (!data) {
+        throw new Error('Failed to create organization: no data returned')
+      }
+      return data
+    } catch (error) {
       this.handleError(error, 'create')
+      throw error
     }
   }
 
@@ -108,9 +115,13 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'update')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      if (!data) {
+        throw new Error('Failed to create organization: no data returned')
+      }
+      return data
+    } catch (error) {
       this.handleError(error, 'update')
+      throw error
     }
   }
 
@@ -129,7 +140,7 @@ export class OrganizationRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'delete')
       }
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, 'delete')
     }
   }
@@ -141,10 +152,10 @@ export class OrganizationRepository extends BaseRepository {
         .insert({
           organization_id: organizationId,
           user_id: userId,
-          role: role as any,
+          role,
           invited_by: invitedBy,
           joined_at: new Date().toISOString(),
-          status: 'active' as any
+          status: 'active'
         })
         .select()
         .single()
@@ -153,9 +164,13 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'addMember')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      if (!data) {
+        throw new Error('Failed to create organization: no data returned')
+      }
+      return data
+    } catch (error) {
       this.handleError(error, 'addMember')
+      throw error
     }
   }
 
@@ -163,7 +178,7 @@ export class OrganizationRepository extends BaseRepository {
     try {
       const { data, error } = await (this.supabase as any)
         .from('organization_members')
-        .update({ role: role as any })
+        .update({ role })
         .eq('organization_id', organizationId)
         .eq('user_id', userId)
         .select()
@@ -173,9 +188,13 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'updateMemberRole')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      if (!data) {
+        throw new Error('Failed to create organization: no data returned')
+      }
+      return data
+    } catch (error) {
       this.handleError(error, 'updateMemberRole')
+      throw error
     }
   }
 
@@ -190,7 +209,7 @@ export class OrganizationRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'removeMember')
       }
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, 'removeMember')
     }
   }
@@ -212,8 +231,9 @@ export class OrganizationRepository extends BaseRepository {
       }
 
       return (data as any) || []
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, 'getMembers')
+      return []
     }
   }
 
@@ -231,15 +251,15 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'getMemberRole')
       }
 
-      return (data as any)?.role || null
-    } catch (error: any) {
+      return data?.role || null
+    } catch (error) {
       return null
     }
   }
 
   async isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
     try {
-      let query = (this.supabase as any)
+      let query = this.supabase
         .from('organizations')
         .select('id')
         .eq('slug', slug)
@@ -254,8 +274,8 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'isSlugAvailable')
       }
 
-      return !(data as any)
-    } catch (error: any) {
+      return !data
+    } catch (error) {
       return false
     }
   }
