@@ -108,7 +108,7 @@ export function ActionablesSection({
       a.status === 'overdue' || 
       (a.status !== 'completed' && a.status !== 'cancelled' && new Date(a.dueDate) < new Date())
     ).length,
-    assignedToMe: actionables.filter(a => a.assignedTo === currentUser?.id).length
+    assignedToMe: 0 // Simplified for now without currentUser context
   };
 
   const formatDate = (dateString: string) => {
@@ -343,7 +343,7 @@ export function ActionablesSection({
                         <div>
                           <p className="font-medium">Assigned to</p>
                           <p className="text-gray-500">
-                            {actionable.assignedTo === currentUser?.id ? 'You' : 'Team Member'}
+                            {'Team Member'}
                           </p>
                         </div>
                       </div>
@@ -415,7 +415,7 @@ export function ActionablesSection({
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    {(canManage || actionable.assignedTo === currentUser?.id) && (
+                    {canManage && (
                       <>
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
@@ -475,7 +475,7 @@ export function ActionablesSection({
       {selectedActionable && (
         <ActionableDetailsModal
           actionable={selectedActionable}
-          canManage={canManage || selectedActionable.assignedTo === currentUser?.id}
+          canManage={canManage}
           onUpdate={onUpdateActionable}
           onClose={() => setSelectedActionable(null)}
         />
