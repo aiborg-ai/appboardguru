@@ -31,12 +31,12 @@ export const validateConfigurations = () => {
     }
 
     // Email configuration warnings (not critical for development)
-    if (process.env.NODE_ENV === 'production' && !emailConfig.features.enabled) {
+    if (process.env['NODE_ENV'] === 'production' && !emailConfig.features.enabled) {
       errors.push('Email configuration is incomplete for production')
     }
 
     // AI configuration warnings
-    if (!aiConfig.openrouter.apiKey && process.env.NODE_ENV === 'production') {
+    if (!aiConfig.openrouter.apiKey && process.env['NODE_ENV'] === 'production') {
       console.warn('AI features disabled: OPENROUTER_API_KEY not configured')
     }
 
@@ -46,7 +46,7 @@ export const validateConfigurations = () => {
 
   if (errors.length > 0) {
     console.error('Configuration errors:', errors)
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       throw new Error(`Configuration validation failed: ${errors.join(', ')}`)
     }
   }
@@ -56,7 +56,7 @@ export const validateConfigurations = () => {
 
 // Environment-based configuration selector
 export const getEnvironmentConfig = () => {
-  const env = process.env.NODE_ENV
+  const env = process.env['NODE_ENV']
   
   return {
     isDevelopment: env === 'development',
@@ -86,7 +86,7 @@ export const getEnvironmentConfig = () => {
 export const healthCheck = async () => {
   const health = {
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
+    environment: process.env['NODE_ENV'],
     services: {
       database: false,
       email: false,

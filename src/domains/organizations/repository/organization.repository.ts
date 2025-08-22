@@ -25,6 +25,18 @@ export class OrganizationRepository extends BaseRepository {
     super(supabase)
   }
 
+  protected getEntityName(): string {
+    return 'Organization'
+  }
+
+  protected getSearchFields(): string[] {
+    return ['name', 'description', 'slug']
+  }
+
+  private handleError(error: any, operation: string): void {
+    console.error(`OrganizationRepository.${operation}:`, error)
+  }
+
   /**
    * Find organization by ID with optional relations
    */

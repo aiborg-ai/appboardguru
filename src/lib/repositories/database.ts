@@ -60,12 +60,12 @@ const connectionPool = new ConnectionPool()
  */
 export function getDatabaseConfig(): DatabaseConfig {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
-    serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    connectionPoolSize: parseInt(process.env.DB_CONNECTION_POOL_SIZE || '10'),
-    enableRealtime: process.env.DB_ENABLE_REALTIME === 'true',
-    debug: process.env.NODE_ENV === 'development'
+    url: process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'https://placeholder.supabase.co',
+    anonKey: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || 'placeholder-key',
+    serviceKey: process.env['SUPABASE_SERVICE_ROLE_KEY'],
+    connectionPoolSize: parseInt(process.env['DB_CONNECTION_POOL_SIZE'] || '10'),
+    enableRealtime: process.env['DB_ENABLE_REALTIME'] === 'true',
+    debug: process.env['NODE_ENV'] === 'development'
   }
 }
 

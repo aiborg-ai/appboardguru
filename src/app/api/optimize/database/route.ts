@@ -11,10 +11,10 @@ export const GET = withTelemetry(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
-    const adminToken = process.env.ADMIN_ACCESS_TOKEN
+    const adminToken = process.env['ADMIN_ACCESS_TOKEN']
     
     // Require admin access for database optimization
-    if (process.env.NODE_ENV === 'production' && (!token || !adminToken || token !== adminToken)) {
+    if (process.env['NODE_ENV'] === 'production' && (!token || !adminToken || token !== adminToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -92,10 +92,10 @@ export const POST = withTelemetry(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
-    const adminToken = process.env.ADMIN_ACCESS_TOKEN
+    const adminToken = process.env['ADMIN_ACCESS_TOKEN']
     
     // Require admin access for applying optimizations
-    if (process.env.NODE_ENV === 'production' && (!token || !adminToken || token !== adminToken)) {
+    if (process.env['NODE_ENV'] === 'production' && (!token || !adminToken || token !== adminToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

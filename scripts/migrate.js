@@ -19,9 +19,9 @@ const { createClient } = require('@supabase/supabase-js');
 // Configuration
 const config = {
   migrationsDir: path.join(__dirname, '../database/migrations'),
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  environment: process.env.NODE_ENV || 'development'
+  supabaseUrl: process.env['NEXT_PUBLIC_SUPABASE_URL'],
+  supabaseKey: process.env['SUPABASE_SERVICE_ROLE_KEY'],
+  environment: process.env['NODE_ENV'] || 'development'
 };
 
 // Initialize Supabase client

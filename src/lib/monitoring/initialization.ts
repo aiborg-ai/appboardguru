@@ -19,10 +19,10 @@ interface MonitoringConfig {
  */
 export function initializeMonitoring(config: Partial<MonitoringConfig> = {}) {
   const finalConfig: MonitoringConfig = {
-    enableTelemetry: process.env.NODE_ENV === 'production',
+    enableTelemetry: process.env['NODE_ENV'] === 'production',
     enablePerformanceTracking: true,
     enableErrorTracking: true,
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env['NODE_ENV'] || 'development',
     serviceName: 'appboardguru',
     ...config
   }
@@ -290,6 +290,6 @@ if (typeof window !== 'undefined') {
 }
 
 // Auto-initialize on server
-if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+if (typeof window === 'undefined' && process.env['NODE_ENV'] !== 'test') {
   initializeMonitoring()
 }

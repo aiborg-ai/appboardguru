@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env['OPENROUTER_API_KEY'];
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 interface TranslateRequest {
@@ -336,7 +336,7 @@ async function transcribeAudio(audioData: string, format?: string) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+        'HTTP-Referer': process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000',
         'X-Title': 'BoardGuru Voice Translation',
       },
       body: formData,
@@ -384,7 +384,7 @@ Translation:`;
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+        'HTTP-Referer': process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000',
         'X-Title': 'BoardGuru Voice Translation',
         'Content-Type': 'application/json',
       },

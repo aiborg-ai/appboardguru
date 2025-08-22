@@ -237,11 +237,11 @@ export const isRecentDate = (dateString: string, maxAgeMs: number = 5000): boole
 
 // Environment helpers
 export const isTestEnvironment = (): boolean => {
-  return process.env.NODE_ENV === 'test'
+  return process.env['NODE_ENV'] === 'test'
 }
 
 export const skipInProduction = (testFn: () => void) => {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env['NODE_ENV'] === 'production') {
     test.skip('Skipped in production environment', testFn)
   } else {
     testFn()

@@ -26,7 +26,7 @@ export interface EmailTemplate {
  * Generate BoardMate invitation email template
  */
 export function generateBoardMateInvitationEmail(data: BoardMateInvitationEmailData): EmailTemplate {
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/boardmate?token=${data.invitationToken}`
+  const inviteUrl = `${process.env['NEXT_PUBLIC_APP_URL']}/invite/boardmate?token=${data.invitationToken}`
   const expiryDate = new Date(data.expiresAt).toLocaleDateString()
   
   const accessLevelDescriptions = {
@@ -273,8 +273,8 @@ export function generateBoardMateInvitationEmail(data: BoardMateInvitationEmailD
             <p>If you have any questions, please contact your board administrator or reach out to our support team.</p>
             <p>
                 <a href="mailto:support@boardguru.ai" style="color: #3b82f6;">support@boardguru.ai</a> | 
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/help" style="color: #3b82f6;">Help Center</a> | 
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/privacy" style="color: #3b82f6;">Privacy Policy</a>
+                <a href="${process.env['NEXT_PUBLIC_APP_URL']}/help" style="color: #3b82f6;">Help Center</a> | 
+                <a href="${process.env['NEXT_PUBLIC_APP_URL']}/privacy" style="color: #3b82f6;">Privacy Policy</a>
             </p>
             <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
                 This invitation was sent to ${data.to} by ${data.inviterName} on behalf of ${data.organizationName}.
@@ -347,12 +347,12 @@ export async function sendBoardMateInvitationEmail(data: BoardMateInvitationEmai
     // Example integration with SendGrid:
     /*
     const sgMail = require('@sendgrid/mail')
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+    sgMail.setApiKey(process.env['SENDGRID_API_KEY'])
     
     const msg = {
       to: data.to,
       from: {
-        email: process.env.FROM_EMAIL || 'noreply@boardguru.ai',
+        email: process.env['FROM_EMAIL'] || 'noreply@boardguru.ai',
         name: 'BoardGuru'
       },
       subject: emailTemplate.subject,
@@ -371,7 +371,7 @@ export async function sendBoardMateInvitationEmail(data: BoardMateInvitationEmai
     console.log('📧 BoardMate Invitation Email:')
     console.log('To:', data.to)
     console.log('Subject:', emailTemplate.subject)
-    console.log('Invitation URL:', `${process.env.NEXT_PUBLIC_APP_URL}/invite/boardmate?token=${data.invitationToken}`)
+    console.log('Invitation URL:', `${process.env['NEXT_PUBLIC_APP_URL']}/invite/boardmate?token=${data.invitationToken}`)
     
     // Log email sent event
     await supabaseAdmin

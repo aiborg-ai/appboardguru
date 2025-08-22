@@ -62,12 +62,12 @@ export async function GET(request: NextRequest) {
     // Send rejection email to the user
     try {
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
+        host: process.env['SMTP_HOST'] || 'smtp.gmail.com',
+        port: parseInt(process.env['SMTP_PORT'] || '587'),
         secure: false,
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: process.env['SMTP_USER'],
+          pass: process.env['SMTP_PASS'],
         },
       })
 
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       `
 
       await transporter.sendMail({
-        from: process.env.SMTP_USER,
+        from: process.env['SMTP_USER'],
         to: (registrationRequest as any).email,
         subject: 'BoardGuru Registration Update',
         html: rejectionEmailHTML,

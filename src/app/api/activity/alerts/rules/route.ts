@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { z } from 'zod'
-import type { Database } from '@/types/database'
 
 const alertRuleSchema = z.object({
   name: z.string().min(1),

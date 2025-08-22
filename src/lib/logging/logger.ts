@@ -317,11 +317,11 @@ export class HTTPTransport implements LogTransport {
 export class Logger {
   private static loggers = new Map<string, Logger>()
   private static globalContext: Partial<LogEntry['context']> = {
-    service: process.env.SERVICE_NAME || 'appboardguru',
-    version: process.env.VERSION || '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    region: process.env.AWS_REGION || 'us-east-1',
-    instance: process.env.INSTANCE_ID || nanoid(8)
+    service: process.env['SERVICE_NAME'] || 'appboardguru',
+    version: process.env['VERSION'] || '1.0.0',
+    environment: process.env['NODE_ENV'] || 'development',
+    region: process.env['AWS_REGION'] || 'us-east-1',
+    instance: process.env['INSTANCE_ID'] || nanoid(8)
   }
 
   private correlationId?: string
@@ -340,8 +340,8 @@ export class Logger {
     if (!Logger.loggers.has(name)) {
       const defaultConfig: LoggerConfig = {
         name,
-        level: process.env.LOG_LEVEL ? 
-          LogLevel[process.env.LOG_LEVEL as keyof typeof LogLevel] || LogLevel.INFO : 
+        level: process.env['LOG_LEVEL'] ? 
+          LogLevel[process.env['LOG_LEVEL'] as keyof typeof LogLevel] || LogLevel.INFO : 
           LogLevel.INFO,
         transports: [new ConsoleTransport()],
         context: Logger.globalContext,
@@ -352,18 +352,18 @@ export class Logger {
       }
 
       // Add file transport in production
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env['NODE_ENV'] === 'production') {
         defaultConfig.transports.push(
           new FileTransport(`/var/log/${name}.log`)
         )
       }
 
       // Add HTTP transport if configured
-      if (process.env.LOG_ENDPOINT) {
+      if (process.env['LOG_ENDPOINT']) {
         defaultConfig.transports.push(
           new HTTPTransport(
-            process.env.LOG_ENDPOINT,
-            process.env.LOG_API_KEY
+            process.env['LOG_ENDPOINT'],
+            process.env['LOG_API_KEY']
           )
         )
       }

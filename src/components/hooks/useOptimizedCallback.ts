@@ -13,7 +13,7 @@ export function useOptimizedCallback<T extends (...args: any[]) => any>(
   const callbackRef = React.useRef(callback)
   const depsRef = React.useRef(dependencies)
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     React.useEffect(() => {
       if (debugName) {
         console.log(`[useOptimizedCallback] ${debugName} callback recreated`)

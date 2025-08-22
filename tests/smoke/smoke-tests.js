@@ -378,7 +378,7 @@ class SmokeTestRunner {
       const status = result.passed ? '✅' : '❌';
       const duration = result.duration > 0 ? ` (${result.duration}ms)` : '';
       console.log(`${status} ${result.test}${duration}`);
-      if (!result.passed || process.env.VERBOSE) {
+      if (!result.passed || process.env['VERBOSE']) {
         console.log(`   ${result.details}`);
       }
     });

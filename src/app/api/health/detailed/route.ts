@@ -76,7 +76,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         platform: process.platform,
         architecture: process.arch,
         pid: process.pid,
-        ...(process.env.NODE_ENV !== 'production' && {
+        ...(process.env['NODE_ENV'] !== 'production' && {
           environmentVariables: getEnvironmentInfo()
         })
       }

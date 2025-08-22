@@ -23,7 +23,7 @@ export class OpenAPIRegistry {
       '1.0.0',
       'Comprehensive API for board management and collaboration platform',
       [
-        { url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api', description: 'API Server' }
+        { url: process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:3000/api', description: 'API Server' }
       ]
     )
   }

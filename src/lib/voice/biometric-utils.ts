@@ -32,7 +32,7 @@ export class BiometricEncryption {
    * Generate a secure encryption key from user-specific data and organization key
    */
   static async generateTemplateKey(userId: string, organizationId: string): Promise<string> {
-    const organizationKey = process.env.VOICE_BIOMETRIC_KEY || 'default-key';
+    const organizationKey = process.env['VOICE_BIOMETRIC_KEY'] || 'default-key';
     const salt = createHash('sha256').update(`${userId}:${organizationId}`).digest();
     
     const key = await scryptAsync(`${organizationKey}:${userId}`, salt, this.KEY_LENGTH) as Buffer;

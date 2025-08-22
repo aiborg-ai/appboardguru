@@ -222,7 +222,7 @@ class PerformanceMonitor {
 
   private logMetric(data: MetricData) {
     // In production, send to monitoring service
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       // TODO: Send to monitoring service (e.g., DataDog, New Relic)
       // this.sendToMonitoringService(data)
     }
@@ -233,7 +233,7 @@ class PerformanceMonitor {
     console.log('Performance metrics:', stats)
     
     // In production, flush to monitoring service
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       // TODO: Flush to monitoring service
       // this.flushToMonitoringService(stats)
     }

@@ -11,7 +11,7 @@ export function useOptimizedMemo<T>(
   // Track computation count in development
   const computeCountRef = React.useRef(0)
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     React.useEffect(() => {
       computeCountRef.current++
       if (debugName) {

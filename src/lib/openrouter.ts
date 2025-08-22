@@ -45,7 +45,7 @@ async function makeOpenRouterRequest(
     temperature = 0.3
   } = options;
 
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!process.env['OPENROUTER_API_KEY']) {
     console.warn('OpenRouter API key not configured - AI features disabled');
     return {
       success: false,
@@ -57,9 +57,9 @@ async function makeOpenRouterRequest(
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${process.env['OPENROUTER_API_KEY']}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
+        'HTTP-Referer': process.env['APP_URL'] || 'http://localhost:3000',
         'X-Title': 'BoardGuru'
       },
       body: JSON.stringify({

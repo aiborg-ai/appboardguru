@@ -753,7 +753,7 @@ export class SmartNotificationEngine {
             targets: [
               {
                 os: "default",
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/activity-analytics`
+                uri: `${process.env['NEXT_PUBLIC_APP_URL']}/dashboard/activity-analytics`
               }
             ]
           }

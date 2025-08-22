@@ -13,11 +13,11 @@ const aiEnvSchema = z.object({
 const getAIEnv = () => {
   try {
     return aiEnvSchema.parse({
-      OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-      OPENROUTER_BASE_URL: process.env.OPENROUTER_BASE_URL,
-      AI_MODEL: process.env.AI_MODEL,
-      AI_TEMPERATURE: process.env.AI_TEMPERATURE,
-      AI_MAX_TOKENS: process.env.AI_MAX_TOKENS,
+      OPENROUTER_API_KEY: process.env['OPENROUTER_API_KEY'],
+      OPENROUTER_BASE_URL: process.env['OPENROUTER_BASE_URL'],
+      AI_MODEL: process.env['AI_MODEL'],
+      AI_TEMPERATURE: process.env['AI_TEMPERATURE'],
+      AI_MAX_TOKENS: process.env['AI_MAX_TOKENS'],
     })
   } catch (error) {
     console.warn('AI configuration validation failed, using defaults:', error)
@@ -138,7 +138,7 @@ export const aiConfig = {
 
   // Caching
   cache: {
-    enabled: process.env.NODE_ENV === 'production',
+    enabled: process.env['NODE_ENV'] === 'production',
     ttl: 60 * 60 * 1000, // 1 hour
     maxSize: 1000, // cached responses
     keyPrefix: 'ai:',
@@ -166,10 +166,10 @@ export const aiConfig = {
 
   // Monitoring and analytics
   monitoring: {
-    logRequests: process.env.NODE_ENV === 'development',
-    trackUsage: process.env.NODE_ENV === 'production',
+    logRequests: process.env['NODE_ENV'] === 'development',
+    trackUsage: process.env['NODE_ENV'] === 'production',
     trackLatency: true,
-    reportErrors: process.env.NODE_ENV === 'production',
+    reportErrors: process.env['NODE_ENV'] === 'production',
   },
 } as const
 

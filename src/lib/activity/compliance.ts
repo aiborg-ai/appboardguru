@@ -336,7 +336,7 @@ export class ComplianceEngine {
       }
 
       // Generate proof hash (simplified - use actual ZK proof library in production)
-      const proofData = JSON.stringify(publicInputs) + process.env.ZK_PROOF_SECRET
+      const proofData = JSON.stringify(publicInputs) + process.env['ZK_PROOF_SECRET']
       const proof = await this.generateHash(proofData)
 
       // Generate verification key
@@ -581,7 +581,7 @@ export class ComplianceEngine {
    */
   private static async generateTamperProofSignature(data: Record<string, unknown>): Promise<string> {
     const dataString = JSON.stringify(data, Object.keys(data).sort())
-    return this.generateHash(dataString + process.env.SIGNATURE_SECRET)
+    return this.generateHash(dataString + process.env['SIGNATURE_SECRET'])
   }
 
   /**
@@ -615,7 +615,7 @@ export class ComplianceEngine {
     organizationId: string
   }, blockHash: string): Promise<string> {
     // In production, use actual cryptographic signing with private keys
-    const signatureData = blockHash + blockData.organizationId + process.env.SIGNING_SECRET
+    const signatureData = blockHash + blockData.organizationId + process.env['SIGNING_SECRET']
     return this.generateHash(signatureData)
   }
 
@@ -1387,7 +1387,7 @@ export class ImmutableAuditChain {
 
   private static async generateCertificateData(data: Record<string, unknown>): Promise<string> {
     const certificateData = JSON.stringify(data, null, 2)
-    const signature = await ComplianceEngine['generateHash'](certificateData + process.env.CERTIFICATE_SECRET)
+    const signature = await ComplianceEngine['generateHash'](certificateData + process.env['CERTIFICATE_SECRET'])
     
     return `
 -----BEGIN BOARDGURU AUDIT CERTIFICATE-----

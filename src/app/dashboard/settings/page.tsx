@@ -5,7 +5,8 @@ import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { AISettingsPanel } from '@/features/dashboard/settings/AISettingsPanel'
 import { ActivityLogsTab } from '@/features/dashboard/settings/ActivityLogsTab'
 import { FYITab } from '@/features/dashboard/settings/FYITab'
-import { SecurityActivityPanel } from '@/features/dashboard/settings/SecurityActivityPanel'
+import { SecurityActivityTab } from '@/features/dashboard/settings/security-activity-tab'
+import { AccountSettingsTab } from '@/features/dashboard/settings/AccountSettingsTab'
 import { 
   Settings, 
   Brain, 
@@ -36,16 +37,10 @@ export default function SettingsPage() {
         return <AISettingsPanel />
       
       case 'account':
-        return (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Account Settings</h3>
-            <p className="text-gray-600">Profile and account management features coming soon.</p>
-          </div>
-        )
+        return <AccountSettingsTab />
       
       case 'security':
-        return <SecurityActivityPanel />
+        return <SecurityActivityTab />
       
       case 'notifications':
         return (

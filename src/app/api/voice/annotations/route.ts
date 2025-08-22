@@ -18,7 +18,7 @@ import {
 // Supabase client will be initialized per request for proper authentication
 
 // OpenRouter API for speech-to-text (using Whisper)
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env['OPENROUTER_API_KEY'];
 const SPEECH_TO_TEXT_MODEL = 'openai/whisper-large-v3';
 
 export async function POST(request: NextRequest) {
@@ -600,7 +600,7 @@ async function transcribeAudioData(audioData: string): Promise<{
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'HTTP-Referer': process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000',
         'X-Title': 'BoardGuru Voice Annotations'
       },
       body: formData

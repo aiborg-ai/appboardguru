@@ -53,6 +53,7 @@
     "node_modules",
     "scripts/**/*",
     "playwright.config.ts",
+    "playwright.enhanced.config.ts",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",

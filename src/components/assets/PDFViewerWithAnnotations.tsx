@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import React, { useState } from 'react'
+import { AnnotationPanel } from '@/components/organisms/annotation-panel'
+import { AssetId } from '@/types/annotation-types'
 
 interface PDFViewerWithAnnotationsProps {
   assetId: string
@@ -10,103 +11,22 @@ interface PDFViewerWithAnnotationsProps {
   onAnnotationChange?: () => void
 }
 
-interface Annotation {
-  id: string
-  asset_id: string
-  created_by: string
-  user?: {
-    full_name: string
-    avatar_url?: string
-  }
-  annotation_type: 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
-  content: {
-    text?: string
-    image?: string
-  }
-  position: {
-    x: number
-    y: number
-    width: number
-    height: number
-    page?: number
-  }
-  selected_text?: string
-  comment_text?: string
-  color: string
-  opacity: number
-  created_at: string
-  is_resolved: boolean
-  replies?: Array<{
-    id: string
-    reply_text: string
-    user: {
-      full_name: string
-      avatar_url?: string
-    }
-    created_at: string
-  }>
-}
-
 export function PDFViewerWithAnnotations({
   assetId,
   filePath,
   annotationMode,
   onAnnotationChange
 }: PDFViewerWithAnnotationsProps) {
-  const [annotations, setAnnotations] = useState<Annotation[]>([])
-  const [loading, setLoading] = useState(true)
-  const supabase = createSupabaseBrowserClient()
+  const [currentPage, setCurrentPage] = useState(1)
 
-  // Fetch annotations from API
-  const fetchAnnotations = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/assets/${assetId}/annotations`)
-      const data = await response.json()
-      
-      if (response.ok) {
-        setAnnotations(data.annotations || [])
-      }
-    } catch (error) {
-      console.error('Error fetching annotations:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [assetId])
+  const handleAnnotationSelect = (annotationId: string) => {
+    // Handle annotation selection logic
+    console.log('Selected annotation:', annotationId)
+  }
 
-  // Subscribe to real-time annotation updates
-  useEffect(() => {
-    const channel = supabase
-      .channel(`annotations:${assetId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'asset_annotations',
-          filter: `asset_id=eq.${assetId}`,
-        },
-        () => {
-          fetchAnnotations()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [assetId, supabase, fetchAnnotations])
-
-  // Initial fetch
-  useEffect(() => {
-    fetchAnnotations()
-  }, [fetchAnnotations])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    )
+  const handlePageNavigate = (page: number) => {
+    setCurrentPage(page)
+    // You could also add logic to actually navigate to the page in the PDF
   }
 
   return (
@@ -118,14 +38,105 @@ export function PDFViewerWithAnnotations({
         title="PDF Viewer"
       />
       
-      {/* Annotation overlay - placeholder for now */}
-      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4">
-        <p className="text-sm text-gray-600">
-          Annotations: {annotations.length}
-        </p>
-        <p className="text-xs text-gray-500">
-          Mode: {annotationMode}
-        </p>
+      {/* Annotation overlay */}
+      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-900">Annotations</h3>
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            {annotations.length}
+          </span>
+        </div>
+        
+        {/* Add Note Button */}
+        <button 
+          onClick={() => {
+            // For now, create a simple test annotation
+            const testAnnotation = {
+              annotation_type: 'textbox' as const,
+              content: { text: 'Test annotation from UI' },
+              page_number: 1,
+              position: {
+                pageNumber: 1,
+                rects: [{
+                  x1: 100, y1: 100, x2: 300, y2: 150,
+                  width: 200, height: 50
+                }],
+                boundingRect: {
+                  x1: 100, y1: 100, x2: 300, y2: 150,
+                  width: 200, height: 50
+                }
+              },
+              comment_text: 'Test annotation from UI',
+              color: '#FFFF00',
+              opacity: 0.3,
+              is_private: false
+            }
+            
+            fetch(`/api/assets/${assetId}/annotations`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(testAnnotation)
+            })
+            .then(res => res.json())
+            .then(data => {
+              console.log('Annotation created:', data)
+              // Refresh annotations
+              fetchAnnotations()
+              if (onAnnotationChange) onAnnotationChange()
+            })
+            .catch(console.error)
+          }}
+          className="w-full bg-blue-600 text-white text-sm px-3 py-2 rounded-md hover:bg-blue-700 mb-3"
+        >
+          Add Test Note
+        </button>
+        
+        {/* Existing Annotations */}
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {annotations.length === 0 ? (
+            <p className="text-xs text-gray-500 italic">No annotations yet</p>
+          ) : (
+            annotations.map((annotation) => (
+              <div key={annotation.id} className="bg-gray-50 p-2 rounded text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium">{annotation.user?.full_name || 'User'}</span>
+                  <span className="text-gray-500">p.{annotation.position?.page || 1}</span>
+                </div>
+                <p className="text-gray-700">
+                  {annotation.comment_text || annotation.content?.text || 'No content'}
+                </p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-gray-400">
+                    {new Date(annotation.created_at).toLocaleDateString()}
+                  </span>
+                  <button 
+                    onClick={() => {
+                      if (confirm('Delete this annotation?')) {
+                        fetch(`/api/assets/${assetId}/annotations/${annotation.id}`, {
+                          method: 'DELETE'
+                        })
+                        .then(() => {
+                          fetchAnnotations()
+                          if (onAnnotationChange) onAnnotationChange()
+                        })
+                        .catch(console.error)
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <p className="text-xs text-gray-500">
+            Mode: {annotationMode}
+          </p>
+        </div>
       </div>
     </div>
   )

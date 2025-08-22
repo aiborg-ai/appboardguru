@@ -21,7 +21,7 @@ export interface WebSocketConfig {
 
 // Default configuration
 const defaultConfig: WebSocketConfig = {
-  url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:3001',
+  url: process.env['NEXT_PUBLIC_WEBSOCKET_URL'] || 'ws://localhost:3001',
   reconnectInterval: 5000,
   maxReconnectAttempts: 10,
   heartbeatInterval: 30000,

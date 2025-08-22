@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import type { Database } from '@/types/database'
 
 /**
  * GET /api/dashboard/metrics

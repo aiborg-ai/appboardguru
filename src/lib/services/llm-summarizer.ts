@@ -18,7 +18,7 @@ class LLMSummarizer {
   private baseURL = 'https://openrouter.ai/api/v1'
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || ''
+    this.apiKey = process.env['OPENROUTER_API_KEY'] || ''
   }
 
   async summarizeInsight({
@@ -42,7 +42,7 @@ class LLMSummarizer {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,
-          'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
+          'HTTP-Referer': process.env['APP_URL'] || 'http://localhost:3000',
           'X-Title': 'BoardGuru FYI Insights'
         },
         body: JSON.stringify({

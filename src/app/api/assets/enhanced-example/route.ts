@@ -13,10 +13,8 @@ import {
   ValidationError,
   AuthenticationError,
   AuthorizationError,
-  NotFoundError,
   DatabaseError,
   withErrorHandler,
-  ErrorResponse,
   ValidationErrorAggregator,
   retry,
   DEFAULT_RETRY_CONFIGS
@@ -85,7 +83,7 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
           // Convert Zod errors to our ValidationError format
           for (const issue of error.issues) {
             const field = issue.path.join('.')
-            validationErrors.addField(field, issue.message, body[issue.path[0]])
+            validationErrors.addField(field, issue.message, issue.path[0] !== undefined ? body[issue.path[0]] : undefined)
           }
           
           logger.withCorrelation(correlationId).warn('Validation failed', {
@@ -104,8 +102,8 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
         async () => {
           const cookieStore = await cookies()
           return createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+            process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
             {
               cookies: {
                 getAll() {
@@ -120,7 +118,7 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
             }
           )
         },
-        DEFAULT_RETRY_CONFIGS.database,
+        DEFAULT_RETRY_CONFIGS['database'] || { maxAttempts: 3, baseDelay: 1000 },
         'supabase_client_initialization'
       )
 
@@ -418,8 +416,8 @@ export const GET = withErrorHandler(async (request: NextRequest): Promise<NextRe
       // Initialize Supabase client
       const cookieStore = await cookies()
       const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+        process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
         {
           cookies: {
             getAll() {

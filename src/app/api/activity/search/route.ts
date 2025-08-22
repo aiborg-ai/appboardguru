@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ActivitySearchEngine } from '@/lib/activity/search'
-import type { Database } from '@/types/database'
 
 export async function POST(request: NextRequest) {
   try {

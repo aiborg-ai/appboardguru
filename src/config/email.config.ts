@@ -15,13 +15,13 @@ const emailEnvSchema = z.object({
 const getEmailEnv = () => {
   try {
     return emailEnvSchema.parse({
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
-      SMTP_USER: process.env.SMTP_USER,
-      SMTP_PASS: process.env.SMTP_PASS,
-      ADMIN_EMAIL: process.env.ADMIN_EMAIL,
-      FROM_EMAIL: process.env.FROM_EMAIL,
-      FROM_NAME: process.env.FROM_NAME,
+      SMTP_HOST: process.env['SMTP_HOST'],
+      SMTP_PORT: process.env['SMTP_PORT'],
+      SMTP_USER: process.env['SMTP_USER'],
+      SMTP_PASS: process.env['SMTP_PASS'],
+      ADMIN_EMAIL: process.env['ADMIN_EMAIL'],
+      FROM_EMAIL: process.env['FROM_EMAIL'],
+      FROM_NAME: process.env['FROM_NAME'],
     })
   } catch (error) {
     console.warn('Email configuration validation failed, using defaults:', error)
@@ -51,7 +51,7 @@ export const emailConfig = {
       pass: env.SMTP_PASS,
     },
     tls: {
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
+      rejectUnauthorized: process.env['NODE_ENV'] === 'production',
     },
   },
 
@@ -74,11 +74,11 @@ export const emailConfig = {
 
   // Email templates configuration
   templates: {
-    baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    baseUrl: process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000',
     brandColor: '#2563eb',
-    logoUrl: `${process.env.NEXT_PUBLIC_APP_URL}/logo.png`,
+    logoUrl: `${process.env['NEXT_PUBLIC_APP_URL']}/logo.png`,
     footerText: '© 2024 BoardGuru. All rights reserved.',
-    unsubscribeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`,
+    unsubscribeUrl: `${process.env['NEXT_PUBLIC_APP_URL']}/unsubscribe`,
     
     // Template paths
     paths: {
@@ -126,8 +126,8 @@ export const emailConfig = {
   // Feature flags
   features: {
     enabled: env.SMTP_USER !== '' && env.SMTP_PASS !== '',
-    trackOpens: process.env.NODE_ENV === 'production',
-    trackClicks: process.env.NODE_ENV === 'production',
+    trackOpens: process.env['NODE_ENV'] === 'production',
+    trackClicks: process.env['NODE_ENV'] === 'production',
     unsubscribeHeader: true,
     bounceHandling: true,
     scheduling: false,

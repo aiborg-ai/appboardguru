@@ -4,8 +4,16 @@
  */
 
 import React, { Suspense, ComponentType, lazy, useEffect, useState } from 'react'
-import { telemetry } from '@/lib/telemetry'
 import { monitor } from '@/lib/monitoring'
+
+// Client-side performance tracking without server telemetry dependencies
+const clientTelemetry = {
+  addSpanAttributes: (attributes: Record<string, string | number>) => {
+    if (process.env['NODE_ENV'] === 'development') {
+      console.debug('Lazy component attributes:', attributes)
+    }
+  }
+}
 
 interface LazyWrapperProps {
   componentName: string
@@ -47,7 +55,7 @@ export function LazyComponentWrapper({
     onLoadStart?.()
     
     // Record component load start
-    telemetry.addSpanAttributes({
+    clientTelemetry.addSpanAttributes({
       'component.name': componentName,
       'component.load_start': loadStartTime
     })

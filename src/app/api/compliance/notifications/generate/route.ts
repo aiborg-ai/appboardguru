@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verify this is a scheduled request (check for auth header or specific token)
     const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
+    const cronSecret = process.env['CRON_SECRET']
     
     if (!authHeader || !cronSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import type { VaultAssetUpdate } from '@/types/api'
 
 interface UpdateVaultAssetRequest {
   folderPath?: string
@@ -17,35 +17,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string; assetId: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const vaultId = (await params).id
     const assetId = (await params).assetId
 
     // Check vault access
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('vault_members')
       .select('id, role, status')
       .eq('vault_id', vaultId)
@@ -58,7 +37,7 @@ export async function GET(
     }
 
     // Get vault asset details
-    const { data: vaultAsset, error: assetError } = await (supabase as any)
+    const { data: vaultAsset, error: assetError } = await supabase
       .from('vault_assets')
       .select(`
         id, folder_path, display_order, is_featured, is_required_reading,
@@ -82,25 +61,25 @@ export async function GET(
     }
 
     // Increment view count
-    await (supabase as any)
+    await supabase
       .from('vault_assets')
       .update({ 
-        view_count: (vaultAsset as any).view_count + 1 
+        view_count: vaultAsset.view_count + 1 
       })
-      .eq('id', (vaultAsset as any).id)
+      .eq('id', vaultAsset.id)
 
     // Log access activity
-    await (supabase as any)
+    await supabase
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: (membership as any).organization_id,
+        organization_id: membership.organization_id,
         activity_type: 'asset_viewed',
         performed_by_user_id: user.id,
         affected_asset_id: assetId,
         activity_details: {
-          asset_title: (vaultAsset as any).asset.title,
-          folder_path: (vaultAsset as any).folder_path,
+          asset_title: vaultAsset.asset.title,
+          folder_path: vaultAsset.folder_path,
           view_method: 'api'
         },
         ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -109,33 +88,33 @@ export async function GET(
 
     // Transform response
     const transformedAsset = {
-      id: (vaultAsset as any).id,
-      folderPath: (vaultAsset as any).folder_path,
-      displayOrder: (vaultAsset as any).display_order,
-      isFeatured: (vaultAsset as any).is_featured,
-      isRequiredReading: (vaultAsset as any).is_required_reading,
-      addedAt: (vaultAsset as any).added_at,
-      viewCount: (vaultAsset as any).view_count + 1, // Include the increment
-      downloadCount: (vaultAsset as any).download_count,
-      visibility: (vaultAsset as any).visibility,
-      downloadPermissions: (vaultAsset as any).download_permissions,
+      id: vaultAsset.id,
+      folderPath: vaultAsset.folder_path,
+      displayOrder: vaultAsset.display_order,
+      isFeatured: vaultAsset.is_featured,
+      isRequiredReading: vaultAsset.is_required_reading,
+      addedAt: vaultAsset.added_at,
+      viewCount: vaultAsset.view_count + 1, // Include the increment
+      downloadCount: vaultAsset.download_count,
+      visibility: vaultAsset.visibility,
+      downloadPermissions: vaultAsset.download_permissions,
       asset: {
-        id: (vaultAsset as any).asset.id,
-        title: (vaultAsset as any).asset.title,
-        description: (vaultAsset as any).asset.description,
-        fileName: (vaultAsset as any).asset.file_name,
-        originalFileName: (vaultAsset as any).asset.original_file_name,
-        fileSize: (vaultAsset as any).asset.file_size,
-        fileType: (vaultAsset as any).asset.file_type,
-        mimeType: (vaultAsset as any).asset.mime_type,
-        category: (vaultAsset as any).asset.category,
-        tags: (vaultAsset as any).asset.tags,
-        thumbnailUrl: (vaultAsset as any).asset.thumbnail_url,
-        createdAt: (vaultAsset as any).asset.created_at,
-        updatedAt: (vaultAsset as any).asset.updated_at,
-        owner: (vaultAsset as any).asset.owner
+        id: vaultAsset.asset.id,
+        title: vaultAsset.asset.title,
+        description: vaultAsset.asset.description,
+        fileName: vaultAsset.asset.file_name,
+        originalFileName: vaultAsset.asset.original_file_name,
+        fileSize: vaultAsset.asset.file_size,
+        fileType: vaultAsset.asset.file_type,
+        mimeType: vaultAsset.asset.mime_type,
+        category: vaultAsset.asset.category,
+        tags: vaultAsset.asset.tags,
+        thumbnailUrl: vaultAsset.asset.thumbnail_url,
+        createdAt: vaultAsset.asset.created_at,
+        updatedAt: vaultAsset.asset.updated_at,
+        owner: vaultAsset.asset.owner
       },
-      addedBy: (vaultAsset as any).added_by
+      addedBy: vaultAsset.added_by
     }
 
     return NextResponse.json({
@@ -157,8 +136,8 @@ export async function PUT(
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
       {
         cookies: {
           getAll() {
@@ -302,8 +281,8 @@ export async function DELETE(
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
       {
         cookies: {
           getAll() {

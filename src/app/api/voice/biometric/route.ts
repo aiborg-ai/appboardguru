@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
       { 
         error: 'Internal server error', 
         success: false,
-        details: process.env.NODE_ENV === 'development' ? error : undefined
+        details: process.env['NODE_ENV'] === 'development' ? error : undefined
       },
       { status: 500 }
     );
@@ -468,7 +468,7 @@ async function handleEnrollment(
     return NextResponse.json({
       success: false,
       error: 'Enrollment failed',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }
@@ -681,7 +681,7 @@ async function handleAuthentication(
     return NextResponse.json({
       success: false,
       error: 'Authentication failed',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }
@@ -750,7 +750,7 @@ async function handleEmotionAnalysis(
     return NextResponse.json({
       success: false,
       error: 'Emotion analysis failed',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }
@@ -797,7 +797,7 @@ async function handleFraudDetection(body: { audioData: string; context?: string 
     return NextResponse.json({
       success: false,
       error: 'Fraud detection failed',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }
@@ -841,7 +841,7 @@ async function handleGetProfile(user: AuthenticatedUser, supabase: SupabaseClien
     return NextResponse.json({
       success: false,
       error: 'Failed to get profile',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }
@@ -885,7 +885,7 @@ async function handleUpdateProfile(body: { securitySettings?: unknown; personali
     return NextResponse.json({
       success: false,
       error: 'Failed to update profile',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }
@@ -918,7 +918,7 @@ async function handleDeleteProfile(user: AuthenticatedUser, supabase: SupabaseCl
     return NextResponse.json({
       success: false,
       error: 'Failed to delete profile',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env['NODE_ENV'] === 'development' ? error : undefined
     }, { status: 500 });
   }
 }

@@ -385,16 +385,16 @@ export function createEnhancedSupabaseClient(cookies?: any): EnhancedDatabaseCli
   if (cookies) {
     // Server-side client
     const client = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
       { cookies }
     )
     return new EnhancedDatabaseClient(client, 'server')
   } else if (typeof window !== 'undefined') {
     // Client-side client
     const client = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!
     )
     return new EnhancedDatabaseClient(client, 'client')
   } else {
@@ -406,13 +406,13 @@ export function createEnhancedSupabaseClient(cookies?: any): EnhancedDatabaseCli
  * Create admin client with enhanced monitoring
  */
 export function createEnhancedAdminClient(): EnhancedDatabaseClient {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!process.env['SUPABASE_SERVICE_ROLE_KEY']) {
     throw new Error('Service role key is required for admin client')
   }
 
   const client = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+    process.env['SUPABASE_SERVICE_ROLE_KEY']!,
     {
       auth: {
         autoRefreshToken: false,

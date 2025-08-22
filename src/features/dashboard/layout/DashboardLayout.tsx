@@ -30,14 +30,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        router.push('/auth/signin')
+        // Prevent redirect if already on signin page to avoid loops
+        if (!window.location.pathname.includes('/auth/signin')) {
+          router.push('/auth/signin')
+        }
         return
       }
 
       setUser(user)
     } catch (error) {
       console.error('Error checking user:', error)
-      router.push('/auth/signin')
+      // Prevent redirect if already on signin page to avoid loops
+      if (!window.location.pathname.includes('/auth/signin')) {
+        router.push('/auth/signin')
+      }
     } finally {
       setIsLoading(false)
     }

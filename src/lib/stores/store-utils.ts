@@ -393,7 +393,7 @@ export class StoreLogger {
   }
 
   log(store: string, action: string, payload?: any, duration?: number): void {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       this.logs.push({
         timestamp: Date.now(),
         store,
@@ -474,7 +474,7 @@ export const waitForStoreHydration = async (storeNames?: StoreNames[]): Promise<
 
 // Store performance monitor
 export const monitorStorePerformance = () => {
-  if (process.env.NODE_ENV !== 'development') return
+  if (process.env['NODE_ENV'] !== 'development') return
 
   Object.entries(stores).forEach(([name, store]) => {
     const originalSubscribe = store.subscribe
@@ -507,7 +507,7 @@ export const batchStoreUpdates = (updates: Array<() => void>) => {
   // Execute all updates
   updates.forEach(update => update())
   
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     const duration = performance.now() - start
     console.log(`Batched ${updates.length} store updates in ${duration}ms`)
   }
@@ -539,7 +539,7 @@ export const initializeStores = async () => {
     await waitForStoreHydration()
     
     // Set up performance monitoring in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       monitorStorePerformance()
     }
     

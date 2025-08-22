@@ -20,8 +20,7 @@ export async function POST(
     }
 
     const { id: conversationId } = await params; // placeholder
-    const body = await request.json()
-    const { message_id } = body // Optional: mark as read up to this message
+    // TODO: Implement message_id-based read marking
 
     // Verify user is a participant
     const { data: participant } = await (supabase as any)

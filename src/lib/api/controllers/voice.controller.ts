@@ -422,12 +422,267 @@ export class VoiceController extends BaseController {
   }
 
   // ============ VOICE COLLABORATION ============
+  async createSession(request: NextRequest): Promise<NextResponse> {
+    const schema = z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+      collaborationType: z.enum(['meeting', 'workshop', 'brainstorm', 'presentation']),
+      spatialAudioConfig: z.object({
+        enabled: z.boolean(),
+        roomSize: z.enum(['small', 'medium', 'large'])
+      }),
+      permissions: z.object({
+        maxParticipants: z.number().min(2).max(50),
+        allowScreenSharing: z.boolean(),
+        allowRecording: z.boolean(),
+        allowTranscription: z.boolean(),
+        allowAnnotations: z.boolean(),
+        allowVoiceCommands: z.boolean()
+      }),
+      expectedDuration: z.number().optional(),
+      invitations: z.array(z.object({
+        inviteeId: z.string().optional(),
+        inviteeEmail: z.string().email(),
+        message: z.string().optional(),
+        permissions: z.record(z.string(), z.boolean()).optional()
+      })).optional()
+    });
+
+    return this.handleRequest(request, async () => {
+      const userIdResult = await this.getUserId(request);
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
+      
+      const bodyResult = await this.validateBody(request, schema);
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
+      
+      const params = ResultUtils.unwrap(bodyResult);
+      const userId = ResultUtils.unwrap(userIdResult);
+      
+      // TODO: Use repository instead of direct database access
+      const sessionId = `vs_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      
+      const session = {
+        id: sessionId,
+        hostUserId: userId,
+        name: params.name,
+        description: params.description,
+        collaborationType: params.collaborationType,
+        spatialAudioConfig: params.spatialAudioConfig,
+        permissions: params.permissions,
+        status: 'scheduled',
+        participants: [],
+        createdAt: new Date().toISOString()
+      };
+
+      // TODO: Store in database via repository
+      
+      return Ok({
+        session,
+        webrtcConfig: {
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+          audioConstraints: {
+            sampleRate: 48000,
+            channelCount: params.spatialAudioConfig.enabled ? 2 : 1,
+            echoCancellation: true,
+            noiseSuppression: true
+          },
+          spatialAudioEnabled: params.spatialAudioConfig.enabled
+        },
+        recommendations: [
+          'Test your microphone and speakers before the session',
+          'Use headphones for better spatial audio experience',
+          'Ensure stable internet connection for optimal quality'
+        ]
+      });
+    });
+  }
+
+  async joinSession(request: NextRequest): Promise<NextResponse> {
+    const schema = z.object({
+      sessionId: z.string(),
+      invitationId: z.string().optional(),
+      audioSettings: z.object({
+        volume: z.number().min(0).max(100).optional(),
+        isMuted: z.boolean().optional(),
+        echoCancellation: z.boolean().optional()
+      }).optional(),
+      spatialPosition: z.object({
+        x: z.number().optional(),
+        y: z.number().optional(),
+        zone: z.string().optional()
+      }).optional()
+    });
+
+    return this.handleRequest(request, async () => {
+      const userIdResult = await this.getUserId(request);
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
+      
+      const bodyResult = await this.validateBody(request, schema);
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
+      
+      const { sessionId, audioSettings, spatialPosition } = ResultUtils.unwrap(bodyResult);
+      const userId = ResultUtils.unwrap(userIdResult);
+      
+      // TODO: Use repository to fetch session and add participant
+      const participant = {
+        id: `p_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        userId,
+        role: 'participant',
+        spatialPosition: spatialPosition || { x: 0, y: 0, zone: 'discussion' },
+        audioSettings: {
+          volume: 100,
+          isMuted: false,
+          echoCancellation: true,
+          ...audioSettings
+        },
+        connectionStatus: 'connecting',
+        joinedAt: new Date().toISOString()
+      };
+
+      return Ok({ 
+        success: true,
+        participant,
+        sessionId
+      });
+    });
+  }
+
+  async leaveSession(request: NextRequest): Promise<NextResponse> {
+    const schema = z.object({
+      sessionId: z.string(),
+      participantId: z.string()
+    });
+
+    return this.handleRequest(request, async () => {
+      const bodyResult = await this.validateBody(request, schema);
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
+      
+      const { sessionId, participantId } = ResultUtils.unwrap(bodyResult);
+      
+      // TODO: Use repository to remove participant and potentially end session
+      return Ok({ success: true, sessionId, participantId });
+    });
+  }
+
+  async getSession(request: NextRequest): Promise<NextResponse> {
+    const queryResult = this.validateQuery(request, z.object({
+      sessionId: z.string()
+    }));
+
+    return this.handleRequest(request, async () => {
+      if (ResultUtils.isErr(queryResult)) return queryResult;
+      
+      const { sessionId } = ResultUtils.unwrap(queryResult);
+      
+      // TODO: Use repository to fetch session details
+      return Ok({
+        session: {
+          id: sessionId,
+          status: 'active',
+          participants: [],
+          events: []
+        },
+        analytics: {
+          participantCount: 0,
+          duration: 0,
+          engagementScore: 0
+        }
+      });
+    });
+  }
+
+  async listSessions(request: NextRequest): Promise<NextResponse> {
+    const queryResult = this.validateQuery(request, z.object({
+      status: z.enum(['scheduled', 'active', 'ended']).optional(),
+      limit: z.coerce.number().min(1).max(100).default(20)
+    }));
+
+    return this.handleRequest(request, async () => {
+      const userIdResult = await this.getUserId(request);
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
+      
+      if (ResultUtils.isErr(queryResult)) return queryResult;
+      
+      const { status, limit } = ResultUtils.unwrap(queryResult);
+      
+      // TODO: Use repository to fetch sessions
+      return Ok({
+        sessions: [],
+        totalCount: 0,
+        filters: { status, limit }
+      });
+    });
+  }
+
+  async endSession(request: NextRequest): Promise<NextResponse> {
+    const schema = z.object({
+      sessionId: z.string()
+    });
+
+    return this.handleRequest(request, async () => {
+      const bodyResult = await this.validateBody(request, schema);
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
+      
+      const { sessionId } = ResultUtils.unwrap(bodyResult);
+      
+      // TODO: Use repository to end session and generate analytics
+      return Ok({ success: true, sessionId, status: 'ended' });
+    });
+  }
+
+  async getSessionAnalytics(request: NextRequest): Promise<NextResponse> {
+    const queryResult = this.validateQuery(request, z.object({
+      sessionId: z.string()
+    }));
+
+    return this.handleRequest(request, async () => {
+      if (ResultUtils.isErr(queryResult)) return queryResult;
+      
+      const { sessionId } = ResultUtils.unwrap(queryResult);
+      
+      // TODO: Use repository to fetch analytics
+      return Ok({
+        sessionId,
+        analytics: {
+          participantStats: [],
+          engagementMetrics: { overallEngagement: 0 },
+          productivityScore: { score: 0 },
+          recommendations: []
+        }
+      });
+    });
+  }
+
+  async updateSpatialPosition(request: NextRequest): Promise<NextResponse> {
+    const schema = z.object({
+      sessionId: z.string(),
+      participantId: z.string(),
+      spatialPosition: z.object({
+        x: z.number(),
+        y: z.number(),
+        z: z.number().optional(),
+        orientation: z.number().optional(),
+        zone: z.string().optional()
+      })
+    });
+
+    return this.handleRequest(request, async () => {
+      const bodyResult = await this.validateBody(request, schema);
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
+      
+      const { sessionId, participantId, spatialPosition } = ResultUtils.unwrap(bodyResult);
+      
+      // TODO: Use repository to update participant position
+      return Ok({ success: true, spatialPosition });
+    });
+  }
+
   async getCollaborationData(request: NextRequest): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
       if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
-      // TODO: Fetch collaboration data
+      // TODO: Fetch collaboration data via repository
       return Ok({
         activeCollaborators: 3,
         sharedWorkflows: 5,

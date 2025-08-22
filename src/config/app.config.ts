@@ -11,11 +11,11 @@ const envSchema = z.object({
 
 // Parse and validate environment variables
 const env = envSchema.parse({
-  NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-  NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
-  NEXT_PUBLIC_APP_DESCRIPTION: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
+  NODE_ENV: process.env['NODE_ENV'],
+  NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL'],
+  NEXT_PUBLIC_APP_NAME: process.env['NEXT_PUBLIC_APP_NAME'],
+  NEXT_PUBLIC_APP_VERSION: process.env['npm_package_version'],
+  NEXT_PUBLIC_APP_DESCRIPTION: process.env['NEXT_PUBLIC_APP_DESCRIPTION'],
 })
 
 // Application configuration

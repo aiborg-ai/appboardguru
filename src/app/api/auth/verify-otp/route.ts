@@ -107,7 +107,7 @@ async function handleVerifyOtp(request: NextRequest) {
         type: 'magiclink',
         email: email,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/set-password?verified=true&source=otp`
+          redirectTo: `${process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000'}/auth/set-password?verified=true&source=otp`
         }
       })
 

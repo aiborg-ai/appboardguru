@@ -25,7 +25,7 @@ interface StoreProviderProps {
 export function StoreProvider({ 
   children, 
   enableWebSocket = true,
-  enableDevTools = process.env.NODE_ENV === 'development'
+  enableDevTools = process.env['NODE_ENV'] === 'development'
 }: StoreProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
@@ -161,7 +161,7 @@ export function StoreStatus() {
     return unsubscribe
   }, [])
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env['NODE_ENV'] !== 'development') {
     return null
   }
 

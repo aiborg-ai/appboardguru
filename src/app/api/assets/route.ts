@@ -6,8 +6,8 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
       {
         cookies: {
           getAll() {
@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
       {
         cookies: {
           getAll() {
@@ -146,16 +146,11 @@ export async function POST(request: NextRequest) {
       title,
       description,
       fileName,
-      originalFileName,
       filePath,
       fileSize,
       fileType,
-      mimeType,
       category,
-      folderPath,
-      tags,
-      thumbnailUrl,
-      previewUrl
+      tags
     } = body
 
     // Validate required fields

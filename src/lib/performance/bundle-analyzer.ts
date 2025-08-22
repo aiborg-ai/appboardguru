@@ -172,8 +172,8 @@ export class BundleAnalyzer {
       console.warn(`Performance threshold exceeded for ${metric}: ${value} > ${threshold}`)
       
       // In production, you'd send this to monitoring
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'performance_issue', {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'performance_issue', {
           metric_name: metric,
           metric_value: value,
           threshold: threshold
@@ -205,12 +205,12 @@ const nextConfig = {
 
   // Compiler optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-    reactRemoveProperties: process.env.NODE_ENV === 'production',
+    removeConsole: process.env['NODE_ENV'] === 'production',
+    reactRemoveProperties: process.env['NODE_ENV'] === 'production',
   },
 
   // Bundle analyzer (development only)
-  ...(process.env.ANALYZE === 'true' && {
+  ...(process.env['ANALYZE'] === 'true' && {
     webpack: (config) => {
       config.plugins.push(
         new (require('@next/bundle-analyzer'))({
@@ -329,4 +329,4 @@ useEffect(() => {
   }
 }
 
-export const bundleAnalyzer = new BundleAnalyzer()`
+export const bundleAnalyzer = new BundleAnalyzer();

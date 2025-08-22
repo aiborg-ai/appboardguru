@@ -240,7 +240,7 @@ async function main() {
   
   const name = args[0];
   const description = args[1] || `Migration: ${name}`;
-  const author = args[2] || process.env.USER || process.env.USERNAME || 'developer';
+  const author = args[2] || process.env['USER'] || process.env['USER']NAME || 'developer';
   
   if (!name || name.trim().length === 0) {
     console.error('❌ Migration name is required');

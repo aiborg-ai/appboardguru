@@ -82,7 +82,7 @@ async function submitInvitations(formData: FormData): Promise<{
     // Process invitations (this would normally call your API)
     const results = []
     for (const invitation of invitations) {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/invitations`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_APP_URL']}/api/invitations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -20,7 +20,7 @@ export class ActivityStreamServer {
   constructor(server: any) {
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        origin: process.env['NEXT_PUBLIC_APP_URL'] || "http://localhost:3000",
         methods: ["GET", "POST"]
       },
       path: '/api/socketio'

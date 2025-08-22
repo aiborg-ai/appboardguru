@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react';
+import React from 'react';
 import '../src/app/globals.css';
 
 const preview: Preview = {
@@ -79,12 +80,14 @@ const preview: Preview = {
     (Story, context) => {
       const theme = context.globals.theme;
       
-      return (
-        <div className={theme === 'dark' ? 'dark' : ''}>
-          <div className="min-h-screen bg-background text-foreground p-4">
-            <Story />
-          </div>
-        </div>
+      return React.createElement(
+        'div',
+        { className: theme === 'dark' ? 'dark' : '' },
+        React.createElement(
+          'div',
+          { className: 'min-h-screen bg-background text-foreground p-4' },
+          React.createElement(Story)
+        )
       );
     },
   ],

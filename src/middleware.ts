@@ -166,7 +166,7 @@ function generateSecurityHeaders(): Record<string, string> {
     'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()',
     
     // HSTS (only in production)
-    ...(process.env.NODE_ENV === 'production' && {
+    ...(process.env['NODE_ENV'] === 'production' && {
       'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
     }),
     
@@ -183,8 +183,8 @@ function generateSecurityHeaders(): Record<string, string> {
 function setCorsHeaders(request: NextRequest, response: NextResponse): void {
   const origin = request.headers.get('origin')
   const allowedOrigins = [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    process.env['NEXT_PUBLIC_APP_URL'],
+    process.env['VERCEL_URL'] ? `https://${process.env['VERCEL_URL']}` : null,
     'http://localhost:3000', // Development
     'https://localhost:3000',
   ].filter(Boolean)

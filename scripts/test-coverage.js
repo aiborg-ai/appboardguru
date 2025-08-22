@@ -354,7 +354,7 @@ class CoverageAnalyzer {
       console.log('❌ Coverage thresholds failed:')
       failures.forEach(failure => console.log(`   - ${failure}`))
       
-      if (process.env.CI === 'true') {
+      if (process.env['CI'] === 'true') {
         console.log('\n💡 In CI mode, failing due to coverage thresholds.')
         process.exit(1)
       }

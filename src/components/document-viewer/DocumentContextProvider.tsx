@@ -104,6 +104,7 @@ type DocumentAction =
   | { type: 'SET_ACTIVE_TAB'; payload: DocumentState['activeTab'] }
   | { type: 'SET_TOC'; payload: TableOfContentsItem[] }
   | { type: 'SET_TOC_LOADING'; payload: boolean }
+  | { type: 'SET_ANNOTATIONS'; payload: DocumentAnnotation[] }
   | { type: 'ADD_ANNOTATION'; payload: DocumentAnnotation }
   | { type: 'UPDATE_ANNOTATION'; payload: { id: string; annotation: Partial<DocumentAnnotation> } }
   | { type: 'DELETE_ANNOTATION'; payload: string }
@@ -181,6 +182,9 @@ function documentReducer(state: DocumentState, action: DocumentAction): Document
     
     case 'SET_TOC_LOADING':
       return { ...state, isLoadingToc: action.payload }
+    
+    case 'SET_ANNOTATIONS':
+      return { ...state, annotations: action.payload }
     
     case 'ADD_ANNOTATION':
       return { 
@@ -309,7 +313,83 @@ export function DocumentContextProvider({
       type: 'SET_ASSET',
       payload: { id: assetId, url: assetUrl, name: assetName, type: assetType, totalPages: 0 }
     })
+    
+    // Load annotations when asset is set
+    loadAnnotations()
   }, [assetId, assetUrl, assetName, assetType])
+
+  // Load annotations from API
+  const loadAnnotations = async () => {
+    try {
+      const response = await fetch(`/api/assets/${assetId}/annotations`)
+      if (!response.ok) {
+        console.warn('Failed to load annotations:', response.statusText)
+        return
+      }
+      const data = await response.json()
+      
+      // Transform API annotations to DocumentAnnotation format
+      const transformedAnnotations: DocumentAnnotation[] = (data.annotations || []).map((annotation: any) => ({
+        id: annotation.id,
+        type: mapAnnotationType(annotation.annotation_type),
+        content: annotation.comment_text || annotation.content?.text || '',
+        sectionReference: {
+          page: annotation.page_number,
+          coordinates: annotation.position?.boundingRect ? {
+            x: annotation.position.boundingRect.x1,
+            y: annotation.position.boundingRect.y1,
+            width: annotation.position.boundingRect.width,
+            height: annotation.position.boundingRect.height
+          } : { x: 100, y: 100, width: 200, height: 50 },
+          text: annotation.selected_text
+        },
+        userId: annotation.created_by,
+        userName: annotation.user?.full_name || 'Unknown User',
+        createdAt: annotation.created_at,
+        updatedAt: annotation.updated_at || annotation.created_at,
+        isShared: !annotation.is_private,
+        sharedWith: [],
+        replies: (annotation.replies || []).map((reply: any) => ({
+          id: reply.id,
+          type: 'comment' as const,
+          content: reply.reply_text,
+          sectionReference: { page: annotation.page_number },
+          userId: reply.created_by,
+          userName: reply.user?.full_name || 'Unknown User',
+          createdAt: reply.created_at,
+          updatedAt: reply.created_at,
+          isShared: false,
+          sharedWith: []
+        }))
+      }))
+      
+      // Clear existing annotations and set new ones
+      dispatch({ type: 'SET_ANNOTATIONS', payload: transformedAnnotations })
+      
+    } catch (error) {
+      console.error('Error loading annotations:', error)
+    }
+  }
+
+  // Helper function to map API annotation types to DocumentAnnotation types
+  const mapAnnotationType = (apiType: string): DocumentAnnotation['type'] => {
+    switch (apiType) {
+      case 'textbox': return 'note'
+      case 'stamp': return 'comment'
+      default: return 'comment'
+    }
+  }
+
+  // Helper function to map DocumentAnnotation types to API annotation types
+  const mapToApiAnnotationType = (docType: DocumentAnnotation['type']): string => {
+    switch (docType) {
+      case 'note': return 'textbox'
+      case 'comment': return 'area'
+      case 'question': return 'area'
+      case 'voice': return 'stamp'
+      default: return 'textbox'
+    }
+  }
 
   // Actions
   const actions = {
@@ -397,13 +477,77 @@ export function DocumentContextProvider({
     addAnnotation: async (annotation: Omit<DocumentAnnotation, 'id' | 'createdAt' | 'updatedAt'>) => {
       dispatch({ type: 'SET_GENERATING_ANNOTATION', payload: true })
       try {
-        const response = await fetch(`/api/documents/${assetId}/annotations`, {
+        // Transform DocumentAnnotation to API format
+        const apiAnnotation = {
+          annotation_type: mapToApiAnnotationType(annotation.type),
+          content: {
+            text: annotation.content
+          },
+          page_number: annotation.sectionReference.page,
+          position: {
+            pageNumber: annotation.sectionReference.page,
+            rects: [{
+              x1: annotation.sectionReference.coordinates?.x || 100,
+              y1: annotation.sectionReference.coordinates?.y || 100,
+              x2: (annotation.sectionReference.coordinates?.x || 100) + (annotation.sectionReference.coordinates?.width || 200),
+              y2: (annotation.sectionReference.coordinates?.y || 100) + (annotation.sectionReference.coordinates?.height || 50),
+              width: annotation.sectionReference.coordinates?.width || 200,
+              height: annotation.sectionReference.coordinates?.height || 50,
+            }],
+            boundingRect: {
+              x1: annotation.sectionReference.coordinates?.x || 100,
+              y1: annotation.sectionReference.coordinates?.y || 100,
+              x2: (annotation.sectionReference.coordinates?.x || 100) + (annotation.sectionReference.coordinates?.width || 200),
+              y2: (annotation.sectionReference.coordinates?.y || 100) + (annotation.sectionReference.coordinates?.height || 50),
+              width: annotation.sectionReference.coordinates?.width || 200,
+              height: annotation.sectionReference.coordinates?.height || 50,
+            }
+          },
+          selected_text: annotation.sectionReference.text,
+          comment_text: annotation.content,
+          color: '#FFFF00',
+          opacity: 0.3,
+          is_private: !annotation.isShared
+        }
+
+        const response = await fetch(`/api/assets/${assetId}/annotations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(annotation)
+          body: JSON.stringify(apiAnnotation)
         })
-        if (!response.ok) throw new Error('Failed to create annotation')
-        const newAnnotation = await response.json()
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to create annotation')
+        }
+        
+        const data = await response.json()
+        const newApiAnnotation = data.annotation
+        
+        // Transform back to DocumentAnnotation format
+        const newAnnotation: DocumentAnnotation = {
+          id: newApiAnnotation.id,
+          type: mapAnnotationType(newApiAnnotation.annotation_type),
+          content: newApiAnnotation.comment_text || newApiAnnotation.content?.text || '',
+          sectionReference: {
+            page: newApiAnnotation.page_number,
+            coordinates: newApiAnnotation.position?.boundingRect ? {
+              x: newApiAnnotation.position.boundingRect.x1,
+              y: newApiAnnotation.position.boundingRect.y1,
+              width: newApiAnnotation.position.boundingRect.width,
+              height: newApiAnnotation.position.boundingRect.height
+            } : annotation.sectionReference.coordinates,
+            text: newApiAnnotation.selected_text
+          },
+          userId: newApiAnnotation.created_by,
+          userName: newApiAnnotation.user?.full_name || 'Current User',
+          createdAt: newApiAnnotation.created_at,
+          updatedAt: newApiAnnotation.created_at,
+          isShared: !newApiAnnotation.is_private,
+          sharedWith: [],
+          replies: []
+        }
+        
         dispatch({ type: 'ADD_ANNOTATION', payload: newAnnotation })
       } catch (error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to create annotation' })
@@ -413,7 +557,7 @@ export function DocumentContextProvider({
 
     updateAnnotation: async (id: string, updates: Partial<DocumentAnnotation>) => {
       try {
-        const response = await fetch(`/api/documents/${assetId}/annotations/${id}`, {
+        const response = await fetch(`/api/assets/${assetId}/annotations/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updates)
@@ -428,10 +572,13 @@ export function DocumentContextProvider({
 
     deleteAnnotation: async (id: string) => {
       try {
-        const response = await fetch(`/api/documents/${assetId}/annotations/${id}`, {
+        const response = await fetch(`/api/assets/${assetId}/annotations/${id}`, {
           method: 'DELETE'
         })
-        if (!response.ok) throw new Error('Failed to delete annotation')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to delete annotation')
+        }
         dispatch({ type: 'DELETE_ANNOTATION', payload: id })
       } catch (error) {
         dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to delete annotation' })

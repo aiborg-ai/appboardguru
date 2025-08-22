@@ -48,7 +48,7 @@ async function globalSetup(config: FullConfig) {
       organization_id: testOrg.id,
       created_by: adminUser.id,
       name: 'E2E Test Vault - Active',
-      status: 'active',
+      status: 'processing',
       priority: 'high',
       meeting_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     })
@@ -57,7 +57,7 @@ async function globalSetup(config: FullConfig) {
       organization_id: testOrg.id,
       created_by: adminUser.id,
       name: 'E2E Test Vault - Draft',
-      status: 'draft',
+      status: 'processing',
       priority: 'medium',
     })
     
@@ -68,7 +68,7 @@ async function globalSetup(config: FullConfig) {
       uploaded_by: adminUser.id,
       title: 'E2E Financial Report',
       file_name: 'e2e-financial-report.pdf',
-      status: 'ready',
+      processing_status: 'ready',
     })
     
     const testAsset2 = await testDb.createAsset({
@@ -76,16 +76,16 @@ async function globalSetup(config: FullConfig) {
       uploaded_by: adminUser.id,
       title: 'E2E Strategic Plan',
       file_name: 'e2e-strategic-plan.docx',
-      status: 'ready',
+      processing_status: 'ready',
     })
     
     // Associate assets with vaults
-    await testDb.supabase
+    await (testDb as any).supabase
       .from('vault_assets')
       .insert([
-        { vault_id: activeVault.id, asset_id: testAsset1.id, added_by: adminUser.id },
-        { vault_id: activeVault.id, asset_id: testAsset2.id, added_by: adminUser.id },
-        { vault_id: draftVault.id, asset_id: testAsset1.id, added_by: adminUser.id },
+        { vault_id: activeVault.id, asset_id: testAsset1.id, added_by_user_id: adminUser.id, organization_id: testOrg.id },
+        { vault_id: activeVault.id, asset_id: testAsset2.id, added_by_user_id: adminUser.id, organization_id: testOrg.id },
+        { vault_id: draftVault.id, asset_id: testAsset1.id, added_by_user_id: adminUser.id, organization_id: testOrg.id },
       ])
     
     // Set up authentication states for different user types

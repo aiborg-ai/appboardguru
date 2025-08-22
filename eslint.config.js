@@ -42,12 +42,24 @@ export default [
         React: 'readonly',
         confirm: 'readonly',
         alert: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        crypto: 'readonly',
+        Blob: 'readonly',
+        atob: 'readonly',
+        btoa: 'readonly',
+        performance: 'readonly',
+        NodeJS: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     rules: {
       // Allow any during migration but warn about it
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
+      'no-unused-vars': 'warn',
       
       // Disable some strict rules that would cause too many errors during migration
       '@typescript-eslint/no-unsafe-any': 'off',
@@ -62,10 +74,60 @@ export default [
       '@next/next/no-img-element': 'warn',
     },
   },
+  // Node.js files (config files, scripts)
   {
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: ['**/*.js', '**/*.mjs', '.storybook/**/*', 'scripts/**/*', 'config/**/*'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        globalThis: 'readonly',
+      },
+    },
+    rules: {
+      'no-undef': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  // Test files
+  {
+    files: ['**/*.test.{ts,tsx,js,jsx}', '**/*.spec.{ts,tsx,js,jsx}', '__tests__/**/*', 'tests/**/*'],
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        console: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        global: 'readonly',
+        globalThis: 'readonly',
+      },
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      'no-unused-vars': 'warn',
+      'no-undef': 'off',
     },
   },
   {

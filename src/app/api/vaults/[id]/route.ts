@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import type {
+  VaultWithRelations,
+  VaultAssetWithRelations,
+  VaultActivityWithUser,
+  VaultUpdate,
+  TypedSupabaseClient
+} from '@/types/api'
 
 interface UpdateVaultRequest {
   name?: string
@@ -9,7 +15,7 @@ interface UpdateVaultRequest {
   location?: string
   priority?: 'low' | 'medium' | 'high' | 'urgent'
   status?: 'draft' | 'active' | 'archived' | 'expired' | 'cancelled'
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
   tags?: string[]
   category?: string
   isPublic?: boolean
@@ -24,34 +30,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const vaultId = (await params).id
 
     // Get vault with detailed information
-    const { data: vault, error: vaultError } = await (supabase as any)
+    const { data: vault, error: vaultError } = await supabase
       .from('vaults')
       .select(`
         *,
@@ -80,8 +65,8 @@ export async function GET(
     }
 
     // Check if user has access to this vault
-    const userMembership = (vault as any).vault_members?.find(
-      (member: any) => (member as any).user.id === user.id && (member as any).status === 'active'
+    const userMembership = vault.vault_members?.find(
+      member => member.user.id === user.id && member.status === 'active'
     )
 
     if (!userMembership) {
@@ -107,7 +92,7 @@ export async function GET(
     )
 
     // Get vault assets
-    const { data: vaultAssets, error: assetsError } = await (supabase as any)
+    const { data: vaultAssets, error: assetsError } = await supabase
       .from('vault_assets')
       .select(`
         id, folder_path, display_order, is_featured, is_required_reading,
@@ -129,7 +114,7 @@ export async function GET(
     }
 
     // Get recent activity
-    const { data: recentActivity, error: activityError } = await (supabase as any)
+    const { data: recentActivity, error: activityError } = await supabase
       .from('vault_activity_log')
       .select(`
         id, activity_type, activity_description, timestamp,
@@ -148,29 +133,29 @@ export async function GET(
 
     // Transform response data
     const transformedVault = {
-      id: (vault as any).id,
-      name: (vault as any).name,
-      description: (vault as any).description,
-      meetingDate: (vault as any).meeting_date,
-      location: (vault as any).location,
-      status: (vault as any).status,
-      priority: (vault as any).priority,
-      createdAt: (vault as any).created_at,
-      updatedAt: (vault as any).updated_at,
-      expiresAt: (vault as any).expires_at,
-      archivedAt: (vault as any).archived_at,
-      memberCount: (vault as any).member_count,
-      assetCount: (vault as any).asset_count,
-      totalSizeBytes: (vault as any).total_size_bytes,
-      lastActivityAt: (vault as any).last_activity_at,
-      tags: (vault as any).tags,
-      category: (vault as any).category,
-      organization: (vault as any).organization,
-      createdBy: (vault as any).created_by_user,
-      settings: (vault as any).settings,
-      isPublic: (vault as any).is_public,
-      requiresInvitation: (vault as any).requires_invitation,
-      accessCode: (vault as any).access_code,
+      id: vault.id,
+      name: vault.name,
+      description: vault.description,
+      meetingDate: vault.meeting_date,
+      location: vault.location,
+      status: vault.status,
+      priority: vault.priority,
+      createdAt: vault.created_at,
+      updatedAt: vault.updated_at,
+      expiresAt: vault.expires_at,
+      archivedAt: vault.archived_at,
+      memberCount: vault.member_count,
+      assetCount: vault.asset_count,
+      totalSizeBytes: vault.total_size_bytes,
+      lastActivityAt: vault.last_activity_at,
+      tags: vault.tags,
+      category: vault.category,
+      organization: vault.organization,
+      createdBy: vault.created_by_user,
+      settings: vault.settings,
+      isPublic: vault.is_public,
+      requiresInvitation: vault.requires_invitation,
+      accessCode: vault.access_code,
       
       // User-specific data
       userRole: userMembership.role,
@@ -178,57 +163,57 @@ export async function GET(
       userLastAccessed: userMembership.last_accessed_at,
       
       // Related data
-      members: (vault as any).vault_members?.map((member: any) => ({
-        id: (member as any).id,
-        role: (member as any).role,
-        status: (member as any).status,
-        joinedAt: (member as any).joined_at,
-        lastAccessedAt: (member as any).last_accessed_at,
-        accessCount: (member as any).access_count,
+      members: vault.vault_members?.map(member => ({
+        id: member.id,
+        role: member.role,
+        status: member.status,
+        joinedAt: member.joined_at,
+        lastAccessedAt: member.last_accessed_at,
+        accessCount: member.access_count,
         user: {
-          id: (member as any).user.id,
-          email: (member as any).user.email
+          id: member.user.id,
+          email: member.user.email
         }
       })) || [],
       
-      assets: vaultAssets?.map((asset: any) => ({
-        id: (asset as any).id,
-        folderPath: (asset as any).folder_path,
-        displayOrder: (asset as any).display_order,
-        isFeatured: (asset as any).is_featured,
-        isRequiredReading: (asset as any).is_required_reading,
-        addedAt: (asset as any).added_at,
-        viewCount: (asset as any).view_count,
-        downloadCount: (asset as any).download_count,
+      assets: vaultAssets?.map(asset => ({
+        id: asset.id,
+        folderPath: asset.folder_path,
+        displayOrder: asset.display_order,
+        isFeatured: asset.is_featured,
+        isRequiredReading: asset.is_required_reading,
+        addedAt: asset.added_at,
+        viewCount: asset.view_count,
+        downloadCount: asset.download_count,
         asset: {
-          id: (asset as any).asset.id,
-          title: (asset as any).asset.title,
-          description: (asset as any).asset.description,
-          fileName: (asset as any).asset.file_name,
-          originalFileName: (asset as any).asset.original_file_name,
-          fileSize: (asset as any).asset.file_size,
-          fileType: (asset as any).asset.file_type,
-          mimeType: (asset as any).asset.mime_type,
-          thumbnailUrl: (asset as any).asset.thumbnail_url,
-          createdAt: (asset as any).asset.created_at,
-          owner: (asset as any).asset.owner
+          id: asset.asset.id,
+          title: asset.asset.title,
+          description: asset.asset.description,
+          fileName: asset.asset.file_name,
+          originalFileName: asset.asset.original_file_name,
+          fileSize: asset.asset.file_size,
+          fileType: asset.asset.file_type,
+          mimeType: asset.asset.mime_type,
+          thumbnailUrl: asset.asset.thumbnail_url,
+          createdAt: asset.asset.created_at,
+          owner: asset.asset.owner
         },
-        addedBy: (asset as any).added_by
+        addedBy: asset.added_by
       })) || [],
       
-      recentActivity: recentActivity?.map((activity: any) => ({
-        id: (activity as any).id,
-        type: (activity as any).activity_type,
-        description: (activity as any).activity_description,
-        timestamp: (activity as any).timestamp,
-        details: (activity as any).activity_details,
-        riskLevel: (activity as any).risk_level,
-        performedBy: (activity as any).performed_by
+      recentActivity: recentActivity?.map(activity => ({
+        id: activity.id,
+        type: activity.activity_type,
+        description: activity.activity_description,
+        timestamp: activity.timestamp,
+        details: activity.activity_details,
+        riskLevel: activity.risk_level,
+        performedBy: activity.performed_by
       })) || []
     }
 
     // Update last access time for the user
-    await (supabase as any)
+    await supabase
       .from('vault_members')
       .update({ 
         last_accessed_at: new Date().toISOString(),
@@ -238,11 +223,11 @@ export async function GET(
       .eq('user_id', user.id)
 
     // Log access activity
-    await (supabase as any)
+    await supabase
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: (vault as any).organization_id,
+        organization_id: vault.organization_id,
         activity_type: 'access_granted',
         performed_by_user_id: user.id,
         activity_details: {
@@ -270,35 +255,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const vaultId = (await params).id
     const updates: UpdateVaultRequest = await request.json()
 
     // Check user's permission to update this vault
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('vault_members')
       .select('role, status, vault_id, organization_id')
       .eq('vault_id', vaultId)
@@ -311,14 +275,14 @@ export async function PUT(
     }
 
     // Only owners, admins, and moderators can update vaults
-    if (!['owner', 'admin', 'moderator'].includes((membership as any).role)) {
+    if (!['owner', 'admin', 'moderator'].includes(membership.role)) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to update vault' 
       }, { status: 403 })
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Partial<VaultUpdate> = {
       updated_at: new Date().toISOString()
     }
 
@@ -342,7 +306,7 @@ export async function PUT(
     if (updates.expiresAt !== undefined) updateData.expires_at = updates.expiresAt ? new Date(updates.expiresAt).toISOString() : null
 
     // Update vault
-    const { data: updatedVault, error: updateError } = await (supabase as any)
+    const { data: updatedVault, error: updateError } = await supabase
       .from('vaults')
       .update(updateData)
       .eq('id', vaultId)
@@ -360,11 +324,11 @@ export async function PUT(
     }
 
     // Log activity
-    await (supabase as any)
+    await supabase
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: (membership as any).organization_id,
+        organization_id: membership.organization_id,
         activity_type: 'vault_updated',
         performed_by_user_id: user.id,
         activity_details: {
@@ -399,7 +363,7 @@ export async function PUT(
       settings: updatedVault.settings,
       isPublic: updatedVault.is_public,
       requiresInvitation: updatedVault.requires_invitation,
-      userRole: (membership as any).role
+      userRole: membership.role
     }
 
     return NextResponse.json({
@@ -420,34 +384,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const vaultId = (await params).id
 
     // Check user's permission to delete this vault
-    const { data: vault, error: vaultError } = await (supabase as any)
+    const { data: vault, error: vaultError } = await supabase
       .from('vaults')
       .select(`
         id, name, organization_id, created_by,
@@ -462,17 +405,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Vault not found or access denied' }, { status: 404 })
     }
 
-    const userRole = (vault as any).vault_members?.[0]?.role
+    const userRole = vault.vault_members?.[0]?.role
 
     // Only vault owners or organization owners/admins can delete vaults
-    const canDelete = userRole === 'owner' || (vault as any).created_by === user.id
+    const canDelete = userRole === 'owner' || vault.created_by === user.id
 
     if (!canDelete) {
       // Check if user is org owner/admin
-      const { data: orgMembership } = await (supabase as any)
+      const { data: orgMembership } = await supabase
         .from('organization_members')
         .select('role')
-        .eq('organization_id', (vault as any).organization_id)
+        .eq('organization_id', vault.organization_id)
         .eq('user_id', user.id)
         .eq('status', 'active')
         .single()
@@ -485,7 +428,7 @@ export async function DELETE(
     }
 
     // Soft delete: Archive the vault instead of hard delete
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('vaults')
       .update({ 
         status: 'cancelled',
@@ -500,15 +443,15 @@ export async function DELETE(
     }
 
     // Log activity
-    await (supabase as any)
+    await supabase
       .from('vault_activity_log')
       .insert({
         vault_id: vaultId,
-        organization_id: (vault as any).organization_id,
+        organization_id: vault.organization_id,
         activity_type: 'vault_deleted',
         performed_by_user_id: user.id,
         activity_details: {
-          vault_name: (vault as any).name,
+          vault_name: vault.name,
           deletion_type: 'soft_delete',
           deleted_via: 'api'
         },

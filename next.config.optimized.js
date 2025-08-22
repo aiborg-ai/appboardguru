@@ -4,7 +4,7 @@ const path = require('path')
 const nextConfig = {
   // Image optimization
   images: {
-    domains: ['localhost', process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/^https?:\/\//, '') || ''],
+    domains: ['localhost', process.env['NEXT_PUBLIC_SUPABASE_URL']?.replace(/^https?:\/\//, '') || ''],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -19,10 +19,10 @@ const nextConfig = {
   
   // Production optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
+    removeConsole: process.env['NODE_ENV'] === 'production' ? {
       exclude: ['error', 'warn']
     } : false,
-    reactRemoveProperties: process.env.NODE_ENV === 'production',
+    reactRemoveProperties: process.env['NODE_ENV'] === 'production',
   },
   
   // Experimental features for performance
@@ -40,7 +40,7 @@ const nextConfig = {
   },
 
   // PWA and caching
-  ...(process.env.NODE_ENV === 'production' && {
+  ...(process.env['NODE_ENV'] === 'production' && {
     async headers() {
       return [
         {
@@ -193,7 +193,7 @@ const nextConfig = {
       }
 
       // Bundle analyzer for production builds
-      if (process.env.ANALYZE === 'true') {
+      if (process.env['ANALYZE'] === 'true') {
         try {
           const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
           config.plugins.push(

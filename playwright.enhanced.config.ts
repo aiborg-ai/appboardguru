@@ -19,20 +19,20 @@ export default defineConfig({
   fullyParallel: true,
   
   /* Fail the build on CI if you accidentally left test.only in the source code */
-  forbidOnly: !!process.env.CI,
+  forbidOnly: !!process.env['CI'],
   
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env['CI'] ? 2 : 0,
   
   /* Opt out of parallel tests on CI */
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env['CI'] ? 2 : undefined,
   
   /* Reporter configuration */
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/junit.xml' }],
-    ...(process.env.CI ? [['github' as const]] : [['list' as const]]),
+    ...(process.env['CI'] ? [['github' as const]] : [['list' as const]]),
   ],
   
   /* Global setup files */
@@ -42,16 +42,16 @@ export default defineConfig({
   /* Shared settings for all projects */
   use: {
     /* Base URL */
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env['BASE_URL'] || 'http://localhost:3000',
     
     /* Trace options */
-    trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
+    trace: process.env['CI'] ? 'retain-on-failure' : 'on-first-retry',
     
     /* Screenshot options */
-    screenshot: process.env.CI ? 'only-on-failure' : 'on-first-retry',
+    screenshot: process.env['CI'] ? 'only-on-failure' : 'on-first-retry',
     
     /* Video recording */
-    video: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
+    video: process.env['CI'] ? 'retain-on-failure' : 'on-first-retry',
     
     /* Action timeout */
     actionTimeout: 15000,
@@ -162,7 +162,7 @@ export default defineConfig({
       name: 'api',
       testMatch: /.*api\.spec\.ts/,
       use: {
-        baseURL: process.env.API_BASE_URL || 'http://localhost:3000/api',
+        baseURL: process.env['API_BASE_URL'] || 'http://localhost:3000/api',
         extraHTTPHeaders: {
           'Content-Type': 'application/json',
         },
@@ -201,25 +201,25 @@ export default defineConfig({
   ],
   
   /* Web server configuration for local development */
-  webServer: process.env.CI ? undefined : {
+  webServer: process.env['CI'] ? undefined : {
     command: 'npm run dev',
     port: 3000,
     reuseExistingServer: true,
     timeout: 120 * 1000,
     env: {
       NODE_ENV: 'test',
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key',
+      NEXT_PUBLIC_SUPABASE_URL: process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'https://test.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || 'test-anon-key',
     },
   },
   
   /* Test metadata */
   metadata: {
     'test-suite': 'BoardGuru E2E Tests',
-    'environment': process.env.NODE_ENV || 'test',
-    'version': process.env.npm_package_version || '1.0.0',
+    'environment': process.env['NODE_ENV'] || 'test',
+    'version': process.env['npm_package_version'] || '1.0.0',
   },
   
   /* Maximum failures before stopping */
-  maxFailures: process.env.CI ? 10 : undefined,
+  maxFailures: process.env['CI'] ? 10 : undefined,
 })

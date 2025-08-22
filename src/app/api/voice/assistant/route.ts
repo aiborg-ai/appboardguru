@@ -20,7 +20,7 @@ import {
   ContextualInfo
 } from '@/types/voice';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env['OPENROUTER_API_KEY'];
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export async function POST(request: NextRequest) {

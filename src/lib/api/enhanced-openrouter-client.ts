@@ -99,7 +99,7 @@ class EnhancedOpenRouterClient {
     } = options
 
     // Use user's API key if provided, otherwise use server-side key
-    const apiKey = this.settings.apiKey || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY
+    const apiKey = this.settings.apiKey || process.env['NEXT_PUBLIC_OPENROUTER_API_KEY']
 
     if (!apiKey && !this.settings.useLocalLLM) {
       return {

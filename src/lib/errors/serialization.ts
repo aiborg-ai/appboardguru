@@ -61,7 +61,7 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
  * Error serializer class
  */
 export class ErrorSerializer {
-  private static isProduction = process.env.NODE_ENV === 'production'
+  private static isProduction = process.env['NODE_ENV'] === 'production'
 
   /**
    * Serialize error to API response
@@ -409,7 +409,7 @@ export class ValidationErrorAggregator {
         validationErrors: this.errors.map(error => ({
           field: error.field || 'unknown',
           message: error.message,
-          value: process.env.NODE_ENV === 'production' ? undefined : error.value
+          value: process.env['NODE_ENV'] === 'production' ? undefined : error.value
         }))
       }
     }

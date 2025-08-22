@@ -38,7 +38,7 @@ export interface SortOptions {
 
 export interface QueryOptions extends PaginationOptions, SortOptions {
   search?: string
-  filters?: Record<string, any>
+  filters?: Record<string, unknown>
 }
 
 // Repository result types
@@ -55,7 +55,7 @@ export interface RepositoryResult<T> {
   data: T | null
   success: boolean
   error?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface RepositoryListResult<T> {
@@ -100,7 +100,7 @@ export interface AuditLogEntry {
   event_description: string
   outcome: 'success' | 'failure' | 'partial'
   severity: 'low' | 'medium' | 'high' | 'critical'
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   ip_address?: string
   user_agent?: string
 }
@@ -109,7 +109,7 @@ export interface AuditLogEntry {
 export interface FilterCriteria {
   field: string
   operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in' | 'like' | 'ilike' | 'is' | 'not_is'
-  value: any
+  value: string | number | boolean | null | string[] | number[]
 }
 
 export interface QueryBuilder {

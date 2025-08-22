@@ -41,8 +41,8 @@ export class SearchService {
 
     const cookieStore = await cookies()
     this.supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['SUPABASE_SERVICE_ROLE_KEY']!,
       {
         cookies: {
           getAll() {
@@ -67,7 +67,7 @@ export class SearchService {
       const response = await fetch('https://api.openai.com/v1/embeddings', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${process.env['OPENAI_API_KEY']}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

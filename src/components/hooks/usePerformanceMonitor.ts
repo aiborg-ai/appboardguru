@@ -12,7 +12,7 @@ interface PerformanceMetrics {
  */
 export function usePerformanceMonitor(
   componentName: string,
-  enabled: boolean = process.env.NODE_ENV === 'development'
+  enabled: boolean = process.env['NODE_ENV'] === 'development'
 ): PerformanceMetrics {
   const metricsRef = React.useRef<PerformanceMetrics>({
     renderCount: 0,
@@ -79,7 +79,7 @@ export function useOperationTimer() {
       const duration = performance.now() - startTime
       timers.current.delete(operationName)
       
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         console.log(`[Operation Timer] ${operationName}: ${duration.toFixed(2)}ms`)
       }
       
@@ -97,7 +97,7 @@ export function useOperationTimer() {
 export function useWhyDidYouUpdate(
   name: string,
   props: Record<string, any>,
-  enabled: boolean = process.env.NODE_ENV === 'development'
+  enabled: boolean = process.env['NODE_ENV'] === 'development'
 ) {
   const previousProps = React.useRef<Record<string, any>>()
 
@@ -135,7 +135,7 @@ export function useLifecycleTimer(componentName: string) {
   React.useEffect(() => {
     mountTimeRef.current = performance.now()
     
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       console.log(`[Lifecycle] ${componentName} mounted`)
     }
 
@@ -143,7 +143,7 @@ export function useLifecycleTimer(componentName: string) {
       const unmountTime = performance.now()
       const lifetimeDuration = unmountTime - mountTimeRef.current
       
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         console.log(
           `[Lifecycle] ${componentName} unmounted after ${lifetimeDuration.toFixed(2)}ms`
         )

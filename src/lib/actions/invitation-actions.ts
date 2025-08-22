@@ -144,7 +144,7 @@ export async function createInvitationsAction(
         }
 
         // Create invitation via API route
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/invitations`, {
+        const response = await fetch(`${process.env['NEXT_PUBLIC_APP_URL']}/api/invitations`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -248,7 +248,7 @@ export async function updateInvitationAction(
     }
 
     // Call API endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/invitations`, {
+    const response = await fetch(`${process.env['NEXT_PUBLIC_APP_URL']}/api/invitations`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

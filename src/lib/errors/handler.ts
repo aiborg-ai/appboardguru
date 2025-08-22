@@ -44,7 +44,7 @@ export class GlobalErrorHandler {
     this.logger = options.logger || Logger.getLogger('ErrorHandler')
     this.options = {
       logger: this.logger,
-      includeStackTrace: process.env.NODE_ENV !== 'production',
+      includeStackTrace: process.env['NODE_ENV'] !== 'production',
       enableAlerting: true,
       sensitiveFields: ['password', 'token', 'secret', 'key', 'auth'],
       customErrorMap: new Map(),
@@ -248,7 +248,7 @@ export class GlobalErrorHandler {
 
     // Generic error fallback
     return new BaseError(
-      process.env.NODE_ENV === 'production' 
+      process.env['NODE_ENV'] === 'production' 
         ? 'An unexpected error occurred'
         : error.message,
       'GENERIC_ERROR',

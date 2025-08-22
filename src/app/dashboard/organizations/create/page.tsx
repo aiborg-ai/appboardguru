@@ -9,6 +9,7 @@ import { Button } from '@/features/shared/ui/button';
 import { ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { useCreateOrganization } from '@/hooks/useOrganizations';
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function CreateOrganizationPage() {
   const [createdOrganization, setCreatedOrganization] = useState<OrganizationCreationResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const createOrganizationMutation = useCreateOrganization();
 
   // Get current user on mount
   useEffect(() => {
@@ -24,8 +26,10 @@ export default function CreateOrganizationPage() {
       const { data: { user }, error } = await supabase.auth.getUser();
       
       if (error || !user) {
-        // Redirect to sign in if not authenticated
-        router.push('/auth/signin');
+        // Prevent redirect if already on signin page to avoid loops
+        if (!window.location.pathname.includes('/auth/signin')) {
+          router.push('/auth/signin');
+        }
         return;
       }
       
@@ -42,25 +46,28 @@ export default function CreateOrganizationPage() {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch('/api/organizations/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          createdBy: currentUser.id,
-        }),
+      // Use the authenticated hook instead of raw fetch
+      const result = await createOrganizationMutation.mutateAsync({
+        name: data.organizationDetails.name,
+        slug: data.organizationDetails.slug,
+        description: data.organizationDetails.description,
+        website: data.organizationDetails.website,
+        industry: data.organizationDetails.industry,
+        organizationSize: data.organizationDetails.organizationSize,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create organization');
-      }
-
-      const result: { data: OrganizationCreationResponse } = await response.json();
+      // Transform the result to match expected response format
+      const response: OrganizationCreationResponse = {
+        success: true,
+        organization: {
+          id: result.id,
+          name: result.name,
+          slug: result.slug,
+        },
+        invitationsSent: data.members?.invitations?.length || 0,
+      };
       
-      setCreatedOrganization(result.data);
+      setCreatedOrganization(response);
       setIsCompleted(true);
     } catch (error) {
       console.error('Error creating organization:', error);

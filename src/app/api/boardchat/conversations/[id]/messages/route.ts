@@ -31,10 +31,7 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const url = new URL(request.url)
-    const limit = parseInt(url.searchParams.get('limit') || '50')
-    const before = url.searchParams.get('before') // For pagination
-    const after = url.searchParams.get('after')
+    // TODO: Implement pagination with limit, before, after parameters
 
     // Verify user is a participant in this conversation
     const { data: participant } = await (supabase as any)

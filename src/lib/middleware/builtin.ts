@@ -118,7 +118,7 @@ export function securityHeadersMiddleware(): MiddlewareFunction {
     
     // CORS headers for API routes
     if (context.request.nextUrl.pathname.startsWith('/api/')) {
-      headers.set('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_APP_URL || '*')
+      headers.set('Access-Control-Allow-Origin', process.env['NEXT_PUBLIC_APP_URL'] || '*')
       headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
       headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-correlation-id')
       headers.set('Access-Control-Allow-Credentials', 'true')

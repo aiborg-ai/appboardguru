@@ -506,11 +506,11 @@ export async function validateApiKey(apiKey: string): Promise<{
 }> {
   // In production, store API keys in database with proper hashing
   const validApiKeys = new Map([
-    [process.env.INTERNAL_API_KEY || '', {
+    [process.env['INTERNAL_API_KEY'] || '', {
       service: 'internal',
       permissions: ['read', 'write', 'admin']
     }],
-    [process.env.WEBHOOK_API_KEY || '', {
+    [process.env['WEBHOOK_API_KEY'] || '', {
       service: 'webhook',
       permissions: ['write']
     }]

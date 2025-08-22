@@ -455,7 +455,7 @@ class BasicSmokeTestRunner {
     this.results.forEach(result => {
       const status = result.passed ? '✅' : '❌';
       console.log(`${status} ${result.test}`);
-      if (!result.passed || process.env.VERBOSE) {
+      if (!result.passed || process.env['VERBOSE']) {
         console.log(`   ${result.details}`);
       }
     });

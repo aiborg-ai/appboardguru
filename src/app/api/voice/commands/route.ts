@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { chatWithOpenRouter } from '@/lib/openrouter';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env['OPENROUTER_API_KEY'];
 
 // Voice command types
 export type VoiceCommandType = 

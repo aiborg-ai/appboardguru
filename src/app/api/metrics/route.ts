@@ -113,8 +113,8 @@ async function getBusinessMetrics() {
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
       {
         cookies: {
           getAll() {
@@ -255,9 +255,9 @@ export const GET = withTelemetry(async (request: NextRequest) => {
     // Check for admin/internal access
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
-    const adminToken = process.env.METRICS_ACCESS_TOKEN
+    const adminToken = process.env['METRICS_ACCESS_TOKEN']
     
-    if (process.env.NODE_ENV === 'production' && (!token || !adminToken || token !== adminToken)) {
+    if (process.env['NODE_ENV'] === 'production' && (!token || !adminToken || token !== adminToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -346,9 +346,9 @@ export const POST = withTelemetry(async (request: NextRequest) => {
     
     // Check for admin access
     const token = searchParams.get('token')
-    const adminToken = process.env.METRICS_ACCESS_TOKEN
+    const adminToken = process.env['METRICS_ACCESS_TOKEN']
     
-    if (process.env.NODE_ENV === 'production' && (!token || !adminToken || token !== adminToken)) {
+    if (process.env['NODE_ENV'] === 'production' && (!token || !adminToken || token !== adminToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

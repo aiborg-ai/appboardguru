@@ -73,7 +73,7 @@ async function handleResendOtp(request: NextRequest) {
       }
 
       // Check if user has already set password
-      const { data: userData, error: userError } = await (supabase as any)
+      const { data: userData } = await (supabase as any)
         .from('users')
         .select('password_set')
         .eq('email', email)

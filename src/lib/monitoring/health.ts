@@ -331,14 +331,14 @@ export class HealthMonitor {
       status: systemStatus,
       timestamp: new Date(),
       uptime: Date.now() - this.startTime,
-      version: process.env.VERSION || '1.0.0',
+      version: process.env['VERSION'] || '1.0.0',
       checks: results,
       summary,
       details: {
         memoryUsage: process.memoryUsage(),
         cpuUsage: process.cpuUsage(),
-        environment: process.env.NODE_ENV || 'development',
-        service: process.env.SERVICE_NAME || 'appboardguru'
+        environment: process.env['NODE_ENV'] || 'development',
+        service: process.env['SERVICE_NAME'] || 'appboardguru'
       }
     }
 
@@ -441,7 +441,7 @@ export class HealthMonitor {
       try {
         // This would check database connectivity
         // For now, just check if environment variables are set
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        if (!process.env['NEXT_PUBLIC_SUPABASE_URL'] || !process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']) {
           return {
             status: HealthStatus.UNHEALTHY,
             message: 'Database configuration missing'

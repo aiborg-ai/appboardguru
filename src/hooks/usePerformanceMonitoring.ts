@@ -5,7 +5,23 @@
 
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { monitor } from '@/lib/monitoring'
-import { telemetry } from '@/lib/telemetry'
+
+// Client-side performance tracking without server telemetry dependencies
+const clientTelemetry = {
+  recordComponentRender: (component: string, duration: number) => {
+    if (process.env['NODE_ENV'] === 'development') {
+      console.debug(`Component ${component} rendered in ${duration}ms`)
+    }
+  },
+  recordBusinessMetric: (name: string, value: number, attributes?: Record<string, string | number>) => {
+    if (process.env['NODE_ENV'] === 'development') {
+      console.debug(`Business metric ${name}: ${value}`, attributes)
+    }
+  },
+  recordError: (error: Error) => {
+    console.error('Performance monitoring error:', error)
+  }
+}
 
 interface PerformanceMetrics {
   renderTime: number
@@ -70,7 +86,7 @@ export function usePerformanceMonitoring({
       renderCount: renderCount.current
     })
 
-    telemetry.recordComponentRender(componentName, renderTime)
+    clientTelemetry.recordComponentRender(componentName, renderTime)
 
     // Check thresholds
     if (thresholds.renderTime && renderTime > thresholds.renderTime) {
@@ -133,7 +149,7 @@ export function usePerformanceMonitoring({
         const duration = Date.now() - startTime
         
         // Track network performance
-        telemetry.recordBusinessMetric('network_request', 1, {
+        clientTelemetry.recordBusinessMetric('network_request', 1, {
           component: componentName,
           status: response.status,
           duration
@@ -144,7 +160,7 @@ export function usePerformanceMonitoring({
         const duration = Date.now() - startTime
         
         // Track network errors
-        telemetry.recordError(error as Error)
+        clientTelemetry.recordError(error as Error)
         errorCount.current++
         
         setMetrics(prev => ({
@@ -178,7 +194,7 @@ export function usePerformanceMonitoring({
       metrics
     })
 
-    telemetry.recordError(error)
+    clientTelemetry.recordError(error)
   }, [componentName, trackErrors, metrics])
 
   // Performance mark utilities
@@ -251,7 +267,7 @@ export function useOperationTracking(operationName: string) {
 
     // Track operation performance
     monitor.trackAPICall(operationName, duration, metadata)
-    telemetry.recordBusinessMetric(`operation_${operationName}`, 1, {
+    clientTelemetry.recordBusinessMetric(`operation_${operationName}`, 1, {
       duration,
       ...metadata
     })
@@ -283,18 +299,18 @@ export function usePagePerformance(pageName: string) {
           case 'paint':
             if (entry.name === 'first-contentful-paint') {
               setPerformanceMetrics(prev => ({ ...prev, fcp: entry.startTime }))
-              telemetry.recordBusinessMetric('first_contentful_paint', entry.startTime, { page: pageName })
+              clientTelemetry.recordBusinessMetric('first_contentful_paint', entry.startTime, { page: pageName })
             }
             break
           
           case 'largest-contentful-paint':
             setPerformanceMetrics(prev => ({ ...prev, lcp: entry.startTime }))
-            telemetry.recordBusinessMetric('largest_contentful_paint', entry.startTime, { page: pageName })
+            clientTelemetry.recordBusinessMetric('largest_contentful_paint', entry.startTime, { page: pageName })
             break
           
           case 'first-input':
             setPerformanceMetrics(prev => ({ ...prev, fid: (entry as any).processingStart - entry.startTime }))
-            telemetry.recordBusinessMetric('first_input_delay', (entry as any).processingStart - entry.startTime, { page: pageName })
+            clientTelemetry.recordBusinessMetric('first_input_delay', (entry as any).processingStart - entry.startTime, { page: pageName })
             break
           
           case 'layout-shift':
@@ -312,7 +328,7 @@ export function usePagePerformance(pageName: string) {
               ...prev,
               ttfb: navEntry.responseStart - navEntry.requestStart
             }))
-            telemetry.recordBusinessMetric('time_to_first_byte', navEntry.responseStart - navEntry.requestStart, { page: pageName })
+            clientTelemetry.recordBusinessMetric('time_to_first_byte', navEntry.responseStart - navEntry.requestStart, { page: pageName })
             break
         }
       })
@@ -376,7 +392,7 @@ export function useResourceTiming() {
 
       // Track slow resources
       slowResources.forEach(resource => {
-        telemetry.recordBusinessMetric('slow_resource', 1, {
+        clientTelemetry.recordBusinessMetric('slow_resource', 1, {
           resource_name: resource.name,
           duration: resource.duration,
           size: resource.size

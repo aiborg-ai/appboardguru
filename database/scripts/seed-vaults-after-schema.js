@@ -3,8 +3,8 @@ const { createClient } = require('@supabase/supabase-js')
 require('dotenv').config({ path: '.env.local' })
 
 async function seedVaultData() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL']
+  const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
   const existingUserId = 'e8698725-6e36-4b8a-917a-c0fa852e7034'
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey, {

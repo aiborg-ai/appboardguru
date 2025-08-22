@@ -230,7 +230,7 @@ export class TelemetryManager {
 
   constructor(provider?: TelemetryProvider) {
     this.provider = provider || (
-      process.env.NODE_ENV === 'production' 
+      process.env['NODE_ENV'] === 'production' 
         ? new OpenTelemetryProvider()
         : new InMemoryTelemetryProvider()
     )

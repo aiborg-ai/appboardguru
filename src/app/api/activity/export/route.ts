@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import type { Database } from '@/types/database'
 // import { ComplianceEngine } from '@/lib/activity/compliance'
-
-type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
 export async function POST(request: NextRequest) {
   try {
@@ -188,7 +185,7 @@ export async function POST(request: NextRequest) {
         
         if (reportType === 'activity') {
           const headers = 'Timestamp,User ID,Event Type,Entity Type,Entity ID' + (includeMetadata ? ',Metadata,IP Address,Session ID' : '')
-          const activities = exportData.activities as Array<{
+          const activities = exportData['activities'] as Array<{
             timestamp: string
             userId: string
             eventType: string

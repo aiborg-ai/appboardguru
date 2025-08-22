@@ -64,7 +64,7 @@ export function createStore<T extends object>(
   }
 
   // Add dev tools in development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     middlewares.push(devtools)
   }
 
@@ -109,7 +109,7 @@ export function createSelectors<S extends Record<string, any>>(store: S) {
 
 // Performance tracking utilities
 export const trackStorePerformance = (storeName: string, actionName: string) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     const startTime = performance.now()
     
     return {
@@ -166,7 +166,7 @@ export const resetAllStores = () => {
 
 // Store debugging utilities
 export const debugStore = (store: any, name: string) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     (window as any)[`debug_${name}`] = store
     console.log(`Store "${name}" available as window.debug_${name}`)
   }
@@ -178,7 +178,7 @@ export const batchActions = (actions: (() => void)[]) => {
   
   actions.forEach(action => action())
   
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     const endTime = performance.now()
     console.log(`Batched ${actions.length} actions in ${endTime - startTime}ms`)
   }

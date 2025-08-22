@@ -430,13 +430,13 @@ export function PerformanceDashboard({
           <h3 className="text-lg font-medium mb-4">Advanced Options</h3>
           <div className="flex gap-4">
             <Button
-              onClick={() => window.open('/api/metrics?token=' + encodeURIComponent(process.env.NEXT_PUBLIC_METRICS_TOKEN || ''), '_blank')}
+              onClick={() => window.open('/api/metrics?token=' + encodeURIComponent(process.env['NEXT_PUBLIC_METRICS_TOKEN'] || ''), '_blank')}
               variant="outline"
             >
               View Raw Metrics
             </Button>
             <Button
-              onClick={() => window.open('/api/optimize/database?token=' + encodeURIComponent(process.env.NEXT_PUBLIC_METRICS_TOKEN || ''), '_blank')}
+              onClick={() => window.open('/api/optimize/database?token=' + encodeURIComponent(process.env['NEXT_PUBLIC_METRICS_TOKEN'] || ''), '_blank')}
               variant="outline"
             >
               Database Optimization

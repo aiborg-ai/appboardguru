@@ -29,9 +29,23 @@ interface EnhancedChatRequest {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
+  console.log('[Enhanced Chat API] Starting request processing')
   
   try {
-    const body: EnhancedChatRequest = await request.json()
+    // Parse request body with error handling
+    let body: EnhancedChatRequest
+    try {
+      body = await request.json()
+      console.log('[Enhanced Chat API] Request parsed successfully:', { 
+        messageLength: body?.message?.length, 
+        context: body?.context,
+        options: body?.options 
+      })
+    } catch (parseError) {
+      console.error('[Enhanced Chat API] JSON parsing error:', parseError)
+      throw new Error('Invalid JSON in request body')
+    }
+    
     const { message, context, options = {} } = body
     const { 
       includeWebSearch = false, 
@@ -39,27 +53,66 @@ export async function POST(request: NextRequest) {
       maxReferences = 5 
     } = options
 
+    // Validate required fields
+    if (!message || typeof message !== 'string') {
+      console.error('[Enhanced Chat API] Invalid message field:', message)
+      throw new Error('Message is required and must be a string')
+    }
+
+    if (!context || typeof context !== 'object') {
+      console.error('[Enhanced Chat API] Invalid context field:', context)
+      throw new Error('Context is required and must be an object')
+    }
+
+    console.log('[Enhanced Chat API] Environment variables check:', {
+      hasSupabaseUrl: !!process.env['NEXT_PUBLIC_SUPABASE_URL'],
+      hasServiceKey: !!process.env['SUPABASE_SERVICE_ROLE_KEY'],
+      hasOpenRouterKey: !!process.env['OPENROUTER_API_KEY'],
+      supabaseUrl: process.env['NEXT_PUBLIC_SUPABASE_URL'] ? 'Set' : 'Missing',
+      serviceKey: process.env['SUPABASE_SERVICE_ROLE_KEY'] ? 'Set' : 'Missing',
+      openRouterKey: process.env['OPENROUTER_API_KEY'] ? 'Set' : 'Missing'
+    })
+
     // Initialize Supabase client
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
+    let supabase
+    try {
+      const cookieStore = await cookies()
+      supabase = createServerClient(
+        process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+        process.env['SUPABASE_SERVICE_ROLE_KEY']!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll()
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                cookieStore.set(name, value, options)
+              })
+            },
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
+        }
+      )
+      console.log('[Enhanced Chat API] Supabase client initialized successfully')
+    } catch (supabaseError) {
+      console.error('[Enhanced Chat API] Supabase client initialization error:', supabaseError)
+      throw new Error('Failed to initialize database connection')
+    }
 
     // Get user info
-    const { data: { user } } = await supabase.auth.getUser()
+    let user
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      user = authUser
+      console.log('[Enhanced Chat API] User authentication check:', { 
+        hasUser: !!user,
+        userId: user?.id || 'Not authenticated'
+      })
+    } catch (authError) {
+      console.error('[Enhanced Chat API] User authentication error:', authError)
+      // Continue without user - this is non-critical for the API to work
+      user = null
+    }
 
     let references: EnhancedChatResponse['references'] = {
       assets: [],
@@ -154,28 +207,76 @@ export async function POST(request: NextRequest) {
     ]
 
     // Call OpenRouter API
-    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'X-Title': 'BoardGuru AI Assistant'
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages,
-        temperature: 0.7,
-        max_tokens: 1500,
-        stream: false
-      })
+    console.log('[Enhanced Chat API] Preparing OpenRouter API call:', {
+      hasApiKey: !!process.env['OPENROUTER_API_KEY'],
+      apiKeyPrefix: process.env['OPENROUTER_API_KEY'] ? process.env['OPENROUTER_API_KEY'].substring(0, 10) + '...' : 'Missing',
+      messagesCount: messages.length,
+      systemPromptLength: systemPrompt.length
     })
 
-    if (!openRouterResponse.ok) {
-      throw new Error(`OpenRouter API error: ${openRouterResponse.statusText}`)
+    let openRouterResponse
+    try {
+      openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env['OPENROUTER_API_KEY']}`,
+          'Content-Type': 'application/json',
+          'X-Title': 'BoardGuru AI Assistant'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-sonnet',
+          messages,
+          temperature: 0.7,
+          max_tokens: 1500,
+          stream: false
+        })
+      })
+      console.log('[Enhanced Chat API] OpenRouter API response received:', {
+        status: openRouterResponse.status,
+        statusText: openRouterResponse.statusText,
+        ok: openRouterResponse.ok,
+        headers: Object.fromEntries(openRouterResponse.headers.entries())
+      })
+    } catch (fetchError) {
+      console.error('[Enhanced Chat API] OpenRouter API fetch error:', fetchError)
+      throw new Error(`Failed to connect to OpenRouter API: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`)
     }
 
-    const aiResponse = await openRouterResponse.json()
+    if (!openRouterResponse.ok) {
+      let errorDetails
+      try {
+        errorDetails = await openRouterResponse.text()
+        console.error('[Enhanced Chat API] OpenRouter API error response:', {
+          status: openRouterResponse.status,
+          statusText: openRouterResponse.statusText,
+          body: errorDetails
+        })
+      } catch (textError) {
+        console.error('[Enhanced Chat API] Failed to read error response:', textError)
+        errorDetails = 'Could not read error response'
+      }
+      throw new Error(`OpenRouter API error: ${openRouterResponse.status} ${openRouterResponse.statusText} - ${errorDetails}`)
+    }
+
+    let aiResponse
+    try {
+      aiResponse = await openRouterResponse.json()
+      console.log('[Enhanced Chat API] OpenRouter API response parsed:', {
+        hasChoices: !!aiResponse.choices,
+        choicesCount: aiResponse.choices?.length,
+        hasUsage: !!aiResponse.usage,
+        usage: aiResponse.usage
+      })
+    } catch (jsonError) {
+      console.error('[Enhanced Chat API] Failed to parse OpenRouter response JSON:', jsonError)
+      throw new Error('Invalid JSON response from OpenRouter API')
+    }
+
     const aiMessage = aiResponse.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.'
+    console.log('[Enhanced Chat API] AI message extracted:', {
+      hasMessage: !!aiMessage,
+      messageLength: aiMessage?.length
+    })
 
     // Generate suggestions based on context
     const suggestions = generateSuggestions(message, context.scope)
@@ -206,21 +307,56 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('[Enhanced Chat API] Request completed successfully:', {
+      success: true,
+      totalProcessingTime: totalTime,
+      messageLength: aiMessage?.length,
+      referencesIncluded: includeReferences,
+      referencesCount: {
+        assets: response.references?.assets?.length || 0,
+        vaults: response.references?.vaults?.length || 0,
+        meetings: response.references?.meetings?.length || 0
+      },
+      suggestionsCount: suggestions.length,
+      usage: response.usage,
+      timestamp: new Date().toISOString()
+    })
+
     return NextResponse.json(response)
 
   } catch (error) {
-    console.error('Enhanced chat error:', error)
+    const errorTime = Date.now()
+    const totalTime = errorTime - startTime
     
+    console.error('[Enhanced Chat API] Critical error occurred:', {
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : error,
+      timestamp: new Date().toISOString(),
+      processingTime: totalTime,
+      memoryUsage: process.memoryUsage()
+    })
+    
+    // Create detailed error response
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
     const errorResponse: EnhancedChatResponse = {
       success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      error: errorMessage,
       search_metadata: {
         query_processed: '',
-        search_time_ms: Date.now() - startTime,
+        search_time_ms: totalTime,
         total_results_found: 0,
         context_used: 'general'
       }
     }
+
+    console.log('[Enhanced Chat API] Sending error response:', {
+      success: false,
+      errorMessage,
+      totalProcessingTime: totalTime
+    })
 
     return NextResponse.json(errorResponse, { status: 500 })
   }

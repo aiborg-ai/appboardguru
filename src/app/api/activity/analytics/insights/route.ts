@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { MLInsightsEngine } from '@/lib/activity/ml-insights'
-import type { Database } from '@/types/database'
 
 export async function GET(request: NextRequest) {
   try {

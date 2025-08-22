@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const { messages, model, max_tokens, temperature, apiKey } = await request.json()
 
     // Use provided API key or fallback to server environment variable
-    const openRouterKey = apiKey || process.env.OPENROUTER_API_KEY
+    const openRouterKey = apiKey || process.env['OPENROUTER_API_KEY']
 
     if (!openRouterKey) {
       return NextResponse.json({
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Authorization': `Bearer ${openRouterKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
+        'HTTP-Referer': process.env['APP_URL'] || 'http://localhost:3000',
         'X-Title': 'BoardGuru'
       },
       body: JSON.stringify({

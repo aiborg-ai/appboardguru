@@ -34,8 +34,8 @@ export function logUrlConfig() {
   if (isDevelopment()) {
     console.log('🔗 URL Configuration:')
     console.log(`   App URL: ${getAppUrl()}`)
-    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`)
-    console.log(`   VERCEL_URL: ${process.env.VERCEL_URL || 'not set'}`)
-    console.log(`   APP_URL: ${process.env.APP_URL || 'not set'}`)
+    console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`)
+    console.log(`   VERCEL_URL: ${process.env['VERCEL_URL'] || 'not set'}`)
+    console.log(`   APP_URL: ${process.env['APP_URL'] || 'not set'}`)
   }
 }

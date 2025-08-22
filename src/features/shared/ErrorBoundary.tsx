@@ -36,7 +36,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.props.onError?.(error, errorInfo)
     
     // In production, you would send this to your error reporting service
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       // Example: sendToErrorReporting({ error, errorInfo })
     }
   }
@@ -90,7 +90,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             </div>
             
             {/* Development error details */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env['NODE_ENV'] === 'development' && this.state.error && (
               <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <h3 className="text-sm font-semibold text-red-800 mb-3">
                   Development Error Details:

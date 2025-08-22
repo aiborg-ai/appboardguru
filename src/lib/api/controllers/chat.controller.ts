@@ -150,7 +150,7 @@ export class ChatController extends BaseController {
       
       try {
         // Use provided API key or fallback to server environment variable
-        const openRouterKey = apiKey || process.env.OPENROUTER_API_KEY;
+        const openRouterKey = apiKey || process.env['OPENROUTER_API_KEY'];
         
         if (!openRouterKey) {
           return Err(new Error('API key not configured'));
@@ -161,7 +161,7 @@ export class ChatController extends BaseController {
           headers: {
             'Authorization': `Bearer ${openRouterKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
+            'HTTP-Referer': process.env['APP_URL'] || 'http://localhost:3000',
             'X-Title': 'BoardGuru'
           },
           body: JSON.stringify({
@@ -310,7 +310,7 @@ export class ChatController extends BaseController {
         const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            'Authorization': `Bearer ${process.env['OPENROUTER_API_KEY']}`,
             'Content-Type': 'application/json',
             'X-Title': 'BoardGuru AI Assistant'
           },

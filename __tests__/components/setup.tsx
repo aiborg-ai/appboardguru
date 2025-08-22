@@ -4,8 +4,9 @@
 import React from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { OrganizationContext } from '@/contexts/OrganizationContext'
+import { OrganizationContextType } from '@/contexts/OrganizationContext'
 import { UserFactory, OrganizationFactory } from '../factories'
+import './jest-globals'
 
 // Mock Next.js router
 const mockRouter = {
@@ -62,7 +63,7 @@ export const createTestQueryClient = () => new QueryClient({
   defaultOptions: {
     queries: {
       retry: false,
-      cacheTime: 0,
+      gcTime: 0,
     },
     mutations: {
       retry: false,
@@ -84,14 +85,29 @@ export const TestProviders: React.FC<TestProvidersProps> = ({
   user = UserFactory.build(),
   organization = OrganizationFactory.build(user.id),
 }) => {
-  const organizationValue = {
+  const organizationValue: OrganizationContextType = {
     currentOrganization: organization,
+    currentVault: null,
     organizations: [organization],
-    setCurrentOrganization: jest.fn(),
+    vaults: [],
+    pendingInvitations: [],
+    isLoadingOrganizations: false,
+    isLoadingVaults: false,
+    isLoadingInvitations: false,
+    selectOrganization: jest.fn(),
+    selectVault: jest.fn(),
     refreshOrganizations: jest.fn(),
-    isLoading: false,
-    error: null,
+    refreshVaults: jest.fn(),
+    refreshInvitations: jest.fn(),
+    acceptInvitation: jest.fn().mockResolvedValue(true),
+    rejectInvitation: jest.fn().mockResolvedValue(true),
+    filterByOrganization: jest.fn().mockImplementation((items: any[]) => items),
+    isCurrentOrganization: jest.fn().mockReturnValue(false),
+    totalVaults: 0,
+    totalPendingInvitations: 0,
   }
+
+  const OrganizationContext = React.createContext<OrganizationContextType | null>(null)
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -116,7 +132,7 @@ export const renderWithProviders = (
   const { queryClient, user, organization, ...renderOptions } = options
 
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <TestProviders queryClient={queryClient} user={user} organization={organization}>
+    <TestProviders queryClient={queryClient || createTestQueryClient()} user={user} organization={organization}>
       {children}
     </TestProviders>
   )

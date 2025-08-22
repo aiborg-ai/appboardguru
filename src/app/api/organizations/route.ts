@@ -17,11 +17,18 @@ const CreateOrganizationSchema = z.object({
   logo_url: z.string().url('Logo URL must be a valid URL').optional(),
   website: z.string().url('Website must be a valid URL').optional(),
   industry: z.string().optional(),
+  // Support both camelCase (from frontend) and snake_case (for database)
+  organizationSize: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
   organization_size: z.enum(['startup', 'small', 'medium', 'large', 'enterprise']).optional(),
   settings: z.record(z.string(), z.any()).optional(),
   compliance_settings: z.record(z.string(), z.any()).optional(),
   billing_settings: z.record(z.string(), z.any()).optional()
-})
+}).transform((data) => ({
+  ...data,
+  // Map camelCase to snake_case for database consistency
+  organization_size: data.organizationSize || data.organization_size,
+  organizationSize: undefined // Remove camelCase version
+}))
 
 const UpdateOrganizationSchema = CreateOrganizationSchema.partial().omit({ slug: true })
 
