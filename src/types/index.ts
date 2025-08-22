@@ -84,7 +84,8 @@ export type {
   ComplianceParticipant,
   NotificationAuditLog,
   ComplianceFrequency,
-  ComplianceStatus
+  ComplianceStatus,
+  AdvanceWorkflowStepRequest
 } from './entities/compliance.types'
 
 // Hook Types
