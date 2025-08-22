@@ -250,7 +250,7 @@ function getTopSlowestEndpoints(apiStats: any, limit: number = 10) {
     .slice(0, limit)
 }
 
-export const GET = withTelemetry(async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
   try {
     // Check for admin/internal access
     const { searchParams } = new URL(request.url)
@@ -337,10 +337,10 @@ export const GET = withTelemetry(async (request: NextRequest) => {
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}, 'metrics')
+}
 
 // Prometheus-compatible metrics endpoint
-export const POST = withTelemetry(async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     
@@ -419,4 +419,4 @@ process_uptime_seconds ${process.uptime()}
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}, 'prometheus-metrics')
+}
