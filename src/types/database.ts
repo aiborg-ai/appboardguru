@@ -1407,6 +1407,7 @@ export type Database = {
           archived_at: string | null
           category: string
           color: string | null
+          compliance_type: string | null
           created_at: string | null
           delivered_at: string | null
           expires_at: string | null
@@ -1433,6 +1434,7 @@ export type Database = {
           archived_at?: string | null
           category: string
           color?: string | null
+          compliance_type?: string | null
           created_at?: string | null
           delivered_at?: string | null
           expires_at?: string | null
@@ -1459,6 +1461,7 @@ export type Database = {
           archived_at?: string | null
           category?: string
           color?: string | null
+          compliance_type?: string | null
           created_at?: string | null
           delivered_at?: string | null
           expires_at?: string | null
@@ -4335,6 +4338,7 @@ export type Database = {
           user_id: string
           prediction_type: string
           predicted_content: Json
+          prediction_data: Json | null
           confidence_score: number
           trigger_conditions: Json | null
           is_sent: boolean | null
@@ -4347,6 +4351,7 @@ export type Database = {
           user_id: string
           prediction_type: string
           predicted_content: Json
+          prediction_data?: Json | null
           confidence_score: number
           trigger_conditions?: Json | null
           is_sent?: boolean | null
@@ -4359,6 +4364,7 @@ export type Database = {
           user_id?: string
           prediction_type?: string
           predicted_content?: Json
+          prediction_data?: Json | null
           confidence_score?: number
           trigger_conditions?: Json | null
           is_sent?: boolean | null
@@ -4516,40 +4522,79 @@ export type Database = {
         Row: {
           id: string
           organization_id: string
+          user_id: string
           insight_type: string
           title: string
           description: string
           actionable_items: Json | null
           priority: string
+          urgency: string | null
+          confidence: number | null
+          relevance_score: number | null
+          insight_data: string | null
+          scheduled_for: string | null
           is_read: boolean | null
+          acknowledged_at: string | null
+          dismissed_at: string | null
           created_at: string | null
           expires_at: string | null
         }
         Insert: {
           id?: string
           organization_id: string
+          user_id: string
           insight_type: string
           title: string
           description: string
           actionable_items?: Json | null
           priority: string
+          urgency?: string | null
+          confidence?: number | null
+          relevance_score?: number | null
+          insight_data?: string | null
+          scheduled_for?: string | null
           is_read?: boolean | null
+          acknowledged_at?: string | null
+          dismissed_at?: string | null
           created_at?: string | null
           expires_at?: string | null
         }
         Update: {
           id?: string
           organization_id?: string
+          user_id?: string
           insight_type?: string
           title?: string
           description?: string
           actionable_items?: Json | null
           priority?: string
+          urgency?: string | null
+          confidence?: number | null
+          relevance_score?: number | null
+          insight_data?: string | null
+          scheduled_for?: string | null
           is_read?: boolean | null
+          acknowledged_at?: string | null
+          dismissed_at?: string | null
           created_at?: string | null
           expires_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "proactive_insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proactive_insights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_insights: {
         Row: {
@@ -5194,6 +5239,87 @@ export type Database = {
         }
         Relationships: []
       }
+      document_search_cache: {
+        Row: {
+          id: string
+          asset_id: string
+          query: string
+          results: Json
+          user_id: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          asset_id: string
+          query: string
+          results: Json
+          user_id: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          asset_id?: string
+          query?: string
+          results?: Json
+          user_id?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      document_summaries: {
+        Row: {
+          id: string
+          asset_id: string
+          title: string
+          key_points: string[]
+          word_count: number
+          user_id: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          asset_id: string
+          title: string
+          key_points: string[]
+          word_count: number
+          user_id: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          asset_id?: string
+          title?: string
+          key_points?: string[]
+          word_count?: number
+          user_id?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      document_table_of_contents: {
+        Row: {
+          id: string
+          asset_id: string
+          content: Json
+          user_id: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          asset_id: string
+          content: Json
+          user_id: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          asset_id?: string
+          content?: Json
+          user_id?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never;
@@ -5291,6 +5417,8 @@ export type Database = {
       deadline_type: "soft" | "hard" | "regulatory"
       acknowledgment_method: "click" | "digital_signature" | "email_reply"
       audit_outcome: "success" | "failure" | "error" | "blocked" | "warning" | "partial_success" | "timeout" | "cancelled"
+      audit_event_type: "authentication" | "authorization" | "data_access" | "data_modification" | "security_breach" | "policy_violation" | "system_action" | "admin_action" | "user_action" | "api_call" | "file_upload" | "file_download" | "login" | "logout" | "password_change" | "account_creation" | "account_deletion" | "permission_change" | "compliance"
+      audit_severity: "low" | "medium" | "high" | "critical"
       risk_level: "low" | "medium" | "high" | "critical"
     }
     CompositeTypes: {
@@ -5448,6 +5576,8 @@ export const Constants = {
       deadline_type: ["soft", "hard", "regulatory"],
       acknowledgment_method: ["click", "digital_signature", "email_reply"],
       audit_outcome: ["success", "failure", "error", "blocked", "warning", "partial_success", "timeout", "cancelled"],
+      audit_event_type: ["authentication", "authorization", "data_access", "data_modification", "security_breach", "policy_violation", "system_action", "admin_action", "user_action", "api_call", "file_upload", "file_download", "login", "logout", "password_change", "account_creation", "account_deletion", "permission_change", "compliance"],
+      audit_severity: ["low", "medium", "high", "critical"],
       risk_level: ["low", "medium", "high", "critical"],
     },
   },
