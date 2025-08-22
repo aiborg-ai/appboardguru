@@ -48,30 +48,50 @@ export type {
 // Component Types - avoid conflicting exports
 export type {
   NavigationItem,
-  NavigationProps,
+  NavigationSection,
+  NavigationMenuProps,
   BreadcrumbItem,
-  BreadcrumbProps
+  BreadcrumbProps,
+  ButtonVariant,
+  ButtonSize,
+  ButtonProps,
+  TopNavProps,
+  TabItem,
+  TabsProps
 } from './navigation'
 
 // Feature Types
 export type {
   BoardMateProfile,
-  BoardMatesProps,
-  AssociationManagerProps
+  BoardMatesPageProps,
+  AssociationManagerProps,
+  BoardMembershipStatus,
+  BoardType,
+  BoardStatus,
+  BoardRole,
+  CommitteeType,
+  CommitteeRole,
+  VaultRole,
+  VaultStatus
 } from './boardmates'
 
 // Entity Types
 export type {
-  ComplianceRequirement,
-  ComplianceStatus,
-  ComplianceReport
+  ComplianceTemplate,
+  ComplianceTemplateInsert,
+  ComplianceCalendarEntry,
+  NotificationWorkflow,
+  ComplianceParticipant,
+  NotificationAuditLog,
+  ComplianceFrequency,
+  ComplianceStatus
 } from './entities/compliance.types'
 
 // Hook Types
 export type {
   UseAsyncReturn,
   UseFormReturn,
-  UseModalReturn
+  UseMapReturn
 } from './hooks'
 
 // Database and Core Types
