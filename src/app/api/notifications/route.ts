@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       expires_at: body.expires_at
     }
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('notifications')
       .insert(notificationData)
       .select()

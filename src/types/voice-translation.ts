@@ -224,8 +224,8 @@ export interface UserLanguagePreferences {
   secondaryLanguages: string[];
   accentProfile?: string;
   dialectRegion?: string;
-  voicePatterns: Record<string, any>;
-  terminologyDictionary: Record<string, any>;
+  voicePatterns: Record<string, unknown>;
+  terminologyDictionary: Record<string, unknown>;
   translationQualityPreference: 'speed' | 'balanced' | 'accuracy';
   autoTranslate: boolean;
   preferredTranslators: string[];
@@ -333,7 +333,7 @@ export interface VoiceLearningData {
   organizationId: string;
   audioFingerprint: string;
   phonemePatterns: Record<string, number>;
-  accentMarkers: Record<string, any>;
+  accentMarkers: Record<string, unknown>;
   speakingRatePatterns: Record<string, number>;
   vocabularyFrequency: Record<string, number>;
   errorPatterns: Record<string, ErrorPattern>;

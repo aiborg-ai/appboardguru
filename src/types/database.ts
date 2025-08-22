@@ -5239,6 +5239,156 @@ export type Database = {
         }
         Relationships: []
       }
+      user_presence: {
+        Row: {
+          user_id: string
+          socket_id: string
+          session_id: string
+          organization_id: string
+          status: string
+          last_seen: string
+          current_room: string | null
+          device_info: Json
+          metadata: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          user_id: string
+          socket_id: string
+          session_id: string
+          organization_id: string
+          status: string
+          last_seen: string
+          current_room?: string | null
+          device_info: Json
+          metadata?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          user_id?: string
+          socket_id?: string
+          session_id?: string
+          organization_id?: string
+          status?: string
+          last_seen?: string
+          current_room?: string | null
+          device_info?: Json
+          metadata?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      websocket_messages: {
+        Row: {
+          id: string
+          type: string
+          room_id: string
+          user_id: string
+          data: Json
+          metadata: Json | null
+          timestamp: string
+          created_at: string | null
+        }
+        Insert: {
+          id: string
+          type: string
+          room_id: string
+          user_id: string
+          data: Json
+          metadata?: Json | null
+          timestamp: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          type?: string
+          room_id?: string
+          user_id?: string
+          data?: Json
+          metadata?: Json | null
+          timestamp?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      websocket_sessions: {
+        Row: {
+          session_id: string
+          user_id: string
+          organization_id: string
+          socket_id: string
+          started_at: string
+          ended_at: string | null
+          last_activity: string
+          metadata: Json | null
+          status: string
+          created_at: string | null
+        }
+        Insert: {
+          session_id: string
+          user_id: string
+          organization_id: string
+          socket_id: string
+          started_at: string
+          ended_at?: string | null
+          last_activity: string
+          metadata?: Json | null
+          status: string
+          created_at?: string | null
+        }
+        Update: {
+          session_id?: string
+          user_id?: string
+          organization_id?: string
+          socket_id?: string
+          started_at?: string
+          ended_at?: string | null
+          last_activity?: string
+          metadata?: Json | null
+          status?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      websocket_rooms: {
+        Row: {
+          id: string
+          type: string
+          name: string
+          organization_id: string
+          resource_id: string
+          permissions: Json
+          settings: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          type: string
+          name: string
+          organization_id: string
+          resource_id: string
+          permissions: Json
+          settings: Json
+          created_at: string
+          updated_at: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          name?: string
+          organization_id?: string
+          resource_id?: string
+          permissions?: Json
+          settings?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never;
@@ -5502,14 +5652,17 @@ export const Constants = {
   },
 } as const
 
-export type UserId = string
-export type OrganizationId = string
-export type AssetId = string
-export type VaultId = string
-export type BoardId = string
-export type NotificationId = string
-export type TemplateId = string
-export type EventId = string
+// Import branded types for type safety
+export type {
+  UserId,
+  OrganizationId,
+  AssetId,
+  VaultId,
+  BoardId,
+  NotificationId,
+  TemplateId,
+  EventId
+} from './branded'
 
 export type UserRole = Database['public']['Enums']['user_role']
 export type UserStatus = Database['public']['Enums']['user_status']

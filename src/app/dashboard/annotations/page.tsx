@@ -301,7 +301,7 @@ export default function AnnotationsPage() {
             </div>
           </div>
           
-          <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+          <Select value={statusFilter} onValueChange={value: unknown) => setStatusFilter(value)}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -312,7 +312,7 @@ export default function AnnotationsPage() {
             </SelectContent>
           </Select>
           
-          <Select value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)}>
+          <Select value={typeFilter} onValueChange={value: unknown) => setTypeFilter(value)}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>

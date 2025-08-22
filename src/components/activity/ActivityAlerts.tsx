@@ -36,7 +36,7 @@ interface AlertRule {
   }
   actions: {
     type: 'email' | 'webhook' | 'slack' | 'teams'
-    config: Record<string, any>
+    config: Record<string, unknown>
   }[]
   isActive: boolean
   priority: 'low' | 'medium' | 'high' | 'critical'
@@ -55,7 +55,7 @@ interface ActiveAlert {
   acknowledged: boolean
   acknowledgedBy?: string
   acknowledgedAt?: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 interface ActivityAlertsProps {
@@ -395,7 +395,7 @@ export function ActivityAlerts({ organizationId }: ActivityAlertsProps) {
                   </div>
                   <div>
                     <label className="text-sm font-medium">Priority</label>
-                    <Select value={newRule.priority} onValueChange={(value: any) => setNewRule(prev => ({ ...prev, priority: value }))}>
+                    <Select value={newRule.priority} onValueChange={value: unknown) => setNewRule(prev => ({ ...prev, priority: value }))}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -460,7 +460,7 @@ export function ActivityAlerts({ organizationId }: ActivityAlertsProps) {
                 
                 <div>
                   <label className="text-sm font-medium">Notification Method</label>
-                  <Select value={newRule.actionType} onValueChange={(value: any) => setNewRule(prev => ({ ...prev, actionType: value }))}>
+                  <Select value={newRule.actionType} onValueChange={value: unknown) => setNewRule(prev => ({ ...prev, actionType: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

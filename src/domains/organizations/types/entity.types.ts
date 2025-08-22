@@ -26,9 +26,9 @@ export interface OrganizationEntity extends BaseEntity {
   website?: string
   industry?: string
   organization_size?: OrganizationSize
-  settings: Record<string, any>
-  compliance_settings: Record<string, any>
-  billing_settings: Record<string, any>
+  settings: Record<string, unknown>
+  compliance_settings: Record<string, unknown>
+  billing_settings: Record<string, unknown>
   
   // Business fields
   is_active: boolean
@@ -45,7 +45,7 @@ export interface OrganizationMemberEntity extends BaseEntity {
   organization_id: string
   user_id: string
   role: OrganizationRole
-  custom_permissions: Record<string, any>
+  custom_permissions: Record<string, unknown>
   invited_by?: string
   approved_by?: string
   joined_at: string

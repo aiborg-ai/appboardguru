@@ -171,7 +171,7 @@ async function triggerWorkflow(params: TriggerWorkflowRequest): Promise<NextResp
       activeWorkflows.set(executionId, execution as any);
 
       // Store in database for persistence
-      await (supabase as any)
+      await supabase
         .from('workflow_executions')
         .insert({
           id: executionId,
@@ -596,7 +596,7 @@ async function confirmWorkflowExecution(params: ExecutionConfirmRequest): Promis
     await executeWorkflowActions(executionId, execution.actions, execution.parameters || {});
 
     // Update database
-    await (supabase as any)
+    await supabase
       .from('workflow_executions')
       .update({
         status: 'executing',
@@ -636,7 +636,7 @@ async function cancelWorkflowExecution(params: ExecutionCancelRequest): Promise<
     execution.cancelledAt = new Date().toISOString();
 
     // Update database
-    await (supabase as any)
+    await supabase
       .from('workflow_executions')
       .update({
         status: 'cancelled',
@@ -868,7 +868,7 @@ async function executeWorkflowActions(
     execution.results = results;
     
     // Update database
-    await (supabase as any)
+    await supabase
       .from('workflow_executions')
       .update({
         status: execution.status,
@@ -890,7 +890,7 @@ async function executeWorkflowActions(
     execution.status = 'failed';
     execution.error = error instanceof Error ? error.message : 'Unknown error';
     
-    await (supabase as any)
+    await supabase
       .from('workflow_executions')
       .update({
         status: 'failed',

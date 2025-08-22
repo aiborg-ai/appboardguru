@@ -96,10 +96,10 @@ export function useOperationTimer() {
  */
 export function useWhyDidYouUpdate(
   name: string,
-  props: Record<string, any>,
+  props: Record<string, unknown>,
   enabled: boolean = process.env['NODE_ENV'] === 'development'
 ) {
-  const previousProps = React.useRef<Record<string, any>>()
+  const previousProps = React.useRef<Record<string, unknown>>()
 
   React.useEffect(() => {
     if (!enabled) return

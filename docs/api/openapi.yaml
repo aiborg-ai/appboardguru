@@ -1,0 +1,570 @@
+openapi: 3.0.3
+info:
+  title: AppBoardGuru API
+  description: |
+    Complete API documentation for AppBoardGuru - The comprehensive board management platform.
+    
+    ## Authentication
+    Most endpoints require authentication using JWT tokens obtained through login.
+    
+    ## Rate Limiting
+    API endpoints are rate-limited per user/IP. See individual endpoint documentation for specific limits.
+    
+    ## Versioning
+    The API supports multiple versions:
+    - **v1**: Current stable version (default)
+    - **v2**: Enhanced version with improved features
+    
+    ## Error Handling
+    All endpoints follow consistent error response patterns with proper HTTP status codes.
+  version: 1.0.0
+  contact:
+    name: AppBoardGuru API Team
+    email: api@appboardguru.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.appboardguru.com/v1
+    description: Production API v1
+  - url: https://api.appboardguru.com/v2
+    description: Production API v2
+  - url: https://staging-api.appboardguru.com/v1
+    description: Staging API v1
+  - url: https://staging-api.appboardguru.com/v2
+    description: Staging API v2
+  - url: http://localhost:3000/api
+    description: Local development
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Health & System APIs
+  /health:
+    $ref: './paths/health.yaml#/health'
+  /health/live:
+    $ref: './paths/health.yaml#/health-live'
+  /health/ready:
+    $ref: './paths/health.yaml#/health-ready'
+  /health/detailed:
+    $ref: './paths/health.yaml#/health-detailed'
+
+  # Authentication APIs
+  /auth/verify-otp:
+    $ref: './paths/auth.yaml#/verify-otp'
+  /auth/resend-otp:
+    $ref: './paths/auth.yaml#/resend-otp'
+  /auth/magic-link:
+    $ref: './paths/auth.yaml#/magic-link'
+  /auth/registration/approve:
+    $ref: './paths/auth.yaml#/approve-registration'
+  /auth/registration/reject:
+    $ref: './paths/auth.yaml#/reject-registration'
+  /auth/registration/send-email:
+    $ref: './paths/auth.yaml#/send-registration-email'
+
+  # Asset Management APIs
+  /assets:
+    $ref: './paths/assets.yaml#/assets'
+  /assets/search:
+    $ref: './paths/assets.yaml#/assets-search'
+  /assets/upload:
+    $ref: './paths/assets.yaml#/assets-upload'
+  /assets/{id}:
+    $ref: './paths/assets.yaml#/assets-by-id'
+  /assets/{id}/download:
+    $ref: './paths/assets.yaml#/assets-download'
+  /assets/{id}/share:
+    $ref: './paths/assets.yaml#/assets-share'
+  /assets/{id}/annotations:
+    $ref: './paths/assets.yaml#/assets-annotations'
+  /assets/{id}/collaborators:
+    $ref: './paths/assets.yaml#/assets-collaborators'
+
+  # Notification APIs
+  /notifications:
+    $ref: './paths/notifications.yaml#/notifications'
+  /notifications/{id}:
+    $ref: './paths/notifications.yaml#/notifications-by-id'
+  /notifications/count:
+    $ref: './paths/notifications.yaml#/notifications-count'
+  /notifications/bulk:
+    $ref: './paths/notifications.yaml#/notifications-bulk'
+  /notifications/anomalies:
+    $ref: './paths/notifications.yaml#/notifications-anomalies'
+  /notifications/predictions:
+    $ref: './paths/notifications.yaml#/notifications-predictions'
+
+  # Organization & Vault APIs
+  /organizations:
+    $ref: './paths/organizations.yaml#/organizations'
+  /organizations/{id}:
+    $ref: './paths/organizations.yaml#/organizations-by-id'
+  /organizations/{id}/members:
+    $ref: './paths/organizations.yaml#/organization-members'
+  /organizations/check-slug:
+    $ref: './paths/organizations.yaml#/organizations-check-slug'
+  
+  /vaults:
+    $ref: './paths/vaults.yaml#/vaults'
+  /vaults/{id}:
+    $ref: './paths/vaults.yaml#/vaults-by-id'
+  /vaults/{id}/assets:
+    $ref: './paths/vaults.yaml#/vault-assets'
+  /vaults/{id}/invite:
+    $ref: './paths/vaults.yaml#/vault-invite'
+  /vaults/create:
+    $ref: './paths/vaults.yaml#/vaults-create'
+
+  # BoardMate & Communication APIs
+  /boardmates:
+    $ref: './paths/boardmates.yaml#/boardmates'
+  /boardmates/{id}:
+    $ref: './paths/boardmates.yaml#/boardmates-by-id'
+  /boardmates/{id}/associations:
+    $ref: './paths/boardmates.yaml#/boardmate-associations'
+  /boardmates/create:
+    $ref: './paths/boardmates.yaml#/boardmates-create'
+  /boardmates/invite:
+    $ref: './paths/boardmates.yaml#/boardmates-invite'
+
+  /boardchat/conversations:
+    $ref: './paths/boardchat.yaml#/conversations'
+  /boardchat/conversations/{id}:
+    $ref: './paths/boardchat.yaml#/conversations-by-id'
+  /boardchat/conversations/{id}/messages:
+    $ref: './paths/boardchat.yaml#/conversation-messages'
+  /boardchat/conversations/{id}/read:
+    $ref: './paths/boardchat.yaml#/conversation-read'
+
+  # Board & Committee APIs
+  /boards:
+    $ref: './paths/boards.yaml#/boards'
+  /committees:
+    $ref: './paths/committees.yaml#/committees'
+
+  # Calendar & Meeting APIs
+  /calendar/events:
+    $ref: './paths/calendar.yaml#/calendar-events'
+  /calendar/events/{id}:
+    $ref: './paths/calendar.yaml#/calendar-events-by-id'
+  /calendar/events/{id}/attendees:
+    $ref: './paths/calendar.yaml#/calendar-event-attendees'
+  /calendar/availability:
+    $ref: './paths/calendar.yaml#/calendar-availability'
+  /calendar/subscriptions:
+    $ref: './paths/calendar.yaml#/calendar-subscriptions'
+  /calendar/views:
+    $ref: './paths/calendar.yaml#/calendar-views'
+  /calendar/export:
+    $ref: './paths/calendar.yaml#/calendar-export'
+
+  /meetings/{id}:
+    $ref: './paths/meetings.yaml#/meetings-by-id'
+  /meetings/{id}/actionables:
+    $ref: './paths/meetings.yaml#/meeting-actionables'
+  /meetings/{id}/resolutions:
+    $ref: './paths/meetings.yaml#/meeting-resolutions'
+
+  # Voice Assistant & AI APIs
+  /voice/assistant:
+    $ref: './paths/voice.yaml#/voice-assistant'
+  /voice/transcribe:
+    $ref: './paths/voice.yaml#/voice-transcribe'
+  /voice/translate:
+    $ref: './paths/voice.yaml#/voice-translate'
+  /voice/commands:
+    $ref: './paths/voice.yaml#/voice-commands'
+  /voice/shortcuts:
+    $ref: './paths/voice.yaml#/voice-shortcuts'
+  /voice/shortcuts/{id}:
+    $ref: './paths/voice.yaml#/voice-shortcuts-by-id'
+  /voice/analytics:
+    $ref: './paths/voice.yaml#/voice-analytics'
+  /voice/training:
+    $ref: './paths/voice.yaml#/voice-training'
+
+  /chat:
+    $ref: './paths/chat.yaml#/chat'
+  /chat/enhanced:
+    $ref: './paths/chat.yaml#/chat-enhanced'
+
+  # Search & Analytics APIs
+  /web-search:
+    $ref: './paths/search.yaml#/web-search'
+  /activity/search:
+    $ref: './paths/activity.yaml#/activity-search'
+  /activity/analytics/metrics:
+    $ref: './paths/activity.yaml#/activity-metrics'
+  /activity/analytics/insights:
+    $ref: './paths/activity.yaml#/activity-insights'
+  /activity/export:
+    $ref: './paths/activity.yaml#/activity-export'
+
+  # User & Profile APIs
+  /user/activity:
+    $ref: './paths/user.yaml#/user-activity'
+  /user/activity/log:
+    $ref: './paths/user.yaml#/user-activity-log'
+  /user/activity/export:
+    $ref: './paths/user.yaml#/user-activity-export'
+
+  # Compliance & Workflow APIs
+  /compliance/workflows:
+    $ref: './paths/compliance.yaml#/compliance-workflows'
+  /compliance/workflows/{id}:
+    $ref: './paths/compliance.yaml#/compliance-workflows-by-id'
+  /compliance/workflows/{id}/advance:
+    $ref: './paths/compliance.yaml#/compliance-workflow-advance'
+  /compliance/reports:
+    $ref: './paths/compliance.yaml#/compliance-reports'
+  /compliance/templates:
+    $ref: './paths/compliance.yaml#/compliance-templates'
+  /compliance/acknowledge:
+    $ref: './paths/compliance.yaml#/compliance-acknowledge'
+  /compliance/notifications/generate:
+    $ref: './paths/compliance.yaml#/compliance-notifications-generate'
+
+  # CMS & Configuration APIs
+  /cms/dropdown-options:
+    $ref: './paths/cms.yaml#/cms-dropdown-options'
+  /cms/dropdown-options/{id}:
+    $ref: './paths/cms.yaml#/cms-dropdown-options-by-id'
+
+  # Dashboard & Metrics APIs
+  /dashboard/activity:
+    $ref: './paths/dashboard.yaml#/dashboard-activity'
+  /dashboard/metrics:
+    $ref: './paths/dashboard.yaml#/dashboard-metrics'
+  /dashboard/insights:
+    $ref: './paths/dashboard.yaml#/dashboard-insights'
+  /dashboard/recommendations:
+    $ref: './paths/dashboard.yaml#/dashboard-recommendations'
+
+  # Document Processing APIs
+  /documents/{assetId}/summary:
+    $ref: './paths/documents.yaml#/document-summary'
+  /documents/{assetId}/toc:
+    $ref: './paths/documents.yaml#/document-toc'
+  /documents/{assetId}/search:
+    $ref: './paths/documents.yaml#/document-search'
+  /documents/{assetId}/chat:
+    $ref: './paths/documents.yaml#/document-chat'
+  /documents/{assetId}/podcast:
+    $ref: './paths/documents.yaml#/document-podcast'
+  /documents/{assetId}/annotations:
+    $ref: './paths/documents.yaml#/document-annotations'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication
+    
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for service-to-service authentication
+
+  schemas:
+    # Common schemas
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Resource not found"
+        code:
+          type: string
+          example: "RESOURCE_NOT_FOUND"
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          format: uuid
+
+    SuccessResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          format: uuid
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 50
+        total:
+          type: integer
+          minimum: 0
+          example: 150
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 3
+        hasMore:
+          type: boolean
+          example: true
+        offset:
+          type: integer
+          minimum: 0
+          example: 0
+
+    # Import domain-specific schemas
+    $ref: './schemas/auth.yaml'
+    $ref: './schemas/assets.yaml'
+    $ref: './schemas/notifications.yaml'
+    $ref: './schemas/organizations.yaml'
+    $ref: './schemas/vaults.yaml'
+    $ref: './schemas/boardmates.yaml'
+    $ref: './schemas/calendar.yaml'
+    $ref: './schemas/voice.yaml'
+    $ref: './schemas/chat.yaml'
+    $ref: './schemas/compliance.yaml'
+    $ref: './schemas/documents.yaml'
+
+  examples:
+    # Common examples
+    UnauthorizedError:
+      summary: Unauthorized access
+      value:
+        success: false
+        error: "Authentication required"
+        code: "UNAUTHORIZED"
+        timestamp: "2024-01-15T10:30:00Z"
+    
+    ValidationError:
+      summary: Validation failed
+      value:
+        success: false
+        error: "Validation failed"
+        code: "VALIDATION_ERROR"
+        details:
+          field: "email"
+          message: "Valid email is required"
+        timestamp: "2024-01-15T10:30:00Z"
+
+  responses:
+    # Standard responses
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              $ref: '#/components/examples/UnauthorizedError'
+    
+    Forbidden:
+      description: Access forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validation:
+              $ref: '#/components/examples/ValidationError'
+    
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per time window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Time when rate limit resets (Unix timestamp)
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  parameters:
+    # Common parameters
+    PageParam:
+      name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    
+    SortByParam:
+      name: sortBy
+      in: query
+      description: Field to sort by
+      required: false
+      schema:
+        type: string
+        enum: [name, created_at, updated_at, size]
+        default: updated_at
+    
+    SortOrderParam:
+      name: sortOrder
+      in: query
+      description: Sort order
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    
+    SearchParam:
+      name: search
+      in: query
+      description: Search query string
+      required: false
+      schema:
+        type: string
+        maxLength: 200
+    
+    OrganizationIdParam:
+      name: organizationId
+      in: query
+      description: Filter by organization ID
+      required: false
+      schema:
+        type: string
+        format: uuid
+    
+    DateFromParam:
+      name: dateFrom
+      in: query
+      description: Filter from date (ISO 8601)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    
+    DateToParam:
+      name: dateTo
+      in: query
+      description: Filter to date (ISO 8601)
+      required: false
+      schema:
+        type: string
+        format: date-time
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Health
+    description: System health and monitoring endpoints
+  - name: Assets
+    description: File and asset management
+  - name: Notifications
+    description: Notification system and management
+  - name: Organizations
+    description: Organization management and membership
+  - name: Vaults
+    description: Secure document vaults and access control
+  - name: BoardMates
+    description: Board member management and relationships
+  - name: BoardChat
+    description: Real-time board communication system
+  - name: Boards
+    description: Board management and governance
+  - name: Committees
+    description: Committee structure and management
+  - name: Calendar
+    description: Calendar and event management
+  - name: Meetings
+    description: Meeting management and tracking
+  - name: Voice
+    description: Voice assistant and speech processing
+  - name: Chat
+    description: AI chat and conversational interfaces
+  - name: Search
+    description: Search functionality and web search integration
+  - name: Activity
+    description: User activity tracking and analytics
+  - name: User
+    description: User profile and account management
+  - name: Compliance
+    description: Compliance workflows and reporting
+  - name: CMS
+    description: Content management and configuration
+  - name: Dashboard
+    description: Dashboard data and insights
+  - name: Documents
+    description: Document processing and AI analysis
+
+externalDocs:
+  description: Find more info about AppBoardGuru API
+  url: https://docs.appboardguru.com/api

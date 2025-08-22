@@ -26,7 +26,7 @@ export interface FollowUpAction {
   type: 'redirect' | 'api_call' | 'notification' | 'file_upload';
   label: string;
   action: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 /**
@@ -65,14 +65,14 @@ export async function executeVoiceCommand(
  * Create Vault Command Implementation
  */
 async function executeCreateVaultCommand(
-  parameters: Record<string, any>,
+  parameters: Record<string, unknown>,
   context: CommandExecutionContext
 ): Promise<CommandExecutionResult> {
   const supabase = await createSupabaseServerClient();
   
   try {
     // Create the vault (using board_packs table as vault equivalent)
-    const { data: vault, error: vaultError } = await (supabase as any)
+    const { data: vault, error: vaultError } = await supabase
       .from('board_packs')
       .insert({
         title: parameters.name,
@@ -95,7 +95,7 @@ async function executeCreateVaultCommand(
     }
 
     // Set up default permissions for the creator
-    await (supabase as any)
+    await supabase
       .from('board_pack_permissions')
       .insert({
         board_pack_id: vault.id,
@@ -157,7 +157,7 @@ async function executeCreateVaultCommand(
  * Schedule Meeting Command Implementation
  */
 async function executeScheduleMeetingCommand(
-  parameters: Record<string, any>,
+  parameters: Record<string, unknown>,
   context: CommandExecutionContext
 ): Promise<CommandExecutionResult> {
   const supabase = await createSupabaseServerClient();
@@ -167,7 +167,7 @@ async function executeScheduleMeetingCommand(
     const { startDate, endDate } = parseMeetingDateTime(parameters.date, parameters.time);
     
     // Create the meeting
-    const { data: meeting, error: meetingError } = await (supabase as any)
+    const { data: meeting, error: meetingError } = await supabase
       .from('meetings')
       .insert({
         title: parameters.title,
@@ -192,7 +192,7 @@ async function executeScheduleMeetingCommand(
     }
 
     // Create calendar event
-    await (supabase as any)
+    await supabase
       .from('calendar_events')
       .insert({
         meeting_id: meeting.id,
@@ -249,14 +249,14 @@ async function executeScheduleMeetingCommand(
  * Upload Document Command Implementation
  */
 async function executeUploadDocumentCommand(
-  parameters: Record<string, any>,
+  parameters: Record<string, unknown>,
   context: CommandExecutionContext
 ): Promise<CommandExecutionResult> {
   const supabase = await createSupabaseServerClient();
   
   try {
     // Find the target vault by name
-    const { data: vaults, error: vaultError } = await (supabase as any)
+    const { data: vaults, error: vaultError } = await supabase
       .from('board_packs')
       .select('*')
       .eq('organization_id', context.organizationId)
@@ -319,7 +319,7 @@ async function executeUploadDocumentCommand(
  * Invite Member Command Implementation
  */
 async function executeInviteMemberCommand(
-  parameters: Record<string, any>,
+  parameters: Record<string, unknown>,
   context: CommandExecutionContext
 ): Promise<CommandExecutionResult> {
   const supabase = await createSupabaseServerClient();
@@ -337,7 +337,7 @@ async function executeInviteMemberCommand(
     // Find the target vault
     let targetVault = null;
     if (parameters.vault) {
-      const { data: vaults, error: vaultError } = await (supabase as any)
+      const { data: vaults, error: vaultError } = await supabase
         .from('board_packs')
         .select('*')
         .eq('organization_id', context.organizationId)
@@ -350,7 +350,7 @@ async function executeInviteMemberCommand(
     }
 
     // Create organization invitation
-    const { data: invitation, error: invitationError } = await (supabase as any)
+    const { data: invitation, error: invitationError } = await supabase
       .from('organization_invitations')
       .insert({
         organization_id: context.organizationId!,
@@ -485,7 +485,7 @@ function parseMeetingDateTime(dateStr?: string, timeStr?: string): { startDate: 
 export function enhancedPatternMatching(input: string): {
   commandType: VoiceCommandType;
   confidence: number;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 } {
   const normalizedInput = input.toLowerCase().trim();
   

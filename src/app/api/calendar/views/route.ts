@@ -24,7 +24,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let { data: calendarView, error } = await (supabase as any)
+    let { data: calendarView, error } = await supabase
       .from('calendar_views')
       .select('*')
       .eq('user_id', user.id)
@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest) {
       // No calendar view exists, create default one
       const defaultView = calendarViewSchema.parse({})
       
-      const { data: newView, error: createError } = await (supabase as any)
+      const { data: newView, error: createError } = await supabase
         .from('calendar_views')
         .insert({
           user_id: user.id,
@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const { data: updatedView, error: updateError } = await (supabase as any)
+    const { data: updatedView, error: updateError } = await supabase
       .from('calendar_views')
       .upsert({
         user_id: user.id,

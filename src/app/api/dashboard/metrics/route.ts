@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's primary organization
-    const { data: userOrg } = await (supabase as any)
+    const { data: userOrg } = await supabase
       .from('organization_members')
       .select('organization_id, organization:organizations(id, name)')
       .eq('user_id', user.id)

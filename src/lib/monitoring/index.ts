@@ -12,7 +12,7 @@ interface MetricData {
   userId?: string
   organizationId?: string
   errorMessage?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 interface PerformanceMetrics {
@@ -43,7 +43,7 @@ class PerformanceMonitor {
   /**
    * Track API call performance
    */
-  trackAPICall(route: string, duration: number, metadata?: Record<string, any>) {
+  trackAPICall(route: string, duration: number, metadata?: Record<string, unknown>) {
     this.addMetric('apiCalls', route, duration)
     
     // Log slow API calls
@@ -62,7 +62,7 @@ class PerformanceMonitor {
   /**
    * Track database query performance
    */
-  trackDatabaseQuery(query: string, duration: number, metadata?: Record<string, any>) {
+  trackDatabaseQuery(query: string, duration: number, metadata?: Record<string, unknown>) {
     // Normalize query for grouping
     const normalizedQuery = this.normalizeQuery(query)
     this.addMetric('dbQueries', normalizedQuery, duration)
@@ -83,7 +83,7 @@ class PerformanceMonitor {
   /**
    * Track component render performance
    */
-  trackComponentRender(component: string, duration: number, metadata?: Record<string, any>) {
+  trackComponentRender(component: string, duration: number, metadata?: Record<string, unknown>) {
     this.addMetric('components', component, duration)
 
     // Log slow renders
@@ -102,7 +102,7 @@ class PerformanceMonitor {
   /**
    * Track errors
    */
-  trackError(context: string, error: Error, metadata?: Record<string, any>) {
+  trackError(context: string, error: Error, metadata?: Record<string, unknown>) {
     const errorData: MetricData = {
       route: context,
       duration: 0,
@@ -145,7 +145,7 @@ class PerformanceMonitor {
     }
 
     const metrics = this.metrics[category] as Map<string, number[]>
-    const detailed: Record<string, any> = {}
+    const detailed: Record<string, unknown> = {}
 
     for (const [key, values] of metrics.entries()) {
       detailed[key] = {

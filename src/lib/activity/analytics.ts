@@ -39,7 +39,7 @@ export interface ActivityInsight {
   severity: 'info' | 'warning' | 'critical'
   title: string
   description: string
-  data: Record<string, any>
+  data: Record<string, unknown>
   actionRequired: boolean
   confidence: number
   createdAt: string
@@ -60,7 +60,7 @@ export class ActivityAnalytics {
 
     try {
       // Get basic activity counts
-      const { data: activityData } = await (supabase as any)
+      const { data: activityData } = await supabase
         .from('audit_logs')
         .select('event_type, entity_type, timestamp, user_id')
         .eq('organization_id', organizationId)
@@ -141,7 +141,7 @@ export class ActivityAnalytics {
 
     try {
       // Get user activity data
-      let query = (supabase as any)
+      let query = supabase
         .from('audit_logs')
         .select(`
           user_id,
@@ -186,7 +186,7 @@ export class ActivityAnalytics {
         }
 
         return acc
-      }, {} as Record<string, any>)
+      }, {} as Record<string, unknown>)
 
       // Convert to engagement data
       const engagementData: UserEngagementData[] = []
@@ -198,7 +198,7 @@ export class ActivityAnalytics {
         const totalActivities = activities.length
 
         // Calculate engagement score using the database function
-        const { data: engagementScore } = await (supabase as any)
+        const { data: engagementScore } = await supabase
           .rpc('calculate_user_engagement_score', {
             input_user_id: uid,
             input_org_id: organizationId,
@@ -284,7 +284,7 @@ export class ActivityAnalytics {
           action_required: insight.actionRequired
         }))
 
-        await (supabase as any)
+        await supabase
           .from('activity_insights')
           .insert(insightInserts)
       }
@@ -302,7 +302,7 @@ export class ActivityAnalytics {
 
     try {
       // Get user activity anomalies
-      const { data: users } = await (supabase as any)
+      const { data: users } = await supabase
         .from('organization_members')
         .select('user_id')
         .eq('organization_id', organizationId)
@@ -311,7 +311,7 @@ export class ActivityAnalytics {
       if (!users) return insights
 
       for (const user of users as any[]) {
-        const { data: anomalyData } = await (supabase as any)
+        const { data: anomalyData } = await supabase
           .rpc('detect_activity_anomalies', {
             input_user_id: user.user_id,
             input_org_id: organizationId
@@ -377,7 +377,7 @@ export class ActivityAnalytics {
 
     try {
       // Analyze activity trends over the past 30 days
-      const { data: trendData } = await (supabase as any)
+      const { data: trendData } = await supabase
         .from('daily_activity_summary')
         .select('*')
         .eq('organization_id', organizationId)
@@ -426,7 +426,7 @@ export class ActivityAnalytics {
 
     try {
       // Check for compliance violations
-      const { data: violations } = await (supabase as any)
+      const { data: violations } = await supabase
         .from('audit_logs')
         .select('*')
         .eq('organization_id', organizationId)
@@ -453,7 +453,7 @@ export class ActivityAnalytics {
       }
 
       // Check for missing activity (potential compliance gap)
-      const { data: recentActivity } = await (supabase as any)
+      const { data: recentActivity } = await supabase
         .from('audit_logs')
         .select('created_at')
         .eq('organization_id', organizationId)
@@ -497,7 +497,7 @@ export class ActivityAnalytics {
       const previousEnd = timeRange.start
 
       const [currentPeriod, previousPeriod] = await Promise.all([
-        (supabase as any)
+        supabase
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -505,7 +505,7 @@ export class ActivityAnalytics {
           .gte('created_at', timeRange.start)
           .lte('created_at', timeRange.end),
         
-        (supabase as any)
+        supabase
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -533,7 +533,7 @@ export class ActivityAnalytics {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: riskEvents } = await (supabase as any)
+      const { data: riskEvents } = await supabase
         .from('audit_logs')
         .select('severity, outcome, event_type')
         .eq('organization_id', organizationId)
@@ -578,7 +578,7 @@ export class ActivityAnalytics {
         { data: auditCoverage }
       ] = await Promise.all([
         // Total events
-        (supabase as any)
+        supabase
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -586,7 +586,7 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end),
 
         // Security events
-        (supabase as any)
+        supabase
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -595,7 +595,7 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end),
 
         // Failed events
-        (supabase as any)
+        supabase
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -604,7 +604,7 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end),
 
         // Check audit coverage (all major actions should be logged)
-        (supabase as any)
+        supabase
           .from('audit_logs')
           .select('event_category')
           .eq('organization_id', organizationId)
@@ -654,7 +654,7 @@ export class ActivityAnalytics {
     try {
       const supabase = await createSupabaseServerClient()
 
-      let query = (supabase as any)
+      let query = supabase
         .from('audit_logs')
         .select(`
           id,
@@ -713,7 +713,7 @@ export class ActivityAnalyticsJobs {
       const supabase = supabaseAdmin
 
       // Get all active organizations
-      const { data: organizations } = await (supabase as any)
+      const { data: organizations } = await supabase
         .from('organizations')
         .select('id, name')
 
@@ -724,7 +724,7 @@ export class ActivityAnalyticsJobs {
           // Calculate and store metrics
           const metrics = await ActivityAnalytics.getOrganizationMetrics(org.id)
           
-          await (supabase as any)
+          await supabase
             .from('activity_analytics')
             .insert({
               organization_id: org.id,
@@ -769,13 +769,13 @@ export class ActivityAnalyticsJobs {
       const supabase = supabaseAdmin
 
       // Remove expired analytics
-      await (supabase as any)
+      await supabase
         .from('activity_analytics')
         .delete()
         .lt('expires_at', new Date().toISOString())
 
       // Remove old insights (keep for 30 days)
-      await (supabase as any)
+      await supabase
         .from('activity_insights')
         .delete()
         .lt('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())

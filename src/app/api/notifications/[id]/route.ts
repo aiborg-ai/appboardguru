@@ -67,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       updateData.archived_at = new Date().toISOString()
     }
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('notifications')
       .update(updateData)
       .eq('id', resolvedParams.id)

@@ -16,7 +16,6 @@ import {
 } from '@/types/annotation-types'
 import { IAnnotationService } from '@/lib/services/annotation.service'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { withTelemetry } from '@/lib/telemetry'
 
 // Validation schemas using Zod
 const createAnnotationSchema = z.object({
@@ -94,7 +93,6 @@ export class AnnotationController {
    * GET /api/assets/[id]/annotations
    * Retrieve all annotations for an asset
    */
-  @withTelemetry('annotation.list')
   async getAnnotations(request: NextRequest, assetId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
       // Authenticate user
@@ -180,7 +178,6 @@ export class AnnotationController {
    * POST /api/assets/[id]/annotations
    * Create a new annotation for an asset
    */
-  @withTelemetry('annotation.create')
   async createAnnotation(request: NextRequest, assetId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
       // Authenticate user
@@ -260,7 +257,6 @@ export class AnnotationController {
    * GET /api/assets/[id]/annotations/[annotationId]
    * Get a specific annotation with replies
    */
-  @withTelemetry('annotation.get')
   async getAnnotation(request: NextRequest, assetId: string, annotationId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
       // Authenticate user
@@ -326,7 +322,6 @@ export class AnnotationController {
    * PATCH /api/assets/[id]/annotations/[annotationId]
    * Update an annotation
    */
-  @withTelemetry('annotation.update')
   async updateAnnotation(request: NextRequest, assetId: string, annotationId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
       // Authenticate user
@@ -392,7 +387,6 @@ export class AnnotationController {
    * DELETE /api/assets/[id]/annotations/[annotationId]
    * Delete an annotation (soft delete)
    */
-  @withTelemetry('annotation.delete')
   async deleteAnnotation(request: NextRequest, assetId: string, annotationId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
       // Authenticate user

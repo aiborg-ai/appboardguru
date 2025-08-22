@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const { data: orgAccess } = await (supabase as any)
+    const { data: orgAccess } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', body.organizationId)
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log integration activity
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -332,7 +332,7 @@ async function processChatHandoff(
   const integrationId = `chat_handoff_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   
   // Get existing chat conversations
-  const { data: chatSessions } = await (supabase as any)
+  const { data: chatSessions } = await supabase
     .from('chat_sessions')
     .select('*')
     .eq('user_id', userId)
@@ -341,7 +341,7 @@ async function processChatHandoff(
     .limit(5);
 
   // Get voice assistant sessions
-  const { data: voiceSessions } = await (supabase as any)
+  const { data: voiceSessions } = await supabase
     .from('voice_assistant_sessions')
     .select('*')
     .eq('user_id', userId)
@@ -437,7 +437,7 @@ async function processDocumentAnalysisIntegration(
   const integrationId = `doc_analysis_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
   // Get recent document activities
-  const { data: documentActivities } = await (supabase as any)
+  const { data: documentActivities } = await supabase
     .from('audit_logs')
     .select('*')
     .eq('user_id', userId)
@@ -531,7 +531,7 @@ async function processMeetingSyncIntegration(
   const integrationId = `meeting_sync_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
   // Get upcoming meetings
-  const { data: upcomingMeetings } = await (supabase as any)
+  const { data: upcomingMeetings } = await supabase
     .from('meetings')
     .select(`
       id, title, description, meeting_date, meeting_type, 
@@ -543,7 +543,7 @@ async function processMeetingSyncIntegration(
     .limit(10);
 
   // Get meeting preparations
-  const { data: meetingPreparations } = await (supabase as any)
+  const { data: meetingPreparations } = await supabase
     .from('meeting_preparations')
     .select('*')
     .eq('user_id', userId)
@@ -635,7 +635,7 @@ async function processBoardPackIntegration(
   const integrationId = `board_pack_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
   // Get board packs (assuming they're stored as special vaults or assets)
-  const { data: boardPacks } = await (supabase as any)
+  const { data: boardPacks } = await supabase
     .from('vaults')
     .select(`
       id, name, description, created_at, updated_at,
@@ -649,7 +649,7 @@ async function processBoardPackIntegration(
     .limit(5);
 
   // Get existing document summaries
-  const { data: documentSummaries } = await (supabase as any)
+  const { data: documentSummaries } = await supabase
     .from('document_summaries')
     .select('*')
     .eq('organization_id', request.organizationId)
@@ -908,7 +908,7 @@ async function enhanceDocumentAnalysis(
   // Enhance documents with additional analysis
   return Promise.all(documents.map(async (doc) => {
     // Get additional document metadata
-    const { data: assetData } = await (supabase as any)
+    const { data: assetData } = await supabase
       .from('assets')
       .select('*')
       .eq('id', doc.id)
@@ -1036,7 +1036,7 @@ async function storeBridgedContext(
   organizationId: string
 ): Promise<void> {
   try {
-    await (supabase as any)
+    await supabase
       .from('voice_integrations')
       .insert({
         id: integrationId,
@@ -1073,7 +1073,7 @@ export async function GET(request: NextRequest) {
 
     if (integrationId) {
       // Get specific integration
-      const { data: integration, error } = await (supabase as any)
+      const { data: integration, error } = await supabase
         .from('voice_integrations')
         .select('*')
         .eq('id', integrationId)

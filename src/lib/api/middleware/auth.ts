@@ -46,7 +46,7 @@ export async function validateOrgAccess(
   userId: string, 
   organizationId: string
 ): Promise<void> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('organization_members')
     .select('id')
     .eq('user_id', userId)
@@ -68,7 +68,7 @@ export async function validateRole(
   organizationId: string,
   requiredRole: 'owner' | 'admin' | 'member' | 'viewer'
 ): Promise<void> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('organization_members')
     .select('role')
     .eq('user_id', userId)
@@ -81,7 +81,7 @@ export async function validateRole(
   }
 
   const roleHierarchy = ['viewer', 'member', 'admin', 'owner']
-  const userRoleIndex = roleHierarchy.indexOf((data as any).role)
+  const userRoleIndex = roleHierarchy.indexOf(data.role)
   const requiredRoleIndex = roleHierarchy.indexOf(requiredRole)
 
   if (userRoleIndex < requiredRoleIndex) {

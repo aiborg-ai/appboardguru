@@ -136,7 +136,7 @@ function formatUptime(uptimeMs: number): string {
 /**
  * Get safe environment information (non-sensitive)
  */
-function getEnvironmentInfo(): Record<string, any> {
+function getEnvironmentInfo(): Record<string, unknown> {
   const safeEnvVars = [
     'NODE_ENV',
     'VERSION',
@@ -145,7 +145,7 @@ function getEnvironmentInfo(): Record<string, any> {
     'HOSTNAME'
   ]
 
-  const envInfo: Record<string, any> = {}
+  const envInfo: Record<string, unknown> = {}
   for (const key of safeEnvVars) {
     if (process.env[key]) {
       envInfo[key] = process.env[key]

@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 export interface VoiceCommandResponse {
   success: boolean;
   commandType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   requiresConfirmation: boolean;
   confirmationMessage?: string;
   nextSteps?: string[];
@@ -200,7 +200,7 @@ export function VoiceCommandProcessor({
     }
   };
 
-  const executeCreateVault = async (parameters: Record<string, any>): Promise<boolean> => {
+  const executeCreateVault = async (parameters: Record<string, unknown>): Promise<boolean> => {
     try {
       const response = await fetch('/api/vaults/create', {
         method: 'POST',
@@ -219,7 +219,7 @@ export function VoiceCommandProcessor({
     }
   };
 
-  const executeScheduleMeeting = async (parameters: Record<string, any>): Promise<boolean> => {
+  const executeScheduleMeeting = async (parameters: Record<string, unknown>): Promise<boolean> => {
     try {
       // Parse date/time if provided
       const scheduledStart = parseDateTimeFromVoice(parameters.date, parameters.time);
@@ -244,7 +244,7 @@ export function VoiceCommandProcessor({
     }
   };
 
-  const executeUploadDocument = async (parameters: Record<string, any>): Promise<boolean> => {
+  const executeUploadDocument = async (parameters: Record<string, unknown>): Promise<boolean> => {
     // This would typically open a file picker or redirect to upload page
     // For now, we'll show a notification to guide the user
     toast({
@@ -263,7 +263,7 @@ export function VoiceCommandProcessor({
     return true;
   };
 
-  const executeInviteMember = async (parameters: Record<string, any>): Promise<boolean> => {
+  const executeInviteMember = async (parameters: Record<string, unknown>): Promise<boolean> => {
     try {
       // Find vault ID by name (simplified - in practice would need proper vault lookup)
       const response = await fetch('/api/vault-invitations', {

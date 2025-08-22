@@ -143,7 +143,7 @@ class FeatureManager {
     try {
       const supabase = createSupabaseBrowserClient()
       
-      await (supabase as any)
+      await supabase
         .from('feature_flags')
         .upsert({
           flag_name: flag,
@@ -168,7 +168,7 @@ class FeatureManager {
     try {
       const supabase = createSupabaseBrowserClient()
       
-      await (supabase as any)
+      await supabase
         .from('feature_flags')
         .upsert({
           flag_name: flag,
@@ -216,7 +216,7 @@ class FeatureManager {
     try {
       const supabase = createSupabaseBrowserClient()
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('feature_flags')
         .select('*')
         .eq('flag_name', flag)
@@ -224,17 +224,17 @@ class FeatureManager {
 
       if (error || !data) return null
 
-      const targetAudience = (data as any)?.target_audience || {}
+      const targetAudience = data?.target_audience || {}
       
       return {
         flag,
-        enabled: (data as any)?.is_enabled,
-        rolloutPercentage: (data as any)?.rollout_percentage,
+        enabled: data?.is_enabled,
+        rolloutPercentage: data?.rollout_percentage,
         enabledForUsers: targetAudience?.enabled_for_users || [],
         enabledForOrganizations: targetAudience?.enabled_for_organizations || [],
         startDate: targetAudience?.start_date ? new Date(targetAudience.start_date) : undefined,
         endDate: targetAudience?.end_date ? new Date(targetAudience.end_date) : undefined,
-        description: (data as any)?.description
+        description: data?.description
       }
     } catch (error) {
       console.error(`Error fetching config for flag ${flag}:`, error)

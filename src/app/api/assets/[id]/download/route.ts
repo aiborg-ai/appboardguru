@@ -1,40 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import type { TypedSupabaseClient } from '@/types/api'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const { id: assetId } = await params
 
     // Get asset with sharing information
-    const { data: asset, error: fetchError } = await (supabase as any)
+    const { data: asset, error: fetchError } = await supabase
       .from('assets')
       .select(`
         *,
@@ -56,7 +35,7 @@ export async function GET(
 
     // Check if user has download access
     const isOwner = asset.owner_id === user.id
-    const userShare = asset.asset_shares?.find((share: any) => 
+    const userShare = asset.asset_shares?.find((share) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -85,14 +64,14 @@ export async function GET(
     }
 
     // Update download count for the asset
-    await (supabase as any)
+    await supabase
       .from('assets')
       .update({ download_count: (asset.download_count || 0) + 1 })
       .eq('id', assetId)
 
     // Update download count for the specific share (if applicable)
     if (userShare) {
-      await (supabase as any)
+      await supabase
         .from('asset_shares')
         .update({ 
           download_count: (userShare.download_count || 0) + 1,
@@ -148,41 +127,25 @@ export async function GET(
   }
 }
 
+interface DownloadRequest {
+  generateWatermark?: boolean
+  watermarkText?: string
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const { id: assetId } = await params
-    const body = await request.json()
+    const body: DownloadRequest = await request.json()
     const { generateWatermark = false, watermarkText } = body
 
     // Get asset information
-    const { data: asset, error: fetchError } = await (supabase as any)
+    const { data: asset, error: fetchError } = await supabase
       .from('assets')
       .select(`
         *,
@@ -203,7 +166,7 @@ export async function POST(
 
     // Check download permissions
     const isOwner = asset.owner_id === user.id
-    const hasDownloadAccess = isOwner || asset.asset_shares?.some((share: any) => 
+    const hasDownloadAccess = isOwner || asset.asset_shares?.some((share) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       ['download', 'edit', 'admin'].includes(share.permission_level) &&

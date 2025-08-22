@@ -11,8 +11,8 @@ export interface AnomalyResult {
   readonly severity: 'low' | 'medium' | 'high' | 'critical'
   readonly score: number
   readonly method: string
-  readonly baseline: Record<string, any>
-  readonly anomalous: Record<string, any>
+  readonly baseline: Record<string, unknown>
+  readonly anomalous: Record<string, unknown>
   readonly affectedMetrics: readonly string[]
   readonly recommendedActions: readonly string[]
   readonly description: string
@@ -54,7 +54,7 @@ export interface StatisticalBaseline {
     readonly q25: number
     readonly q75: number
   }>
-  readonly patterns: Record<string, any>
+  readonly patterns: Record<string, unknown>
   readonly thresholds: Record<string, {
     readonly min: number
     readonly max: number

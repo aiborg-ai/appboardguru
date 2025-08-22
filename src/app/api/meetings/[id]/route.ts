@@ -17,7 +17,7 @@ export async function GET(
     const meetingId = params.id;
 
     // Get meeting details
-    const { data: meeting, error: meetingError } = await (supabase as any)
+    const { data: meeting, error: meetingError } = await supabase
       .from('meetings')
       .select(`
         id,
@@ -60,7 +60,7 @@ export async function GET(
     }
 
     // Verify user has access to the organization
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', (meeting as any)?.organization_id)
@@ -134,7 +134,7 @@ export async function PATCH(
     const updates = await request.json();
 
     // Check if user has access to this meeting and can manage it
-    const { data: meeting, error: meetingError } = await (supabase as any)
+    const { data: meeting, error: meetingError } = await supabase
       .from('meetings')
       .select(`
         id,
@@ -149,7 +149,7 @@ export async function PATCH(
     }
 
     // Check if user is meeting organizer or has admin/superuser role
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', (meeting as any)?.organization_id)
@@ -165,7 +165,7 @@ export async function PATCH(
     }
 
     // Update the meeting
-    const { data: updatedMeeting, error: updateError } = await (supabase as any)
+    const { data: updatedMeeting, error: updateError } = await supabase
       .from('meetings')
       .update(updates as any)
       .eq('id', meetingId)

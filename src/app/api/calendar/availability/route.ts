@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     
     // If no query params, return user's own availability patterns
     if (!searchParams.has('user_ids')) {
-      const { data: availability, error } = await (supabase as any)
+      const { data: availability, error } = await supabase
         .from('calendar_availability')
         .select('*')
         .eq('user_id', user.id)
@@ -59,14 +59,14 @@ export async function GET(request: NextRequest) {
       // Check for conflicts for each user
       const availabilityResults = await Promise.all(
         queryData.user_ids.map(async (userId) => {
-          const { data: conflicts } = await (supabase as any)
+          const { data: conflicts } = await supabase
             .rpc('check_calendar_conflicts', {
               p_user_id: userId,
               p_start_datetime: queryData.start_datetime,
               p_end_datetime: queryData.end_datetime
             })
 
-          const { data: userInfo } = await (supabase as any)
+          const { data: userInfo } = await supabase
             .from('users')
             .select('id, full_name, email')
             .eq('id', userId)
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { data: availability, error: insertError } = await (supabase as any)
+    const { data: availability, error: insertError } = await supabase
       .from('calendar_availability')
       .upsert({
         user_id: user.id,

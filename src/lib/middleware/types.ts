@@ -13,7 +13,7 @@ export interface MiddlewareContext {
   response?: NextResponse
   data?: any
   error?: any
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   startTime: number
   requestId: string
 }
@@ -40,13 +40,13 @@ export interface MiddlewareConfig {
 export interface RequestTransformConfig {
   camelCaseToSnakeCase?: boolean
   snakeCaseToCamelCase?: boolean
-  customTransforms?: Record<string, (value: any) => any>
+  customTransforms?: Record<string, value: unknown) => any>
 }
 
 export interface ResponseTransformConfig {
   snakeCaseToCamelCase?: boolean
   camelCaseToSnakeCase?: boolean
-  customTransforms?: Record<string, (value: any) => any>
+  customTransforms?: Record<string, value: unknown) => any>
 }
 
 export interface AuditConfig {

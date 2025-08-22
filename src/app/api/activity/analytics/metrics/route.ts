@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: userOrgMember } = await (supabase as any)
+    const { data: userOrgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: userOrgMember } = await (supabase as any)
+    const { data: userOrgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)

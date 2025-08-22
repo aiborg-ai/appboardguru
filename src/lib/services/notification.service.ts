@@ -256,7 +256,7 @@ export class NotificationService extends BaseService {
           type: data.type,
           title: data.title,
           message: data.message,
-          metadata: data.metadata as Record<string, any>,
+          metadata: data.metadata as Record<string, unknown>,
           created_at: new Date().toISOString(),
           read_at: null,
         } as any)

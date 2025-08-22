@@ -9,9 +9,9 @@ export interface StoreConfig {
   version: number
   storage?: 'localStorage' | 'sessionStorage' | 'memory'
   migrate?: (persistedState: any, version: number) => any
-  partialize?: (state: any) => any
+  partialize?: (state: Record<string, unknown>) => any
   skipHydration?: boolean
-  onRehydrateStorage?: (state: any) => ((state?: any, error?: Error) => void) | void
+  onRehydrateStorage?: (state: Record<string, unknown>) => ((state?: any, error?: Error) => void) | void
 }
 
 // Base store creator with all middleware
@@ -93,7 +93,7 @@ export function createStore<T extends object>(
 }
 
 // Utility for creating selectors
-export function createSelectors<S extends Record<string, any>>(store: S) {
+export function createSelectors<S extends Record<string, unknown>>(store: S) {
   const storeIn = store as S
   const storeOut: S & { use: { [K in keyof S]: () => S[K] } } = {
     ...storeIn,
@@ -139,7 +139,7 @@ export const createMigrations = (migrations: StoreMigration[]) => {
 }
 
 // Common partialize function for sensitive data
-export const excludeSensitiveData = (state: any) => {
+export const excludeSensitiveData = (state: Record<string, unknown>) => {
   const { auth, ...rest } = state
   return {
     ...rest,
@@ -187,7 +187,7 @@ export const batchActions = (actions: (() => void)[]) => {
 // Store hydration check
 export const waitForHydration = (store: any): Promise<void> => {
   return new Promise((resolve) => {
-    const unsubscribe = store.persist?.onHydrate?.((state: any) => {
+    const unsubscribe = store.persist?.onHydrate?.((state: Record<string, unknown>) => {
       if (state._meta?.hydrated) {
         unsubscribe?.()
         resolve()

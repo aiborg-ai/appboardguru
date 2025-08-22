@@ -58,7 +58,7 @@ async function handleRegistrationEmail(request: NextRequest) {
 
   try {
     // Check if email already has a registration request
-    const { data: existingRequest, error: checkError } = await (supabase as any)
+    const { data: existingRequest, error: checkError } = await supabase
       .from('registration_requests')
       .select('*')
       .eq('email', sanitizedData.email)
@@ -77,7 +77,7 @@ async function handleRegistrationEmail(request: NextRequest) {
     }
 
     // Insert registration request into database
-    const { data: insertData, error: dbError } = await (supabase as any)
+    const { data: insertData, error: dbError } = await supabase
       .from('registration_requests')
       .upsert([
         {
@@ -120,7 +120,7 @@ async function handleRegistrationEmail(request: NextRequest) {
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
     // Update registration with token and expiration
-    const { error: tokenUpdateError } = await (supabase as any)
+    const { error: tokenUpdateError } = await supabase
       .from('registration_requests')
       .update({
         approval_token: securityToken,

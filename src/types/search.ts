@@ -67,7 +67,7 @@ export interface AssetAccessAnalytics {
   organization_id?: string;
   access_type: 'view' | 'download' | 'search_result' | 'ai_reference';
   access_source: 'chat' | 'search' | 'direct' | 'recommendation';
-  context_data?: Record<string, any>;
+  context_data?: Record<string, unknown>;
   session_id?: string;
   user_agent?: string;
   ip_address?: string;
@@ -244,7 +244,7 @@ export interface ReportReference {
   type: 'dashboard' | 'analytics' | 'summary' | 'financial' | 'governance';
   url: string;
   generated_at: string;
-  metrics?: Record<string, any>;
+  metrics?: Record<string, unknown>;
   organization?: {
     id: string;
     name: string;

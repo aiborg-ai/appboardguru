@@ -23,14 +23,14 @@ export interface FieldConfig {
   transform?: (value: string) => any
 }
 
-export interface FormConfig<T = Record<string, any>> {
+export interface FormConfig<T = Record<string, unknown>> {
   fields: Record<keyof T, FieldConfig>
   onSubmit?: (data: T, form: HTMLFormElement) => void | Promise<void>
   validateOnChange?: boolean
   validateOnBlur?: boolean
 }
 
-export interface FormState<T = Record<string, any>> {
+export interface FormState<T = Record<string, unknown>> {
   values: Partial<T>
   errors: Partial<Record<keyof T, string>>
   touched: Partial<Record<keyof T, boolean>>
@@ -39,7 +39,7 @@ export interface FormState<T = Record<string, any>> {
   isDirty: boolean
 }
 
-export interface FormActions<T = Record<string, any>> {
+export interface FormActions<T = Record<string, unknown>> {
   setValue: (name: keyof T, value: any) => void
   setError: (name: keyof T, error: string) => void
   clearError: (name: keyof T) => void
@@ -136,7 +136,7 @@ export class FormValidator {
 /**
  * Lightweight form hook using native browser APIs
  */
-export function useLightweightForm<T extends Record<string, any>>(
+export function useLightweightForm<T extends Record<string, unknown>>(
   config: FormConfig<T>
 ): [FormState<T>, FormActions<T>] {
   const formRef = useRef<HTMLFormElement>(null)
@@ -412,7 +412,7 @@ export const validators = {
     return regex.test(value) ? undefined : message
   },
 
-  compose: (...validators: Array<(value: any) => string | undefined>) => 
+  compose: (...validators: Array<value: unknown) => string | undefined>) => 
     (value: any): string | undefined => {
       for (const validate of validators) {
         const error = validate(value)

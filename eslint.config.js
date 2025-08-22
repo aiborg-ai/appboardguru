@@ -6,6 +6,9 @@ import nextPlugin from '@next/eslint-plugin-next';
 export default [
   js.configs.recommended,
   {
+    ignores: ['node_modules/**', '.next/**', 'dist/**', 'build/**', '**/bundle*.js', '**/*.min.js'],
+  },
+  {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
       '@typescript-eslint': typescript,

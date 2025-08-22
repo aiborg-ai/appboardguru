@@ -404,7 +404,7 @@ export class ExternalIntelligenceService {
 
           const supabase = await this.getSupabase()
           if (supabase) {
-            await (supabase as any)
+            await supabase
               .from('intelligence_sources')
               .update({
                 updated_at: new Date().toISOString(),
@@ -453,7 +453,7 @@ export class ExternalIntelligenceService {
   private async updateSourceUsage(sourceId: string): Promise<void> {
     const supabase = await this.getSupabase()
     if (supabase) {
-      await (supabase as any)
+      await supabase
         .from('intelligence_sources')
         .update({
           updated_at: new Date().toISOString() // Use available column
@@ -656,7 +656,7 @@ export class ExternalIntelligenceService {
       const supabase = await this.getSupabase()
       if (!supabase) return null
 
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('intelligence_insights')
         .insert({
           insight_id: `insight_${nanoid()}`,

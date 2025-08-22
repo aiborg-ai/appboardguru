@@ -443,7 +443,7 @@ export class EmotionAnalyzer {
     return Math.min(100, Math.max(10, intensity));
   }
 
-  private static determineDominantEmotion(characteristics: VoiceCharacteristics, stressLevel: number): any {
+  private static determineDominantEmotion(characteristics: VoiceCharacteristics, stressLevel: number): unknown {
     if (stressLevel > 60) {
       if (characteristics.fundamentalFrequency > 200) return 'anxiety';
       if (characteristics.speechRate > 170) return 'urgency';
@@ -610,8 +610,8 @@ export class AntiSpoofingDetector {
   static detectLiveness(
     voiceCharacteristics: VoiceCharacteristics,
     challengeResponse?: string
-  ): { isLive: boolean; confidence: number; evidence: Record<string, any> } {
-    const evidence: Record<string, any> = {};
+  ): { isLive: boolean; confidence: number; evidence: Record<string, unknown> } {
+    const evidence: Record<string, unknown> = {};
     let livenessScore = 50; // Start with neutral score
 
     // Check for natural voice variations

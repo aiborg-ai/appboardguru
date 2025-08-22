@@ -11,18 +11,28 @@ import {
   OrganizationId,
   createUserId
 } from './types'
+import { 
+  TransactionCoordinator, 
+  TransactionOptions, 
+  TransactionUtils,
+  OptimisticLock 
+} from './transaction-coordinator'
 
 export abstract class BaseRepository {
   protected supabase: SupabaseClient<Database>
+  protected transactionCoordinator?: TransactionCoordinator
 
-  constructor(supabase: SupabaseClient<Database>) {
+  constructor(
+    supabase: SupabaseClient<Database>,
+    transactionCoordinator?: TransactionCoordinator
+  ) {
     this.supabase = supabase
+    this.transactionCoordinator = transactionCoordinator
   }
 
   /**
-   * Execute a database transaction
-   * Note: Supabase doesn't have native transactions, but we can implement
-   * compensating actions and better error handling
+   * Execute a simple database transaction
+   * Legacy method - prefer withTransaction for new code
    */
   protected async transaction<T>(
     callback: (client: SupabaseClient<Database>) => Promise<T>
@@ -33,13 +43,157 @@ export abstract class BaseRepository {
   }
 
   /**
+   * Execute operations within a managed transaction with ACID support
+   */
+  protected async withTransaction<T>(
+    operations: Array<() => Promise<Result<T>>>,
+    options: Partial<TransactionOptions> = {}
+  ): Promise<Result<T[]>> {
+    if (!this.transactionCoordinator) {
+      // Fallback to legacy transaction behavior
+      const results: T[] = []
+      for (const operation of operations) {
+        const result = await operation()
+        if (!result.success) {
+          return failure(result.error)
+        }
+        results.push(result.data)
+      }
+      return success(results)
+    }
+
+    return TransactionUtils.withTransaction(
+      this.transactionCoordinator,
+      operations,
+      options
+    )
+  }
+
+  /**
+   * Execute a saga-based distributed transaction
+   */
+  protected async withSaga<T>(
+    steps: Array<{
+      execute: () => Promise<Result<T>>
+      compensate: () => Promise<Result<void>>
+      description: string
+    }>
+  ): Promise<Result<T[]>> {
+    if (!this.transactionCoordinator) {
+      return failure(RepositoryError.internal(
+        'Transaction coordinator required for saga operations'
+      ))
+    }
+
+    return TransactionUtils.withSaga(this.transactionCoordinator, steps)
+  }
+
+  /**
+   * Create optimistic lock for entity updates
+   */
+  protected async withOptimisticLock<T extends { id: string; version: number }>(
+    entity: T,
+    updateOperation: (locked: OptimisticLock) => Promise<Result<T>>
+  ): Promise<Result<T>> {
+    if (!this.transactionCoordinator) {
+      // Fallback to direct update without locking
+      return failure(RepositoryError.internal(
+        'Transaction coordinator required for optimistic locking'
+      ))
+    }
+
+    const beginResult = await this.transactionCoordinator.begin({
+      mode: 'SINGLE_DOMAIN',
+      enableOptimisticLocking: true,
+      timeout: 10000
+    })
+
+    if (!beginResult.success) {
+      return failure(beginResult.error)
+    }
+
+    const transactionId = beginResult.data.id
+
+    try {
+      // Acquire optimistic lock
+      const lockResult = await this.transactionCoordinator.acquireOptimisticLock(
+        transactionId,
+        this.getTableName(),
+        entity.id,
+        entity.version
+      )
+
+      if (!lockResult.success) {
+        await this.transactionCoordinator.rollback(transactionId, 'Lock acquisition failed')
+        return failure(lockResult.error)
+      }
+
+      // Execute update operation
+      const updateResult = await updateOperation(lockResult.data)
+
+      if (updateResult.success) {
+        const commitResult = await this.transactionCoordinator.commit(transactionId)
+        if (commitResult.success) {
+          return updateResult
+        } else {
+          await this.transactionCoordinator.rollback(transactionId, 'Commit failed')
+          return failure(commitResult.error)
+        }
+      } else {
+        await this.transactionCoordinator.rollback(transactionId, 'Update operation failed')
+        return failure(updateResult.error)
+      }
+    } catch (error) {
+      await this.transactionCoordinator.rollback(transactionId, 'Exception occurred')
+      return failure(RepositoryError.internal('Optimistic lock operation failed', error))
+    }
+  }
+
+  /**
+   * Execute batch operations within a transaction
+   */
+  protected async batchWithTransaction<T>(
+    operations: Array<{
+      operation: () => Promise<Result<T>>
+      compensate?: () => Promise<Result<void>>
+      description?: string
+    }>,
+    options: {
+      continueOnError?: boolean
+      mode?: TransactionOptions['mode']
+    } = {}
+  ): Promise<Result<T[]>> {
+    const txOptions: Partial<TransactionOptions> = {
+      mode: options.mode || 'SINGLE_DOMAIN',
+      enableMetrics: true
+    }
+
+    if (options.continueOnError) {
+      // Use saga pattern for fault tolerance
+      return this.withSaga(
+        operations.map(op => ({
+          execute: op.operation,
+          compensate: op.compensate || (async () => success(undefined)),
+          description: op.description || 'Batch operation'
+        }))
+      )
+    } else {
+      // Use simple transaction - fail fast
+      return this.withTransaction(
+        operations.map(op => op.operation),
+        txOptions
+      )
+    }
+  }
+
+  /**
    * Create a Result from a Supabase response
    */
   protected createResult<T>(
     data: T | null,
     error: any,
     operation: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Result<T> {
     if (error) {
       return failure(RepositoryError.fromSupabaseError(error, operation), metadata)
@@ -173,7 +327,7 @@ export abstract class BaseRepository {
   /**
    * Validate required fields
    */
-  protected validateRequired(data: Record<string, any>, fields: string[]): Result<void> {
+  protected validateRequired(data: Record<string, unknown>, fields: string[]): Result<void> {
     const missing = fields.filter(field => !data[field] || data[field] === '')
     if (missing.length > 0) {
       return failure(
@@ -266,4 +420,5 @@ export abstract class BaseRepository {
   // Abstract methods that subclasses should implement
   protected abstract getEntityName(): string
   protected abstract getSearchFields(): string[]
+  protected abstract getTableName(): string
 }

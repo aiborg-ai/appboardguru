@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const { data: orgMember, error: orgError } = await (supabase as any)
+    const { data: orgMember, error: orgError } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', body.organizationId)
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
     const alerts = await generateAnalyticsAlerts(analytics);
 
     // Log analytics request
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -977,7 +977,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get cached analytics if available
-    const { data: cachedAnalytics } = await (supabase as any)
+    const { data: cachedAnalytics } = await supabase
       .from('cached_analytics')
       .select('*')
       .eq('organization_id', organizationId)

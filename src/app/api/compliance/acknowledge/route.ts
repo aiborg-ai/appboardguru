@@ -6,7 +6,7 @@ import type { AcknowledgeNotificationRequest } from '@/types'
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const body = await request.json() as AcknowledgeNotificationRequest
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this notification
-    const { data: notification } = await (supabase as any)
+    const { data: notification } = await supabase
       .from('notifications')
       .select('*')
       .eq('id', body.notification_id)
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get acknowledgment details
-    const { data: notification, error } = await (supabase as any)
+    const { data: notification, error } = await supabase
       .from('notifications')
       .select(`
         id,
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get audit trail for this acknowledgment
-    const { data: auditEntries } = await (supabase as any)
+    const { data: auditEntries } = await supabase
       .from('notification_audit_log')
       .select('*')
       .eq('notification_id', notificationId)
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const body = await request.json()
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()

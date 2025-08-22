@@ -74,6 +74,57 @@ export type {
   VaultRole
 } from './boardmates'
 
+// User Types
+export type {
+  User,
+  UserInsert,
+  UserUpdate,
+  UserProfile,
+  UserWithPermissions,
+  OrganizationMembership,
+  UserRole,
+  UserStatus,
+  OrganizationRole,
+  MembershipStatus
+} from './entities/user.types'
+
+// Organization Types
+export type {
+  Organization,
+  OrganizationInsert,
+  OrganizationUpdate,
+  OrganizationMember,
+  OrganizationInvitation,
+  OrganizationFeatures,
+  OrganizationWithMembers,
+  OrganizationMemberWithUser,
+  OrganizationSettings,
+  PasswordPolicy,
+  OrganizationSize,
+  PlanType,
+  InvitationStatus
+} from './entities/organization.types'
+
+// Asset Types
+export type {
+  Asset,
+  AssetInsert,
+  AssetUpdate,
+  AssetPermission,
+  AssetAnnotation,
+  AssetWithDetails,
+  AssetUploadData,
+  AssetProcessingResult,
+  AssetDownloadOptions,
+  AssetShareOptions,
+  AssetAnnotationData,
+  AnnotationPosition,
+  AssetMetrics,
+  AssetStatus,
+  AssetVisibility,
+  AnnotationType
+} from './entities/asset.types'
+
 // Entity Types
 export type {
   ComplianceTemplate,
@@ -299,3 +350,306 @@ export type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type Position = 'top' | 'right' | 'bottom' | 'left'
 export type Alignment = 'start' | 'center' | 'end'
 export type Placement = `${Position}` | `${Position}-${Alignment}`
+
+// ==== Advanced Type Utilities ====
+
+// Re-export advanced type utilities from lib/types
+export type {
+  // Deep utility types
+  DeepReadonly,
+  DeepPartial,
+  DeepRequired,
+  // Strict utility types
+  StrictOmit,
+  StrictPick,
+  // Key utility types
+  KeysOfType,
+  StringKeys,
+  NumberKeys,
+  SymbolKeys,
+  // Conditional type helpers
+  Extends,
+  Equals,
+  IsNever,
+  IsAny,
+  IsUnknown,
+  IsUnion,
+  UnionToIntersection,
+  LastInUnion,
+  UnionToTuple,
+  // Advanced mapped types
+  RequireOnly,
+  OptionalOnly,
+  Replace,
+  Override,
+  Merge,
+  Mutable,
+  ReadonlyBy,
+  MutableBy,
+  // Template literal utilities
+  Capitalize as CapitalizeString,
+  Uncapitalize as UncapitalizeString,
+  KebabToCamel,
+  CamelToKebab,
+  SnakeToCamel,
+  CamelToSnake,
+  Paths,
+  PathValue,
+  // Function utilities
+  Func,
+  Asyncify,
+  Awaited as AwaitedType,
+  // Builder patterns
+  Builder,
+  FluentBuilder,
+  ValidatedBuilder,
+  // Type predicates
+  TypePredicate,
+  // Brand types
+  Brand,
+  ValidatedBrand,
+  Unbrand,
+  IsBranded
+} from '../lib/types/utilities'
+
+// Export utility functions
+export {
+  isDefined,
+  isNullish,
+  filterDefined,
+  assertDefined,
+  createBuilder,
+  assertNever,
+  identity,
+  compose,
+  pipe,
+  createTypeGuard,
+  and,
+  or
+} from '../lib/types/utilities'
+
+// ==== Enhanced Branded Types ====
+
+// Re-export enhanced branded types
+export type {
+  UserId,
+  OrganizationId,
+  VaultId,
+  AssetId,
+  NotificationId,
+  CalendarEventId,
+  MeetingId,
+  ActivityLogId,
+  ComplianceWorkflowId,
+  BoardId,
+  CommitteeId,
+  DocumentId,
+  AnnotationId,
+  TocId,
+  SummaryId,
+  PodcastId,
+  AnyBrandedId,
+  SerializedBrandedId,
+  ComposeBrands,
+  ContextualBrand,
+  VersionedBrand,
+  ScopedBrand,
+  OrgScopedId,
+  ValidationResult as BrandedValidationResult,
+  BrandedTypeName
+} from '../lib/types/branded'
+
+// Export branded type functions
+export {
+  createUserId,
+  createOrganizationId,
+  createVaultId,
+  createAssetId,
+  createNotificationId,
+  createCalendarEventId,
+  createMeetingId,
+  createActivityLogId,
+  createComplianceWorkflowId,
+  createBoardId,
+  createCommitteeId,
+  createDocumentId,
+  createAnnotationId,
+  createTocId,
+  createSummaryId,
+  createPodcastId,
+  // Unsafe constructors
+  unsafeCreateUserId,
+  unsafeCreateOrganizationId,
+  unsafeCreateVaultId,
+  unsafeCreateAssetId,
+  unsafeCreateNotificationId,
+  unsafeCreateCalendarEventId,
+  unsafeCreateMeetingId,
+  unsafeCreateActivityLogId,
+  unsafeCreateComplianceWorkflowId,
+  unsafeCreateBoardId,
+  unsafeCreateCommitteeId,
+  unsafeCreateDocumentId,
+  unsafeCreateAnnotationId,
+  unsafeCreateTocId,
+  unsafeCreateSummaryId,
+  unsafeCreatePodcastId,
+  // Type guards
+  isUserId,
+  isOrganizationId,
+  isVaultId,
+  isAssetId,
+  isNotificationId,
+  isCalendarEventId,
+  isMeetingId,
+  isActivityLogId,
+  isComplianceWorkflowId,
+  isBoardId,
+  isCommitteeId,
+  isDocumentId,
+  isAnnotationId,
+  isTocId,
+  isSummaryId,
+  isPodcastId,
+  isAnyBrandedId,
+  // Utilities
+  extractId,
+  serializeBrandedId,
+  deserializeBrandedId,
+  mapBrandedIds,
+  validateBrandedIds,
+  createOrgScopedId,
+  extractScope,
+  BrandedTypeMap,
+  TypeGuardMap
+} from '../lib/types/branded'
+
+// ==== Runtime Type Validation ====
+
+// Re-export validation types and schemas
+export type {
+  ValidationOptions,
+  ValidationMetadata,
+  ValidationResult as ValidationResultType,
+  ValidationMiddlewareConfig
+} from '../lib/types/validation'
+
+// Export validation schemas
+export {
+  TimestampSchema,
+  EmailSchema,
+  UrlSchema,
+  SlugSchema,
+  PhoneSchema,
+  UserBaseSchema,
+  UserCreateSchema,
+  UserUpdateSchema,
+  OrganizationBaseSchema,
+  OrganizationCreateSchema,
+  OrganizationUpdateSchema,
+  VaultBaseSchema,
+  VaultCreateSchema,
+  VaultUpdateSchema,
+  AssetBaseSchema,
+  AssetCreateSchema,
+  AssetUpdateSchema,
+  MeetingBaseSchema,
+  MeetingCreateSchema,
+  MeetingUpdateSchema,
+  NotificationBaseSchema,
+  NotificationCreateSchema,
+  NotificationUpdateSchema,
+  // Validation decorators
+  Validate,
+  ValidateInput,
+  ValidateOutput,
+  // Validation utilities
+  validateWithSchema,
+  validatePartialWithSchema,
+  validateAsync,
+  validateBatch,
+  createValidationMiddleware,
+  // Schema registry
+  SchemaRegistry,
+  defaultSchemaRegistry
+} from '../lib/types/validation'
+
+// ==== Result Factory and Combinators ====
+
+// Re-export Result factory types
+export type {
+  ResultFactory as ResultFactoryType,
+  AsyncResultFactory,
+  ResultTransform,
+  AsyncResultTransform,
+  ResultPredicate,
+  AsyncResultPredicate,
+  Chain
+} from '../lib/types/result-factory'
+
+// Export Result factory classes and utilities
+export {
+  ResultFactory,
+  ResultCombinators,
+  ResultArray,
+  AsyncResult,
+  ResultPattern,
+  ResultBuilder,
+  chain
+} from '../lib/types/result-factory'
+
+// ==== Type-Safe Event System ====
+
+// Re-export event system types
+export type {
+  BaseEvent,
+  EventHandler as TypedEventHandler,
+  AsyncEventHandler,
+  EventPredicate,
+  EventMiddleware,
+  EventFilter,
+  EventSubscription,
+  EventRegistry,
+  DomainEvent,
+  EventType,
+  EventStore,
+  // Specific event types
+  UserEvent,
+  UserCreatedEvent,
+  UserUpdatedEvent,
+  UserDeletedEvent,
+  OrganizationEvent,
+  OrganizationCreatedEvent,
+  OrganizationUpdatedEvent,
+  OrganizationMemberAddedEvent,
+  OrganizationMemberRemovedEvent,
+  VaultEvent,
+  VaultCreatedEvent,
+  VaultUpdatedEvent,
+  VaultAssetAddedEvent,
+  VaultAssetRemovedEvent,
+  AssetEvent,
+  AssetUploadedEvent,
+  AssetProcessedEvent,
+  AssetSharedEvent,
+  MeetingEvent,
+  MeetingScheduledEvent,
+  MeetingStartedEvent,
+  MeetingEndedEvent,
+  NotificationEvent,
+  NotificationCreatedEvent,
+  NotificationReadEvent
+} from '../lib/types/events'
+
+// Export event system classes and utilities
+export {
+  TypedEventEmitter,
+  InMemoryEventStore,
+  globalEventEmitter,
+  globalEventStore,
+  emitDomainEvent,
+  onDomainEvent,
+  onceDomainEvent,
+  EventHandler as EventHandlerDecorator,
+  registerEventHandlers
+} from '../lib/types/events'

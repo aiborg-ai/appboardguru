@@ -23,7 +23,7 @@ export async function POST(
     // TODO: Implement message_id-based read marking
 
     // Verify user is a participant
-    const { data: participant } = await (supabase as any)
+    const { data: participant } = await supabase
       .from('chat_participants')
       .select('id, last_read_at')
       .eq('conversation_id', conversationId)
@@ -37,7 +37,7 @@ export async function POST(
 
     // In real implementation, use the mark_messages_read function:
     /*
-    const { data: markedCount, error: markError } = await (supabase as any)
+    const { data: markedCount, error: markError } = await supabase
       .rpc('mark_messages_read', {
         p_conversation_id: conversationId,
         p_user_id: user.id,

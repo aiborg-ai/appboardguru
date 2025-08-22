@@ -183,7 +183,7 @@ export async function PATCH(request: NextRequest) {
         break
     }
 
-    const { data: recommendation, error } = await (supabase as any)
+    const { data: recommendation, error } = await supabase
       .from('user_recommendations')
       .update(updateData)
       .eq('id', recommendation_id)

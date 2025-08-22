@@ -14,7 +14,7 @@ export interface AsyncState<T> {
 
 export interface AsyncOptions {
   immediate?: boolean
-  onSuccess?: (data: any) => void
+  onSuccess?: data: unknown) => void
   onError?: (error: Error) => void
 }
 
@@ -36,7 +36,7 @@ export interface UseFetchOptions<T> extends AsyncOptions {
   enabled?: boolean
   retry?: number | boolean
   retryDelay?: number | ((attempt: number) => number)
-  select?: (data: any) => T
+  select?: data: unknown) => T
   onSettled?: (data: T | null, error: Error | null) => void
 }
 

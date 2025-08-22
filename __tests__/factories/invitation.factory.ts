@@ -31,9 +31,9 @@ export const InvitationFactory = {
       token_expires_at: expirationDate,
       max_attempts: 3,
       attempt_count: 0,
-      last_attempt_at: null,
+      // last_attempt_at: null,
       accepted_at: null,
-      rejected_at: null,
+      // rejected_at: null,
       ...overrides,
     } as OrganizationInvitation
   },
@@ -79,7 +79,7 @@ export const InvitationFactory = {
       status: 'accepted',
       accepted_at: new Date().toISOString(),
       attempt_count: 1,
-      last_attempt_at: new Date().toISOString(),
+      // last_attempt_at: new Date().toISOString(),
       ...overrides,
     })
   },
@@ -94,9 +94,9 @@ export const InvitationFactory = {
   ): OrganizationInvitation {
     return this.buildOrganizationInvitation(organizationId, invitedBy, {
       status: 'rejected',
-      rejected_at: new Date().toISOString(),
+      // rejected_at: new Date().toISOString(),
       attempt_count: 1,
-      last_attempt_at: new Date().toISOString(),
+      // last_attempt_at: new Date().toISOString(),
       ...overrides,
     })
   },
@@ -148,7 +148,7 @@ export const InvitationFactory = {
   ): VaultInvitation[] {
     return userIds.map((userId, index) =>
       this.buildVaultInvitation(vaultId, userId, invitedBy, {
-        role: index === 0 ? 'editor' : 'viewer',
+        role: index === 0 ? 'admin' : 'viewer',
         ...overrides,
       })
     )
@@ -160,7 +160,7 @@ export const InvitationFactory = {
   buildWithRoles(
     organizationId: string,
     invitedBy: string,
-    roles: string[]
+    roles: ("owner" | "admin" | "member" | "viewer")[]
   ): OrganizationInvitation[] {
     return roles.map((role, index) =>
       this.buildOrganizationInvitation(organizationId, invitedBy, {
@@ -201,7 +201,7 @@ export const InvitationFactory = {
     organizationId: string,
     invitedBy: string,
     emails: string[],
-    role: string = 'member'
+    role: "owner" | "admin" | "member" | "viewer" = 'member'
   ): OrganizationInvitation[] {
     return emails.map(email =>
       this.buildOrganizationInvitation(organizationId, invitedBy, {
@@ -220,7 +220,7 @@ export const InvitationTemplates = {
   boardDirector: (organizationId: string, invitedBy: string) =>
     InvitationFactory.buildOrganizationInvitation(organizationId, invitedBy, {
       email: 'boarddirector@example.com',
-      role: 'director',
+      role: 'admin', // 'director' is not valid, using 'admin'
       personal_message: 'We are pleased to invite you to join our board of directors. Your expertise and experience will be invaluable to our organization\'s success.',
     }),
 
@@ -244,24 +244,24 @@ export const InvitationTemplates = {
   emergencyMeeting: (vaultId: string, userId: string, invitedBy: string) =>
     InvitationFactory.buildVaultInvitation(vaultId, userId, invitedBy, {
       role: 'viewer',
-      message: 'URGENT: Please review the materials for tomorrow\'s emergency board session regarding the acquisition proposal.',
-      deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      // message: 'URGENT: Please review the materials for tomorrow\'s emergency board session regarding the acquisition proposal.',
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
     }),
 
   // Annual meeting invitation
   annualMeeting: (vaultId: string, userId: string, invitedBy: string) =>
     InvitationFactory.buildVaultInvitation(vaultId, userId, invitedBy, {
       role: 'viewer',
-      message: 'Please review the materials for our upcoming annual shareholders meeting, including the proxy statement and financial reports.',
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+      // message: 'Please review the materials for our upcoming annual shareholders meeting, including the proxy statement and financial reports.',
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
     }),
 
   // Strategic planning session invitation
   strategicPlanning: (vaultId: string, userId: string, invitedBy: string) =>
     InvitationFactory.buildVaultInvitation(vaultId, userId, invitedBy, {
-      role: 'editor',
-      message: 'You are invited to participate in our strategic planning retreat. Please review the pre-read materials and come prepared to contribute.',
-      deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days
+      role: 'admin',
+      // message: 'You are invited to participate in our strategic planning retreat. Please review the pre-read materials and come prepared to contribute.',
+      expires_at: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days
     }),
 }
 

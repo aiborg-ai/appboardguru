@@ -240,7 +240,7 @@ export class ErrorSerializer {
   /**
    * Sanitize error details for API response
    */
-  private static sanitizeDetails(error: BaseError): any {
+  private static sanitizeDetails(error: BaseError): unknown {
     const details: any = { ...error.context }
 
     // Add specific error details based on type
@@ -333,7 +333,7 @@ export class ErrorSerializer {
   /**
    * Remove sensitive fields from object
    */
-  private static removeSensitiveFields(obj: any, sensitiveFields: string[]): any {
+  private static removeSensitiveFields(obj: any, sensitiveFields: string[]): unknown {
     if (!obj || typeof obj !== 'object') {
       return obj
     }

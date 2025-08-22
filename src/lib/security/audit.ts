@@ -24,8 +24,8 @@ export interface SecurityEvent {
   resourceType: string
   resourceId?: string
   eventDescription: string
-  details?: Record<string, any>
-  metadata?: Record<string, any>
+  details?: Record<string, unknown>
+  metadata?: Record<string, unknown>
   severity: AuditSeverity
   outcome: AuditOutcome
   riskScore?: number
@@ -41,11 +41,11 @@ export interface SecurityEvent {
   }
   httpMethod?: string
   endpoint?: string
-  requestHeaders?: Record<string, any>
+  requestHeaders?: Record<string, unknown>
   responseStatus?: number
   responseTimeMs?: number
-  oldValues?: Record<string, any>
-  newValues?: Record<string, any>
+  oldValues?: Record<string, unknown>
+  newValues?: Record<string, unknown>
   affectedRows?: number
   correlationId?: string
   parentEventId?: string
@@ -459,7 +459,7 @@ if (typeof setInterval !== 'undefined') {
  */
 export async function logSecurityEvent(
   action: string,
-  details: Record<string, any> = {},
+  details: Record<string, unknown> = {},
   severity: AuditSeverity = 'medium',
   eventType: AuditEventType = 'security_breach'
 ): Promise<string> {
@@ -485,7 +485,7 @@ export async function logSecurityEvent(
 export async function logFailedLogin(
   email: string,
   ip: string,
-  details: Record<string, any> = {}
+  details: Record<string, unknown> = {}
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
     eventType: 'authentication',
@@ -513,7 +513,7 @@ export async function logFailedLogin(
 export async function logSuccessfulLogin(
   userId: string,
   ip: string,
-  details: Record<string, any> = {}
+  details: Record<string, unknown> = {}
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
     eventType: 'authentication',
@@ -540,7 +540,7 @@ export async function logSuccessfulLogin(
  */
 export async function logSuspiciousActivity(
   description: string,
-  details: Record<string, any> = {}
+  details: Record<string, unknown> = {}
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
     eventType: 'security_breach',
@@ -569,7 +569,7 @@ export async function logDataAccess(
   resourceType: string,
   resourceId: string,
   action: string,
-  details: Record<string, any> = {}
+  details: Record<string, unknown> = {}
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
     eventType: 'data_access',
@@ -596,9 +596,9 @@ export async function logDataModification(
   resourceType: string,
   resourceId: string,
   action: 'create' | 'update' | 'delete',
-  oldValues?: Record<string, any>,
-  newValues?: Record<string, any>,
-  details: Record<string, any> = {}
+  oldValues?: Record<string, unknown>,
+  newValues?: Record<string, unknown>,
+  details: Record<string, unknown> = {}
 ): Promise<string> {
   return SecurityAuditLogger.logEvent({
     eventType: 'data_modification',

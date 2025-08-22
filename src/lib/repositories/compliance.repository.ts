@@ -78,7 +78,7 @@ export interface ComplianceWorkflowCreateData {
     recipients: UserId[]
   }
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ComplianceExecution {
@@ -90,7 +90,7 @@ export interface ComplianceExecution {
   current_step: number
   total_steps: number
   completion_percentage: number
-  evidence_submitted: Record<string, any>[]
+  evidence_submitted: Record<string, unknown>[]
   reviewer_notes?: string
   completed_at?: Date
   failure_reason?: string
@@ -193,12 +193,12 @@ export class ComplianceRepository extends BaseRepository {
       .single()
 
     // Find current execution
-    if (data && (data as any).executions) {
-      const currentExecution = (data as any).executions.find((exec: any) => 
+    if (data && data.executions) {
+      const currentExecution = data.executions.find((exec: any) => 
         exec.status === 'in_progress'
       )
       if (currentExecution) {
-        (data as any).current_execution = currentExecution
+        data.current_execution = currentExecution
       }
     }
 
@@ -478,7 +478,7 @@ export class ComplianceRepository extends BaseRepository {
     updates: {
       current_step?: number
       completion_percentage?: number
-      evidence_submitted?: Record<string, any>[]
+      evidence_submitted?: Record<string, unknown>[]
       reviewer_notes?: string
     },
     updatedBy: UserId
@@ -759,7 +759,7 @@ export class ComplianceRepository extends BaseRepository {
     return { score: Math.max(0, score), risks }
   }
 
-  private applyFilters(query: any, filters: ComplianceFilters): any {
+  private applyFilters(query: any, filters: ComplianceFilters): unknown {
     if (filters.status) {
       query = query.eq('status', filters.status)
     }

@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'anomalyId required' }, { status: 400 })
       }
 
-      const { data: updatedAnomaly, error } = await (supabase as any)
+      const { data: updatedAnomaly, error } = await supabase
         .from('anomaly_detections')
         .update({
           investigation_status: 'in_progress',
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      const { data: updatedAnomaly, error } = await (supabase as any)
+      const { data: updatedAnomaly, error } = await supabase
         .from('anomaly_detections')
         .update({
           investigation_status: resolution,
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      const { data: updatedAnomalies, error } = await (supabase as any)
+      const { data: updatedAnomalies, error } = await supabase
         .from('anomaly_detections')
         .update({
           investigation_status: resolution,
@@ -352,7 +352,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the anomaly
-    const { data: updatedAnomaly, error } = await (supabase as any)
+    const { data: updatedAnomaly, error } = await supabase
       .from('anomaly_detections')
       .update({
         ...updates,

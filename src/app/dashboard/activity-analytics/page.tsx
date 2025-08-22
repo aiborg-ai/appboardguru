@@ -102,7 +102,7 @@ export default function ActivityAnalyticsDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }, [(organization as any)?.id, (user as any)?.id, selectedTimeRange, activeTab, logActivity])
+  }, [(organization as any)?.id, user?.id, selectedTimeRange, activeTab, logActivity])
 
   /**
    * Setup real-time connection

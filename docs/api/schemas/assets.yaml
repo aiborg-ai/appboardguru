@@ -1,0 +1,507 @@
+# Asset Management Schemas
+
+Asset:
+  type: object
+  required:
+    - id
+    - title
+    - file_name
+    - file_size
+    - file_type
+    - owner_id
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique asset identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    title:
+      type: string
+      maxLength: 200
+      description: Human-readable asset title
+      example: "Q4 Financial Report"
+    description:
+      type: string
+      maxLength: 1000
+      description: Asset description
+      example: "Quarterly financial analysis and projections"
+    file_name:
+      type: string
+      description: Original file name
+      example: "q4-financial-report.pdf"
+    original_file_name:
+      type: string
+      description: Original uploaded file name
+      example: "Financial Report Q4 2024.pdf"
+    file_path:
+      type: string
+      description: Storage path of the file
+      example: "/assets/2024/01/550e8400-e29b-41d4-a716-446655440000.pdf"
+    file_size:
+      type: integer
+      minimum: 1
+      description: File size in bytes
+      example: 2048576
+    file_type:
+      type: string
+      description: File extension/type
+      example: "pdf"
+    mime_type:
+      type: string
+      description: MIME type of the file
+      example: "application/pdf"
+    storage_bucket:
+      type: string
+      description: Storage bucket name
+      example: "assets"
+    category:
+      type: string
+      description: Asset category
+      example: "financial"
+    folder_path:
+      type: string
+      description: Virtual folder path
+      example: "/reports/financial"
+    tags:
+      type: array
+      items:
+        type: string
+      description: Asset tags
+      example: ["financial", "quarterly", "2024"]
+    visibility:
+      type: string
+      enum: [private, organization, public]
+      description: Asset visibility level
+      example: "organization"
+    owner_id:
+      type: string
+      format: uuid
+      description: ID of asset owner
+    organization_id:
+      type: string
+      format: uuid
+      description: Organization ID
+    vault_id:
+      type: string
+      format: uuid
+      description: Vault ID if asset is in a vault
+    view_count:
+      type: integer
+      minimum: 0
+      description: Number of times asset was viewed
+      example: 42
+    download_count:
+      type: integer
+      minimum: 0
+      description: Number of times asset was downloaded
+      example: 15
+    is_processed:
+      type: boolean
+      description: Whether asset processing is complete
+      example: true
+    processing_status:
+      type: string
+      enum: [pending, processing, completed, failed]
+      description: Processing status
+      example: "completed"
+    is_deleted:
+      type: boolean
+      description: Soft delete flag
+      example: false
+    created_at:
+      type: string
+      format: date-time
+      description: Creation timestamp
+    updated_at:
+      type: string
+      format: date-time
+      description: Last update timestamp
+    deleted_at:
+      type: string
+      format: date-time
+      description: Deletion timestamp
+    deleted_by:
+      type: string
+      format: uuid
+      description: ID of user who deleted the asset
+    owner:
+      $ref: '#/AssetOwner'
+    vault:
+      $ref: '#/AssetVault'
+    sharedWith:
+      type: array
+      items:
+        $ref: '#/AssetShare'
+    isOwner:
+      type: boolean
+      description: Whether current user is the owner
+      example: true
+    isShared:
+      type: boolean
+      description: Whether asset is shared with others
+      example: false
+    comments:
+      type: array
+      items:
+        $ref: '#/AssetComment'
+
+AssetOwner:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    email:
+      type: string
+      format: email
+
+AssetVault:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    organization_id:
+      type: string
+      format: uuid
+
+AssetShare:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    userId:
+      type: string
+      format: uuid
+    userName:
+      type: string
+    userEmail:
+      type: string
+      format: email
+    permission:
+      type: string
+      enum: [view, download, edit, admin]
+    message:
+      type: string
+    expiresAt:
+      type: string
+      format: date-time
+    sharedAt:
+      type: string
+      format: date-time
+
+AssetComment:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    text:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    user:
+      $ref: '#/AssetOwner'
+
+CreateAssetRequest:
+  type: object
+  required:
+    - title
+    - fileName
+    - filePath
+    - fileSize
+    - fileType
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+      description: Asset title
+      example: "Q4 Financial Report"
+    description:
+      type: string
+      maxLength: 1000
+      description: Asset description
+    fileName:
+      type: string
+      minLength: 1
+      description: File name
+      example: "report.pdf"
+    filePath:
+      type: string
+      minLength: 1
+      description: Storage file path
+    fileSize:
+      type: integer
+      minimum: 1
+      description: File size in bytes
+    fileType:
+      type: string
+      minLength: 1
+      description: MIME type
+    category:
+      type: string
+      default: "general"
+      description: Asset category
+    folderPath:
+      type: string
+      default: "/"
+      description: Virtual folder path
+    tags:
+      type: array
+      items:
+        type: string
+      default: []
+      description: Asset tags
+    vaultId:
+      type: string
+      format: uuid
+      description: Vault ID (optional)
+    visibility:
+      type: string
+      enum: [private, organization, public]
+      default: private
+      description: Visibility level
+
+UpdateAssetRequest:
+  type: object
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      maxLength: 1000
+    category:
+      type: string
+    folderPath:
+      type: string
+    tags:
+      type: array
+      items:
+        type: string
+    visibility:
+      type: string
+      enum: [private, organization, public]
+
+ShareAssetRequest:
+  type: object
+  required:
+    - userIds
+    - permission
+  properties:
+    userIds:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
+      description: User IDs to share with
+    permission:
+      type: string
+      enum: [view, download, edit, admin]
+      description: Permission level to grant
+    message:
+      type: string
+      description: Optional sharing message
+    expiresAt:
+      type: string
+      format: date-time
+      description: Share expiration time
+    notifyUsers:
+      type: boolean
+      default: true
+      description: Whether to notify users
+
+AssetListResponse:
+  type: object
+  properties:
+    assets:
+      type: array
+      items:
+        $ref: '#/Asset'
+    pagination:
+      $ref: '../openapi.yaml#/components/schemas/PaginationMeta'
+
+AssetResponse:
+  type: object
+  properties:
+    asset:
+      $ref: '#/Asset'
+
+ShareAssetResponse:
+  type: object
+  properties:
+    shares:
+      type: array
+      items:
+        $ref: '#/AssetShare'
+    message:
+      type: string
+
+AssetSearchRequest:
+  type: object
+  properties:
+    q:
+      type: string
+      default: ""
+      description: Search query
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 50
+    organizationId:
+      type: string
+      format: uuid
+    vaultId:
+      type: string
+      format: uuid
+    fileTypes:
+      type: array
+      items:
+        type: string
+    categories:
+      type: array
+      items:
+        type: string
+    dateFrom:
+      type: string
+      format: date-time
+    dateTo:
+      type: string
+      format: date-time
+
+AssetSearchResponse:
+  type: object
+  properties:
+    assets:
+      type: array
+      items:
+        $ref: '#/Asset'
+    total:
+      type: integer
+    query:
+      type: string
+
+AssetUploadRequest:
+  type: object
+  required:
+    - file
+  properties:
+    file:
+      type: string
+      format: binary
+      description: File to upload
+    title:
+      type: string
+      description: Optional asset title
+    description:
+      type: string
+      description: Optional description
+    category:
+      type: string
+      description: Asset category
+    tags:
+      type: array
+      items:
+        type: string
+      description: Asset tags
+    vaultId:
+      type: string
+      format: uuid
+      description: Vault ID (optional)
+    visibility:
+      type: string
+      enum: [private, organization, public]
+      default: private
+
+AssetUploadResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+    asset:
+      $ref: '#/Asset'
+    uploadId:
+      type: string
+      description: Upload tracking ID
+
+AssetAnnotation:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    asset_id:
+      type: string
+      format: uuid
+    user_id:
+      type: string
+      format: uuid
+    annotation_type:
+      type: string
+      enum: [highlight, note, comment, bookmark]
+    content:
+      type: string
+    position:
+      type: object
+      properties:
+        page:
+          type: integer
+        x:
+          type: number
+        y:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+    metadata:
+      type: object
+      additionalProperties: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+    user:
+      $ref: '#/AssetOwner'
+
+AssetCollaborator:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    asset_id:
+      type: string
+      format: uuid
+    user_id:
+      type: string
+      format: uuid
+    role:
+      type: string
+      enum: [viewer, editor, admin]
+    permissions:
+      type: array
+      items:
+        type: string
+        enum: [view, download, edit, annotate, share, delete]
+    added_at:
+      type: string
+      format: date-time
+    added_by:
+      type: string
+      format: uuid
+    user:
+      $ref: '#/AssetOwner'

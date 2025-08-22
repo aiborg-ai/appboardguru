@@ -106,7 +106,7 @@ export interface VaultCreateData {
     allowed_file_types: string[]
   }
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface VaultMemberData {
@@ -931,7 +931,7 @@ export class VaultRepository extends BaseRepository {
     return Math.round(score)
   }
 
-  private applyFilters(query: any, filters: VaultFilters): any {
+  private applyFilters(query: any, filters: VaultFilters): unknown {
     if (filters.status) {
       query = query.eq('status', filters.status)
     }

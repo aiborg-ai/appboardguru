@@ -19,9 +19,9 @@ export interface CreateOrganizationData {
   website?: string
   industry?: string
   organization_size?: OrganizationSize
-  settings?: Record<string, any>
-  compliance_settings?: Record<string, any>
-  billing_settings?: Record<string, any>
+  settings?: Record<string, unknown>
+  compliance_settings?: Record<string, unknown>
+  billing_settings?: Record<string, unknown>
 }
 
 export interface UpdateOrganizationData {
@@ -32,9 +32,9 @@ export interface UpdateOrganizationData {
   website?: string
   industry?: string
   organization_size?: OrganizationSize
-  settings?: Record<string, any>
-  compliance_settings?: Record<string, any>
-  billing_settings?: Record<string, any>
+  settings?: Record<string, unknown>
+  compliance_settings?: Record<string, unknown>
+  billing_settings?: Record<string, unknown>
 }
 
 export interface Organization {
@@ -52,9 +52,9 @@ export interface Organization {
   is_active: boolean
   deleted_at?: string
   deletion_scheduled_for?: string
-  settings: Record<string, any>
-  compliance_settings: Record<string, any>
-  billing_settings: Record<string, any>
+  settings: Record<string, unknown>
+  compliance_settings: Record<string, unknown>
+  billing_settings: Record<string, unknown>
 }
 
 export interface OrganizationMember {
@@ -62,7 +62,7 @@ export interface OrganizationMember {
   organization_id: string
   user_id: string
   role: OrganizationRole
-  custom_permissions: Record<string, any>
+  custom_permissions: Record<string, unknown>
   invited_by?: string
   approved_by?: string
   joined_at: string
@@ -400,7 +400,7 @@ export async function listUserOrganizations(
       return { success: false, error: error.message }
     }
 
-    const formattedOrganizations = organizations?.map((item: any) => ({
+    const formattedOrganizations = organizations?.map(item: unknown) => ({
       ...item.organizations,
       user_role: item.role,
       user_status: item.status,
@@ -518,7 +518,7 @@ async function createAuditLog(logData: {
   action: string
   resource_type: string
   resource_id?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   outcome: 'success' | 'failure' | 'error' | 'blocked'
   severity: 'low' | 'medium' | 'high' | 'critical'
 }) {

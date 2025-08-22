@@ -188,7 +188,7 @@ export default function ApiDocsPage() {
             }
             return request
           },
-          responseInterceptor: (response: any) => {
+          responseInterceptor: (response: Record<string, unknown>) => {
             return response
           },
           onComplete: () => {

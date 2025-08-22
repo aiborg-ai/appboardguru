@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useRenderPerformance } from '@/hooks/useRenderPerformance'
+import type { NotificationPayload } from '@/types/entities/activity.types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -61,7 +63,10 @@ interface BoardChatPanelProps {
   onToggle: () => void
 }
 
-const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => {
+const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) => {
+  // Performance monitoring
+  useRenderPerformance('BoardChatPanel', { isOpen })
+
   const {
     conversations,
     messages,
@@ -89,36 +94,41 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Filter conversations based on search
-  const filteredConversations = conversations.filter(conv =>
-    conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.other_participant_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter conversations based on search (memoized)
+  const filteredConversations = useMemo(() => 
+    conversations.filter(conv =>
+      conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.other_participant_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [conversations, searchQuery]
   )
 
-  const activeConversation = conversations.find(conv => conv.id === activeConversationId)
+  const activeConversation = useMemo(() => 
+    conversations.find(conv => conv.id === activeConversationId),
+    [conversations, activeConversationId]
+  )
 
-  const handleSendMessage = () => {
+  const handleSendMessage = useCallback(() => {
     if (!newMessage.trim() || !activeConversationId) return
     
     sendChatMessage(activeConversationId, newMessage)
     setNewMessage('')
-  }
+  }, [newMessage, activeConversationId, sendChatMessage])
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
     }
-  }
+  }, [handleSendMessage])
 
-  const getConversationDisplayName = (conv: ChatConversation) => {
+  const getConversationDisplayName = useCallback((conv: ChatConversation) => {
     if (conv.conversation_type === 'direct') {
       return conv.other_participant_name || 'Direct Message'
     }
     return conv.name || 'Group Chat'
-  }
+  }, [])
 
-  const getConversationIcon = (conv: ChatConversation) => {
+  const getConversationIcon = useCallback((conv: ChatConversation) => {
     switch (conv.conversation_type) {
       case 'direct':
         return <MessageSquare className="h-4 w-4" />
@@ -127,7 +137,7 @@ const BoardChatPanel: React.FC<BoardChatPanelProps> = ({ isOpen, onToggle }) => 
       default:
         return <Hash className="h-4 w-4" />
     }
-  }
+  }, [])
 
   if (!isOpen) {
     return (
@@ -486,21 +496,34 @@ interface ChatMessageComponentProps {
   isOwn: boolean
 }
 
-const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({ message, isOwn }) => {
+const ChatMessageComponent = React.memo<ChatMessageComponentProps>(({ message, isOwn }) => {
   const [showActions, setShowActions] = useState(false)
+
+  const handleMouseEnter = useCallback(() => setShowActions(true), [])
+  const handleMouseLeave = useCallback(() => setShowActions(false), [])
+  
+  const messageTime = useMemo(() => 
+    formatDistanceToNow(new Date(message.created_at), { addSuffix: true }),
+    [message.created_at]
+  )
+  
+  const senderInitial = useMemo(() => 
+    message.sender_name.charAt(0),
+    [message.sender_name]
+  )
 
   return (
     <div 
       className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Avatar */}
       {!isOwn && (
         <Avatar className="h-6 w-6 mt-1">
           <AvatarImage src={message.sender_avatar} />
           <AvatarFallback className="text-xs">
-            {message.sender_name.charAt(0)}
+            {senderInitial}
           </AvatarFallback>
         </Avatar>
       )}
@@ -514,7 +537,7 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({ message, is
               {message.sender_name}
             </span>
             <span className="text-xs text-gray-500">
-              {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+              {messageTime}
             </span>
           </div>
         )}
@@ -600,17 +623,19 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({ message, is
           {/* Own Message Time */}
           {isOwn && (
             <div className="text-xs text-gray-500 mt-1 text-right">
-              {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+              {messageTime}
             </div>
           )}
         </div>
       </div>
     </div>
   )
-}
+})
+
+ChatMessageComponent.displayName = 'ChatMessageComponent'
 
 // Notifications Content Component
-const NotificationsContent: React.FC = () => {
+const NotificationsContent = React.memo(() => {
   const {
     notifications,
     counts,
@@ -624,16 +649,16 @@ const NotificationsContent: React.FC = () => {
 
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
 
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = useCallback(async (notification: NotificationPayload) => {
     if (notification.status === 'unread') {
       await markAsRead(notification.id)
     }
     if (notification.action_url) {
       window.open(notification.action_url, '_blank')
     }
-  }
+  }, [markAsRead])
 
-  const getNotificationIcon = (notification: any) => {
+  const getNotificationIcon = (notification: NotificationPayload) => {
     switch (notification.type) {
       case 'meeting': return <Calendar className="h-4 w-4" />
       case 'chat': return <MessageSquare className="h-4 w-4" />
@@ -853,5 +878,7 @@ const LogsContent: React.FC = () => {
     </div>
   )
 }
+
+BoardChatPanel.displayName = 'BoardChatPanel'
 
 export default BoardChatPanel

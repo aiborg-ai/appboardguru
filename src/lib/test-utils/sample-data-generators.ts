@@ -27,7 +27,7 @@ export interface SampleUserActivity {
   event_type: SampleActivityEventType
   event_category: SampleActivityEventCategory
   timestamp: string
-  event_data: Record<string, any>
+  event_data: Record<string, unknown>
   session_id: string
   duration_seconds?: number
   engagement_score?: number
@@ -317,7 +317,7 @@ function generateUserBehaviorProfile(userId: number): UserBehaviorProfile {
 function generateEventData(eventType: string, profile: {
   engagementLevel: string;
   [key: string]: any;
-}): Record<string, any> {
+}): Record<string, unknown> {
   const baseData = {
     user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,

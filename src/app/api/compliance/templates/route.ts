@@ -6,7 +6,7 @@ import type { ComplianceTemplate, ComplianceTemplateInsert } from '@/types'
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const { searchParams } = new URL(request.url)
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's organization
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', user.id)
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const body = await request.json()
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's organization and role
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate template names
-    const { data: existingTemplate } = await (supabase as any)
+    const { data: existingTemplate } = await supabase
       .from('compliance_templates')
       .select('id')
       .eq('organization_id', orgMember.organization_id)
@@ -153,7 +153,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if user can update this template
-    const { data: template } = await (supabase as any)
+    const { data: template } = await supabase
       .from('compliance_templates')
       .select(`
         *,
@@ -201,7 +201,7 @@ export async function PUT(request: NextRequest) {
 
     // Check for name conflicts if name is being changed
     if (body.name && body.name !== template.name) {
-      const { data: existingTemplate } = await (supabase as any)
+      const { data: existingTemplate } = await supabase
         .from('compliance_templates')
         .select('id')
         .eq('organization_id', template.organization_id)
@@ -218,7 +218,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update template
-    const { data: updatedTemplate, error: updateError } = await (supabase as any)
+    const { data: updatedTemplate, error: updateError } = await supabase
       .from('compliance_templates')
       .update(updateData)
       .eq('id', templateId)
@@ -260,7 +260,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user can delete this template
-    const { data: template } = await (supabase as any)
+    const { data: template } = await supabase
       .from('compliance_templates')
       .select(`
         *,
@@ -289,7 +289,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if template is being used by active workflows
-    const { count: activeWorkflows } = await (supabase as any)
+    const { count: activeWorkflows } = await supabase
       .from('notification_workflows')
       .select('*', { count: 'exact', head: true })
       .eq('template_id', templateId)
@@ -302,7 +302,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Soft delete by setting is_active to false
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('compliance_templates')
       .update({
         is_active: false,

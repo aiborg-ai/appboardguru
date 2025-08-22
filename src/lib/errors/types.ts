@@ -19,7 +19,7 @@ export class ValidationError extends EnhancedBaseError {
     field?: string,
     value?: any,
     validationRules?: string[],
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ) {
     super(
@@ -94,7 +94,7 @@ export class AuthenticationError extends EnhancedBaseError {
     message: string = 'Authentication failed',
     authMethod?: string,
     userId?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     correlationId?: string
   ) {
@@ -154,7 +154,7 @@ export class AuthorizationError extends EnhancedBaseError {
     action?: string,
     requiredRole?: string,
     currentRole?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ) {
     super(
@@ -222,13 +222,13 @@ export class AuthorizationError extends EnhancedBaseError {
 export class NotFoundError extends EnhancedBaseError {
   public readonly resource: string
   public readonly resourceId?: string
-  public readonly query?: Record<string, any>
+  public readonly query?: Record<string, unknown>
 
   constructor(
     resource: string,
     resourceId?: string,
-    query?: Record<string, any>,
-    context?: Record<string, any>,
+    query?: Record<string, unknown>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ) {
     const message = resourceId 
@@ -261,7 +261,7 @@ export class NotFoundError extends EnhancedBaseError {
     return new NotFoundError(resource, id, undefined, undefined, correlationId)
   }
 
-  static byQuery(resource: string, query: Record<string, any>, correlationId?: string): NotFoundError {
+  static byQuery(resource: string, query: Record<string, unknown>, correlationId?: string): NotFoundError {
     return new NotFoundError(resource, undefined, query, undefined, correlationId)
   }
 }
@@ -280,7 +280,7 @@ export class ConflictError extends EnhancedBaseError {
     resource: string,
     conflictingField?: string,
     conflictingValue?: any,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ) {
     super(
@@ -352,7 +352,7 @@ export class ServiceUnavailableError extends EnhancedBaseError {
     message?: string,
     retryAfter?: number,
     maintainanceWindow?: { start: Date; end: Date },
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     correlationId?: string
   ) {
@@ -420,7 +420,7 @@ export class BusinessLogicError extends EnhancedBaseError {
     message: string,
     rule: string,
     domain: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ) {
     super(
@@ -448,7 +448,7 @@ export class BusinessLogicError extends EnhancedBaseError {
     rule: string,
     domain: string,
     message: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ): BusinessLogicError {
     return new BusinessLogicError(message, rule, domain, context, correlationId)
@@ -471,7 +471,7 @@ export class ExternalServiceError extends EnhancedBaseError {
     message?: string,
     serviceStatusCode?: number,
     serviceResponse?: any,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     correlationId?: string
   ) {
@@ -545,7 +545,7 @@ export class DatabaseError extends EnhancedBaseError {
     operation: string,
     table?: string,
     constraint?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     correlationId?: string
   ) {
@@ -623,7 +623,7 @@ export class RateLimitError extends EnhancedBaseError {
     window: string,
     retryAfter: number,
     key: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     correlationId?: string
   ) {
     super(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import type { AssetInsert, TypedSupabaseClient } from '@/types/api'
 import { v4 as uuidv4 } from 'uuid'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -42,31 +42,19 @@ function getFileExtension(filename: string): string {
 
 // TODO: Implement thumbnail generation when needed
 
+interface UploadFormData {
+  file: File
+  title: string
+  description?: string
+  category?: string
+  folderPath?: string
+  tags?: string
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     // Parse form data
     const formData = await request.formData()
@@ -76,7 +64,7 @@ export async function POST(request: NextRequest) {
     const category = formData.get('category') as string || 'general'
     const folderPath = formData.get('folderPath') as string || '/'
     const tagsString = formData.get('tags') as string
-    const tags = tagsString ? tagsString.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []
+    const tags = tagsString ? tagsString.split(',').map((tag) => tag.trim()).filter(Boolean) : []
 
     // Validate file
     if (!file) {
@@ -138,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create asset record in database
-    const { data: asset, error: dbError } = await (supabase as any)
+    const { data: asset, error: dbError } = await supabase
       .from('assets')
       .insert({
         owner_id: user.id,
@@ -237,42 +225,42 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle multiple file uploads
+interface BulkUploadSettings {
+  description?: string
+  category?: string
+  folderPath?: string
+  tags?: string
+}
+
+interface UploadResult {
+  success: boolean
+  fileName: string
+  asset?: {
+    id: string
+    title: string
+    fileName: string
+    fileSize: number
+    fileType: string
+    createdAt: string
+  }
+  error?: string
+}
+
 export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
-    const bulkSettings = JSON.parse(formData.get('settings') as string || '{}')
+    const bulkSettings: BulkUploadSettings = JSON.parse(formData.get('settings') as string || '{}')
 
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 })
     }
 
-    const uploadResults = []
-    const errors = []
+    const uploadResults: UploadResult[] = []
+    const errors: UploadResult[] = []
 
     // Process files concurrently (with a limit to avoid overwhelming the server)
     const CONCURRENT_UPLOADS = 3
@@ -294,7 +282,7 @@ export async function PUT(request: NextRequest) {
                                 bulkSettings.folderPath || '/'
           const fileTagsString = formData.get(`tags_${actualIndex}`) as string || 
                                 bulkSettings.tags || ''
-          const fileTags = fileTagsString ? fileTagsString.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []
+          const fileTags = fileTagsString ? fileTagsString.split(',').map((tag) => tag.trim()).filter(Boolean) : []
 
           // Validate file
           if (file.size > MAX_FILE_SIZE) {
@@ -337,7 +325,7 @@ export async function PUT(request: NextRequest) {
           }
 
           // Create asset record
-          const { data: asset, error: dbError } = await (supabase as any)
+          const { data: asset, error: dbError } = await supabase
             .from('assets')
             .insert({
               owner_id: user.id,
@@ -368,7 +356,7 @@ export async function PUT(request: NextRequest) {
           }
 
           // Log activity
-          await (supabase as any)
+          await supabase
             .from('asset_activity_log')
             .insert({
               asset_id: asset.id,

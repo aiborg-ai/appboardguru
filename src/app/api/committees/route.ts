@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createServerRepositoryFactory } from '@/lib/repositories';
+import { createOrganizationId, createCommitteeId } from '@/lib/repositories/types';
+import { isFailure } from '@/lib/repositories/result';
 
 /**
  * GET /api/committees
@@ -8,130 +9,90 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const repositories = await createServerRepositoryFactory();
     
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Get current user using the auth repository
+    const userResult = await repositories.auth.getCurrentUser();
+    if (isFailure(userResult)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get('organization_id');
-    const boardId = searchParams.get('board_id');
+    const organizationIdParam = searchParams.get('organization_id');
     const status = searchParams.get('status') || 'active';
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const search = searchParams.get('search') || undefined;
 
-    if (!organizationId) {
+    const queryOptions = {
+      limit,
+      offset,
+      search,
+      filters: { status },
+      sortBy: 'name',
+      sortOrder: 'asc' as const
+    };
+
+    if (!organizationIdParam) {
       // Get all organizations the user has access to
-      const { data: userMemberships } = await (supabase as any)
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
+      const userOrgsResult = await repositories.auth.getUserOrganizations();
+      if (isFailure(userOrgsResult)) {
+        return NextResponse.json({ error: 'Failed to get user organizations' }, { status: 500 });
+      }
 
-      const orgIds = userMemberships?.map((m: any) => m.organization_id) || [];
+      if (userOrgsResult.data.length === 0) {
+        return NextResponse.json({ 
+          committees: [], 
+          total: 0,
+          limit,
+          offset 
+        });
+      }
+
+      // For now, get committees from the first organization
+      // TODO: Enhance committee repository to support multi-organization queries
+      const firstOrgId = createOrganizationId(userOrgsResult.data[0].organizationId);
+      const committeesResult = await repositories.committees.findByOrganization(firstOrgId, queryOptions);
       
-      if (orgIds.length === 0) {
-        return NextResponse.json({ committees: [], total: 0 });
-      }
-
-      let query = (supabaseAdmin as any)
-        .from('committees')
-        .select(`
-          *,
-          boards!inner (
-            id,
-            name,
-            board_type
-          ),
-          organizations!inner (
-            id,
-            name,
-            logo_url
-          )
-        `)
-        .in('organization_id', orgIds)
-        .eq('status', status)
-        .order('name');
-
-      if (boardId) {
-        query = query.eq('board_id', boardId);
-      }
-
-      const { data: committees, error } = await query;
-
-      if (error) {
-        console.error('Error fetching committees:', error);
+      if (isFailure(committeesResult)) {
+        console.error('Error fetching committees:', committeesResult.error);
         return NextResponse.json({ error: 'Failed to fetch committees' }, { status: 500 });
       }
 
-      // Transform the data to include board name
-      const transformedCommittees = (committees as any[])?.map((committee: any) => ({
-        ...committee,
-        board_name: (committee.boards as any)?.name
-      })) || [];
-
       return NextResponse.json({
-        committees: transformedCommittees,
-        total: transformedCommittees.length
+        committees: committeesResult.data.data,
+        total: committeesResult.data.total,
+        limit: committeesResult.data.limit,
+        offset: committeesResult.data.offset,
+        page: committeesResult.data.page,
+        totalPages: committeesResult.data.totalPages
       });
     }
 
-    // Verify user has access to this specific organization
-    const { data: orgMember, error: orgError } = await (supabase as any)
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', organizationId)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+    const organizationId = createOrganizationId(organizationIdParam);
 
-    if (orgError || !orgMember) {
-      return NextResponse.json({ error: 'Access denied to organization' }, { status: 403 });
-    }
-
-    // Get committees for the specific organization
-    let query = (supabaseAdmin as any)
-      .from('committees')
-      .select(`
-        *,
-        boards!inner (
-          id,
-          name,
-          board_type
-        ),
-        organizations!inner (
-          id,
-          name,
-          logo_url
-        )
-      `)
-      .eq('organization_id', organizationId)
-      .eq('status', status)
-      .order('name');
-
-    if (boardId) {
-      query = query.eq('board_id', boardId);
-    }
-
-    const { data: committees, error } = await query;
-
-    if (error) {
-      console.error('Error fetching committees:', error);
+    // Get committees for the specific organization using repository
+    const committeesResult = await repositories.committees.findByOrganization(organizationId, queryOptions);
+    
+    if (isFailure(committeesResult)) {
+      console.error('Error fetching committees:', committeesResult.error);
+      
+      // Handle specific error types
+      if (committeesResult.error.code === 'FORBIDDEN') {
+        return NextResponse.json({ error: 'Access denied to organization' }, { status: 403 });
+      }
+      
       return NextResponse.json({ error: 'Failed to fetch committees' }, { status: 500 });
     }
 
-    // Transform the data to include board name
-    const transformedCommittees = (committees as any[])?.map((committee: any) => ({
-      ...committee,
-      board_name: (committee.boards as any)?.name
-    })) || [];
-
     return NextResponse.json({
-      committees: transformedCommittees,
-      total: transformedCommittees.length,
-      organization_id: organizationId,
-      board_id: boardId
+      committees: committeesResult.data.data,
+      total: committeesResult.data.total,
+      limit: committeesResult.data.limit,
+      offset: committeesResult.data.offset,
+      page: committeesResult.data.page,
+      totalPages: committeesResult.data.totalPages,
+      organization_id: organizationIdParam
     });
 
   } catch (error) {
@@ -146,11 +107,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const repositories = await createServerRepositoryFactory();
     
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Get current user using the auth repository
+    const userResult = await repositories.auth.getCurrentUser();
+    if (isFailure(userResult)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -177,72 +138,44 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Verify user has admin access to this organization
-    const { data: orgMember, error: orgError } = await (supabase as any)
-      .from('organization_members')
-      .select('role')
-      .eq('organization_id', organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .in('role', ['owner', 'admin'])
-      .single();
+    // Create the committee using the repository
+    const committeeData = {
+      organization_id,
+      board_id,
+      name,
+      description,
+      committee_type,
+      established_date,
+      is_permanent,
+      charter_document_url,
+      responsibilities,
+      authority_level,
+      meeting_frequency,
+      meeting_location,
+      settings: settings || {},
+      status: 'active'
+    };
 
-    if (orgError || !orgMember) {
-      return NextResponse.json({
-        error: 'Access denied - admin role required'
-      }, { status: 403 });
-    }
-
-    // Verify the board exists and belongs to this organization
-    const { data: board, error: boardError } = await (supabaseAdmin as any)
-      .from('boards')
-      .select('id, name')
-      .eq('id', board_id)
-      .eq('organization_id', organization_id)
-      .eq('status', 'active')
-      .single();
-
-    if (boardError || !board) {
-      return NextResponse.json({
-        error: 'Board not found or does not belong to this organization'
-      }, { status: 400 });
-    }
-
-    // Create the committee
-    const { data: newCommittee, error: createError } = await (supabaseAdmin as any)
-      .from('committees')
-      .insert({
-        organization_id,
-        board_id,
-        name,
-        description,
-        committee_type,
-        established_date,
-        is_permanent,
-        charter_document_url,
-        responsibilities,
-        authority_level,
-        meeting_frequency,
-        meeting_location,
-        settings: settings || {},
-        created_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as any)
-      .select()
-      .single();
-
-    if (createError || !newCommittee) {
-      console.error('Error creating committee:', createError);
+    const createResult = await repositories.committees.create(committeeData);
+    
+    if (isFailure(createResult)) {
+      console.error('Error creating committee:', createResult.error);
+      
+      // Handle specific error types
+      if (createResult.error.code === 'VALIDATION_ERROR') {
+        return NextResponse.json({ error: createResult.error.message }, { status: 400 });
+      }
+      
+      if (createResult.error.code === 'FORBIDDEN') {
+        return NextResponse.json({ error: 'Access denied - admin role required' }, { status: 403 });
+      }
+      
       return NextResponse.json({ error: 'Failed to create committee' }, { status: 500 });
     }
 
     return NextResponse.json({
       message: 'Committee created successfully',
-      committee: {
-        ...newCommittee,
-        board_name: (board as any)?.name
-      }
+      committee: createResult.data
     }, { status: 201 });
 
   } catch (error) {

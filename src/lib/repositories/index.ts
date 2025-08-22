@@ -1,6 +1,47 @@
 // Core repository exports
 export { BaseRepository } from './base.repository'
 
+// Enhanced repository exports
+export { EnhancedBaseRepository } from './enhanced-base'
+export { CachedRepository } from './cached-repository'
+export { EnhancedUserRepository } from './enhanced-user.repository'
+
+// Query building exports
+export { 
+  TypeSafeQueryBuilder, 
+  createQueryBuilder,
+  QueryBuilderUtils,
+  QueryTemplates
+} from './query-builder'
+
+// Transaction management exports
+export { 
+  SagaOrchestrator, 
+  SagaExecution,
+  TransactionManager,
+  SagaPatterns
+} from './transaction-manager'
+
+// Performance monitoring exports
+export { 
+  PerformanceMonitor,
+  QueryAnalyzer,
+  QueryOptimizer,
+  RepositoryBenchmark,
+  BenchmarkSuites,
+  BenchmarkReporter
+} from './performance/'
+
+// Cache management exports
+export { 
+  CacheManager, 
+  MemoryCache, 
+  DatabaseCache,
+  createCacheManager,
+  CachePresets,
+  CacheConfigBuilder
+} from '../cache/CacheManager'
+
 // Type exports
 export * from './types'
 export * from './result'
@@ -14,6 +55,18 @@ export { NotificationRepository } from './notification.repository'
 export { CalendarRepository } from './calendar.repository'
 export { ComplianceRepository } from './compliance.repository'
 export { ActivityRepository } from './activity.repository'
+export { DocumentRepository } from './document.repository'
+export { WebSocketRepository } from './websocket.repository'
+export { BoardRepository } from './board.repository'
+export { CommitteeRepository } from './committee.repository'
+export { MeetingRepository } from './meeting.repository'
+export { MeetingResolutionRepository } from './meeting-resolution.repository'
+export { MeetingActionableRepository } from './meeting-actionable.repository'
+export { FeedbackRepository } from './feedback.repository'
+export { AuthRepository } from './auth.repository'
+
+// Document-specific exports
+export * from './document-errors'
 
 // Database utilities
 export * from './database'
@@ -29,6 +82,15 @@ import { NotificationRepository } from './notification.repository'
 import { CalendarRepository } from './calendar.repository'
 import { ComplianceRepository } from './compliance.repository'
 import { ActivityRepository } from './activity.repository'
+import { DocumentRepository } from './document.repository'
+import { WebSocketRepository } from './websocket.repository'
+import { BoardRepository } from './board.repository'
+import { CommitteeRepository } from './committee.repository'
+import { MeetingRepository } from './meeting.repository'
+import { MeetingResolutionRepository } from './meeting-resolution.repository'
+import { MeetingActionableRepository } from './meeting-actionable.repository'
+import { FeedbackRepository } from './feedback.repository'
+import { AuthRepository } from './auth.repository'
 import { createMonitoredClient } from './database'
 
 export class RepositoryFactory {
@@ -68,6 +130,42 @@ export class RepositoryFactory {
 
   get activity() {
     return new ActivityRepository(this.monitoredClient)
+  }
+
+  get documents() {
+    return new DocumentRepository(this.monitoredClient)
+  }
+
+  get websocket() {
+    return new WebSocketRepository(this.monitoredClient)
+  }
+
+  get boards() {
+    return new BoardRepository(this.monitoredClient)
+  }
+
+  get committees() {
+    return new CommitteeRepository(this.monitoredClient)
+  }
+
+  get meetings() {
+    return new MeetingRepository(this.monitoredClient)
+  }
+
+  get meetingResolutions() {
+    return new MeetingResolutionRepository(this.monitoredClient)
+  }
+
+  get meetingActionables() {
+    return new MeetingActionableRepository(this.monitoredClient)
+  }
+
+  get feedback() {
+    return new FeedbackRepository(this.monitoredClient)
+  }
+
+  get auth() {
+    return new AuthRepository(this.monitoredClient)
   }
 }
 

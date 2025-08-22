@@ -20,26 +20,26 @@ export const OrganizationFactory = {
       industry: 'Technology',
       organization_size: 'medium',
       website: `https://${orgName.toLowerCase().replace(/\s+/g, '')}.com`,
-      headquarters_location: 'San Francisco, CA',
-      founded_year: 2020,
-      employee_count: 150,
-      annual_revenue: 10000000, // $10M
+      // headquarters_location: 'San Francisco, CA',
+      // founded_year: 2020,
+      // employee_count: 150,
+      // annual_revenue: 10000000, // $10M
       created_by: createdBy,
       created_at: timestamp,
       updated_at: timestamp,
       is_active: true,
       subscription_tier: 'premium',
-      subscription_status: 'active',
+      // subscription_status: 'active',
       billing_cycle: 'monthly',
       next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      features_enabled: {
+      // features_enabled: {
         advanced_analytics: true,
         voice_integration: true,
         ai_insights: true,
         compliance_tracking: true,
         board_collaboration: true
       },
-      compliance_requirements: ['sox', 'gdpr'],
+      // compliance_requirements: ['sox', 'gdpr'],
       board_meeting_frequency: 'quarterly',
       fiscal_year_end: '12-31',
       timezone: 'America/Los_Angeles',
@@ -63,13 +63,13 @@ export const OrganizationFactory = {
       name: `TechCorp ${randomId}`,
       industry: 'Technology',
       organization_size: 'small',
-      employee_count: 25,
-      annual_revenue: 2000000, // $2M
-      founded_year: 2022,
+      // employee_count: 25,
+      // annual_revenue: 2000000, // $2M
+      // founded_year: 2022,
       description: 'Innovative technology startup disrupting the industry',
-      compliance_requirements: ['gdpr'],
+      // compliance_requirements: ['gdpr'],
       subscription_tier: 'standard',
-      features_enabled: {
+      // features_enabled: {
         advanced_analytics: false,
         voice_integration: true,
         ai_insights: true,
@@ -90,13 +90,13 @@ export const OrganizationFactory = {
       name: `Enterprise Corp ${randomId}`,
       industry: 'Manufacturing',
       organization_size: 'enterprise',
-      employee_count: 5000,
-      annual_revenue: 500000000, // $500M
-      founded_year: 1995,
+      // employee_count: 5000,
+      // annual_revenue: 500000000, // $500M
+      // founded_year: 1995,
       description: 'Large multinational enterprise with complex governance needs',
-      compliance_requirements: ['sox', 'gdpr', 'hipaa'],
+      // compliance_requirements: ['sox', 'gdpr', 'hipaa'],
       subscription_tier: 'enterprise',
-      features_enabled: {
+      // features_enabled: {
         advanced_analytics: true,
         voice_integration: true,
         ai_insights: true,
@@ -118,10 +118,10 @@ export const OrganizationFactory = {
       name: `FinServ ${randomId}`,
       industry: 'Financial Services',
       organization_size: 'large',
-      employee_count: 1200,
-      annual_revenue: 75000000, // $75M
-      headquarters_location: 'New York, NY',
-      compliance_requirements: ['sox', 'gdpr', 'pci', 'basel'],
+      // employee_count: 1200,
+      // annual_revenue: 75000000, // $75M
+      // headquarters_location: 'New York, NY',
+      // compliance_requirements: ['sox', 'gdpr', 'pci', 'basel'],
       board_meeting_frequency: 'monthly',
       fiscal_year_end: '12-31',
       subscription_tier: 'enterprise',
@@ -139,12 +139,12 @@ export const OrganizationFactory = {
       name: `Nonprofit Foundation ${randomId}`,
       industry: 'Nonprofit',
       organization_size: 'small',
-      employee_count: 15,
-      annual_revenue: 500000, // $500K
-      compliance_requirements: ['gdpr'],
+      // employee_count: 15,
+      // annual_revenue: 500000, // $500K
+      // compliance_requirements: ['gdpr'],
       subscription_tier: 'standard',
       board_meeting_frequency: 'quarterly',
-      features_enabled: {
+      // features_enabled: {
         advanced_analytics: false,
         voice_integration: false,
         ai_insights: true,
@@ -161,10 +161,10 @@ export const OrganizationFactory = {
   buildInactive(createdBy: string, overrides: Partial<OrganizationInsert> = {}): OrganizationInsert {
     return this.build(createdBy, {
       is_active: false,
-      subscription_status: 'suspended',
+      // subscription_status: 'suspended',
       deleted_at: new Date().toISOString(),
       description: 'Inactive organization for testing edge cases',
-      features_enabled: {
+      // features_enabled: {
         advanced_analytics: false,
         voice_integration: false,
         ai_insights: false,
@@ -214,8 +214,8 @@ export const OrganizationFactory = {
       return this.build(createdBy, {
         name: `${size.charAt(0).toUpperCase() + size.slice(1)} Company ${index + 1}`,
         organization_size: size,
-        employee_count: employeeCount,
-        annual_revenue: revenue,
+        // employee_count: employeeCount,
+        // annual_revenue: revenue,
         slug: `${size}-company-${index + 1}`,
       })
     })
@@ -277,18 +277,18 @@ export const OrganizationTemplates = {
     description: 'Cloud-based software solutions for modern businesses',
     industry: 'Software',
     website: 'https://saasstartup.com',
-    employee_count: 35,
-    annual_revenue: 3500000,
+    // employee_count: 35,
+    // annual_revenue: 3500000,
   }),
 
   // Traditional bank
   traditionalBank: (createdBy: string) => OrganizationFactory.buildFinancial(createdBy, {
     name: 'First National Bank',
     description: 'Traditional banking services with modern technology',
-    headquarters_location: 'Chicago, IL',
-    employee_count: 2500,
-    annual_revenue: 250000000,
-    founded_year: 1985,
+    // headquarters_location: 'Chicago, IL',
+    // employee_count: 2500,
+    // annual_revenue: 250000000,
+    // founded_year: 1985,
   }),
 
   // Healthcare nonprofit
@@ -296,8 +296,8 @@ export const OrganizationTemplates = {
     name: 'Healthcare Foundation',
     description: 'Improving community health through innovative programs',
     industry: 'Healthcare',
-    compliance_requirements: ['gdpr', 'hipaa'],
-    annual_revenue: 2000000,
+    // compliance_requirements: ['gdpr', 'hipaa'],
+    // annual_revenue: 2000000,
   }),
 
   // Global enterprise
@@ -305,9 +305,9 @@ export const OrganizationTemplates = {
     name: 'Global Manufacturing Corp',
     description: 'Leading manufacturer with operations across 50 countries',
     industry: 'Manufacturing',
-    employee_count: 25000,
-    annual_revenue: 2000000000,
-    headquarters_location: 'Detroit, MI',
-    compliance_requirements: ['sox', 'gdpr', 'iso27001', 'environmental'],
+    // employee_count: 25000,
+    // annual_revenue: 2000000000,
+    // headquarters_location: 'Detroit, MI',
+    // compliance_requirements: ['sox', 'gdpr', 'iso27001', 'environmental'],
   }),
 }

@@ -1,0 +1,492 @@
+# Notification System Schemas
+
+Notification:
+  type: object
+  required:
+    - id
+    - user_id
+    - type
+    - category
+    - title
+    - message
+    - priority
+    - status
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique notification identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    user_id:
+      type: string
+      format: uuid
+      description: Target user ID
+    organization_id:
+      type: string
+      format: uuid
+      description: Organization context
+    type:
+      type: string
+      description: Notification type
+      example: "asset_shared"
+      enum: [
+        asset_shared, asset_commented, asset_updated,
+        meeting_scheduled, meeting_reminder, meeting_updated,
+        board_invitation, committee_assignment,
+        compliance_deadline, compliance_violation,
+        system_maintenance, security_alert,
+        user_mention, workflow_update,
+        vault_access_granted, vault_access_revoked
+      ]
+    category:
+      type: string
+      description: Notification category for grouping
+      example: "collaboration"
+      enum: [
+        collaboration, meetings, governance,
+        compliance, security, system,
+        social, workflow, access
+      ]
+    title:
+      type: string
+      maxLength: 200
+      description: Notification title
+      example: "Document shared with you"
+    message:
+      type: string
+      maxLength: 1000
+      description: Notification message content
+      example: "John Doe shared 'Q4 Financial Report' with you"
+    priority:
+      type: string
+      enum: [low, medium, high, critical]
+      description: Notification priority level
+      example: "medium"
+    status:
+      type: string
+      enum: [unread, read, archived, dismissed]
+      description: Notification status
+      example: "unread"
+    action_url:
+      type: string
+      format: uri
+      description: URL for notification action
+      example: "/assets/550e8400-e29b-41d4-a716-446655440000"
+    action_text:
+      type: string
+      maxLength: 50
+      description: Action button text
+      example: "View Document"
+    icon:
+      type: string
+      description: Icon identifier
+      example: "document-share"
+    color:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      description: Notification color (hex)
+      example: "#3b82f6"
+    resource_type:
+      type: string
+      description: Related resource type
+      example: "asset"
+    resource_id:
+      type: string
+      format: uuid
+      description: Related resource ID
+    sender_id:
+      type: string
+      format: uuid
+      description: ID of user who triggered notification
+    metadata:
+      type: object
+      additionalProperties: true
+      description: Additional notification data
+      example:
+        asset_title: "Q4 Financial Report"
+        permission_level: "view"
+    scheduled_for:
+      type: string
+      format: date-time
+      description: When notification should be delivered
+    expires_at:
+      type: string
+      format: date-time
+      description: When notification expires
+    created_at:
+      type: string
+      format: date-time
+      description: Creation timestamp
+    updated_at:
+      type: string
+      format: date-time
+      description: Last update timestamp
+    read_at:
+      type: string
+      format: date-time
+      description: When notification was read
+    archived_at:
+      type: string
+      format: date-time
+      description: When notification was archived
+    delivered_at:
+      type: string
+      format: date-time
+      description: When notification was delivered
+    sender:
+      $ref: '../auth.yaml#/User'
+
+CreateNotificationRequest:
+  type: object
+  required:
+    - type
+    - category
+    - title
+    - message
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: Target user ID (defaults to current user)
+    organization_id:
+      type: string
+      format: uuid
+    type:
+      type: string
+      minLength: 1
+    category:
+      type: string
+      minLength: 1
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+    message:
+      type: string
+      minLength: 1
+      maxLength: 1000
+    priority:
+      type: string
+      enum: [low, medium, high, critical]
+      default: medium
+    status:
+      type: string
+      enum: [unread, read, archived, dismissed]
+      default: unread
+    action_url:
+      type: string
+      format: uri
+    action_text:
+      type: string
+      maxLength: 50
+    icon:
+      type: string
+    color:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+    resource_type:
+      type: string
+    resource_id:
+      type: string
+      format: uuid
+    metadata:
+      type: object
+      additionalProperties: true
+    scheduled_for:
+      type: string
+      format: date-time
+    expires_at:
+      type: string
+      format: date-time
+
+UpdateNotificationRequest:
+  type: object
+  properties:
+    status:
+      type: string
+      enum: [unread, read, archived, dismissed]
+    priority:
+      type: string
+      enum: [low, medium, high, critical]
+    read_at:
+      type: string
+      format: date-time
+    archived_at:
+      type: string
+      format: date-time
+    metadata:
+      type: object
+      additionalProperties: true
+
+NotificationListResponse:
+  type: object
+  properties:
+    notifications:
+      type: array
+      items:
+        $ref: '#/Notification'
+    pagination:
+      $ref: '../openapi.yaml#/components/schemas/PaginationMeta'
+
+NotificationResponse:
+  type: object
+  properties:
+    notification:
+      $ref: '#/Notification'
+
+NotificationCountResponse:
+  type: object
+  properties:
+    unread:
+      type: integer
+      minimum: 0
+      example: 5
+    total:
+      type: integer
+      minimum: 0
+      example: 150
+    critical_unread:
+      type: integer
+      minimum: 0
+      example: 1
+    high_unread:
+      type: integer
+      minimum: 0
+      example: 2
+    archived:
+      type: integer
+      minimum: 0
+      example: 45
+
+BulkNotificationActionRequest:
+  type: object
+  required:
+    - action
+    - notification_ids
+  properties:
+    action:
+      type: string
+      enum: [mark_read, mark_unread, archive, dismiss, delete]
+      description: Action to perform
+    notification_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
+      description: Notification IDs to update
+    filters:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [unread, read, archived, dismissed]
+        type:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        olderThan:
+          type: string
+          format: date-time
+
+BulkNotificationActionResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    action:
+      type: string
+    affected_count:
+      type: integer
+      description: Number of notifications affected
+
+BulkDeleteNotificationsRequest:
+  type: object
+  required:
+    - notification_ids
+  properties:
+    notification_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
+
+BulkDeleteNotificationsResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    deleted_count:
+      type: integer
+
+NotificationAnomaly:
+  type: object
+  properties:
+    type:
+      type: string
+      enum: [type_spike, category_spike, frequency_anomaly, pattern_deviation]
+      description: Type of anomaly detected
+    resource:
+      type: string
+      description: Resource that has anomaly
+    frequency:
+      type: integer
+      description: Actual frequency
+    baseline:
+      type: number
+      description: Expected baseline frequency
+    severity:
+      type: string
+      enum: [low, medium, high]
+      description: Severity of anomaly
+    description:
+      type: string
+      description: Human-readable description
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Confidence score for anomaly detection
+
+NotificationAnomaliesResponse:
+  type: object
+  properties:
+    anomalies:
+      type: array
+      items:
+        $ref: '#/NotificationAnomaly'
+    analysis_period:
+      type: string
+      description: Time period analyzed
+      example: "7 days"
+    total_notifications_analyzed:
+      type: integer
+
+NotificationPrediction:
+  type: object
+  properties:
+    type:
+      type: string
+      enum: [high_volume_day, low_engagement, pattern_shift, optimization_opportunity]
+      description: Type of prediction
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Prediction confidence score
+    description:
+      type: string
+      description: Human-readable prediction description
+    impact:
+      type: string
+      enum: [low, medium, high]
+      description: Expected impact level
+    recommendation:
+      type: string
+      description: Recommended action
+
+NotificationPredictionsResponse:
+  type: object
+  properties:
+    predictions:
+      type: array
+      items:
+        $ref: '#/NotificationPrediction'
+    analysis_period:
+      type: string
+      example: "30 days"
+    confidence_threshold:
+      type: number
+      example: 0.6
+
+NotificationPreferences:
+  type: object
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    email_enabled:
+      type: boolean
+      default: true
+    push_enabled:
+      type: boolean
+      default: true
+    sms_enabled:
+      type: boolean
+      default: false
+    frequency:
+      type: string
+      enum: [immediate, hourly, daily, weekly]
+      default: immediate
+    types:
+      type: object
+      additionalProperties:
+        type: boolean
+      description: Notification type preferences
+    quiet_hours:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: false
+        start_time:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: "22:00"
+        end_time:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: "08:00"
+        timezone:
+          type: string
+          example: "America/New_York"
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+NotificationTemplate:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    type:
+      type: string
+    category:
+      type: string
+    title_template:
+      type: string
+      description: Title template with variables
+    message_template:
+      type: string
+      description: Message template with variables
+    action_text:
+      type: string
+    icon:
+      type: string
+    color:
+      type: string
+    priority:
+      type: string
+      enum: [low, medium, high, critical]
+    variables:
+      type: array
+      items:
+        type: string
+      description: Available template variables
+    is_active:
+      type: boolean
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time

@@ -45,7 +45,7 @@ export interface SchedulingCapability {
 export interface LearningAlgorithm {
   name: string;
   type: 'reinforcement_learning' | 'supervised_learning' | 'pattern_recognition' | 'preference_modeling';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   trainingData: TrainingDataset;
   performance: AlgorithmPerformance;
   isActive: boolean;
@@ -315,7 +315,7 @@ export interface HistoricalPattern {
   confidence: number;
   lastObserved: string;
   predictedNext: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
 }
 
 export interface EnvironmentalContext {
@@ -730,7 +730,7 @@ export interface StrategyCondition {
 
 export interface ResolutionAction {
   action: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   order: number;
   required: boolean;
   fallback?: string;
@@ -744,7 +744,7 @@ export interface ConflictPriority {
 
 export interface PriorityCalculation {
   method: 'weighted_sum' | 'hierarchical' | 'fuzzy_logic' | 'ml_model';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   confidence: number;
 }
 
@@ -773,7 +773,7 @@ export interface RuleCondition {
 
 export interface RuleAction {
   type: 'reschedule' | 'notify' | 'suggest_alternative' | 'escalate' | 'wait_for_response';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   timeout?: number; // minutes
 }
 
@@ -996,7 +996,7 @@ export interface AvoidedTime {
 
 export interface SeasonalAdjustment {
   season: string;
-  adjustments: Record<string, any>;
+  adjustments: Record<string, unknown>;
   effectiveDate: string;
   expirationDate: string;
 }
@@ -1493,7 +1493,7 @@ export interface TransitionCondition {
 
 export interface TransitionAction {
   action: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   order: number;
 }
 
@@ -1502,7 +1502,7 @@ export interface ConversationContext {
   userId: string;
   startTime: string;
   history: ConversationTurn[];
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
 }
 
 export interface ConversationTurn {
@@ -1640,7 +1640,7 @@ export interface DecisionMakingEngine {
 export interface DecisionAlgorithm {
   name: string;
   type: 'rule_based' | 'ml_model' | 'optimization' | 'heuristic';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   performance: AlgorithmPerformance;
   applicability: string[];
 }
@@ -1928,7 +1928,7 @@ export interface SchedulingAction {
   action: string;
   type: 'create' | 'update' | 'delete' | 'query' | 'suggest';
   target: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   confidence: number;
   impact: ActionImpact;
 }

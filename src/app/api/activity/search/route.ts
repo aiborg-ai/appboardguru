@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: userOrgMember } = await (supabase as any)
+    const { data: userOrgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         confidence: nlResults?.confidence
       }
     } else {
-      const supabaseQuery = (supabase as any)
+      const supabaseQuery = supabase
         .from('audit_logs')
         .select(`
           id,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: userOrgMember } = await (supabase as any)
+    const { data: userOrgMember } = await supabase
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', authUser.id)
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'templates': {
-        const { data: customTemplates } = await (supabase as any)
+        const { data: customTemplates } = await supabase
           .from('activity_search_templates')
           .select('*')
           .eq('organization_id', userOrgMember.organization_id)

@@ -71,7 +71,7 @@ async function createTrainingSession(
   const profileId = `profile-${userId}-001`; // Would come from user's active profile
 
   // Exercise configurations based on type
-  const exerciseConfigs: Record<string, any> = {
+  const exerciseConfigs: Record<string, unknown> = {
     'basic-commands': {
       modelType: 'command_recognition',
       requiredSamples: 18,
@@ -243,7 +243,7 @@ async function createTrainingSession(
 
   // In a real implementation, save to database
   /*
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('voice_training_sessions')
     .insert(session)
     .select()

@@ -539,7 +539,7 @@ export interface ReportCustomization {
   section: string;
   visible: boolean;
   priority: number;
-  customizations: Record<string, any>;
+  customizations: Record<string, unknown>;
 }
 
 export interface ExportFormat {
@@ -595,7 +595,7 @@ export interface AnalyticsEvent {
   type: string;
   description: string;
   impact: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ContextualData {
@@ -666,7 +666,7 @@ export interface AggregationOptions {
 export interface AggregationFunction {
   metric: string;
   function: 'sum' | 'avg' | 'max' | 'min' | 'count' | 'percentile';
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 export interface VoiceAnalyticsResponse {

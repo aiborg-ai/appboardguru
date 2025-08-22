@@ -12,7 +12,7 @@ import { telemetry, withDatabaseTelemetry } from '@/lib/telemetry'
 interface QueryMetadata {
   table?: string
   operation?: string
-  filters?: Record<string, any>
+  filters?: Record<string, unknown>
   joins?: string[]
   limit?: number
   orderBy?: string
@@ -142,7 +142,7 @@ export class EnhancedDatabaseClient {
   async update(
     table: string,
     data: any,
-    filters: Record<string, any>,
+    filters: Record<string, unknown>,
     metadata?: QueryMetadata
   ) {
     const startTime = Date.now()
@@ -202,7 +202,7 @@ export class EnhancedDatabaseClient {
    */
   async delete(
     table: string,
-    filters: Record<string, any>,
+    filters: Record<string, unknown>,
     metadata?: QueryMetadata
   ) {
     const startTime = Date.now()
@@ -262,7 +262,7 @@ export class EnhancedDatabaseClient {
    */
   async rpc(
     functionName: string,
-    params?: Record<string, any>,
+    params?: Record<string, unknown>,
     metadata?: QueryMetadata
   ) {
     const startTime = Date.now()

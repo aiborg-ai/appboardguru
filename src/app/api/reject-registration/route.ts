@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the registration request with token verification
-    const { data: registrationRequest, error: fetchError } = await (supabase as any)
+    const { data: registrationRequest, error: fetchError } = await supabase
       .from('registration_requests')
       .select('*')
       .eq('id', id)
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Reject the registration request and clear the token (one-time use)
-    const { error: updateError } = await (supabase as any)
+    const { error: updateError } = await supabase
       .from('registration_requests')
       .update({
         status: 'rejected',

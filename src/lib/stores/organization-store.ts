@@ -51,7 +51,7 @@ export interface OrganizationSettings {
   enable_2fa: boolean
   enable_sso: boolean
   sso_provider?: string
-  sso_config?: Record<string, any>
+  sso_config?: Record<string, unknown>
   branding: {
     logo_url?: string
     primary_color?: string
@@ -61,7 +61,7 @@ export interface OrganizationSettings {
   integrations: {
     slack?: { webhook_url: string; enabled: boolean }
     teams?: { webhook_url: string; enabled: boolean }
-    email?: { provider: string; config: Record<string, any> }
+    email?: { provider: string; config: Record<string, unknown> }
   }
 }
 

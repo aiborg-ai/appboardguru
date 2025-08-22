@@ -6,7 +6,7 @@ import type { CreateCalendarEntryRequest, ComplianceStatus } from '@/types'
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const { searchParams } = new URL(request.url)
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's organization
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', user.id)
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const body = await request.json() as CreateCalendarEntryRequest
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's organization and role
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)
@@ -136,7 +136,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if user can update this calendar entry
-    const { data: entry } = await (supabase as any)
+    const { data: entry } = await supabase
       .from('compliance_calendar')
       .select(`
         *,
@@ -169,7 +169,7 @@ export async function PUT(request: NextRequest) {
         JSON.stringify(body.metadata) : undefined
     }
 
-    const { data: updatedEntry, error: updateError } = await (supabase as any)
+    const { data: updatedEntry, error: updateError } = await supabase
       .from('compliance_calendar')
       .update(updateData)
       .eq('id', entryId)
@@ -211,7 +211,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user can delete this calendar entry
-    const { data: entry } = await (supabase as any)
+    const { data: entry } = await supabase
       .from('compliance_calendar')
       .select(`
         *,
@@ -235,7 +235,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Soft delete by updating status to cancelled
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('compliance_calendar')
       .update({
         status: 'cancelled',

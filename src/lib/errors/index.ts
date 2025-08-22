@@ -142,7 +142,7 @@ export const Errors = {
     DatabaseError.constraintViolation(constraint, table, correlationId),
 
   // Business logic errors
-  ruleViolation: (rule: string, domain: string, message: string, context?: Record<string, any>, correlationId?: string) =>
+  ruleViolation: (rule: string, domain: string, message: string, context?: Record<string, unknown>, correlationId?: string) =>
     BusinessLogicError.ruleViolation(rule, domain, message, context, correlationId)
 }
 

@@ -399,7 +399,7 @@ export class ComplianceEngine extends BaseService {
       }
 
       // Create workflow
-      const { data: workflow, error } = await (this.supabase as any)
+      const { data: workflow, error } = await this.supabase
         .from('notification_workflows')
         .insert({
           organization_id: organizationId,
@@ -513,7 +513,7 @@ export class ComplianceEngine extends BaseService {
   ): Promise<ComplianceApiResponse<NotificationWorkflowWithDetails>> {
     try {
       // Use the database function for consistency and transaction safety
-      const { data: result, error } = await (this.supabase as any)
+      const { data: result, error } = await this.supabase
         .rpc('advance_workflow_step', {
           p_workflow_id: workflowId,
           p_user_id: userId,
@@ -554,7 +554,7 @@ export class ComplianceEngine extends BaseService {
   async generateScheduledNotifications(): Promise<ComplianceApiResponse<{ notificationsGenerated: number }>> {
     try {
       // Use the database function to generate notifications
-      const { data: count, error } = await (this.supabase as any)
+      const { data: count, error } = await this.supabase
         .rpc('generate_compliance_notifications')
 
       if (error) {
@@ -601,7 +601,7 @@ export class ComplianceEngine extends BaseService {
       }
 
       // Log acknowledgment in audit trail
-      await (this.supabase as any)
+      await this.supabase
         .from('notification_audit_log')
         .insert({
           event_type: 'notification_acknowledged',

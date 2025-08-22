@@ -26,7 +26,7 @@ export interface VoiceCommandRequest {
 export interface VoiceCommandResponse {
   success: boolean;
   commandType: VoiceCommandType;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   requiresConfirmation: boolean;
   confirmationMessage?: string;
   nextSteps?: string[];
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the voice command activity
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -164,7 +164,7 @@ async function matchCommandPattern(text: string): Promise<VoiceCommandResponse> 
     for (const regex of pattern.patterns) {
       const match = normalizedText.match(regex);
       if (match) {
-        const parameters: Record<string, any> = {};
+        const parameters: Record<string, unknown> = {};
         
         // Extract parameters based on command type
         switch (pattern.type) {
@@ -285,7 +285,7 @@ Parse this command and extract relevant parameters.`;
   }
 }
 
-function generateConfirmationMessage(commandType: VoiceCommandType, parameters: Record<string, any>): string {
+function generateConfirmationMessage(commandType: VoiceCommandType, parameters: Record<string, unknown>): string {
   switch (commandType) {
     case 'create_vault':
       return `Create vault "${parameters.name}"${parameters.documents ? ` with documents: ${parameters.documents}` : ''}?`;
@@ -346,7 +346,7 @@ async function storeCommandInSession(
   // This could be implemented with a voice_command_sessions table
   try {
     // For now, we'll use the audit_logs table with a specific category
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: userId,

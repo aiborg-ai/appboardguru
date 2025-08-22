@@ -1,281 +1,301 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { CreateActionableRequest, MeetingActionable } from '@/types/meetings';
+import { MeetingActionableRepository } from '@/lib/repositories/meeting-actionable.repository';
+import { 
+  failure, 
+  isSuccess, 
+  isFailure,
+  resultToAPIResponse, 
+  getHTTPStatusFromError,
+  RepositoryError,
+  RetryStrategy,
+  FallbackStrategy,
+  withRecovery
+} from '@/lib/repositories/result';
+import { CreateActionableRequest } from '@/types/meetings';
+import { createMeetingId } from '@/lib/repositories/types';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  // Parse query parameters for pagination and filtering
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100); // Cap at 100
+  const search = url.searchParams.get('search') || undefined;
+  const status = url.searchParams.get('status') || undefined;
+  const assignedTo = url.searchParams.get('assignedTo') || undefined;
+  const priority = url.searchParams.get('priority') || undefined;
+  const sortBy = url.searchParams.get('sortBy') || 'created_at';
+  const sortOrder = (url.searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
 
-    const meetingId = params.id;
+  const meetingId = createMeetingId(context.params.id);
+  const repository = new MeetingActionableRepository();
 
-    // Check if user has access to this meeting
-    const { data: meeting, error: meetingError } = await (supabase as any)
-      .from('meetings')
-      .select(`
-        id,
-        organization_id,
-        title,
-        created_by
-      `)
-      .eq('id', meetingId)
-      .single();
+  // Build filters object
+  const filters: any = {};
+  if (status) filters.status = status;
+  if (assignedTo) filters.assigned_to = assignedTo;
+  if (priority) filters.priority = priority;
 
-    if (meetingError || !meeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
-    }
+  // Define recovery strategies for resilient error handling
+  const retryStrategy = RetryStrategy(
+    () => repository.findByMeeting(meetingId, {
+      page,
+      limit,
+      search,
+      filters: Object.keys(filters).length > 0 ? filters : undefined,
+      sortBy,
+      sortOrder
+    }),
+    3, // max 3 retry attempts
+    1000 // 1 second initial delay
+  );
 
-    // Verify user has access to the organization
-    const { data: orgMember } = await (supabase as any)
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+  // Fallback to empty result on non-critical errors
+  const fallbackStrategy = FallbackStrategy({
+    data: [],
+    total: 0,
+    page,
+    limit,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
 
-    if (!orgMember) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+  // Execute the repository operation with recovery strategies
+  const result = await repository.findByMeeting(meetingId, {
+    page,
+    limit,
+    search,
+    filters: Object.keys(filters).length > 0 ? filters : undefined,
+    sortBy,
+    sortOrder
+  });
 
-    // Get actionables for the meeting
-    const { data: actionables, error: actionablesError } = await (supabase as any)
-      .from('meeting_actionables')
-      .select(`
-        id,
-        meeting_id,
-        agenda_item_id,
-        resolution_id,
-        assigned_to,
-        assigned_by,
-        delegated_from,
-        action_number,
-        title,
-        description,
-        detailed_requirements,
-        category,
-        priority,
-        estimated_effort_hours,
-        actual_effort_hours,
-        due_date,
-        reminder_intervals,
-        last_reminder_sent,
-        status,
-        progress_percentage,
-        completion_notes,
-        depends_on_actionable_ids,
-        blocks_actionable_ids,
-        requires_approval,
-        approved_by,
-        approved_at,
-        approval_notes,
-        deliverable_type,
-        deliverable_location,
-        success_metrics,
-        actual_results,
-        stakeholders_to_notify,
-        communication_required,
-        communication_template,
-        escalation_level,
-        escalation_path,
-        escalated_at,
-        escalated_to,
-        escalation_reason,
-        assigned_at,
-        started_at,
-        completed_at,
-        cancelled_at,
-        created_at,
-        updated_at
-      `)
-      .eq('meeting_id', meetingId)
-      .order('created_at', { ascending: false });
+  // Apply recovery strategies if the operation failed
+  const recoveredResult = await withRecovery(result, [retryStrategy, fallbackStrategy]);
 
-    if (actionablesError) {
-      console.error('Error fetching actionables:', actionablesError);
-      return NextResponse.json({ error: 'Failed to fetch actionables' }, { status: 500 });
-    }
-
-    // Transform to match our TypeScript interface
-    const formattedActionables: MeetingActionable[] = (actionables as any)?.map((actionable: any) => ({
-      id: (actionable as any)?.id,
-      meetingId: (actionable as any)?.meeting_id,
-      agendaItemId: (actionable as any)?.agenda_item_id,
-      resolutionId: (actionable as any)?.resolution_id,
-      assignedTo: (actionable as any)?.assigned_to,
-      assignedBy: (actionable as any)?.assigned_by,
-      delegatedFrom: (actionable as any)?.delegated_from,
-      actionNumber: (actionable as any)?.action_number,
-      title: (actionable as any)?.title,
-      description: (actionable as any)?.description,
-      detailedRequirements: (actionable as any)?.detailed_requirements,
-      category: (actionable as any)?.category as any,
-      priority: (actionable as any)?.priority as any,
-      estimatedEffortHours: (actionable as any)?.estimated_effort_hours,
-      actualEffortHours: (actionable as any)?.actual_effort_hours,
-      dueDate: (actionable as any)?.due_date,
-      reminderIntervals: (actionable as any)?.reminder_intervals || [],
-      lastReminderSent: (actionable as any)?.last_reminder_sent,
-      status: (actionable as any)?.status as any,
-      progressPercentage: (actionable as any)?.progress_percentage || 0,
-      completionNotes: (actionable as any)?.completion_notes,
-      dependsOnActionableIds: (actionable as any)?.depends_on_actionable_ids || [],
-      blocksActionableIds: (actionable as any)?.blocks_actionable_ids || [],
-      requiresApproval: (actionable as any)?.requires_approval || false,
-      approvedBy: (actionable as any)?.approved_by,
-      approvedAt: (actionable as any)?.approved_at,
-      approvalNotes: (actionable as any)?.approval_notes,
-      deliverableType: (actionable as any)?.deliverable_type,
-      deliverableLocation: (actionable as any)?.deliverable_location,
-      successMetrics: (actionable as any)?.success_metrics,
-      actualResults: (actionable as any)?.actual_results,
-      stakeholdersToNotify: (actionable as any)?.stakeholders_to_notify || [],
-      communicationRequired: (actionable as any)?.communication_required || false,
-      communicationTemplate: (actionable as any)?.communication_template,
-      escalationLevel: (actionable as any)?.escalation_level || 1,
-      escalationPath: (actionable as any)?.escalation_path || [],
-      escalatedAt: (actionable as any)?.escalated_at,
-      escalatedTo: (actionable as any)?.escalated_to,
-      escalationReason: (actionable as any)?.escalation_reason,
-      assignedAt: (actionable as any)?.assigned_at || (actionable as any)?.created_at,
-      startedAt: (actionable as any)?.started_at,
-      completedAt: (actionable as any)?.completed_at,
-      cancelledAt: (actionable as any)?.cancelled_at,
-      createdAt: (actionable as any)?.created_at,
-      updatedAt: (actionable as any)?.updated_at
-    })) || [];
-
+  if (isSuccess(recoveredResult)) {
     return NextResponse.json({
-      actionables: formattedActionables,
-      total: formattedActionables.length
+      success: true,
+      data: {
+        actionables: recoveredResult.data.data,
+        pagination: {
+          total: recoveredResult.data.total,
+          page: recoveredResult.data.page,
+          limit: recoveredResult.data.limit,
+          totalPages: recoveredResult.data.totalPages,
+          hasNext: recoveredResult.data.hasNext,
+          hasPrev: recoveredResult.data.hasPrev
+        }
+      }
     });
-
-  } catch (error) {
-    console.error('Error in GET /api/meetings/[id]/actionables:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+
+  // Handle error with proper HTTP status mapping
+  const error = recoveredResult.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(recoveredResult);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  let requestData: CreateActionableRequest;
+  
+  // Parse and validate request body
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const meetingId = params.id;
-    const body: CreateActionableRequest = await request.json();
-
-    // Validate required fields
-    if (!body.assignedTo || !body.title || !body.description || !body.dueDate) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: assignedTo, title, description, dueDate' 
-      }, { status: 400 });
-    }
-
-    // Check if user has access to this meeting and can manage it
-    const { data: meeting, error: meetingError } = await (supabase as any)
-      .from('meetings')
-      .select(`
-        id,
-        organization_id,
-        created_by
-      `)
-      .eq('id', meetingId)
-      .single();
-
-    if (meetingError || !meeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
-    }
-
-    // Check if user is meeting organizer or has admin/superuser role
-    const { data: orgMember } = await (supabase as any)
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    const canManage = (meeting as any)?.created_by === user.id || 
-                     ((orgMember as any) && ['owner', 'admin', 'superuser'].includes((orgMember as any)?.role));
-
-    if (!canManage) {
-      return NextResponse.json({ error: 'Insufficient permissions to assign actions' }, { status: 403 });
-    }
-
-    // Validate assignee exists and has access to the organization
-    const { data: assigneeCheck } = await (supabase as any)
-      .from('organization_members')
-      .select('user_id, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', body.assignedTo)
-      .eq('status', 'active')
-      .single();
-
-    if (!assigneeCheck) {
-      return NextResponse.json({ 
-        error: 'Assignee is not a member of this organization' 
-      }, { status: 400 });
-    }
-
-    // Create the actionable
-    const { data: actionable, error: insertError } = await (supabase as any)
-      .from('meeting_actionables')
-      .insert({
-        meeting_id: meetingId,
-        agenda_item_id: body.agendaItemId,
-        resolution_id: body.resolutionId,
-        assigned_to: body.assignedTo,
-        assigned_by: user.id,
-        title: body.title,
-        description: body.description,
-        detailed_requirements: body.detailedRequirements,
-        category: (body.category || 'follow_up') as any,
-        priority: (body.priority || 'medium') as any,
-        estimated_effort_hours: body.estimatedEffortHours,
-        due_date: body.dueDate,
-        reminder_intervals: body.reminderIntervals || [7, 3, 1],
-        depends_on_actionable_ids: body.dependsOnActionableIds || [],
-        requires_approval: body.requiresApproval || false,
-        deliverable_type: body.deliverableType,
-        success_metrics: body.successMetrics,
-        stakeholders_to_notify: body.stakeholdersToNotify || [],
-        communication_required: body.communicationRequired || false,
-        escalation_path: body.escalationPath || [],
-        status: 'assigned' as any,
-        progress_percentage: 0,
-        escalation_level: 1
-      } as any)
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Error creating actionable:', insertError);
-      return NextResponse.json({ error: 'Failed to create actionable' }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      actionable,
-      message: 'Action item assigned successfully' 
-    }, { status: 201 });
-
-  } catch (error) {
-    console.error('Error in POST /api/meetings/[id]/actionables:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    requestData = await request.json();
+  } catch (parseError) {
+    const validationError = RepositoryError.validation(
+      'Invalid JSON in request body',
+      { parseError: String(parseError) }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
   }
+
+  // Add meetingId from URL params to request data
+  const meetingId = createMeetingId(context.params.id);
+  const createRequest: CreateActionableRequest = {
+    ...requestData,
+    meetingId
+  };
+
+  const repository = new MeetingActionableRepository();
+
+  // Define recovery strategies for resilient creation
+  const retryStrategy = RetryStrategy(
+    () => repository.create(createRequest),
+    2, // max 2 retry attempts for creation
+    2000 // 2 second initial delay
+  );
+
+  // Execute creation with recovery strategies
+  let result = await repository.create(createRequest);
+  
+  // Apply retry strategy only for recoverable errors
+  if (isFailure(result)) {
+    result = await withRecovery(result, [retryStrategy]);
+  }
+
+  if (isSuccess(result)) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        actionable: result.data,
+        message: 'Action item assigned successfully'
+      }
+    }, { status: 201 });
+  }
+
+  // Handle error with proper HTTP status mapping
+  const error = result.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(result);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
+}
+
+/**
+ * PUT /api/meetings/[id]/actionables/[actionableId] - Update an actionable
+ */
+export async function PUT(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  let requestData: any;
+  
+  // Parse and validate request body
+  try {
+    requestData = await request.json();
+  } catch (parseError) {
+    const validationError = RepositoryError.validation(
+      'Invalid JSON in request body',
+      { parseError: String(parseError) }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
+  }
+
+  // Extract actionable ID from URL path
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const actionableId = pathParts[pathParts.length - 1];
+
+  if (!actionableId || actionableId === 'actionables') {
+    const validationError = RepositoryError.validation(
+      'Actionable ID is required for update operations',
+      { providedPath: url.pathname }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
+  }
+
+  const repository = new MeetingActionableRepository();
+
+  // Define recovery strategies
+  const retryStrategy = RetryStrategy(
+    () => repository.update(actionableId, requestData),
+    2, // max 2 retry attempts for updates
+    1500 // 1.5 second initial delay
+  );
+
+  // Execute update with recovery strategies
+  let result = await repository.update(actionableId, requestData);
+  
+  // Apply retry strategy for recoverable errors
+  if (isFailure(result)) {
+    result = await withRecovery(result, [retryStrategy]);
+  }
+
+  if (isSuccess(result)) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        actionable: result.data,
+        message: 'Actionable updated successfully'
+      }
+    });
+  }
+
+  // Handle error with proper HTTP status mapping
+  const error = result.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(result);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
+}
+
+/**
+ * DELETE /api/meetings/[id]/actionables/[actionableId] - Delete an actionable
+ */
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  // Extract actionable ID from URL path
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const actionableId = pathParts[pathParts.length - 1];
+
+  if (!actionableId || actionableId === 'actionables') {
+    const validationError = RepositoryError.validation(
+      'Actionable ID is required for delete operations',
+      { providedPath: url.pathname }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
+  }
+
+  const repository = new MeetingActionableRepository();
+
+  // Note: Assuming soft delete - update status to 'cancelled'
+  const softDeleteUpdate = {
+    status: 'cancelled' as const,
+    cancelledAt: new Date().toISOString()
+  };
+
+  // Define recovery strategies
+  const retryStrategy = RetryStrategy(
+    () => repository.update(actionableId, softDeleteUpdate),
+    2, // max 2 retry attempts
+    1000 // 1 second initial delay
+  );
+
+  // Execute soft delete with recovery strategies
+  let result = await repository.update(actionableId, softDeleteUpdate);
+  
+  // Apply retry strategy for recoverable errors
+  if (isFailure(result)) {
+    result = await withRecovery(result, [retryStrategy]);
+  }
+
+  if (isSuccess(result)) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        message: 'Actionable deleted successfully'
+      }
+    });
+  }
+
+  // Handle error with proper HTTP status mapping
+  const error = result.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(result);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
 }

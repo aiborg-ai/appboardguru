@@ -133,7 +133,7 @@ export function errorHandlingMiddleware(): MiddlewareFunction {
   return async (context, next) => {
     try {
       await next()
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Enhanced error handling with context
       console.error(`[${context.requestId}] Middleware error:`, error)
       
@@ -175,7 +175,7 @@ export function performanceMiddleware(): MiddlewareFunction {
 }
 
 // Utility functions for key transformation
-function transformKeys(obj: any, transform: (key: string) => string): any {
+function transformKeys(obj: any, transform: (key: string) => string): unknown {
   if (obj === null || obj === undefined) return obj
   
   if (Array.isArray(obj)) {

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get('limit') || '10')
 
     // Get user's primary organization
-    const { data: userOrg } = await (supabase as any)
+    const { data: userOrg } = await supabase
       .from('organization_members')
       .select('organization_id, organization:organizations(name)')
       .eq('user_id', user.id)
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
 
     // In a real implementation, insert into ai_insights table:
     /*
-    const { data: insight, error } = await (supabase as any)
+    const { data: insight, error } = await supabase
       .from('ai_insights')
       .insert({
         user_id: user.id,

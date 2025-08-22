@@ -28,7 +28,7 @@ export async function GET(
     const { id: assetId, annotationId } = await params;
 
     // Verify user has access to the annotation
-    const { data: annotation, error: annotationError } = await (supabase as any)
+    const { data: annotation, error: annotationError } = await supabase
       .from('asset_annotations')
       .select(`
         id,
@@ -55,7 +55,7 @@ export async function GET(
     }
 
     // Get replies with user information and reactions
-    const { data: replies, error: repliesError } = await (supabase as any)
+    const { data: replies, error: repliesError } = await supabase
       .from('annotation_replies')
       .select(`
         *,
@@ -143,7 +143,7 @@ export async function POST(
     const { reply_text, parent_reply_id } = validationResult.data;
 
     // Verify user has access to the annotation
-    const { data: annotation, error: annotationError } = await (supabase as any)
+    const { data: annotation, error: annotationError } = await supabase
       .from('asset_annotations')
       .select(`
         id,
@@ -172,7 +172,7 @@ export async function POST(
 
     // If replying to a specific reply, verify it exists
     if (parent_reply_id) {
-      const { data: parentReply, error: parentError } = await (supabase as any)
+      const { data: parentReply, error: parentError } = await supabase
         .from('annotation_replies')
         .select('id, annotation_id')
         .eq('id', parent_reply_id)
@@ -186,7 +186,7 @@ export async function POST(
     }
 
     // Create reply
-    const { data: reply, error: createError } = await (supabase as any)
+    const { data: reply, error: createError } = await supabase
       .from('annotation_replies')
       .insert({
         annotation_id: annotationId,
@@ -217,7 +217,7 @@ export async function POST(
       // Find mentioned users by username/name
       const mentionedNames = mentions.map(match => match[1]);
       
-      const { data: mentionedUsers } = await (supabase as any)
+      const { data: mentionedUsers } = await supabase
         .from('users')
         .select('id, full_name, email')
         .ilike('full_name', `%${mentionedNames.join('%')}%`);
@@ -230,14 +230,14 @@ export async function POST(
           mentioned_by: user.id,
         }));
 
-        await (supabase as any)
+        await supabase
           .from('annotation_mentions')
           .insert(mentionRecords as any);
       }
     }
 
     // Log activity
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         organization_id: (annotation as any)?.organization_id,

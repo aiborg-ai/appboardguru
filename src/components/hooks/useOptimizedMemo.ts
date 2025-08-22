@@ -115,7 +115,7 @@ export function useStableArray<T>(array: T[]): T[] {
 /**
  * Memoize objects to prevent unnecessary re-renders
  */
-export function useStableObject<T extends Record<string, any>>(obj: T): T {
+export function useStableObject<T extends Record<string, unknown>>(obj: T): T {
   return React.useMemo(() => obj, [
     Object.keys(obj).length,
     ...Object.entries(obj).flat().map(value =>

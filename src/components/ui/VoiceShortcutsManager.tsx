@@ -30,7 +30,7 @@ export interface VoiceShortcut {
   id: string;
   phrase: string;
   commandType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   createdAt: Date;
   useCount: number;
   lastUsed?: Date;
@@ -90,7 +90,7 @@ export function VoiceShortcutsManager({
   const [formData, setFormData] = useState({
     phrase: '',
     commandType: '',
-    parameters: {} as Record<string, any>,
+    parameters: {} as Record<string, unknown>,
     isActive: true
   });
 

@@ -114,7 +114,7 @@ export interface ActivityError {
   readonly code: string
   readonly message: string
   readonly stack_trace?: string
-  readonly additional_context?: Record<string, any>
+  readonly additional_context?: Record<string, unknown>
 }
 
 // Activity metadata structure
@@ -142,7 +142,7 @@ export interface ActivityMetadata {
   readonly security_context?: {
     readonly risk_score?: number
     readonly anomaly_indicators?: string[]
-    readonly threat_intelligence?: Record<string, any>
+    readonly threat_intelligence?: Record<string, unknown>
     readonly mfa_method?: string
   }
   readonly compliance_context?: {
@@ -183,7 +183,7 @@ export interface AuditTrailIntegrity {
 
 export interface ZeroKnowledgeProof {
   readonly proof: string
-  readonly public_inputs: Record<string, any>
+  readonly public_inputs: Record<string, unknown>
   readonly verification_key: string
   readonly description: string
   readonly generated_at: Timestamp
@@ -461,7 +461,7 @@ export interface NotificationMetadata {
   readonly icon?: string
   readonly color?: string
   readonly tags?: readonly string[]
-  readonly custom_data?: Record<string, any>
+  readonly custom_data?: Record<string, unknown>
 }
 
 // =============================================
@@ -727,7 +727,7 @@ export interface RuleCondition {
 
 export interface RuleAction {
   readonly action_type: 'alert' | 'block' | 'log' | 'escalate' | 'remediate'
-  readonly configuration: Record<string, any>
+  readonly configuration: Record<string, unknown>
   readonly delay_seconds?: number
 }
 

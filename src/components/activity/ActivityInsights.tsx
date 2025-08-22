@@ -41,7 +41,7 @@ interface AnomalyDetection {
   affectedEntities: string[]
   detectedAt: string
   confidence: number
-  context: Record<string, any>
+  context: Record<string, unknown>
 }
 
 interface ActivityRecommendation {

@@ -28,7 +28,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -40,7 +40,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
-    const { data: rules, error } = await (supabase as any)
+    const { data: rules, error } = await supabase
       .from('activity_alert_rules')
       .select('*')
       .eq('organization_id', orgMember.organization_id)
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = alertRuleSchema.parse(body)
 
-    const { data: rule, error } = await (supabase as any)
+    const { data: rule, error } = await supabase
       .from('activity_alert_rules')
       .insert({
         organization_id: orgMember.organization_id,
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
@@ -156,7 +156,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -175,7 +175,7 @@ export async function PATCH(request: NextRequest) {
       [key: string]: unknown
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('activity_alert_rules')
       .update({
         is_active: isActive,
@@ -187,7 +187,7 @@ export async function PATCH(request: NextRequest) {
 
     if (error) throw error
 
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
@@ -224,7 +224,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -243,7 +243,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Rule ID is required' }, { status: 400 })
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('activity_alert_rules')
       .delete()
       .eq('id', ruleId)
@@ -251,7 +251,7 @@ export async function DELETE(request: NextRequest) {
 
     if (error) throw error
 
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: authUser.id,

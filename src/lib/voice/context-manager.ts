@@ -33,7 +33,7 @@ export interface ConversationMessage {
   content: string;
   timestamp: Date;
   commandType?: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   confidence?: number;
 }
 
@@ -56,7 +56,7 @@ export interface VoiceShortcut {
   id: string;
   phrase: string;
   commandType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   createdAt: Date;
   useCount: number;
 }
@@ -66,7 +66,7 @@ export interface WorkflowState {
   type: 'multi_step_vault_creation' | 'meeting_setup' | 'document_upload' | 'bulk_invitation';
   currentStep: number;
   totalSteps: number;
-  stepData: Record<string, any>;
+  stepData: Record<string, unknown>;
   nextExpectedInput?: string;
   timeout?: Date;
 }
@@ -152,7 +152,7 @@ export class VoiceContextManager {
     role: 'user' | 'assistant' | 'system',
     content: string,
     commandType?: string,
-    parameters?: Record<string, any>,
+    parameters?: Record<string, unknown>,
     confidence?: number
   ): void {
     const session = this.sessions.get(sessionId);
@@ -236,7 +236,7 @@ export class VoiceContextManager {
   async startWorkflow(
     sessionId: string,
     workflowType: WorkflowState['type'],
-    initialData: Record<string, any>
+    initialData: Record<string, unknown>
   ): Promise<WorkflowState> {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -261,7 +261,7 @@ export class VoiceContextManager {
    */
   async advanceWorkflow(
     sessionId: string,
-    stepData: Record<string, any>
+    stepData: Record<string, unknown>
   ): Promise<WorkflowState | null> {
     const session = this.sessions.get(sessionId);
     if (!session?.activeWorkflow) return null;
@@ -289,7 +289,7 @@ export class VoiceContextManager {
     userId: string,
     phrase: string,
     commandType: string,
-    parameters: Record<string, any>
+    parameters: Record<string, unknown>
   ): Promise<VoiceShortcut> {
     const shortcut: VoiceShortcut = {
       id: `shortcut_${Date.now()}`,
@@ -302,7 +302,7 @@ export class VoiceContextManager {
 
     // Save to database
     const supabase = await createSupabaseServerClient();
-    await (supabase as any)
+    await supabase
       .from('user_behavior_metrics')
       .insert({
         user_id: userId,
@@ -431,14 +431,14 @@ export class VoiceContextManager {
     const supabase = await createSupabaseServerClient();
     
     // Load user's timezone and preferences
-    const { data: user } = await (supabase as any)
+    const { data: user } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .single();
 
     // Load custom shortcuts
-    const { data: shortcuts } = await (supabase as any)
+    const { data: shortcuts } = await supabase
       .from('user_behavior_metrics')
       .select('*')
       .eq('user_id', userId)
@@ -469,7 +469,7 @@ export class VoiceContextManager {
     const entities: RecentEntity[] = [];
 
     // Recent vaults
-    const { data: vaults } = await (supabase as any)
+    const { data: vaults } = await supabase
       .from('board_packs')
       .select('id, title, updated_at')
       .eq('uploaded_by', userId)
@@ -488,7 +488,7 @@ export class VoiceContextManager {
     }
 
     // Recent meetings
-    const { data: meetings } = await (supabase as any)
+    const { data: meetings } = await supabase
       .from('meetings')
       .select('id, title, updated_at')
       .eq('created_by', userId)
@@ -574,7 +574,7 @@ export class VoiceContextManager {
    */
   private async updateShortcutUsage(userId: string, shortcutId: string): Promise<void> {
     const supabase = await createSupabaseServerClient();
-    await (supabase as any)
+    await supabase
       .from('user_behavior_metrics')
       .insert({
         user_id: userId,

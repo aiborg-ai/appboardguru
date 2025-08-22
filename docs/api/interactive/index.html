@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppBoardGuru API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+            background: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .swagger-ui .topbar {
+            background-color: #1e40af;
+            border-bottom: 1px solid #1e3a8a;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper .select-label {
+            color: white;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper input[type="text"] {
+            border: 1px solid #3b82f6;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper .download-url-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper .download-url-button:hover {
+            background: #2563eb;
+        }
+
+        .custom-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .custom-header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .custom-header p {
+            margin: 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .version-selector {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .version-selector h3 {
+            margin: 0 0 1rem 0;
+            color: #374151;
+        }
+
+        .version-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .version-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .version-btn:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+            text-decoration: none;
+            color: #374151;
+        }
+
+        .version-btn.active {
+            background: #3b82f6;
+            border-color: #2563eb;
+            color: white;
+        }
+
+        .api-info {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-info h3 {
+            margin: 0 0 1rem 0;
+            color: #374151;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #f3f4f6;
+        }
+
+        .info-item h4 {
+            margin: 0 0 0.5rem 0;
+            color: #1f2937;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-item p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .swagger-ui-container {
+            max-width: none;
+        }
+
+        #swagger-ui {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: #6b7280;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem auto;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .custom-header h1 {
+                font-size: 2rem;
+            }
+            
+            .custom-header p {
+                font-size: 1rem;
+            }
+            
+            #swagger-ui {
+                padding: 0 1rem;
+            }
+            
+            .version-selector,
+            .api-info {
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-header">
+        <h1>AppBoardGuru API</h1>
+        <p>Complete API documentation for the comprehensive board management platform</p>
+    </div>
+
+    <div class="version-selector">
+        <h3>Select API Version</h3>
+        <div class="version-buttons">
+            <a href="#" class="version-btn" data-version="v1">v1.0 (Legacy)</a>
+            <a href="#" class="version-btn" data-version="v1.1">v1.1 (Stable)</a>
+            <a href="#" class="version-btn active" data-version="v2">v2.0 (Latest)</a>
+            <a href="#" class="version-btn" data-version="v2.1">v2.1 (Beta)</a>
+        </div>
+    </div>
+
+    <div class="api-info">
+        <h3>API Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <h4>Base URL</h4>
+                <p id="base-url">https://api.appboardguru.com/v2</p>
+            </div>
+            <div class="info-item">
+                <h4>Authentication</h4>
+                <p>Bearer Token (JWT)</p>
+            </div>
+            <div class="info-item">
+                <h4>Rate Limits</h4>
+                <p id="rate-limits">100 req/min</p>
+            </div>
+            <div class="info-item">
+                <h4>Response Format</h4>
+                <p>JSON</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading API documentation...</p>
+    </div>
+
+    <div id="error" class="error" style="display: none;">
+        <p>Failed to load API documentation. Please try again later.</p>
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        // API version configurations
+        const versionConfigs = {
+            'v1': {
+                spec: '../openapi-v1.yaml',
+                baseUrl: 'https://api.appboardguru.com/v1',
+                rateLimit: '50 req/min',
+                deprecated: true
+            },
+            'v1.1': {
+                spec: '../openapi-v1.1.yaml',
+                baseUrl: 'https://api.appboardguru.com/v1.1',
+                rateLimit: '75 req/min',
+                deprecated: false
+            },
+            'v2': {
+                spec: '../openapi.yaml',
+                baseUrl: 'https://api.appboardguru.com/v2',
+                rateLimit: '100 req/min',
+                deprecated: false
+            },
+            'v2.1': {
+                spec: '../openapi-v2.1.yaml',
+                baseUrl: 'https://api.appboardguru.com/v2.1',
+                rateLimit: '150 req/min',
+                deprecated: false,
+                beta: true
+            }
+        };
+
+        let currentVersion = 'v2';
+        let swaggerUI;
+
+        // Initialize Swagger UI
+        function initializeSwaggerUI(version) {
+            const config = versionConfigs[version];
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('swagger-ui').innerHTML = '';
+
+            // Update info
+            document.getElementById('base-url').textContent = config.baseUrl;
+            document.getElementById('rate-limits').textContent = config.rateLimit;
+
+            try {
+                swaggerUI = SwaggerUIBundle({
+                    url: config.spec,
+                    dom_id: '#swagger-ui',
+                    deepLinking: true,
+                    presets: [
+                        SwaggerUIBundle.presets.apis,
+                        SwaggerUIStandalonePreset
+                    ],
+                    plugins: [
+                        SwaggerUIBundle.plugins.DownloadUrl
+                    ],
+                    layout: "StandaloneLayout",
+                    validatorUrl: null,
+                    tryItOutEnabled: true,
+                    requestInterceptor: (request) => {
+                        // Add API version header
+                        request.headers['API-Version'] = version;
+                        
+                        // Add example authorization if not present
+                        if (!request.headers.authorization && !request.headers.Authorization) {
+                            request.headers.authorization = 'Bearer your-jwt-token-here';
+                        }
+                        
+                        return request;
+                    },
+                    responseInterceptor: (response) => {
+                        // Log API responses for debugging
+                        console.log('API Response:', response);
+                        return response;
+                    },
+                    onComplete: () => {
+                        document.getElementById('loading').style.display = 'none';
+                        console.log('SwaggerUI loaded successfully for version:', version);
+                    },
+                    onFailure: (error) => {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('error').style.display = 'block';
+                        console.error('SwaggerUI failed to load:', error);
+                    },
+                    // Custom request/response handling
+                    requestSnippets: [
+                        {
+                            label: 'cURL',
+                            syntax: 'bash'
+                        },
+                        {
+                            label: 'JavaScript (fetch)',
+                            syntax: 'javascript'
+                        },
+                        {
+                            label: 'Python (requests)',
+                            syntax: 'python'
+                        },
+                        {
+                            label: 'Node.js (axios)',
+                            syntax: 'javascript'
+                        }
+                    ]
+                });
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                console.error('Failed to initialize SwaggerUI:', error);
+            }
+        }
+
+        // Handle version selection
+        function selectVersion(version) {
+            // Update active state
+            document.querySelectorAll('.version-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-version="${version}"]`).classList.add('active');
+
+            // Update current version
+            currentVersion = version;
+
+            // Reinitialize Swagger UI
+            initializeSwaggerUI(version);
+
+            // Update URL hash
+            window.location.hash = version;
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Handle version button clicks
+            document.querySelectorAll('.version-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const version = btn.dataset.version;
+                    selectVersion(version);
+                });
+            });
+
+            // Check URL hash for initial version
+            const hashVersion = window.location.hash.substring(1);
+            if (hashVersion && versionConfigs[hashVersion]) {
+                selectVersion(hashVersion);
+            } else {
+                // Initialize with default version
+                initializeSwaggerUI(currentVersion);
+            }
+
+            // Handle browser back/forward
+            window.addEventListener('hashchange', () => {
+                const hashVersion = window.location.hash.substring(1);
+                if (hashVersion && versionConfigs[hashVersion] && hashVersion !== currentVersion) {
+                    selectVersion(hashVersion);
+                }
+            });
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.altKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        selectVersion('v1');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        selectVersion('v2');
+                        break;
+                }
+            }
+        });
+
+        // Add custom CSS for better mobile experience
+        const style = document.createElement('style');
+        style.textContent = `
+            .swagger-ui .wrapper {
+                padding: 0;
+            }
+            
+            .swagger-ui .info {
+                margin: 1rem 0;
+            }
+            
+            .swagger-ui .scheme-container {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .swagger-ui .opblock {
+                border-radius: 8px;
+                margin: 1rem 0;
+                border: 1px solid #e2e8f0;
+            }
+            
+            .swagger-ui .opblock .opblock-summary {
+                border-radius: 8px 8px 0 0;
+            }
+            
+            .swagger-ui .btn.authorize {
+                background: #3b82f6;
+                border-color: #2563eb;
+            }
+            
+            .swagger-ui .btn.authorize:hover {
+                background: #2563eb;
+            }
+            
+            .swagger-ui .response-col_description .response-col_status {
+                font-weight: 600;
+            }
+            
+            @media (max-width: 768px) {
+                .swagger-ui .opblock-summary {
+                    flex-wrap: wrap;
+                }
+                
+                .swagger-ui .opblock-summary-method {
+                    min-width: auto;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .swagger-ui .execute-wrapper {
+                    text-align: center;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

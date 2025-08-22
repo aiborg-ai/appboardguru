@@ -243,7 +243,7 @@ export interface Entity {
 export interface Intent {
   intent: string;
   confidence: number;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 }
 
 export interface Sentiment {
@@ -585,7 +585,7 @@ export interface AdaptationTrigger {
 
 export interface AdaptationMethod {
   method: 'incremental_update' | 'model_fine_tuning' | 'ensemble_update' | 'parameter_adjustment';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   applicability: string[];
   effectiveness: number; // 0-1
 }
@@ -612,7 +612,7 @@ export interface RetentionCriterion {
 
 export interface ForgettingPrevention {
   technique: 'elastic_weight_consolidation' | 'rehearsal' | 'gradient_episodic_memory' | 'progressive_neural_networks';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   effectiveness: number;
 }
 
@@ -667,7 +667,7 @@ export interface PersonalizedStrategy {
   applicableContexts: string[];
   effectiveness: number;
   userSatisfaction: number;
-  implementationDetails: Record<string, any>;
+  implementationDetails: Record<string, unknown>;
 }
 
 export interface ContextualAdaptation {
@@ -738,7 +738,7 @@ export interface RuleCondition {
 
 export interface RuleAction {
   action: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   executionOrder: number;
 }
 
@@ -956,7 +956,7 @@ export interface AnomalyDetection {
 
 export interface AnomalyAlgorithm {
   algorithm: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   accuracy: number;
   falsePositiveRate: number;
   detectionLatency: number;
@@ -1073,7 +1073,7 @@ export interface ModelMetrics {
 
 export interface AdaptationDetails {
   method: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   dataUsed: number; // samples
   trainingTime: number; // seconds
   computationalCost: number;
@@ -1225,14 +1225,14 @@ export interface ContextualTrainingData {
   samples: string[]; // Audio sample IDs
   weight: number;
   importance: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface DataAugmentation {
   originalSampleId: string;
   augmentedSampleId: string;
   technique: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   qualityImpact: number;
 }
 
@@ -1277,7 +1277,7 @@ export interface AdaptationRequest {
   adaptationType: AdaptationType;
   trigger: string;
   data?: any;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 export interface AdaptationResponse {

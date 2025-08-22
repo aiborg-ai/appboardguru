@@ -28,7 +28,7 @@ async function handleApprovalRequest(request: NextRequest) {
 
   try {
     // Get the registration request with token verification
-    const { data: registrationRequest, error: fetchError } = await (supabase as any)
+    const { data: registrationRequest, error: fetchError } = await supabase
       .from('registration_requests')
       .select('*')
       .eq('id', id)
@@ -59,7 +59,7 @@ async function handleApprovalRequest(request: NextRequest) {
     }
 
     // Approve the registration request and clear the token (one-time use)
-    const { error: updateError } = await (supabase as any)
+    const { error: updateError } = await supabase
       .from('registration_requests')
       .update({
         status: 'approved',

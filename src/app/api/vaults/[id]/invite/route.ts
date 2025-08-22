@@ -61,7 +61,7 @@ export async function POST(
     }
 
     // Check user's permission to invite to this vault
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('vault_members')
       .select(`
         role, status, organization_id,
@@ -108,7 +108,7 @@ export async function POST(
       for (const userId of body.userIds) {
         try {
           // Check if user exists
-          const { data: targetUser, error: userError } = await (supabase as any)
+          const { data: targetUser, error: userError } = await supabase
             .from('auth.users')
             .select('id, email')
             .eq('id', userId)
@@ -120,7 +120,7 @@ export async function POST(
           }
 
           // Check if user is already a member
-          const { data: existingMember } = await (supabase as any)
+          const { data: existingMember } = await supabase
             .from('vault_members')
             .select('id, status')
             .eq('vault_id', vaultId)
@@ -133,7 +133,7 @@ export async function POST(
           }
 
           // Check for existing pending invitation
-          const { data: existingInvitation } = await (supabase as any)
+          const { data: existingInvitation } = await supabase
             .from('vault_invitations')
             .select('id, status')
             .eq('vault_id', vaultId)
@@ -162,7 +162,7 @@ export async function POST(
             device_fingerprint: request.headers.get('user-agent')?.substring(0, 255)
           }
 
-          const { data: invitation, error: inviteError } = await (supabase as any)
+          const { data: invitation, error: inviteError } = await supabase
             .from('vault_invitations')
             .insert(invitationData)
             .select(`
@@ -179,7 +179,7 @@ export async function POST(
           }
 
           // Log activity
-          await (supabase as any)
+          await supabase
             .from('vault_activity_log')
             .insert({
               vault_id: vaultId,
@@ -229,7 +229,7 @@ export async function POST(
           }
 
           // Check if user exists with this email
-          const { data: existingUser } = await (supabase as any)
+          const { data: existingUser } = await supabase
             .from('auth.users')
             .select('id, email')
             .eq('email', email)
@@ -240,7 +240,7 @@ export async function POST(
             const userId = existingUser.id
 
             // Check if user is already a member
-            const { data: existingMember } = await (supabase as any)
+            const { data: existingMember } = await supabase
               .from('vault_members')
               .select('id, status')
               .eq('vault_id', vaultId)
@@ -253,7 +253,7 @@ export async function POST(
             }
 
             // Check for existing pending invitation
-            const { data: existingInvitation } = await (supabase as any)
+            const { data: existingInvitation } = await supabase
               .from('vault_invitations')
               .select('id, status')
               .eq('vault_id', vaultId)
@@ -278,7 +278,7 @@ export async function POST(
                           new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             }
 
-            const { data: invitation, error: inviteError } = await (supabase as any)
+            const { data: invitation, error: inviteError } = await supabase
               .from('vault_invitations')
               .insert(invitationData)
               .select('id, invitation_token, expires_at')
@@ -363,7 +363,7 @@ export async function GET(
     const vaultId = (await params).id
 
     // Check user's access to view vault invitations
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('vault_members')
       .select('role, status')
       .eq('vault_id', vaultId)
@@ -383,7 +383,7 @@ export async function GET(
     }
 
     // Get invitations
-    const { data: invitations, error: invitationsError } = await (supabase as any)
+    const { data: invitations, error: invitationsError } = await supabase
       .from('vault_invitations')
       .select(`
         id, permission_level, personal_message, status,

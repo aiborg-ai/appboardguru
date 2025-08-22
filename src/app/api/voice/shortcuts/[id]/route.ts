@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       organizationId: shortcut.organization_id,
       phrase: shortcut.trigger_phrase,
       commandType: shortcut.workflow_name,
-      parameters: (shortcut.action_config as Record<string, any>) || {},
+      parameters: (shortcut.action_config as Record<string, unknown>) || {},
       createdAt: new Date(shortcut.created_at || ''),
       updatedAt: new Date(shortcut.updated_at || ''),
       useCount: shortcut.trigger_count || 0,
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { phrase, commandType, parameters, isActive } = body;
 
     // Get existing shortcut
-    const { data: existing, error: fetchError } = await (supabase as any)
+    const { data: existing, error: fetchError } = await supabase
       .from('user_behavior_metrics')
       .select('*')
       .eq('id', resolvedParams.id)
@@ -149,7 +149,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       organizationId: updated.organization_id,
       phrase: updated.trigger_phrase,
       commandType: updated.workflow_name,
-      parameters: (updated.action_config as Record<string, any>) || {},
+      parameters: (updated.action_config as Record<string, unknown>) || {},
       createdAt: new Date(updated.created_at || ''),
       updatedAt: new Date(updated.updated_at || ''),
       useCount: updated.trigger_count || 0,

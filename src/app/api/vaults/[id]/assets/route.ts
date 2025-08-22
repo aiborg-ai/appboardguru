@@ -56,7 +56,7 @@ export async function GET(
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
 
     // Check vault access
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('vault_members')
       .select('id, role, status')
       .eq('vault_id', vaultId)
@@ -138,7 +138,7 @@ export async function GET(
     })) || []
 
     // Get folder structure
-    const { data: folders, error: foldersError } = await (supabase as any)
+    const { data: folders, error: foldersError } = await supabase
       .from('vault_assets')
       .select('folder_path')
       .eq('vault_id', vaultId)
@@ -204,7 +204,7 @@ export async function POST(
     }
 
     // Check vault access and permissions
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('vault_members')
       .select(`
         id, role, status, organization_id,
@@ -227,7 +227,7 @@ export async function POST(
     }
 
     // Verify all assets exist and user has access
-    const { data: assets, error: assetsError } = await (supabase as any)
+    const { data: assets, error: assetsError } = await supabase
       .from('assets')
       .select('id, title, file_size, organization_id')
       .in('id', body.assetIds)
@@ -243,7 +243,7 @@ export async function POST(
     }
 
     // Check if any assets are already in the vault
-    const { data: existingAssets, error: existingError } = await (supabase as any)
+    const { data: existingAssets, error: existingError } = await supabase
       .from('vault_assets')
       .select('asset_id')
       .eq('vault_id', vaultId)
@@ -278,7 +278,7 @@ export async function POST(
     }))
 
     // Insert vault asset records
-    const { data: vaultAssets, error: insertError } = await (supabase as any)
+    const { data: vaultAssets, error: insertError } = await supabase
       .from('vault_assets')
       .insert(vaultAssetRecords)
       .select(`
@@ -311,7 +311,7 @@ export async function POST(
     })) || []
 
     if (activityRecords.length > 0) {
-      await (supabase as any)
+      await supabase
         .from('vault_activity_log')
         .insert(activityRecords)
     }

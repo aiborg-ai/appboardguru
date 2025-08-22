@@ -1,5 +1,6 @@
 import { BaseRepository } from './base.repository'
 import type { Database } from '../../types/database'
+import type { TypedSupabaseClient } from '../../types/api'
 
 type BoardPack = Database['public']['Tables']['board_packs']['Row']
 type BoardPackInsert = Database['public']['Tables']['board_packs']['Insert']
@@ -8,7 +9,7 @@ type BoardPackUpdate = Database['public']['Tables']['board_packs']['Update']
 export class AssetRepository extends BaseRepository {
   async findById(id: string): Promise<BoardPack | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .select('*')
         .eq('id', id)
@@ -18,8 +19,8 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'findById')
       }
 
-      return (data as any) || null
-    } catch (error: any) {
+      return data || null
+    } catch (error: unknown) {
       this.handleError(error, 'findById')
     }
   }
@@ -30,13 +31,13 @@ export class AssetRepository extends BaseRepository {
     offset?: number
   }): Promise<BoardPack[]> {
     try {
-      let query = (this.supabase as any)
+      let query = this.supabase
         .from('board_packs')
         .select('*')
         .eq('organization_id', organizationId)
 
       if (filters?.status) {
-        query = query.eq('status', filters.status as any)
+        query = query.eq('status', filters.status)
       }
 
       if (filters?.limit) {
@@ -53,15 +54,15 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'findByOrganization')
       }
 
-      return ((data as any) || []) as BoardPack[]
-    } catch (error: any) {
+      return (data || []) as BoardPack[]
+    } catch (error: unknown) {
       this.handleError(error, 'findByOrganization')
     }
   }
 
   async findByUploader(uploaderId: string): Promise<BoardPack[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .select('*')
         .eq('uploaded_by', uploaderId)
@@ -71,15 +72,15 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'findByUploader')
       }
 
-      return ((data as any) || []) as BoardPack[]
-    } catch (error: any) {
+      return (data || []) as BoardPack[]
+    } catch (error: unknown) {
       this.handleError(error, 'findByUploader')
     }
   }
 
   async create(asset: BoardPackInsert): Promise<BoardPack> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .insert(asset)
         .select()
@@ -89,15 +90,15 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'create')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      return data!
+    } catch (error: unknown) {
       this.handleError(error, 'create')
     }
   }
 
   async update(id: string, updates: BoardPackUpdate): Promise<BoardPack> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .update({
           ...updates,
@@ -111,8 +112,8 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'update')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      return data!
+    } catch (error: unknown) {
       this.handleError(error, 'update')
     }
   }
@@ -122,13 +123,13 @@ export class AssetRepository extends BaseRepository {
       // First delete from storage if file exists
       const asset = await this.findById(id)
       if ((asset as any)?.file_path) {
-        await (this.supabase as any).storage
+        await this.supabase.storage
           .from('board-packs')
           .remove([(asset as any).file_path])
       }
 
       // Then delete from database
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('board_packs')
         .delete()
         .eq('id', id)
@@ -136,7 +137,7 @@ export class AssetRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'delete')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'delete')
     }
   }
@@ -155,7 +156,7 @@ export class AssetRepository extends BaseRepository {
 
   async search(organizationId: string, query: string): Promise<BoardPack[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .select('*')
         .eq('organization_id', organizationId)
@@ -166,15 +167,15 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'search')
       }
 
-      return ((data as any) || []) as BoardPack[]
-    } catch (error: any) {
+      return (data || []) as BoardPack[]
+    } catch (error: unknown) {
       this.handleError(error, 'search')
     }
   }
 
   async findByVault(vaultId: string): Promise<BoardPack[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .select(`
           *,
@@ -190,15 +191,15 @@ export class AssetRepository extends BaseRepository {
         this.handleError(error, 'findByVault')
       }
 
-      return ((data as any) || []) as BoardPack[]
-    } catch (error: any) {
+      return (data || []) as BoardPack[]
+    } catch (error: unknown) {
       this.handleError(error, 'findByVault')
     }
   }
 
   async addToVault(assetId: string, vaultId: string, addedBy: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('vault_assets')
         .insert({
           asset_id: assetId,
@@ -211,14 +212,14 @@ export class AssetRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'addToVault')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'addToVault')
     }
   }
 
   async removeFromVault(assetId: string, vaultId: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('vault_assets')
         .delete()
         .eq('asset_id', assetId)
@@ -227,7 +228,7 @@ export class AssetRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'removeFromVault')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'removeFromVault')
     }
   }

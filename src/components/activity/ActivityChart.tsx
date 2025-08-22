@@ -11,7 +11,7 @@ interface ChartDataPoint {
   timestamp: string
   value: number
   label?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 interface ActivityChartProps {
@@ -229,7 +229,7 @@ export function ActivityChart({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium">{title}</CardTitle>
           <div className="flex items-center gap-2">
-            <Select value={chartType} onValueChange={(value: any) => setChartType(value)}>
+            <Select value={chartType} onValueChange={value: unknown) => setChartType(value)}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>

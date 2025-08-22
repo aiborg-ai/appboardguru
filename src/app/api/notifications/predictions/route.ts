@@ -257,7 +257,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: 'newTime required for reschedule' }, { status: 400 })
       }
 
-      await (supabase as any)
+      await supabase
         .from('predicted_notifications')
         .update({
           predicted_time: newTime,
@@ -268,7 +268,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ status: 'rescheduled', newTime })
 
     } else if (action === 'cancel') {
-      await (supabase as any)
+      await supabase
         .from('predicted_notifications')
         .update({
           is_sent: true,

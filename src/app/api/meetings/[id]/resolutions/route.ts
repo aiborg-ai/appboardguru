@@ -1,236 +1,293 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { CreateResolutionRequest, MeetingResolution } from '@/types/meetings';
+import { MeetingResolutionRepository } from '@/lib/repositories/meeting-resolution.repository';
+import { 
+  failure, 
+  isSuccess, 
+  isFailure,
+  resultToAPIResponse, 
+  getHTTPStatusFromError,
+  RepositoryError,
+  RetryStrategy,
+  FallbackStrategy,
+  withRecovery
+} from '@/lib/repositories/result';
+import { CreateResolutionRequest } from '@/types/meetings';
+import { createMeetingId } from '@/lib/repositories/types';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  // Parse query parameters for pagination and filtering
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100); // Cap at 100
+  const search = url.searchParams.get('search') || undefined;
+  const status = url.searchParams.get('status') || undefined;
+  const sortBy = url.searchParams.get('sortBy') || 'created_at';
+  const sortOrder = (url.searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
 
-    const meetingId = params.id;
+  const meetingId = createMeetingId(context.params.id);
+  const repository = new MeetingResolutionRepository();
 
-    // Check if user has access to this meeting
-    const { data: meeting, error: meetingError } = await (supabase as any)
-      .from('meetings')
-      .select(`
-        id,
-        organization_id,
-        title,
-        created_by
-      `)
-      .eq('id', meetingId)
-      .single();
+  // Define recovery strategies for resilient error handling
+  const retryStrategy = RetryStrategy(
+    () => repository.findByMeeting(meetingId, {
+      page,
+      limit,
+      search,
+      filters: status ? { status } : undefined,
+      sortBy,
+      sortOrder
+    }),
+    3, // max 3 retry attempts
+    1000 // 1 second initial delay
+  );
 
-    if (meetingError || !meeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
-    }
+  // Fallback to empty result on non-critical errors
+  const fallbackStrategy = FallbackStrategy({
+    data: [],
+    total: 0,
+    page,
+    limit,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
 
-    // Verify user has access to the organization
-    const { data: orgMember } = await (supabase as any)
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+  // Execute the repository operation with recovery strategies
+  const result = await repository.findByMeeting(meetingId, {
+    page,
+    limit,
+    search,
+    filters: status ? { status } : undefined,
+    sortBy,
+    sortOrder
+  });
 
-    if (!orgMember) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+  // Apply recovery strategies if the operation failed
+  const recoveredResult = await withRecovery(result, [retryStrategy, fallbackStrategy]);
 
-    // Get resolutions for the meeting
-    const { data: resolutions, error: resolutionsError } = await (supabase as any)
-      .from('meeting_resolutions')
-      .select(`
-        id,
-        meeting_id,
-        agenda_item_id,
-        resolution_number,
-        title,
-        description,
-        resolution_text,
-        resolution_type,
-        category,
-        priority_level,
-        proposed_by,
-        seconded_by,
-        status,
-        voting_method,
-        votes_for,
-        votes_against,
-        votes_abstain,
-        total_eligible_voters,
-        effective_date,
-        expiry_date,
-        implementation_deadline,
-        implementation_notes,
-        requires_board_approval,
-        requires_shareholder_approval,
-        legal_review_required,
-        compliance_impact,
-        supporting_documents,
-        related_resolutions,
-        supersedes_resolution_id,
-        discussion_duration_minutes,
-        amendments_proposed,
-        was_amended,
-        proposed_at,
-        voted_at,
-        effective_at,
-        created_at,
-        updated_at
-      `)
-      .eq('meeting_id', meetingId)
-      .order('created_at', { ascending: false });
-
-    if (resolutionsError) {
-      console.error('Error fetching resolutions:', resolutionsError);
-      return NextResponse.json({ error: 'Failed to fetch resolutions' }, { status: 500 });
-    }
-
-    // Transform to match our TypeScript interface
-    const formattedResolutions: MeetingResolution[] = (resolutions as any)?.map((resolution: any) => ({
-      id: (resolution as any)?.id,
-      meetingId: (resolution as any)?.meeting_id,
-      agendaItemId: (resolution as any)?.agenda_item_id,
-      resolutionNumber: (resolution as any)?.resolution_number,
-      title: (resolution as any)?.title || (resolution as any)?.resolution_title,
-      description: (resolution as any)?.description,
-      resolutionText: (resolution as any)?.resolution_text,
-      resolutionType: (resolution as any)?.resolution_type as any || 'other',
-      category: (resolution as any)?.category,
-      priorityLevel: (resolution as any)?.priority_level || 3,
-      proposedBy: (resolution as any)?.proposed_by || (resolution as any)?.moved_by,
-      secondedBy: (resolution as any)?.seconded_by,
-      status: (resolution as any)?.status as any,
-      votingMethod: (resolution as any)?.voting_method as any,
-      votesFor: (resolution as any)?.votes_for || 0,
-      votesAgainst: (resolution as any)?.votes_against || 0,
-      votesAbstain: (resolution as any)?.votes_abstain || 0,
-      totalEligibleVoters: (resolution as any)?.total_eligible_voters || 0,
-      effectiveDate: (resolution as any)?.effective_date,
-      expiryDate: (resolution as any)?.expiry_date,
-      implementationDeadline: (resolution as any)?.implementation_deadline,
-      implementationNotes: (resolution as any)?.implementation_notes,
-      requiresBoardApproval: (resolution as any)?.requires_board_approval || false,
-      requiresShareholderApproval: (resolution as any)?.requires_shareholder_approval || false,
-      legalReviewRequired: (resolution as any)?.legal_review_required || false,
-      complianceImpact: (resolution as any)?.compliance_impact,
-      supportingDocuments: (resolution as any)?.supporting_documents || [],
-      relatedResolutions: (resolution as any)?.related_resolutions || [],
-      supersedesResolutionId: (resolution as any)?.supersedes_resolution_id,
-      discussionDurationMinutes: (resolution as any)?.discussion_duration_minutes || 0,
-      amendmentsProposed: (resolution as any)?.amendments_proposed || 0,
-      wasAmended: (resolution as any)?.was_amended || false,
-      proposedAt: (resolution as any)?.proposed_at || (resolution as any)?.created_at,
-      votedAt: (resolution as any)?.voted_at,
-      effectiveAt: (resolution as any)?.effective_at,
-      createdAt: (resolution as any)?.created_at,
-      updatedAt: (resolution as any)?.updated_at
-    })) || [];
-
+  if (isSuccess(recoveredResult)) {
     return NextResponse.json({
-      resolutions: formattedResolutions,
-      total: formattedResolutions.length
+      success: true,
+      data: {
+        resolutions: recoveredResult.data.data,
+        pagination: {
+          total: recoveredResult.data.total,
+          page: recoveredResult.data.page,
+          limit: recoveredResult.data.limit,
+          totalPages: recoveredResult.data.totalPages,
+          hasNext: recoveredResult.data.hasNext,
+          hasPrev: recoveredResult.data.hasPrev
+        }
+      }
     });
-
-  } catch (error) {
-    console.error('Error in GET /api/meetings/[id]/resolutions:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+
+  // Handle error with proper HTTP status mapping
+  const error = recoveredResult.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(recoveredResult);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  let requestData: CreateResolutionRequest;
+  
+  // Parse and validate request body
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const meetingId = params.id;
-    const body: CreateResolutionRequest = await request.json();
-
-    // Validate required fields
-    if (!body.title || !body.description || !body.resolutionText) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: title, description, resolutionText' 
-      }, { status: 400 });
-    }
-
-    // Check if user has access to this meeting and can manage it
-    const { data: meeting, error: meetingError } = await (supabase as any)
-      .from('meetings')
-      .select(`
-        id,
-        organization_id,
-        created_by
-      `)
-      .eq('id', meetingId)
-      .single();
-
-    if (meetingError || !meeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
-    }
-
-    // Check if user is meeting organizer or has admin/superuser role
-    const { data: orgMember } = await (supabase as any)
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    const canManage = (meeting as any)?.created_by === user.id || 
-                     ((orgMember as any) && ['owner', 'admin', 'superuser'].includes((orgMember as any)?.role));
-
-    if (!canManage) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-    }
-
-    // Create the resolution
-    const { data: resolution, error: insertError } = await (supabase as any)
-      .from('meeting_resolutions')
-      .insert({
-        meeting_id: meetingId,
-        agenda_item_id: body.agendaItemId,
-        resolution_title: body.title,
-        resolution_text: body.resolutionText,
-        moved_by: user.id,
-        seconded_by: body.secondedBy,
-        status: 'proposed' as any,
-        vote_result: null,
-        vote_count: {}
-      } as any)
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Error creating resolution:', insertError);
-      return NextResponse.json({ error: 'Failed to create resolution' }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      resolution,
-      message: 'Resolution created successfully' 
-    }, { status: 201 });
-
-  } catch (error) {
-    console.error('Error in POST /api/meetings/[id]/resolutions:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    requestData = await request.json();
+  } catch (parseError) {
+    const validationError = RepositoryError.validation(
+      'Invalid JSON in request body',
+      { parseError: String(parseError) }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
   }
+
+  // Add meetingId from URL params to request data
+  const meetingId = createMeetingId(context.params.id);
+  const createRequest: CreateResolutionRequest = {
+    ...requestData,
+    meetingId
+  };
+
+  const repository = new MeetingResolutionRepository();
+
+  // Define recovery strategies for resilient creation
+  const retryStrategy = RetryStrategy(
+    () => repository.create(createRequest),
+    2, // max 2 retry attempts for creation
+    2000 // 2 second initial delay
+  );
+
+  // Execute creation with recovery strategies
+  let result = await repository.create(createRequest);
+  
+  // Apply retry strategy only for recoverable errors
+  if (isFailure(result)) {
+    result = await withRecovery(result, [retryStrategy]);
+  }
+
+  if (isSuccess(result)) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        resolution: result.data,
+        message: 'Resolution created successfully'
+      }
+    }, { status: 201 });
+  }
+
+  // Handle error with proper HTTP status mapping
+  const error = result.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(result);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
+}
+
+/**
+ * PUT /api/meetings/[id]/resolutions/[resolutionId] - Update a resolution
+ */
+export async function PUT(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  let requestData: any;
+  
+  // Parse and validate request body
+  try {
+    requestData = await request.json();
+  } catch (parseError) {
+    const validationError = RepositoryError.validation(
+      'Invalid JSON in request body',
+      { parseError: String(parseError) }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
+  }
+
+  // Extract resolution ID from URL path
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const resolutionId = pathParts[pathParts.length - 1];
+
+  if (!resolutionId || resolutionId === 'resolutions') {
+    const validationError = RepositoryError.validation(
+      'Resolution ID is required for update operations',
+      { providedPath: url.pathname }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
+  }
+
+  const repository = new MeetingResolutionRepository();
+
+  // Define recovery strategies
+  const retryStrategy = RetryStrategy(
+    () => repository.update(resolutionId, requestData),
+    2, // max 2 retry attempts for updates
+    1500 // 1.5 second initial delay
+  );
+
+  // Execute update with recovery strategies
+  let result = await repository.update(resolutionId, requestData);
+  
+  // Apply retry strategy for recoverable errors
+  if (isFailure(result)) {
+    result = await withRecovery(result, [retryStrategy]);
+  }
+
+  if (isSuccess(result)) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        resolution: result.data,
+        message: 'Resolution updated successfully'
+      }
+    });
+  }
+
+  // Handle error with proper HTTP status mapping
+  const error = result.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(result);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
+}
+
+/**
+ * DELETE /api/meetings/[id]/resolutions/[resolutionId] - Delete a resolution
+ */
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  // Extract resolution ID from URL path
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const resolutionId = pathParts[pathParts.length - 1];
+
+  if (!resolutionId || resolutionId === 'resolutions') {
+    const validationError = RepositoryError.validation(
+      'Resolution ID is required for delete operations',
+      { providedPath: url.pathname }
+    );
+    return NextResponse.json(
+      resultToAPIResponse(failure(validationError)), 
+      { status: getHTTPStatusFromError(validationError) }
+    );
+  }
+
+  const repository = new MeetingResolutionRepository();
+
+  // Note: Assuming soft delete - implement actual delete method in repository
+  // For now, we'll update status to 'cancelled' as a soft delete
+  const softDeleteUpdate = {
+    status: 'cancelled' as const
+  };
+
+  // Define recovery strategies
+  const retryStrategy = RetryStrategy(
+    () => repository.update(resolutionId, softDeleteUpdate),
+    2, // max 2 retry attempts
+    1000 // 1 second initial delay
+  );
+
+  // Execute soft delete with recovery strategies
+  let result = await repository.update(resolutionId, softDeleteUpdate);
+  
+  // Apply retry strategy for recoverable errors
+  if (isFailure(result)) {
+    result = await withRecovery(result, [retryStrategy]);
+  }
+
+  if (isSuccess(result)) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        message: 'Resolution deleted successfully'
+      }
+    });
+  }
+
+  // Handle error with proper HTTP status mapping
+  const error = result.error;
+  const httpStatus = getHTTPStatusFromError(error);
+  const apiResponse = resultToAPIResponse(result);
+
+  return NextResponse.json(apiResponse, { status: httpStatus });
 }

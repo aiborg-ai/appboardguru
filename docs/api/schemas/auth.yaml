@@ -1,0 +1,267 @@
+# Authentication & Authorization Schemas
+
+User:
+  type: object
+  required:
+    - id
+    - email
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique user identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    name:
+      type: string
+      description: User's full name
+      example: "John Doe"
+    status:
+      type: string
+      enum: [pending, approved, rejected, active, inactive]
+      description: User account status
+      example: "approved"
+    role:
+      type: string
+      enum: [member, admin, owner, super_admin]
+      description: User role in the system
+      example: "member"
+    password_set:
+      type: boolean
+      description: Whether user has set a password
+      example: false
+    created_at:
+      type: string
+      format: date-time
+      description: Account creation timestamp
+    updated_at:
+      type: string
+      format: date-time
+      description: Last update timestamp
+    last_login:
+      type: string
+      format: date-time
+      description: Last login timestamp
+    approved_at:
+      type: string
+      format: date-time
+      description: When account was approved
+    approved_by:
+      type: string
+      format: uuid
+      description: ID of user who approved the account
+    invited_by:
+      type: string
+      format: uuid
+      description: ID of user who sent invitation
+    organization_id:
+      type: string
+      format: uuid
+      description: User's primary organization ID
+
+VerifyOtpRequest:
+  type: object
+  required:
+    - email
+    - otpCode
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    otpCode:
+      type: string
+      pattern: '^\\d{6}$'
+      description: 6-digit OTP code
+      example: "123456"
+    purpose:
+      type: string
+      enum: [first_login, password_reset]
+      default: first_login
+      description: Purpose of OTP verification
+
+VerifyOtpResponse:
+  type: object
+  required:
+    - verified
+  properties:
+    verified:
+      type: boolean
+      example: true
+    requiresPasswordSetup:
+      type: boolean
+      description: Whether user needs to set up password
+      example: true
+    userId:
+      type: string
+      format: uuid
+      description: User ID
+    email:
+      type: string
+      format: email
+      description: User's email
+    setupLink:
+      type: string
+      format: uri
+      description: Link for password setup
+    message:
+      type: string
+      description: Success message
+
+ResendOtpRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    purpose:
+      type: string
+      enum: [first_login, password_reset]
+      default: first_login
+      description: Purpose of OTP
+
+ResendOtpResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "OTP code has been resent to your email"
+    email:
+      type: string
+      format: email
+    expiresIn:
+      type: integer
+      description: OTP expiry time in minutes
+      example: 10
+
+MagicLinkRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    redirectTo:
+      type: string
+      format: uri
+      description: URL to redirect after authentication
+      example: "https://app.example.com/dashboard"
+
+MagicLinkResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Magic link has been sent to your email"
+    email:
+      type: string
+      format: email
+
+RegistrationActionRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    userId:
+      type: string
+      format: uuid
+      description: User ID (optional)
+    message:
+      type: string
+      description: Optional message/reason
+      example: "Welcome to the team!"
+
+RegistrationActionResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Registration approved successfully"
+    user:
+      $ref: '#/User'
+
+SendRegistrationEmailRequest:
+  type: object
+  required:
+    - email
+    - organizationName
+    - inviterName
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    organizationName:
+      type: string
+      minLength: 2
+      description: Name of the organization
+      example: "Acme Corporation"
+    inviterName:
+      type: string
+      minLength: 2
+      description: Name of person sending invitation
+      example: "Jane Smith"
+    role:
+      type: string
+      enum: [member, admin, owner]
+      default: member
+      description: Role to assign to new user
+
+SendRegistrationEmailResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Registration invitation sent successfully"
+    user:
+      $ref: '#/User'
+
+AuthenticationError:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: string
+      example: "Invalid credentials"
+    code:
+      type: string
+      enum: [INVALID_CREDENTIALS, OTP_EXPIRED, OTP_INVALID, RATE_LIMIT_EXCEEDED, USER_NOT_FOUND, USER_NOT_APPROVED]
+    retryAfter:
+      type: integer
+      description: Seconds to wait before retry (for rate limiting)
+    remainingAttempts:
+      type: integer
+      description: Remaining authentication attempts

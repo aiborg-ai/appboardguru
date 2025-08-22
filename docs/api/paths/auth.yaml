@@ -1,0 +1,359 @@
+# Authentication & Authorization Endpoints
+
+verify-otp:
+  post:
+    tags:
+      - Authentication
+    summary: Verify OTP code
+    description: |
+      Verify a 6-digit OTP code sent to user's email for first login or password reset.
+      Returns temporary authentication tokens for password setup if verification succeeds.
+    operationId: verifyOtp
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/VerifyOtpRequest'
+          examples:
+            first_login:
+              summary: First login verification
+              value:
+                email: "user@example.com"
+                otpCode: "123456"
+                purpose: "first_login"
+            password_reset:
+              summary: Password reset verification
+              value:
+                email: "user@example.com"
+                otpCode: "654321"
+                purpose: "password_reset"
+    responses:
+      '200':
+        description: OTP verified successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/VerifyOtpResponse'
+            examples:
+              first_login_success:
+                summary: First login verification success
+                value:
+                  verified: true
+                  requiresPasswordSetup: true
+                  userId: "550e8400-e29b-41d4-a716-446655440000"
+                  email: "user@example.com"
+                  setupLink: "https://app.example.com/auth/set-password?token=xyz123"
+                  message: "OTP verified successfully. Please set up your password."
+      '400':
+        description: Invalid or expired OTP
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+            examples:
+              invalid_otp:
+                summary: Invalid OTP code
+                value:
+                  success: false
+                  error: "Invalid or expired OTP code"
+                  code: "OTP_INVALID"
+              expired_otp:
+                summary: Expired OTP code
+                value:
+                  success: false
+                  error: "OTP code has expired"
+                  code: "OTP_EXPIRED"
+      '429':
+        description: Rate limit exceeded
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+            examples:
+              rate_limit:
+                summary: Too many attempts
+                value:
+                  success: false
+                  error: "Too many verification attempts. Try again in 10 minutes."
+                  code: "RATE_LIMIT_EXCEEDED"
+                  retryAfter: 600
+
+resend-otp:
+  post:
+    tags:
+      - Authentication
+    summary: Resend OTP code
+    description: |
+      Resend a new 6-digit OTP code to user's email. 
+      Limited to 3 requests per 10 minutes to prevent abuse.
+    operationId: resendOtp
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/ResendOtpRequest'
+          examples:
+            resend:
+              summary: Resend OTP
+              value:
+                email: "user@example.com"
+                purpose: "first_login"
+    responses:
+      '200':
+        description: OTP code resent successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/ResendOtpResponse'
+            examples:
+              success:
+                summary: OTP resent successfully
+                value:
+                  success: true
+                  message: "OTP code has been resent to your email"
+                  email: "user@example.com"
+                  expiresIn: 10
+      '400':
+        $ref: '../openapi.yaml#/components/responses/ValidationError'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+            examples:
+              user_not_found:
+                summary: User not found
+                value:
+                  success: false
+                  error: "User not found"
+                  code: "USER_NOT_FOUND"
+      '429':
+        $ref: '../openapi.yaml#/components/responses/RateLimitExceeded'
+
+magic-link:
+  post:
+    tags:
+      - Authentication
+    summary: Request magic link
+    description: |
+      Request a magic link for passwordless authentication.
+      Link will be sent to the provided email address.
+    operationId: requestMagicLink
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/MagicLinkRequest'
+          examples:
+            basic:
+              summary: Basic magic link request
+              value:
+                email: "user@example.com"
+            with_redirect:
+              summary: With custom redirect
+              value:
+                email: "user@example.com"
+                redirectTo: "https://app.example.com/dashboard"
+    responses:
+      '200':
+        description: Magic link sent successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/MagicLinkResponse'
+            examples:
+              success:
+                summary: Magic link sent
+                value:
+                  success: true
+                  message: "Magic link has been sent to your email"
+                  email: "user@example.com"
+      '400':
+        $ref: '../openapi.yaml#/components/responses/ValidationError'
+      '429':
+        description: Rate limit exceeded (5 requests per hour)
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+
+approve-registration:
+  post:
+    tags:
+      - Authentication
+    summary: Approve user registration
+    description: |
+      Approve a pending user registration. Admin only endpoint.
+      Generates OTP for first login after approval.
+    operationId: approveRegistration
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/RegistrationActionRequest'
+          examples:
+            approve:
+              summary: Approve registration
+              value:
+                email: "newuser@example.com"
+                message: "Welcome to the team!"
+    responses:
+      '200':
+        description: Registration approved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/RegistrationActionResponse'
+            examples:
+              success:
+                summary: Registration approved
+                value:
+                  success: true
+                  message: "Registration approved successfully"
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "newuser@example.com"
+                    status: "approved"
+      '400':
+        $ref: '../openapi.yaml#/components/responses/ValidationError'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+
+reject-registration:
+  post:
+    tags:
+      - Authentication
+    summary: Reject user registration
+    description: |
+      Reject a pending user registration. Admin only endpoint.
+      User will be notified of rejection via email.
+    operationId: rejectRegistration
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/RegistrationActionRequest'
+          examples:
+            reject:
+              summary: Reject registration
+              value:
+                email: "spam@example.com"
+                message: "Registration does not meet our requirements"
+    responses:
+      '200':
+        description: Registration rejected successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/RegistrationActionResponse'
+            examples:
+              success:
+                summary: Registration rejected
+                value:
+                  success: true
+                  message: "Registration rejected successfully"
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "spam@example.com"
+                    status: "rejected"
+      '400':
+        $ref: '../openapi.yaml#/components/responses/ValidationError'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+
+send-registration-email:
+  post:
+    tags:
+      - Authentication
+    summary: Send registration invitation
+    description: |
+      Send registration invitation email to a new user.
+      Creates a pending user record and sends invitation link.
+    operationId: sendRegistrationEmail
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/SendRegistrationEmailRequest'
+          examples:
+            invite_member:
+              summary: Invite new team member
+              value:
+                email: "newmember@example.com"
+                organizationName: "Acme Corporation"
+                inviterName: "Jane Smith"
+                role: "member"
+            invite_admin:
+              summary: Invite new admin
+              value:
+                email: "admin@example.com"
+                organizationName: "Acme Corporation"
+                inviterName: "Jane Smith"
+                role: "admin"
+    responses:
+      '200':
+        description: Registration invitation sent successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/SendRegistrationEmailResponse'
+            examples:
+              success:
+                summary: Invitation sent
+                value:
+                  success: true
+                  message: "Registration invitation sent successfully"
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "newmember@example.com"
+                    status: "pending"
+                    role: "member"
+      '400':
+        description: Validation error or user already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/AuthenticationError'
+            examples:
+              user_exists:
+                summary: User already exists
+                value:
+                  success: false
+                  error: "User with this email already exists"
+                  code: "USER_EXISTS"
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'

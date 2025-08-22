@@ -118,7 +118,7 @@ export class ActivityStreamServer {
       if (error || !user) return null
 
       // Get user's organizations
-      const { data: memberships } = await (supabase as any)
+      const { data: memberships } = await supabase
         .from('organization_members')
         .select(`
           organization_id,
@@ -146,7 +146,7 @@ export class ActivityStreamServer {
     try {
       const supabase = await createSupabaseServerClient()
       
-      const { data: activities } = await (supabase as any)
+      const { data: activities } = await supabase
         .from('audit_logs')
         .select(`
           id,
@@ -232,7 +232,7 @@ export class ActivityStreamServer {
       
       // Get analytics data based on request type
       if (metricsRequest.type === 'engagement_scores') {
-        const { data } = await (supabase as any).rpc('calculate_user_engagement_score', {
+        const { data } = await supabase.rpc('calculate_user_engagement_score', {
           input_user_id: metricsRequest.userId,
           input_org_id: organizationIds[0], // Primary org
           days_back: metricsRequest.daysBack || 30
@@ -241,7 +241,7 @@ export class ActivityStreamServer {
       }
 
       if (metricsRequest.type === 'anomaly_detection') {
-        const { data } = await (supabase as any).rpc('detect_activity_anomalies', {
+        const { data } = await supabase.rpc('detect_activity_anomalies', {
           input_user_id: metricsRequest.userId,
           input_org_id: organizationIds[0]
         } as any)
@@ -249,7 +249,7 @@ export class ActivityStreamServer {
       }
 
       // Default: return activity summary
-      const { data: summary } = await (supabase as any)
+      const { data: summary } = await supabase
         .from('daily_activity_summary')
         .select('*')
         .in('organization_id', organizationIds)
@@ -307,7 +307,7 @@ export class ActivityStreamServer {
     message: string
     organizationId?: string
     userId?: string
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   }) {
     const target = alert.organizationId ? `org:${alert.organizationId}` : 'system'
     this.io.to(target).emit('alert:new', alert)

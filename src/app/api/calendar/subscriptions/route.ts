@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const includeOwned = searchParams.get('include_owned') === 'true'
 
-    let query = (supabase as any)
+    let query = supabase
       .from('calendar_subscriptions')
       .select(`
         *,
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const validatedData = createSubscriptionSchema.parse(body)
 
     // Find the calendar owner by email
-    const { data: calendarOwner, error: ownerError } = await (supabase as any)
+    const { data: calendarOwner, error: ownerError } = await supabase
       .from('users')
       .select('id')
       .eq('email', validatedData.calendar_owner_email)
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing subscription
-    const { data: existingSubscription } = await (supabase as any)
+    const { data: existingSubscription } = await supabase
       .from('calendar_subscriptions')
       .select('id')
       .eq('subscriber_id', user.id)
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the subscription
-    const { data: subscription, error: createError } = await (supabase as any)
+    const { data: subscription, error: createError } = await supabase
       .from('calendar_subscriptions')
       .insert({
         subscriber_id: user.id,
@@ -166,7 +166,7 @@ export async function PUT(request: NextRequest) {
     const validatedData = updateSubscriptionSchema.parse(body)
 
     // Check if user owns the subscription or the calendar
-    const { data: subscription, error: fetchError } = await (supabase as any)
+    const { data: subscription, error: fetchError } = await supabase
       .from('calendar_subscriptions')
       .select('subscriber_id, calendar_owner_id')
       .eq('id', subscriptionId)
@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { data: updatedSubscription, error: updateError } = await (supabase as any)
+    const { data: updatedSubscription, error: updateError } = await supabase
       .from('calendar_subscriptions')
       .update(validatedData)
       .eq('id', subscriptionId)
@@ -232,7 +232,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user owns the subscription
-    const { data: subscription, error: fetchError } = await (supabase as any)
+    const { data: subscription, error: fetchError } = await supabase
       .from('calendar_subscriptions')
       .select('subscriber_id, calendar_owner_id')
       .eq('id', subscriptionId)
@@ -248,7 +248,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('calendar_subscriptions')
       .delete()
       .eq('id', subscriptionId)

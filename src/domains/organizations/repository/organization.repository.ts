@@ -45,7 +45,7 @@ export class OrganizationRepository extends BaseRepository {
     includeRelations = false
   ): Promise<OrganizationEntityWithRelations | null> {
     try {
-      let query = (this.supabase as any)
+      let query = this.supabase
         .from(this.tableName)
         .select(this.buildSelectString(includeRelations))
         .eq('id', id)
@@ -133,7 +133,7 @@ export class OrganizationRepository extends BaseRepository {
         return []
       }
 
-      return (data as any[])?.map((item: any) => ({
+      return (data as any[])?.map(item: unknown) => ({
         ...item.organizations,
         user_role: item.role,
         user_status: item.status,
@@ -168,7 +168,7 @@ export class OrganizationRepository extends BaseRepository {
       } = filters
 
       // Build the query
-      let query = (this.supabase as any)
+      let query = this.supabase
         .from(this.tableName)
         .select(this.buildSelectString(true), { count: 'exact' })
         .eq('is_active', true)
@@ -291,7 +291,7 @@ export class OrganizationRepository extends BaseRepository {
         updated_at: new Date().toISOString()
       }
 
-      const { data: organization, error } = await (this.supabase as any)
+      const { data: organization, error } = await this.supabase
         .from(this.tableName)
         .insert(insertData)
         .select()
@@ -318,7 +318,7 @@ export class OrganizationRepository extends BaseRepository {
         updated_at: new Date().toISOString()
       }
 
-      const { data: organization, error } = await (this.supabase as any)
+      const { data: organization, error } = await this.supabase
         .from(this.tableName)
         .update(updateData)
         .eq('id', id)
@@ -345,7 +345,7 @@ export class OrganizationRepository extends BaseRepository {
       const deletionScheduledFor = new Date()
       deletionScheduledFor.setDate(deletionScheduledFor.getDate() + 30) // 30 day grace period
 
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from(this.tableName)
         .update({ 
           is_active: false,
@@ -450,7 +450,7 @@ export class OrganizationRepository extends BaseRepository {
    */
   async isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
     try {
-      let query = (this.supabase as any)
+      let query = this.supabase
         .from(this.tableName)
         .select('id')
         .eq('slug', slug)

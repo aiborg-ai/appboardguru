@@ -180,7 +180,7 @@ export interface AnnotationMetadata {
 export interface VoiceAction {
   type: 'approval' | 'rejection' | 'question' | 'suggestion' | 'workflow_trigger' | 'navigation';
   target?: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   confidence: number;
   requiresConfirmation: boolean;
   fallbackText?: string;
@@ -213,7 +213,7 @@ export interface WorkflowTriggerCondition {
 export interface WorkflowAction {
   type: 'approval' | 'notification' | 'document_action' | 'meeting_action' | 'api_call' | 'navigation';
   target: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   condition?: WorkflowCondition;
   timeout?: number; // seconds
   retryCount?: number;
@@ -271,7 +271,7 @@ export interface VoiceCommand {
   phrase: string;
   action: 'next_page' | 'previous_page' | 'zoom_in' | 'zoom_out' | 'scroll_up' | 'scroll_down' | 
           'highlight' | 'annotate' | 'pause' | 'resume' | 'stop_sharing';
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   enabled: boolean;
   requiresConfirmation: boolean;
 }
@@ -574,7 +574,7 @@ export interface VoiceAnnotationResponse {
 export interface TriggerWorkflowRequest {
   phrase: string;
   context?: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   confidence?: number;
 }
 

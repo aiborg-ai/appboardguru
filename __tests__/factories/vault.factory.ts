@@ -18,7 +18,7 @@ export const VaultFactory = {
       description: `Quarterly board meeting materials and documentation - ${randomId}`,
       organization_id: organizationId,
       created_by: createdBy,
-      status: 'draft',
+      status: 'ready',
       priority: 'medium',
       meeting_date: futureDate,
       agenda_items: [
@@ -53,7 +53,7 @@ export const VaultFactory = {
    */
   buildActive(organizationId: string, createdBy: string, overrides: Partial<VaultInsert> = {}): VaultInsert {
     return this.build(organizationId, createdBy, {
-      status: 'active',
+      status: 'ready',
       priority: 'high',
       name: 'Active Board Meeting - Ready for Review',
       description: 'All materials are prepared and ready for board review',
@@ -68,7 +68,7 @@ export const VaultFactory = {
    */
   buildDraft(organizationId: string, createdBy: string, overrides: Partial<VaultInsert> = {}): VaultInsert {
     return this.build(organizationId, createdBy, {
-      status: 'draft',
+      status: 'ready',
       priority: 'medium',
       name: 'Draft Board Materials - In Preparation',
       description: 'Board meeting materials currently being prepared',
@@ -109,7 +109,7 @@ export const VaultFactory = {
     const urgentDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days from now
     
     return this.build(organizationId, createdBy, {
-      status: 'active',
+      status: 'ready',
       priority: 'critical',
       name: 'Emergency Board Meeting - Urgent Decision Required',
       description: 'Emergency board session to address critical business matters',
@@ -141,7 +141,7 @@ export const VaultFactory = {
     const annualDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days from now
     
     return this.build(organizationId, createdBy, {
-      status: 'draft',
+      status: 'ready',
       priority: 'high',
       name: 'Annual Shareholders Meeting 2024',
       description: 'Annual shareholders meeting with board elections and major decisions',
@@ -258,7 +258,7 @@ export const VaultFactory = {
       name: 'Board Meeting Template',
       description: 'Template for creating new board meetings with standard agenda',
       is_template: true,
-      status: 'draft',
+      status: 'ready',
       meeting_date: null, // Templates don't have dates
       agenda_items: [
         '[TEMPLATE] Call to Order',

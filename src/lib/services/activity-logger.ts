@@ -24,7 +24,7 @@ export interface UserActivityEvent {
   description?: string
   resourceType?: string
   resourceId?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
 }
@@ -155,7 +155,7 @@ export async function logAssetActivity(
   action: 'opened' | 'downloaded' | 'uploaded' | 'shared' | 'deleted',
   assetId: string,
   assetName: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   const actionTitles = {
     opened: `Opened asset "${assetName}"`,
@@ -189,7 +189,7 @@ export async function logVaultActivity(
   action: 'created' | 'opened' | 'updated' | 'deleted' | 'shared',
   vaultId: string,
   vaultName: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   const actionTitles = {
     created: `Created vault "${vaultName}"`,
@@ -222,7 +222,7 @@ export async function logOrganizationActivity(
   organizationId: string,
   action: 'created' | 'joined' | 'left' | 'updated',
   organizationName: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   const actionTitles = {
     created: `Created organization "${organizationName}"`,
@@ -254,7 +254,7 @@ export async function logSearchActivity(
   organizationId: string,
   searchQuery: string,
   resultCount: number,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   return UserActivityLogger.logActivity({
     userId,
@@ -277,7 +277,7 @@ export async function logAIChatActivity(
   userId: string,
   organizationId: string,
   chatTopic: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   return UserActivityLogger.logActivity({
     userId,
@@ -301,7 +301,7 @@ export async function logAnnotationActivity(
   action: 'created' | 'updated' | 'deleted',
   annotationId: string,
   assetName: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   const actionTitles = {
     created: `Added annotation to "${assetName}"`,
@@ -330,7 +330,7 @@ export async function logAnnotationActivity(
 export async function logAuthActivity(
   userId: string,
   action: 'login' | 'logout' | 'password_changed',
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
   const actionTitles = {
     login: 'Signed in to BoardGuru',

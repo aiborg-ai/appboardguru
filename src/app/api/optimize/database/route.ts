@@ -5,9 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { queryAnalyzer } from '@/lib/database/query-analyzer'
-import { withTelemetry } from '@/lib/telemetry'
+// import { withTelemetry } from '@/lib/telemetry' // Temporarily disabled for build compatibility
 
-export const GET = withTelemetry(async (request: NextRequest) => {
+export const GET = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
@@ -86,9 +86,9 @@ export const GET = withTelemetry(async (request: NextRequest) => {
       }
     }, { status: 500 })
   }
-}, 'database-optimization')
+}
 
-export const POST = withTelemetry(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
@@ -154,4 +154,4 @@ export const POST = withTelemetry(async (request: NextRequest) => {
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}, 'database-optimization-apply')
+}

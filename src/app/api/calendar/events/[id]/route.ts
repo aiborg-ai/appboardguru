@@ -33,7 +33,7 @@ export async function GET(
     }
 
     const resolvedParams = await params;
-    const { data: event, error } = await (supabase as any)
+    const { data: event, error } = await supabase
       .from('calendar_events')
       .select(`
         *,
@@ -77,7 +77,7 @@ export async function PUT(
     const validatedData = updateEventSchema.parse(body)
 
     // Check if user owns the event or has permission to edit
-    const { data: existingEvent, error: fetchError } = await (supabase as any)
+    const { data: existingEvent, error: fetchError } = await supabase
       .from('calendar_events')
       .select('*')
       .eq('id', resolvedParams.id)
@@ -89,7 +89,7 @@ export async function PUT(
 
     if (existingEvent.user_id !== user.id) {
       // Check if user has edit permission as attendee
-      const { data: attendee } = await (supabase as any)
+      const { data: attendee } = await supabase
         .from('calendar_attendees')
         .select('can_edit')
         .eq('event_id', resolvedParams.id)
@@ -106,7 +106,7 @@ export async function PUT(
       const startTime = validatedData.start_datetime || existingEvent.start_datetime
       const endTime = validatedData.end_datetime || existingEvent.end_datetime
 
-      const { data: conflicts } = await (supabase as any)
+      const { data: conflicts } = await supabase
         .rpc('check_calendar_conflicts', {
           p_user_id: existingEvent.user_id,
           p_start_datetime: startTime,
@@ -123,7 +123,7 @@ export async function PUT(
     }
 
     // Update the event
-    const { data: updatedEvent, error: updateError } = await (supabase as any)
+    const { data: updatedEvent, error: updateError } = await supabase
       .from('calendar_events')
       .update(validatedData)
       .eq('id', resolvedParams.id)
@@ -174,7 +174,7 @@ export async function DELETE(
     const deleteRecurring = searchParams.get('delete_recurring') === 'true'
 
     // Check if user owns the event
-    const { data: existingEvent, error: fetchError } = await (supabase as any)
+    const { data: existingEvent, error: fetchError } = await supabase
       .from('calendar_events')
       .select('user_id, is_recurring, parent_event_id')
       .eq('id', resolvedParams.id)
@@ -192,7 +192,7 @@ export async function DELETE(
       // Delete all recurring instances
       const parentId = existingEvent.parent_event_id || resolvedParams.id
       
-      const { error: deleteError } = await (supabase as any)
+      const { error: deleteError } = await supabase
         .from('calendar_events')
         .delete()
         .or(`id.eq.${parentId},parent_event_id.eq.${parentId}`)
@@ -205,7 +205,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Recurring events deleted successfully' })
     } else {
       // Delete single event
-      const { error: deleteError } = await (supabase as any)
+      const { error: deleteError } = await supabase
         .from('calendar_events')
         .delete()
         .eq('id', resolvedParams.id)

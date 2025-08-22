@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MessageCircle } from 'lucide-react'
@@ -11,13 +11,13 @@ import BoardChatPanel from './BoardChatPanel'
  * BoardChat floating button and panel
  * Shows unread message count and opens chat interface
  */
-const BoardChatButton: React.FC = () => {
+const BoardChatButton = React.memo(() => {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const { totalUnread, hasNotifications } = useChatNotifications()
 
-  const toggleChat = () => {
+  const toggleChat = useCallback(() => {
     setIsChatOpen(!isChatOpen)
-  }
+  }, [isChatOpen])
 
   return (
     <>
@@ -43,5 +43,9 @@ const BoardChatButton: React.FC = () => {
     </>
   )
 }
+
+})
+
+BoardChatButton.displayName = 'BoardChatButton'
 
 export default BoardChatButton

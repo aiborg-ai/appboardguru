@@ -20,8 +20,8 @@ export interface OpenAPISpec {
   }>
   paths: Record<string, PathItem>
   components?: {
-    schemas?: Record<string, any>
-    securitySchemes?: Record<string, any>
+    schemas?: Record<string, unknown>
+    securitySchemes?: Record<string, unknown>
   }
 }
 
@@ -65,7 +65,7 @@ export interface Response {
 
 export interface MediaType {
   schema: any
-  examples?: Record<string, any>
+  examples?: Record<string, unknown>
 }
 
 export interface Header {
@@ -350,7 +350,7 @@ export class OpenAPIGenerator {
   /**
    * Convert Zod schema to OpenAPI schema
    */
-  private zodToOpenApiSchema(schema: ZodSchema): any {
+  private zodToOpenApiSchema(schema: ZodSchema): unknown {
     try {
       return zodToJsonSchema(schema, {
         target: 'openApi3',

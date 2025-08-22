@@ -82,7 +82,7 @@ export interface AssetCreateData {
   watermark_applied?: boolean
   thumbnail_url?: string
   preview_url?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface AssetShareData {
@@ -584,7 +584,7 @@ export class AssetRepository extends BaseRepository {
     return success(undefined)
   }
 
-  private applyFilters(query: any, filters: AssetFilters): any {
+  private applyFilters(query: any, filters: AssetFilters): unknown {
     if (filters.category) {
       query = query.eq('category', filters.category)
     }

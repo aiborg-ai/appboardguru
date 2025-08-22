@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log assistant interaction
-    await (supabase as any)
+    await supabase
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -157,7 +157,7 @@ async function getOrCreateSession(
 ): Promise<VoiceAssistantSession> {
   if (sessionId) {
     // Try to fetch existing session
-    const { data: existingSession } = await (supabase as any)
+    const { data: existingSession } = await supabase
       .from('voice_assistant_sessions')
       .select('*')
       .eq('id', sessionId)
@@ -191,7 +191,7 @@ async function getOrCreateSession(
   };
 
   // Store in database
-  await (supabase as any)
+  await supabase
     .from('voice_assistant_sessions')
     .insert({
       id: newSession.id,
@@ -706,7 +706,7 @@ async function updateSessionHistory(
     } as ConversationEntry;
 
     // Update session in database with new conversation entry
-    const { data: session } = await (supabase as any)
+    const { data: session } = await supabase
       .from('voice_assistant_sessions')
       .select('session_data')
       .eq('id', sessionId)
@@ -720,7 +720,7 @@ async function updateSessionHistory(
       sessionData.conversationHistory = sessionData.conversationHistory.slice(0, 50);
       sessionData.lastActivity = new Date().toISOString();
 
-      await (supabase as any)
+      await supabase
         .from('voice_assistant_sessions')
         .update({
           session_data: JSON.stringify(sessionData),
@@ -749,7 +749,7 @@ export async function GET(request: NextRequest) {
 
     if (sessionId) {
       // Get specific session
-      const { data: session, error } = await (supabase as any)
+      const { data: session, error } = await supabase
         .from('voice_assistant_sessions')
         .select('*')
         .eq('id', sessionId)
@@ -766,7 +766,7 @@ export async function GET(request: NextRequest) {
       });
     } else if (organizationId) {
       // Get user's sessions for organization
-      const { data: sessions, error } = await (supabase as any)
+      const { data: sessions, error } = await supabase
         .from('voice_assistant_sessions')
         .select('id, created_at, last_activity, is_active')
         .eq('user_id', user.id)
@@ -811,7 +811,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Deactivate session
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('voice_assistant_sessions')
       .update({ is_active: false })
       .eq('id', sessionId)

@@ -80,7 +80,7 @@ export interface CalendarEventCreateData {
   }
   is_all_day?: boolean
   reminder_minutes?: number[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   attendees?: Array<{
     user_id: UserId
     role: 'organizer' | 'required' | 'optional' | 'resource'
@@ -618,7 +618,7 @@ export class CalendarRepository extends BaseRepository {
     return success(stats)
   }
 
-  private applyFilters(query: any, filters: CalendarEventFilters): any {
+  private applyFilters(query: any, filters: CalendarEventFilters): unknown {
     if (filters.start_date) {
       query = query.gte('start_time', filters.start_date.toISOString())
     }

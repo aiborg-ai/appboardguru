@@ -1,40 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import type {
+  AssetRow,
+  AssetUpdate,
+  TypedSupabaseClient,
+  AssetWithOwner
+} from '@/types/api'
+import type { Database } from '@/types/database'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const { id: assetId } = await params
 
     // Get asset with sharing information
-    const { data: asset, error } = await (supabase as any)
+    const { data: asset, error } = await supabase
       .from('assets')
       .select(`
         *,
@@ -66,7 +51,7 @@ export async function GET(
 
     // Check if user has access to this asset
     const isOwner = asset.owner_id === user.id
-    const hasSharedAccess = asset.asset_shares?.some((share: any) => 
+    const hasSharedAccess = asset.asset_shares?.some((share) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -77,7 +62,7 @@ export async function GET(
     }
 
     // Increment view count
-    await (supabase as any)
+    await supabase
       .from('assets')
       .update({ view_count: (asset.view_count || 0) + 1 })
       .eq('id', assetId)
@@ -104,7 +89,7 @@ export async function GET(
     const transformedAsset = {
       ...asset,
       isOwner,
-      sharedWith: asset.asset_shares?.map((share: any) => ({
+      sharedWith: asset.asset_shares?.map((share) => ({
         id: share.id,
         userId: share.shared_with_user_id,
         userName: share.users?.name || '',
@@ -115,7 +100,7 @@ export async function GET(
         isActive: share.is_active,
         sharedAt: share.created_at
       })) || [],
-      comments: asset.asset_comments?.map((comment: any) => ({
+      comments: asset.asset_comments?.map((comment) => ({
         id: comment.id,
         text: comment.comment_text,
         createdAt: comment.created_at,
@@ -135,40 +120,27 @@ export async function GET(
   }
 }
 
+interface UpdateAssetRequest {
+  title?: string
+  description?: string
+  category?: string
+  folderPath?: string
+  tags?: string[]
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const { id: assetId } = await params
-    const body = await request.json()
+    const body: UpdateAssetRequest = await request.json()
     
     // Check if user owns the asset or has edit permission
-    const { data: asset, error: fetchError } = await (supabase as any)
+    const { data: asset, error: fetchError } = await supabase
       .from('assets')
       .select(`
         *,
@@ -183,7 +155,7 @@ export async function PUT(
     }
 
     const isOwner = asset.owner_id === user.id
-    const hasEditAccess = asset.asset_shares?.some((share: any) => 
+    const hasEditAccess = asset.asset_shares?.some((share) => 
       share.shared_with_user_id === user.id && 
       share.is_active &&
       ['edit', 'admin'].includes(share.permission_level) &&
@@ -195,14 +167,14 @@ export async function PUT(
     }
 
     // Update asset
-    const updateData: any = {}
+    const updateData: Partial<AssetUpdate> = {}
     if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
     if (body.category !== undefined) updateData.category = body.category
     if (body.folderPath !== undefined) updateData.folder_path = body.folderPath
     if (body.tags !== undefined) updateData.tags = body.tags
 
-    const { data: updatedAsset, error: updateError } = await (supabase as any)
+    const { data: updatedAsset, error: updateError } = await supabase
       .from('assets')
       .update(updateData)
       .eq('id', assetId)
@@ -215,7 +187,7 @@ export async function PUT(
     }
 
     // Log activity
-    await (supabase as any)
+    await supabase
       .from('asset_activity_log')
       .insert({
         asset_id: assetId,
@@ -237,34 +209,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = await createTypedSupabaseClient()
+    const user = await getAuthenticatedUser(supabase)
 
     const { id: assetId } = await params
 
     // Check if user owns the asset
-    const { data: asset, error: fetchError } = await (supabase as any)
+    const { data: asset, error: fetchError } = await supabase
       .from('assets')
       .select('owner_id, title, file_path')
       .eq('id', assetId)
@@ -280,7 +231,7 @@ export async function DELETE(
     }
 
     // Soft delete the asset
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('assets')
       .update({
         is_deleted: true,
@@ -294,7 +245,7 @@ export async function DELETE(
     }
 
     // Log activity
-    await (supabase as any)
+    await supabase
       .from('asset_activity_log')
       .insert({
         asset_id: assetId,

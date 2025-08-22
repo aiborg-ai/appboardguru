@@ -57,7 +57,7 @@ export interface UpdateOrganizationRequest {
   website?: string
   industry?: string
   organizationSize?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }
 
 export interface InviteOrganizationMemberRequest {
@@ -115,7 +115,7 @@ export interface UpdateAssetRequest {
   description?: string
   visibility?: 'organization' | 'public' | 'private'
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ShareAssetRequest {

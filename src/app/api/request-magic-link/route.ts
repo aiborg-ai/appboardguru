@@ -28,7 +28,7 @@ async function handleMagicLinkRequest(request: NextRequest) {
     const { email } = requestSchema.parse(body)
 
     // Check if user exists and is approved but hasn't set password
-    const { data: registrationData, error: regError } = await (supabase as any)
+    const { data: registrationData, error: regError } = await supabase
       .from('registration_requests')
       .select('*')
       .eq('email', email)
@@ -40,7 +40,7 @@ async function handleMagicLinkRequest(request: NextRequest) {
     }
 
     // Check if user has already set password
-    const { data: userData, error: userError } = await (supabase as any)
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('password_set')
       .eq('email', email)

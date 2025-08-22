@@ -291,7 +291,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Soft delete the pattern (set is_active to false)
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('notification_patterns')
       .update({
         is_active: false,

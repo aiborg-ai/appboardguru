@@ -9,7 +9,7 @@ type VaultMember = Database['public']['Tables']['board_pack_permissions']['Row']
 export class VaultRepository extends BaseRepository {
   async findById(id: string): Promise<Vault | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .select('*')
         .eq('id', id)
@@ -19,15 +19,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'findById')
       }
 
-      return (data as any) || null
-    } catch (error: any) {
+      return data || null
+    } catch (error: unknown) {
       this.handleError(error, 'findById')
     }
   }
 
   async findByOrganization(organizationId: string, userId?: string): Promise<Vault[]> {
     try {
-      let query = (this.supabase as any)
+      let query = this.supabase
         .from('board_packs')
         .select(`
           *,
@@ -53,15 +53,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'findByOrganization')
       }
 
-      return (data as any) || []
-    } catch (error: any) {
+      return data || []
+    } catch (error: unknown) {
       this.handleError(error, 'findByOrganization')
     }
   }
 
   async findByUser(userId: string): Promise<Vault[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .select(`
           *,
@@ -81,15 +81,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'findByUser')
       }
 
-      return (data as any) || []
-    } catch (error: any) {
+      return data || []
+    } catch (error: unknown) {
       this.handleError(error, 'findByUser')
     }
   }
 
   async create(vault: VaultInsert): Promise<Vault> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .insert(vault)
         .select()
@@ -99,15 +99,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'create')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      return data!
+    } catch (error: unknown) {
       this.handleError(error, 'create')
     }
   }
 
   async update(id: string, updates: VaultUpdate): Promise<Vault> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_packs')
         .update({
           ...updates,
@@ -121,15 +121,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'update')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      return data!
+    } catch (error: unknown) {
       this.handleError(error, 'update')
     }
   }
 
   async delete(id: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('board_packs')
         .delete()
         .eq('id', id)
@@ -137,14 +137,14 @@ export class VaultRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'delete')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'delete')
     }
   }
 
   async addMember(vaultId: string, userId: string, role: string = 'member'): Promise<VaultMember> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_pack_permissions')
         .insert({
           board_pack_id: vaultId,
@@ -161,15 +161,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'addMember')
       }
 
-      return (data as any)!
-    } catch (error: any) {
+      return data!
+    } catch (error: unknown) {
       this.handleError(error, 'addMember')
     }
   }
 
   async removeMember(vaultId: string, userId: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('board_pack_permissions')
         .delete()
         .eq('board_pack_id', vaultId)
@@ -178,14 +178,14 @@ export class VaultRepository extends BaseRepository {
       if (error) {
         this.handleError(error, 'removeMember')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.handleError(error, 'removeMember')
     }
   }
 
   async getMembers(vaultId: string): Promise<VaultMember[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_pack_permissions')
         .select(`
           *,
@@ -197,15 +197,15 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'getMembers')
       }
 
-      return (data as any) || []
-    } catch (error: any) {
+      return data || []
+    } catch (error: unknown) {
       this.handleError(error, 'getMembers')
     }
   }
 
   async hasAccess(vaultId: string, userId: string): Promise<boolean> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('board_pack_permissions')
         .select('id')
         .eq('board_pack_id', vaultId)
@@ -216,8 +216,8 @@ export class VaultRepository extends BaseRepository {
         this.handleError(error, 'hasAccess')
       }
 
-      return !!(data as any)
-    } catch (error: any) {
+      return !!data
+    } catch (error: unknown) {
       return false
     }
   }

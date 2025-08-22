@@ -1,0 +1,145 @@
+/** @type {import('next').NextConfig} */
+const path = require('path')
+
+const nextConfig = {
+  // Image optimization
+  images: {
+    domains: ['localhost', 'pgeuvjihhfmzqymoygwb.supabase.co'],
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    dangerouslyAllowSVG: false,
+  },
+  
+  reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
+  // Production optimizations
+  compiler: {
+    removeConsole: process.env['NODE_ENV'] === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
+    reactRemoveProperties: process.env['NODE_ENV'] === 'production',
+  },
+  
+  // Experimental features for performance
+  experimental: {
+    optimizeCss: true,
+    scrollRestoration: true,
+    optimizePackageImports: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', 'lucide-react'],
+  },
+  
+  // Server external packages (moved from experimental)
+  serverExternalPackages: [
+    '@supabase/supabase-js',
+    '@opentelemetry/sdk-node',
+    '@opentelemetry/exporter-trace-otlp-grpc',
+    '@opentelemetry/exporter-trace-otlp-http',
+    '@grpc/grpc-js',
+  ],
+
+  // PWA and caching
+  ...(process.env['NODE_ENV'] === 'production' && {
+    async headers() {
+      return [
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'X-DNS-Prefetch-Control',
+              value: 'on'
+            },
+            {
+              key: 'Strict-Transport-Security',
+              value: 'max-age=63072000; includeSubDomains; preload'
+            },
+            {
+              key: 'X-Content-Type-Options',
+              value: 'nosniff',
+            },
+            {
+              key: 'X-Frame-Options',
+              value: 'SAMEORIGIN',
+            },
+            {
+              key: 'X-XSS-Protection',
+              value: '1; mode=block',
+            },
+            {
+              key: 'Referrer-Policy',
+              value: 'origin-when-cross-origin',
+            },
+          ],
+        },
+        {
+          source: '/static/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+        {
+          source: '/_next/static/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+        {
+          source: '/api/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'no-cache, no-store, must-revalidate',
+            },
+          ],
+        },
+      ]
+    },
+  }),
+  
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Completely disable devtool and source maps
+      config.devtool = false
+      
+      // Remove hot reload and error overlay plugins
+      config.plugins = config.plugins.filter(plugin => {
+        const pluginName = plugin.constructor?.name || ''
+        return !pluginName.includes('ReactRefresh') && 
+               !pluginName.includes('HotModule') &&
+               !pluginName.includes('ErrorOverlay')
+      })
+      
+      // Disable all webpack dev server overlays
+      if (config.devServer) {
+        config.devServer.client = {
+          overlay: false,
+          logging: 'none',
+          progress: false
+        }
+      }
+      
+      // Keep development mode but suppress warnings
+      config.mode = 'development'
+      
+      // Disable infrastructure logging
+      config.infrastructureLogging = {
+        level: 'none'
+      }
+      
+      // Disable stats logging
+      config.stats = 'none'
+    }
+    return config
+  }
+}
+
+module.exports = nextConfig

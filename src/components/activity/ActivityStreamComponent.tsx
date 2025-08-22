@@ -17,7 +17,7 @@ interface ActivityEvent {
   eventType: string
   entityType: string
   entityId: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   timestamp: string
   correlationId: string
   sessionId: string

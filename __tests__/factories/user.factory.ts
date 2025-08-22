@@ -19,7 +19,7 @@ export const UserFactory = {
       status: 'approved',
       company: 'Test Company Ltd.',
       position: 'Board Director',
-      bio: null,
+      // bio: null,
       linkedin_profile: null,
       phone: null,
       timezone: 'UTC',
@@ -30,7 +30,7 @@ export const UserFactory = {
         sms: false
       },
       avatar_url: null,
-      email_verified: true,
+      // email_verified: true,
       password_set: true,
       created_at: timestamp,
       updated_at: timestamp,
@@ -84,7 +84,7 @@ export const UserFactory = {
       status: 'pending',
       full_name: 'Pending User',
       password_set: false,
-      email_verified: false,
+      // email_verified: false,
       last_login_at: null,
       login_count: 0,
       ...overrides,
@@ -98,7 +98,7 @@ export const UserFactory = {
     const randomId = Math.random().toString(36).substr(2, 9)
     
     return this.build({
-      bio: 'Experienced board director with expertise in strategy and governance.',
+      // bio: 'Experienced board director with expertise in strategy and governance.',
       linkedin_profile: `https://linkedin.com/in/user-${randomId}`,
       phone: '+1-555-0123',
       avatar_url: `https://avatar.example.com/user-${randomId}.jpg`,
@@ -185,7 +185,7 @@ export const UserTemplates = {
     role: 'admin',
     full_name: 'Chief Executive Officer',
     position: 'CEO & Founder',
-    bio: 'Visionary leader with 20+ years of experience in scaling technology companies.',
+    // bio: 'Visionary leader with 20+ years of experience in scaling technology companies.',
   }),
 
   // Board chair profile
@@ -193,7 +193,7 @@ export const UserTemplates = {
     role: 'director',
     full_name: 'Board Chairperson',
     position: 'Chairman of the Board',
-    bio: 'Experienced board leader with expertise in corporate governance.',
+    // bio: 'Experienced board leader with expertise in corporate governance.',
   }),
 
   // Independent director
@@ -201,7 +201,7 @@ export const UserTemplates = {
     role: 'director',
     full_name: 'Independent Director',
     position: 'Independent Board Director',
-    bio: 'Independent director bringing external perspective and industry expertise.',
+    // bio: 'Independent director bringing external perspective and industry expertise.',
   }),
 
   // Audit committee member
@@ -209,20 +209,20 @@ export const UserTemplates = {
     role: 'director',
     full_name: 'Audit Committee Member',
     position: 'Director & Audit Committee Chair',
-    bio: 'Financial expert with CPA certification and audit committee experience.',
+    // bio: 'Financial expert with CPA certification and audit committee experience.',
   }),
 
   // External observer
   observer: UserFactory.buildViewer({
     full_name: 'External Observer',
     position: 'Board Observer',
-    bio: 'External stakeholder observer with limited access privileges.',
+    // bio: 'External stakeholder observer with limited access privileges.',
   }),
 
   // New user awaiting approval
   newApplicant: UserFactory.buildPending({
     full_name: 'New Board Candidate',
     position: 'Prospective Director',
-    bio: null,
+    // bio: null,
   }),
 }

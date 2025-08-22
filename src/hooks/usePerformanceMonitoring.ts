@@ -178,7 +178,7 @@ export function usePerformanceMonitoring({
   }, [componentName, trackNetwork])
 
   // Error tracking
-  const trackError = useCallback((error: Error, context?: Record<string, any>) => {
+  const trackError = useCallback((error: Error, context?: Record<string, unknown>) => {
     if (!trackErrors) return
 
     errorCount.current++
@@ -257,7 +257,7 @@ export function useOperationTracking(operationName: string) {
     }
   }, [operationName])
 
-  const endOperation = useCallback((metadata?: Record<string, any>) => {
+  const endOperation = useCallback((metadata?: Record<string, unknown>) => {
     const duration = Date.now() - startTime.current
     
     if (typeof window !== 'undefined' && 'performance' in window) {

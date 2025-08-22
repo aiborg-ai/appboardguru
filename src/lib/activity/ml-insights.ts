@@ -15,7 +15,7 @@ export interface MLPrediction {
   reasoning: string[]
   recommendedActions: string[]
   timeframe: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 export interface AnomalyDetection {
@@ -29,7 +29,7 @@ export interface AnomalyDetection {
   deviation: number
   confidence: number
   investigationRequired: boolean
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 export interface ActivityRecommendation {
@@ -582,7 +582,7 @@ export class MLInsightsEngine {
       const supabase = await createSupabaseServerClient()
 
       // Analyze user behavior patterns
-      const { data: users } = await (supabase as any)
+      const { data: users } = await supabase
         .from('organization_members')
         .select('user_id')
         .eq('organization_id', organizationId)
@@ -591,13 +591,13 @@ export class MLInsightsEngine {
       if (!users) return anomalies
 
       for (const user of users as any[]) {
-        const { data: userBehavior } = await (supabase as any).rpc('detect_activity_anomalies', {
+        const { data: userBehavior } = await supabase.rpc('detect_activity_anomalies', {
           input_user_id: user.user_id,
           input_org_id: organizationId
         })
 
         if (userBehavior) {
-          const behavior = userBehavior as Record<string, any>
+          const behavior = userBehavior as Record<string, unknown>
 
           if (behavior.bulk_downloads && behavior.downloads_today > 10) {
             anomalies.push({
@@ -665,7 +665,7 @@ export class MLInsightsEngine {
       const supabase = await createSupabaseServerClient()
 
       // Analyze hourly patterns
-      const { data: hourlyData } = await (supabase as any)
+      const { data: hourlyData } = await supabase
         .from('audit_logs')
         .select('created_at, event_category')
         .eq('organization_id', organizationId)
@@ -739,7 +739,7 @@ export class MLInsightsEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get IP address patterns
-      const { data: ipData } = await (supabase as any)
+      const { data: ipData } = await supabase
         .from('audit_logs')
         .select('user_id, ip_address, created_at, users(full_name)')
         .eq('organization_id', organizationId)
@@ -750,7 +750,7 @@ export class MLInsightsEngine {
       if (!ipData) return anomalies
 
       // Group by user and analyze IP patterns
-      const userIPPatterns = (ipData as any[]).reduce((acc: Record<string, any>, record: any) => {
+      const userIPPatterns = (ipData as any[]).reduce((acc: Record<string, unknown>, record: any) => {
         if (!record.user_id) return acc
         
         if (!acc[record.user_id]) {
@@ -764,7 +764,7 @@ export class MLInsightsEngine {
         }
         acc[record.user_id].activities.push(record)
         return acc
-      }, {} as Record<string, any>)
+      }, {} as Record<string, unknown>)
 
       for (const [userId, pattern] of Object.entries(userIPPatterns)) {
         const patternData = pattern as any
@@ -857,7 +857,7 @@ export class MLInsightsEngine {
     anomalies: AnomalyDetection[],
     recommendations: ActivityRecommendation[],
     healthScore: number
-  ): any {
+  ): unknown {
     const keyInsights = []
     const urgentActions = []
 

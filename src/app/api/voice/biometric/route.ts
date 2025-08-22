@@ -325,7 +325,7 @@ async function handleEnrollment(
       const newProfile: VoiceBiometricProfile = {
         id: BiometricUtils.generateSessionId(),
         userId: user.id,
-        organizationId: (user as any).organizations?.[0]?.id || 'default',
+        organizationId: user.organizations?.[0]?.id || 'default',
         voiceprintTemplate: '', // Will be set after encryption
         voiceCharacteristics,
         enrollmentData: {
@@ -729,7 +729,7 @@ async function handleEmotionAnalysis(
         .insert({
           id: emotionResult.emotionId,
           user_id: user.id,
-          organization_id: (user as any).organizations?.[0]?.id || 'default',
+          organization_id: user.organizations?.[0]?.id || 'default',
           session_id: sessionId,
           emotion_data: JSON.stringify(emotionResult),
           analysis_type: analysisType,

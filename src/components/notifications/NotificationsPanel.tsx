@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -43,7 +43,7 @@ interface NotificationsPanelProps {
   onToggle: () => void
 }
 
-const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onToggle }) => {
+const NotificationsPanel = React.memo<NotificationsPanelProps>(({ isOpen, onToggle }) => {
   const [filter, setFilter] = useState<'all' | 'unread' | 'priority'>('all')
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -67,7 +67,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onToggl
     autoRefresh: true
   })
 
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = useCallback(async (notification: Notification) => {
     if (notification.status === 'unread') {
       await markAsRead(notification.id)
     }
@@ -75,32 +75,32 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onToggl
     if (notification.action_url) {
       window.location.href = notification.action_url
     }
-  }
+  }, [markAsRead])
 
-  const handleSelectNotification = (notificationId: string) => {
+  const handleSelectNotification = useCallback((notificationId: string) => {
     setSelectedNotifications(prev =>
       prev.includes(notificationId)
         ? prev.filter(id => id !== notificationId)
         : [...prev, notificationId]
     )
-  }
+  }, [])
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedNotifications.length === notifications.length) {
       setSelectedNotifications([])
     } else {
       setSelectedNotifications(notifications.map(n => n.id))
     }
-  }
+  }, [selectedNotifications.length, notifications])
 
-  const handleBulkAction = async (action: 'mark_read' | 'mark_unread' | 'archive' | 'dismiss') => {
+  const handleBulkAction = useCallback(async (action: 'mark_read' | 'mark_unread' | 'archive' | 'dismiss') => {
     if (selectedNotifications.length === 0) return
     
     await bulkAction(action, selectedNotifications)
     setSelectedNotifications([])
-  }
+  }, [selectedNotifications, bulkAction])
 
-  const getNotificationIcon = (notification: Notification) => {
+  const getNotificationIcon = useCallback((notification: Notification) => {
     const iconProps = { className: "h-4 w-4", style: { color: notification.color || undefined } }
     
     if (notification.icon) {
@@ -126,9 +126,9 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onToggl
       default:
         return <Bell {...iconProps} />
     }
-  }
+  }, [])
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
       case 'critical':
         return 'text-red-600 bg-red-50'
@@ -141,9 +141,9 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onToggl
       default:
         return 'text-gray-600 bg-gray-50'
     }
-  }
+  }, [])
 
-  const getStatusBadgeColor = (status: string) => {
+  const getStatusBadgeColor = useCallback((status: string) => {
     switch (status) {
       case 'unread':
         return 'bg-blue-100 text-blue-800'
@@ -156,16 +156,16 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onToggl
       default:
         return 'bg-gray-100 text-gray-800'
     }
-  }
+  }, [])
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (!scrollAreaRef.current) return
     
     const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current
     if (scrollHeight - scrollTop <= clientHeight + 100) {
       loadMore()
     }
-  }
+  }, [loadMore])
 
   if (!isOpen) {
     return (
@@ -359,7 +359,7 @@ interface NotificationItemProps {
   getStatusBadgeColor: (status: string) => string
 }
 
-const NotificationItem: React.FC<NotificationItemProps> = ({
+const NotificationItem = React.memo<NotificationItemProps>(({
   notification,
   isSelected,
   onSelect,
@@ -374,6 +374,14 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   const [showActions, setShowActions] = useState(false)
 
+  const handleMouseEnter = useCallback(() => setShowActions(true), [])
+  const handleMouseLeave = useCallback(() => setShowActions(false), [])
+  
+  const notificationTime = useMemo(() => 
+    formatDistanceToNow(new Date(notification.created_at || new Date()), { addSuffix: true }),
+    [notification.created_at]
+  )
+
   return (
     <div
       className={`p-3 rounded-lg border transition-colors cursor-pointer relative ${
@@ -381,8 +389,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           ? 'bg-blue-50 border-blue-200' 
           : 'bg-white border-gray-200 hover:bg-gray-50'
       } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="flex items-start gap-3" onClick={onClick}>
         {/* Selection Checkbox */}
@@ -422,7 +430,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
               
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>
-                  {formatDistanceToNow(new Date(notification.created_at || new Date()), { addSuffix: true })}
+                  {notificationTime}
                 </span>
                 <Badge 
                   variant="outline" 
@@ -493,6 +501,10 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       </div>
     </div>
   )
-}
+})
+
+NotificationItem.displayName = 'NotificationItem'
+
+NotificationsPanel.displayName = 'NotificationsPanel'
 
 export default NotificationsPanel

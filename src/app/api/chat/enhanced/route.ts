@@ -136,53 +136,60 @@ export async function POST(request: NextRequest) {
       try {
         const contextId = context.organizationId || context.vaultId || context.assetId
         if (!contextId) {
-          throw new Error('No valid context ID found for search')
-        }
+          console.log('[Enhanced Chat API] No context ID provided, skipping search but continuing without references')
+          // Continue without search - this is acceptable for general scope
+          searchMetadata = {
+            query_processed: message,
+            search_time_ms: Date.now() - searchStartTime,
+            total_results_found: 0,
+            context_used: context.scope
+          }
+        } else {
+          const searchRequest = {
+            query: message,
+            context_scope: context.scope,
+            context_id: contextId as string, // TypeScript check - contextId is guaranteed to be string after null check
+            limit: maxReferences * 2, // Get more results for better filtering
+            search_type: 'hybrid' as const
+          }
 
-        const searchRequest = {
-          query: message,
-          context_scope: context.scope,
-          context_id: contextId as string, // TypeScript check - contextId is guaranteed to be string after null check
-          limit: maxReferences * 2, // Get more results for better filtering
-          search_type: 'hybrid' as const
-        }
+          const searchResponse = await searchService.search(searchRequest)
+          const searchTime = Date.now() - searchStartTime
 
-        const searchResponse = await searchService.search(searchRequest)
-        const searchTime = Date.now() - searchStartTime
+          searchMetadata = {
+            query_processed: message,
+            search_time_ms: searchTime,
+            total_results_found: searchResponse.total_count,
+            context_used: context.scope
+          }
 
-        searchMetadata = {
-          query_processed: message,
-          search_time_ms: searchTime,
-          total_results_found: searchResponse.total_count,
-          context_used: context.scope
-        }
+          // Transform search results to references
+          references.assets = searchResponse.results
+            .slice(0, maxReferences)
+            .map(result => transformToAssetReference(result))
 
-        // Transform search results to references
-        references.assets = searchResponse.results
-          .slice(0, maxReferences)
-          .map(result => transformToAssetReference(result))
+          // Search for related vaults (if not in vault scope)
+          if (context.scope !== 'vault' && context.organizationId) {
+            references.vaults = await searchVaults(supabase, message, context.organizationId, Math.ceil(maxReferences / 2))
+          }
 
-        // Search for related vaults (if not in vault scope)
-        if (context.scope !== 'vault' && context.organizationId) {
-          references.vaults = await searchVaults(supabase, message, context.organizationId, Math.ceil(maxReferences / 2))
-        }
+          // Search for related meetings
+          if (context.organizationId) {
+            references.meetings = await searchMeetings(supabase, message, context.organizationId, Math.ceil(maxReferences / 3))
+          }
 
-        // Search for related meetings
-        if (context.organizationId) {
-          references.meetings = await searchMeetings(supabase, message, context.organizationId, Math.ceil(maxReferences / 3))
-        }
-
-        // Track the search query
-        if (user?.id) {
-          await searchService.trackSearchQuery(
-            message,
-            context.scope,
-            context.organizationId || context.vaultId || context.assetId,
-            user.id,
-            context.organizationId,
-            searchResponse.total_count,
-            searchTime
-          )
+          // Track the search query
+          if (user?.id) {
+            await searchService.trackSearchQuery(
+              message,
+              context.scope,
+              context.organizationId || context.vaultId || context.assetId,
+              user.id,
+              context.organizationId,
+              searchResponse.total_count,
+              searchTime
+            )
+          }
         }
 
       } catch (searchError) {
@@ -472,7 +479,7 @@ async function searchVaults(
   limit: number
 ): Promise<VaultReference[]> {
   try {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('vaults')
       .select(`
         id,
@@ -517,7 +524,7 @@ async function searchMeetings(
   limit: number
 ): Promise<MeetingReference[]> {
   try {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('meetings')
       .select(`
         id,

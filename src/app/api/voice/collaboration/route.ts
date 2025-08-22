@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper functions for screen sharing (to be moved to controller later)
-async function startScreenShare(params: any): Promise<NextResponse> {
+async function startScreenShare(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const { sessionId, participantId, shareType = 'full_screen' } = params;
 
@@ -112,7 +112,7 @@ async function startScreenShare(params: any): Promise<NextResponse> {
   }
 }
 
-async function stopScreenShare(params: any): Promise<NextResponse> {
+async function stopScreenShare(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const { sessionId, participantId, screenShareId } = params;
     return NextResponse.json({ success: true });
@@ -126,7 +126,7 @@ async function stopScreenShare(params: any): Promise<NextResponse> {
   }
 }
 
-async function updateAudioSettings(params: any): Promise<NextResponse> {
+async function updateAudioSettings(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const { sessionId, participantId, audioSettings } = params;
     return NextResponse.json({ success: true, audioSettings });

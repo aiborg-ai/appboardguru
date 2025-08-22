@@ -1,38 +1,51 @@
-// Branded types for better type safety
-export type UserId = string & { __brand: 'UserId' }
-export type OrganizationId = string & { __brand: 'OrganizationId' }
-export type VaultId = string & { __brand: 'VaultId' }
-export type AssetId = string & { __brand: 'AssetId' }
-export type NotificationId = string & { __brand: 'NotificationId' }
-export type CalendarEventId = string & { __brand: 'CalendarEventId' }
-export type MeetingId = string & { __brand: 'MeetingId' }
-export type ActivityLogId = string & { __brand: 'ActivityLogId' }
-export type ComplianceWorkflowId = string & { __brand: 'ComplianceWorkflowId' }
-export type BoardId = string & { __brand: 'BoardId' }
-export type CommitteeId = string & { __brand: 'CommitteeId' }
-export type DocumentId = string & { __brand: 'DocumentId' }
-export type AnnotationId = string & { __brand: 'AnnotationId' }
-export type TocId = string & { __brand: 'TocId' }
-export type SummaryId = string & { __brand: 'SummaryId' }
-export type PodcastId = string & { __brand: 'PodcastId' }
+/**
+ * @deprecated This file is deprecated. Use the centralized branded type system from '../../types/branded' instead.
+ * Re-exporting for backward compatibility only.
+ */
 
-// Type constructors for branded types
-export const createUserId = (id: string): UserId => id as UserId
-export const createOrganizationId = (id: string): OrganizationId => id as OrganizationId
-export const createVaultId = (id: string): VaultId => id as VaultId
-export const createAssetId = (id: string): AssetId => id as AssetId
-export const createNotificationId = (id: string): NotificationId => id as NotificationId
-export const createCalendarEventId = (id: string): CalendarEventId => id as CalendarEventId
-export const createMeetingId = (id: string): MeetingId => id as MeetingId
-export const createActivityLogId = (id: string): ActivityLogId => id as ActivityLogId
-export const createComplianceWorkflowId = (id: string): ComplianceWorkflowId => id as ComplianceWorkflowId
-export const createBoardId = (id: string): BoardId => id as BoardId
-export const createCommitteeId = (id: string): CommitteeId => id as CommitteeId
-export const createDocumentId = (id: string): DocumentId => id as DocumentId
-export const createAnnotationId = (id: string): AnnotationId => id as AnnotationId
-export const createTocId = (id: string): TocId => id as TocId
-export const createSummaryId = (id: string): SummaryId => id as SummaryId
-export const createPodcastId = (id: string): PodcastId => id as PodcastId
+// Re-export branded types from centralized system
+export type {
+  UserId,
+  OrganizationId,
+  VaultId,
+  AssetId,
+  NotificationId,
+  CalendarEventId,
+  MeetingId,
+  MeetingResolutionId,
+  MeetingActionableId,
+  ActivityLogId,
+  ComplianceWorkflowId,
+  BoardId,
+  CommitteeId,
+  DocumentId,
+  AnnotationId,
+  TocId,
+  SummaryId,
+  PodcastId
+} from '../../types/branded'
+
+// Re-export unsafe constructors for backward compatibility (internal use only)
+export {
+  unsafeUserId as createUserId,
+  unsafeOrganizationId as createOrganizationId,
+  unsafeVaultId as createVaultId,
+  unsafeAssetId as createAssetId,
+  unsafeNotificationId as createNotificationId,
+  unsafeCalendarEventId as createCalendarEventId,
+  unsafeMeetingId as createMeetingId,
+  unsafeMeetingResolutionId as createMeetingResolutionId,
+  unsafeMeetingActionableId as createMeetingActionableId,
+  unsafeActivityLogId as createActivityLogId,
+  unsafeComplianceWorkflowId as createComplianceWorkflowId,
+  unsafeBoardId as createBoardId,
+  unsafeCommitteeId as createCommitteeId,
+  unsafeDocumentId as createDocumentId,
+  unsafeAnnotationId as createAnnotationId,
+  unsafeTocId as createTocId,
+  unsafeSummaryId as createSummaryId,
+  unsafePodcastId as createPodcastId
+} from '../../types/branded'
 
 // Common query options
 export interface PaginationOptions {

@@ -156,7 +156,7 @@ async function handleGetUserActivity(request: NextRequest) {
     const transformedLogs = activityLogs?.map(transformAuditLogForUser) || []
 
     // Get total count for pagination
-    const { count, error: countError } = await (supabase as any)
+    const { count, error: countError } = await supabase
       .from('audit_logs')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)

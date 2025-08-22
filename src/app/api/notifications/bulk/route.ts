@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest) {
         )
     }
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('notifications')
       .update(updateData)
       .in('id', notification_ids)

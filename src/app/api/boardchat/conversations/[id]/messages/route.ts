@@ -34,7 +34,7 @@ export async function GET(
     // TODO: Implement pagination with limit, before, after parameters
 
     // Verify user is a participant in this conversation
-    const { data: participant } = await (supabase as any)
+    const { data: participant } = await supabase
       .from('chat_participants')
       .select('role, status, last_read_at')
       .eq('conversation_id', conversationId)
@@ -218,7 +218,7 @@ export async function POST(
     const messageData = validation.data
 
     // Verify user is a participant
-    const { data: participant } = await (supabase as any)
+    const { data: participant } = await supabase
       .from('chat_participants')
       .select('role, status')
       .eq('conversation_id', conversationId)
@@ -232,7 +232,7 @@ export async function POST(
 
     // In real implementation, use the send_chat_message function:
     /*
-    const { data: messageId, error: sendError } = await (supabase as any)
+    const { data: messageId, error: sendError } = await supabase
       .rpc('send_chat_message', {
         p_conversation_id: conversationId,
         p_sender_id: user.id,

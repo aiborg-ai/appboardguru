@@ -451,7 +451,7 @@ export const waitForStoreHydration = async (storeNames?: StoreNames[]): Promise<
     const store = stores[storeName]
     return new Promise<void>((resolve) => {
       const unsubscribe = store.subscribe(
-        (state: any) => state._meta?.hydrated,
+        (state: Record<string, unknown>) => state._meta?.hydrated,
         (hydrated: boolean) => {
           if (hydrated) {
             unsubscribe()

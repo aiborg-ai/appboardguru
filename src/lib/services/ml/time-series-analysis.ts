@@ -6,7 +6,7 @@
 export interface TimeSeriesData {
   readonly timestamp: Date
   readonly value: number
-  readonly metadata?: Record<string, any>
+  readonly metadata?: Record<string, unknown>
 }
 
 // Enhanced time series configuration

@@ -55,7 +55,7 @@ export interface SecurityAlert {
   created_at: string
   resolved_at?: string
   assigned_to?: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 // Authentication and Session Management Types
@@ -139,7 +139,7 @@ export interface ActivityEvent {
   severity: AuditSeverity
   outcome: AuditOutcome
   risk_score: number
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   correlation_id?: string
 }
 
@@ -550,7 +550,7 @@ export interface DashboardWidget {
   id: string
   type: 'metric' | 'chart' | 'table' | 'alert_summary' | 'risk_heatmap'
   title: string
-  configuration: Record<string, any>
+  configuration: Record<string, unknown>
   position: { x: number; y: number; width: number; height: number }
   refresh_interval: number // in seconds
 }

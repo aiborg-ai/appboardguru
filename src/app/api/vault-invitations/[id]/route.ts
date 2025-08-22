@@ -48,7 +48,7 @@ export async function POST(
     }
 
     // Get the invitation details
-    const { data: invitation, error: invitationError } = await (supabase as any)
+    const { data: invitation, error: invitationError } = await supabase
       .from('vault_invitations')
       .select(`
         id, vault_id, invited_user_id, organization_id, 
@@ -80,7 +80,7 @@ export async function POST(
 
     if (new Date() > new Date((invitation as any).expires_at)) {
       // Mark as expired
-      await (supabase as any)
+      await supabase
         .from('vault_invitations')
         .update({ 
           status: 'expired',
@@ -106,7 +106,7 @@ export async function POST(
       // Start transaction-like operations
       
       // 1. Check if user is already a member (race condition protection)
-      const { data: existingMember } = await (supabase as any)
+      const { data: existingMember } = await supabase
         .from('vault_members')
         .select('id, status')
         .eq('vault_id', (invitation as any).vault_id)
@@ -115,7 +115,7 @@ export async function POST(
 
       if (existingMember && existingMember.status === 'active') {
         // Update invitation status to accepted even if already a member
-        await (supabase as any)
+        await supabase
           .from('vault_invitations')
           .update({
             status: 'accepted',
@@ -133,7 +133,7 @@ export async function POST(
       }
 
       // 2. Add user to vault members
-      const { error: memberError } = await (supabase as any)
+      const { error: memberError } = await supabase
         .from('vault_members')
         .insert({
           vault_id: (invitation as any).vault_id,
@@ -156,7 +156,7 @@ export async function POST(
       }
 
       // 3. Update invitation status to accepted
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('vault_invitations')
         .update({
           status: 'accepted',
@@ -169,7 +169,7 @@ export async function POST(
       if (updateError) {
         console.error('Invitation update error:', updateError)
         // Try to clean up the member record
-        await (supabase as any)
+        await supabase
           .from('vault_members')
           .delete()
           .eq('vault_id', (invitation as any).vault_id)
@@ -182,7 +182,7 @@ export async function POST(
       }
 
       // 4. Log activity
-      await (supabase as any)
+      await supabase
         .from('vault_activity_log')
         .insert({
           vault_id: (invitation as any).vault_id,
@@ -212,7 +212,7 @@ export async function POST(
 
     } else if (body.action === 'reject') {
       // Update invitation status to rejected
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('vault_invitations')
         .update({
           status: 'rejected',
@@ -228,7 +228,7 @@ export async function POST(
       }
 
       // Log activity
-      await (supabase as any)
+      await supabase
         .from('vault_activity_log')
         .insert({
           vault_id: (invitation as any).vault_id,
@@ -299,7 +299,7 @@ export async function GET(
     const invitationId = (await params).id
 
     // Get invitation details
-    const { data: invitation, error: invitationError } = await (supabase as any)
+    const { data: invitation, error: invitationError } = await supabase
       .from('vault_invitations')
       .select(`
         id, permission_level, personal_message, status,

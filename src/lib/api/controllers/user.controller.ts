@@ -195,33 +195,33 @@ export class UserController extends BaseController {
         
         // Extract preferences from user profile or provide defaults
         const preferences = {
-          theme: (user as any).theme || 'system',
+          theme: user.theme || 'system',
           language: user.language || 'en',
-          timezone: (user as any).timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-          date_format: (user as any).date_format || 'MM/DD/YYYY',
-          time_format: (user as any).time_format || '12h',
+          timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+          date_format: user.date_format || 'MM/DD/YYYY',
+          time_format: user.time_format || '12h',
           notifications: {
-            email: (user as any).email_notifications ?? true,
-            push: (user as any).push_notifications ?? true,
-            in_app: (user as any).in_app_notifications ?? true,
-            activity_digest: (user as any).activity_digest ?? false,
-            security_alerts: (user as any).security_alerts ?? true,
-            marketing: (user as any).marketing_notifications ?? false
+            email: user.email_notifications ?? true,
+            push: user.push_notifications ?? true,
+            in_app: user.in_app_notifications ?? true,
+            activity_digest: user.activity_digest ?? false,
+            security_alerts: user.security_alerts ?? true,
+            marketing: user.marketing_notifications ?? false
           },
           privacy: {
-            profile_visibility: (user as any).profile_visibility || 'organization',
-            show_activity: (user as any).show_activity ?? false,
-            allow_contact: (user as any).allow_contact ?? true
+            profile_visibility: user.profile_visibility || 'organization',
+            show_activity: user.show_activity ?? false,
+            allow_contact: user.allow_contact ?? true
           },
           dashboard: {
-            default_view: (user as any).default_view || 'overview',
-            widgets: (user as any).dashboard_widgets || ['overview', 'recent_activity', 'quick_actions'],
-            refresh_interval: (user as any).refresh_interval || '5m'
+            default_view: user.default_view || 'overview',
+            widgets: user.dashboard_widgets || ['overview', 'recent_activity', 'quick_actions'],
+            refresh_interval: user.refresh_interval || '5m'
           },
           integrations: {
-            calendar_sync: (user as any).calendar_sync ?? false,
-            email_sync: (user as any).email_sync ?? false,
-            cloud_storage: (user as any).cloud_storage || []
+            calendar_sync: user.calendar_sync ?? false,
+            email_sync: user.email_sync ?? false,
+            cloud_storage: user.cloud_storage || []
           }
         };
         
@@ -379,15 +379,15 @@ export class UserController extends BaseController {
         
         // Get security-related information (excluding sensitive data)
         const securitySettings = {
-          twoFactorEnabled: (user as any).two_factor_enabled || false,
-          lastPasswordChange: (user as any).password_changed_at || user.created_at,
-          lastLogin: (user as any).last_login_at || user.updated_at,
+          twoFactorEnabled: user.two_factor_enabled || false,
+          lastPasswordChange: user.password_changed_at || user.created_at,
+          lastLogin: user.last_login_at || user.updated_at,
           activeSessionsCount: 1, // TODO: Get from session store
-          loginNotifications: (user as any).login_notifications ?? true,
-          securityAlerts: (user as any).security_alerts ?? true,
-          accountLocked: (user as any).account_locked || false,
-          loginAttempts: (user as any).failed_login_attempts || 0,
-          trustedDevices: (user as any).trusted_devices || [],
+          loginNotifications: user.login_notifications ?? true,
+          securityAlerts: user.security_alerts ?? true,
+          accountLocked: user.account_locked || false,
+          loginAttempts: user.failed_login_attempts || 0,
+          trustedDevices: user.trusted_devices || [],
           recentActivity: [] // TODO: Get from activity logs
         };
         

@@ -247,7 +247,7 @@ export class ThreatDetectionEngine {
     isBruteForce: boolean
     riskScore: number
     recommendation: 'allow' | 'block' | 'captcha' | 'delay'
-    details: Record<string, any>
+    details: Record<string, unknown>
   }> {
     try {
       const timeWindow = this.config.bruteForce.timeWindowMs
@@ -359,7 +359,7 @@ export class ThreatDetectionEngine {
     isAnomalous: boolean
     riskScore: number
     anomalies: string[]
-    details: Record<string, any>
+    details: Record<string, unknown>
   }> {
     try {
       const timeWindow = this.config.anomalousAccess.timeWindowMs
@@ -545,7 +545,7 @@ export class ThreatDetectionEngine {
     isSuspicious: boolean
     riskScore: number
     indicators: string[]
-    details: Record<string, any>
+    details: Record<string, unknown>
   }> {
     try {
       const timeWindow = this.config.dataExfiltration.timeWindowMs

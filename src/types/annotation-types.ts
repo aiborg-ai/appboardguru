@@ -3,11 +3,14 @@
  * Following DDD patterns with branded types and discriminated unions
  */
 
-// Branded types for ID safety
-export type AnnotationId = string & { readonly __brand: unique symbol }
-export type AssetId = string & { readonly __brand: unique symbol }
-export type UserId = string & { readonly __brand: unique symbol }
-export type OrganizationId = string & { readonly __brand: unique symbol }
+// Import branded types from centralized system
+export type {
+  AnnotationId,
+  AssetId,
+  UserId,
+  OrganizationId,
+  CommentId
+} from './branded'
 
 // Annotation type discriminated union
 export type AnnotationType = 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'

@@ -49,7 +49,7 @@ type ErrorKey<T, K extends keyof T> = `error_${string & K}`
 
 // Dynamic field type generation using template literals
 type DynamicFieldType<
-  T extends Record<string, any>,
+  T extends Record<string, unknown>,
   K extends keyof T,
   V extends string
 > = {
@@ -70,7 +70,7 @@ type InferFieldType<T> = T extends { type: infer U }
 // ============================================================================
 
 // Advanced mapped type for field property transformation
-type TransformFieldProps<T extends Record<string, any>> = {
+type TransformFieldProps<T extends Record<string, unknown>> = {
   [K in keyof T]: T[K] extends Function
     ? (...args: any[]) => any
     : T[K] extends object
@@ -96,7 +96,7 @@ type OptionalFields<T> = {
 }[keyof T]
 
 // Smart form type generation
-type SmartFormType<T extends Record<string, any>> = 
+type SmartFormType<T extends Record<string, unknown>> = 
   & { [K in RequiredFields<T>]: InferFieldType<T[K]> }
   & { [K in OptionalFields<T>]?: InferFieldType<T[K]> }
 
@@ -107,7 +107,7 @@ type SmartFormType<T extends Record<string, any>> =
 /**
  * Advanced Proxy handler for intercepting and transforming form field access
  */
-class FormFieldProxy<T extends Record<string, any>> {
+class FormFieldProxy<T extends Record<string, unknown>> {
   private transformers: Map<string, Function> = new Map()
   private validators: Map<string, Function> = new Map()
   private cache: Map<string, any> = new Map()
@@ -240,7 +240,7 @@ class FormFieldProxy<T extends Record<string, any>> {
 // TYPE-SAFE BRIDGE CONFIGURATION
 // ============================================================================
 
-interface FormBridgeConfig<T extends Record<string, any>> {
+interface FormBridgeConfig<T extends Record<string, unknown>> {
   fieldTransformers?: {
     [K in keyof T]?: (value: any, context: T) => any
   }
@@ -256,10 +256,10 @@ interface FormBridgeConfig<T extends Record<string, any>> {
 }
 
 interface TypeAdapter<T> {
-  fromNative: (value: any) => T
+  fromNative: value: unknown) => T
   toNative: (value: T) => any
-  validate: (value: any) => boolean
-  transform: (value: any) => T
+  validate: value: unknown) => boolean
+  transform: value: unknown) => T
 }
 
 // ============================================================================
@@ -270,10 +270,10 @@ interface TypeAdapter<T> {
  * Advanced generic type bridge with multiple constraints and conditional logic
  */
 interface TypeBridge<
-  TSource extends Record<string, any>,
-  TTarget extends Record<string, any>,
-  TContext extends Record<string, any> = {},
-  TMeta extends Record<string, any> = {}
+  TSource extends Record<string, unknown>,
+  TTarget extends Record<string, unknown>,
+  TContext extends Record<string, unknown> = {},
+  TMeta extends Record<string, unknown> = {}
 > {
   source: TSource
   target: TTarget
@@ -334,7 +334,7 @@ class TypeReflector {
   /**
    * Get type information with caching
    */
-  static getTypeInfo(name: string): any {
+  static getTypeInfo(name: string): unknown {
     if (this.schemaCache.has(name)) {
       return this.schemaCache.get(name)
     }
@@ -361,7 +361,7 @@ class TypeReflector {
         })
       }
 
-      private getDefaultValue(fieldSchema: any): any {
+      private getDefaultValue(fieldSchema: any): unknown {
         if (fieldSchema.default !== undefined) {
           return fieldSchema.default
         }
@@ -416,7 +416,7 @@ class TypeReflector {
 /**
  * Main bridge class that connects different form systems
  */
-export class FormTypeBridge<T extends Record<string, any>> {
+export class FormTypeBridge<T extends Record<string, unknown>> {
   private proxy: T
   private config: FormBridgeConfig<T>
   private metadata: Map<string, any> = new Map()
@@ -511,7 +511,7 @@ export class FormTypeBridge<T extends Record<string, any>> {
   /**
    * Extract metadata for a specific field
    */
-  getFieldMetadata<K extends keyof T>(fieldName: K): any {
+  getFieldMetadata<K extends keyof T>(fieldName: K): unknown {
     return this.metadata.get(String(fieldName))
   }
 
@@ -533,8 +533,8 @@ export class FormTypeBridge<T extends Record<string, any>> {
    * Register dynamic type transformation
    */
   static registerTypeTransformation<
-    TSource extends Record<string, any>,
-    TTarget extends Record<string, any>
+    TSource extends Record<string, unknown>,
+    TTarget extends Record<string, unknown>
   >(
     name: string,
     sourceSchema: TSource,
@@ -556,7 +556,7 @@ export class FormTypeBridge<T extends Record<string, any>> {
 /**
  * Create a type-safe form bridge with automatic configuration
  */
-export function createFormBridge<T extends Record<string, any>>(
+export function createFormBridge<T extends Record<string, unknown>>(
   target: T,
   config?: FormBridgeConfig<T>
 ): FormTypeBridge<T> {
@@ -566,7 +566,7 @@ export function createFormBridge<T extends Record<string, any>>(
 /**
  * Type-safe field props transformer utility
  */
-export function transformFieldProps<T extends Record<string, any>>(
+export function transformFieldProps<T extends Record<string, unknown>>(
   fieldProps: FieldProps,
   fieldName: keyof T
 ): React.SelectHTMLAttributes<HTMLSelectElement> {
@@ -597,15 +597,15 @@ export function transformFieldProps<T extends Record<string, any>>(
 export function createFieldValueTransformer<
   TInput,
   TOutput,
-  TContext extends Record<string, any> = {}
+  TContext extends Record<string, unknown> = {}
 >(
   transform: (input: TInput, context?: TContext) => TOutput,
   reverse?: (output: TOutput, context?: TContext) => TInput
 ): TypeAdapter<TOutput> {
   return {
-    fromNative: (value: any) => transform(value),
+    fromNative: value: unknown) => transform(value),
     toNative: (value: TOutput) => reverse ? reverse(value) : value,
-    validate: (value: any) => {
+    validate: value: unknown) => {
       try {
         transform(value)
         return true
@@ -613,7 +613,7 @@ export function createFieldValueTransformer<
         return false
       }
     },
-    transform: (value: any) => transform(value)
+    transform: value: unknown) => transform(value)
   }
 }
 

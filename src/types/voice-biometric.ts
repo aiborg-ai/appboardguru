@@ -315,7 +315,7 @@ export interface VoiceShortcut {
   id: string;
   phrase: string;
   action: ShortcutAction;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   context?: string[];
   frequency: number;
   lastUsed: string;
@@ -496,7 +496,7 @@ export interface FraudIndicator {
   type: 'voice_stress' | 'behavioral_anomaly' | 'pattern_deviation' | 'technical_anomaly';
   severity: number; // 0-100
   description: string;
-  evidence: Record<string, any>;
+  evidence: Record<string, unknown>;
   confidence: number;
 }
 

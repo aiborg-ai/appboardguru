@@ -262,7 +262,7 @@ export function initializeStoreQueryIntegration(queryClient: QueryClient): Store
   Object.values(stores).forEach((store) => {
     if ('subscribe' in store) {
       (store as any).subscribe(
-        (state: any) => state,
+        (state: Record<string, unknown>) => state,
         (state: any, prevState: any) => {
           // Determine what changed and invalidate accordingly
           if (state !== prevState) {

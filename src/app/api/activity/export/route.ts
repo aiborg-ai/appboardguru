@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: userOrgMember } = await (supabase as any)
+    const { data: userOrgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     switch (reportType) {
       case 'activity': {
-        let query = (supabase as any)
+        let query = supabase
           .from('audit_logs')
           .select(`
             id,
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Admin access required for security reports' }, { status: 403 })
         }
 
-        const { data: securityEvents } = await (supabase as any)
+        const { data: securityEvents } = await supabase
           .from('audit_logs')
           .select('*')
           .eq('organization_id', userOrgMember.organization_id)

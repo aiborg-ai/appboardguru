@@ -23,7 +23,7 @@ export interface SmartNotificationRequest {
   priority?: 'low' | 'medium' | 'high' | 'critical'
   resourceType?: string
   resourceId?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   scheduleOptions?: {
     allowDelay: boolean
     maxDelayHours: number
@@ -39,7 +39,7 @@ export interface PredictiveInsight {
   actionable: boolean
   recommendedActions: string[]
   affectedUsers?: string[]
-  data: Record<string, any>
+  data: Record<string, unknown>
 }
 
 export interface NotificationOptimization {

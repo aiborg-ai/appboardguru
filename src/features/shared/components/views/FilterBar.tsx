@@ -64,7 +64,7 @@ export interface FilterBarProps {
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
   filters?: FilterConfig[];
-  activeFilters?: Record<string, any>;
+  activeFilters?: Record<string, unknown>;
   onFilterChange?: (key: string, value: any) => void;
   sortOptions?: SortOption[];
   sortBy?: string;

@@ -279,7 +279,7 @@ async function completeTrainingSession(
 
   // In a real implementation, update the database
   /*
-  const { error: updateError } = await (supabase as any)
+  const { error: updateError } = await supabase
     .from('voice_training_sessions')
     .update({
       status: 'completed',
@@ -295,7 +295,7 @@ async function completeTrainingSession(
   }
 
   // Update the user's voice profile with improved model
-  const { error: profileError } = await (supabase as any)
+  const { error: profileError } = await supabase
     .from('voice_training_profiles')
     .update({
       accuracyMetrics: {

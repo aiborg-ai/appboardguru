@@ -20,7 +20,7 @@ export interface AppError {
   details?: any
   cause?: Error
   timestamp: Date
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 }
 
 // Common error codes

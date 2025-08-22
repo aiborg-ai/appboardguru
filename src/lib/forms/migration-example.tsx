@@ -109,18 +109,18 @@ const dateAdapter = createFieldValueTransformer<string, Date>(
 // Advanced form bridge configuration
 const advancedFormConfig: FormBridgeConfig<AdvancedFormData> = {
   fieldTransformers: {
-    budget: (value: any) => budgetAdapter.transform(value),
-    deadline: (value: any) => dateAdapter.transform(value),
-    isUrgent: (value: any) => value === 'true' || value === true
+    budget: value: unknown) => budgetAdapter.transform(value),
+    deadline: value: unknown) => dateAdapter.transform(value),
+    isUrgent: value: unknown) => value === 'true' || value === true
   },
   fieldValidators: {
-    department: (value: any) => {
+    department: value: unknown) => {
       if (!value || value.trim().length < 2) {
         return 'Department name must be at least 2 characters'
       }
       return true
     },
-    budget: (value: any) => {
+    budget: value: unknown) => {
       try {
         const transformed = budgetAdapter.transform(value)
         if (transformed < 1000) {
@@ -134,7 +134,7 @@ const advancedFormConfig: FormBridgeConfig<AdvancedFormData> = {
         return error instanceof Error ? error.message : 'Invalid budget'
       }
     },
-    deadline: (value: any) => {
+    deadline: value: unknown) => {
       try {
         const date = dateAdapter.transform(value)
         const now = new Date()
@@ -172,7 +172,7 @@ function AdvancedFormExample() {
       department: {
         validation: {
           required: 'Department is required',
-          custom: (value: any) => {
+          custom: value: unknown) => {
             const result = formBridge.validateField('department', value)
             return result === true ? undefined : result
           }
@@ -181,7 +181,7 @@ function AdvancedFormExample() {
       budget: {
         validation: {
           required: 'Budget is required',
-          custom: (value: any) => {
+          custom: value: unknown) => {
             const result = formBridge.validateField('budget', value)
             return result === true ? undefined : result
           }
@@ -191,7 +191,7 @@ function AdvancedFormExample() {
       deadline: {
         validation: {
           required: 'Deadline is required',
-          custom: (value: any) => {
+          custom: value: unknown) => {
             const result = formBridge.validateField('deadline', value)
             return result === true ? undefined : result
           }
@@ -200,7 +200,7 @@ function AdvancedFormExample() {
       },
       isUrgent: {
         validation: {
-          custom: (value: any) => undefined // Always valid for boolean
+          custom: value: unknown) => undefined // Always valid for boolean
         },
         transform: (value: string) => value === 'true'
       }
@@ -290,7 +290,7 @@ function AdvancedFormExample() {
 /**
  * Custom hook that automatically applies the type bridge solution
  */
-function useTypeSafeForm<T extends Record<string, any>>(
+function useTypeSafeForm<T extends Record<string, unknown>>(
   initialData: Partial<T>,
   config: FormBridgeConfig<T> = {}
 ) {
@@ -334,7 +334,7 @@ function CustomHookExample() {
     { status: '', score: 0 },
     {
       fieldValidators: {
-        score: (value: any) => {
+        score: value: unknown) => {
           const num = typeof value === 'string' ? parseInt(value, 10) : value
           return (num >= 0 && num <= 100) ? true : 'Score must be between 0 and 100'
         }
@@ -348,7 +348,7 @@ function CustomHookExample() {
       score: {
         validation: {
           required: 'Score is required',
-          custom: (value: any) => {
+          custom: value: unknown) => {
             const result = validateWithBridge('score', value)
             return result === true ? undefined : result
           }

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
-    const { data: alerts, error } = await (supabase as any)
+    const { data: alerts, error } = await supabase
       .from('activity_alert_instances')
       .select(`
         id,
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', authUser.id)
@@ -89,7 +89,7 @@ export async function PATCH(request: NextRequest) {
 
     switch (action) {
       case 'acknowledge': {
-        const { error: updateError } = await (supabase as any)
+        const { error: updateError } = await supabase
           .from('activity_alert_instances')
           .update({
             acknowledged: true,
@@ -101,7 +101,7 @@ export async function PATCH(request: NextRequest) {
 
         if (updateError) throw updateError
 
-        await (supabase as any)
+        await supabase
           .from('audit_logs')
           .insert({
             user_id: authUser.id,

@@ -163,7 +163,7 @@ class MeetingTranscriptionService {
       if (transcriptionError) throw transcriptionError;
 
       // Log the start of transcription
-      await (this.supabase as any)
+      await this.supabase
         .from('audit_logs')
         .insert({
           user_id: userId,
@@ -265,7 +265,7 @@ class MeetingTranscriptionService {
         .eq('id', transcriptionId);
 
       // Store voice translation entry
-      await (this.supabase as any)
+      await this.supabase
         .from('voice_translations')
         .insert({
           session_id: sessionId,

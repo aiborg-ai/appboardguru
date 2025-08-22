@@ -658,7 +658,7 @@ class MultilingualService {
     // This would integrate with phonetic transcription libraries
     // For now, return simplified guides
     
-    const guides: Record<string, any> = {
+    const guides: Record<string, unknown> = {
       'es': {
         phonetic: this.toSpanishPhonetic(text),
         syllables: text.split(/[aeiouáéíóú]/),

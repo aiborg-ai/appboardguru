@@ -936,7 +936,7 @@ async function createAuditLog(logData: {
   action: string
   resource_type: string
   resource_id?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   outcome: 'success' | 'failure' | 'error' | 'blocked'
   severity: 'low' | 'medium' | 'high' | 'critical'
   ip_address?: string

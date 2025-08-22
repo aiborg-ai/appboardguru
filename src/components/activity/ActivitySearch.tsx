@@ -19,7 +19,7 @@ interface SearchResult {
   userId: string
   userName: string
   userEmail: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   relevanceScore: number
   context: string
   correlationId: string
@@ -30,7 +30,7 @@ interface SearchTemplate {
   name: string
   description: string
   query: string
-  filters: Record<string, any>
+  filters: Record<string, unknown>
 }
 
 interface ActivitySearchProps {

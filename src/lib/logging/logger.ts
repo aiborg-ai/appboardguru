@@ -33,7 +33,7 @@ export interface LogEntry {
   sessionId?: string
   traceId?: string
   spanId?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
   error?: {
     name: string
     message: string
@@ -418,25 +418,25 @@ export class Logger {
   /**
    * Log methods for different levels
    */
-  trace(message: string, data?: Record<string, any>): void {
+  trace(message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.TRACE, message, data)
   }
 
-  debug(message: string, data?: Record<string, any>): void {
+  debug(message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, message, data)
   }
 
-  info(message: string, data?: Record<string, any>): void {
+  info(message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, message, data)
   }
 
-  warn(message: string, data?: Record<string, any>): void {
+  warn(message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, message, data)
   }
 
-  error(message: string, error?: Error | Record<string, any>): void {
+  error(message: string, error?: Error | Record<string, unknown>): void {
     let errorData: LogEntry['error'] | undefined
-    let data: Record<string, any> | undefined
+    let data: Record<string, unknown> | undefined
 
     if (error instanceof Error) {
       errorData = {
@@ -452,9 +452,9 @@ export class Logger {
     this.log(LogLevel.ERROR, message, data, errorData)
   }
 
-  fatal(message: string, error?: Error | Record<string, any>): void {
+  fatal(message: string, error?: Error | Record<string, unknown>): void {
     let errorData: LogEntry['error'] | undefined
-    let data: Record<string, any> | undefined
+    let data: Record<string, unknown> | undefined
 
     if (error instanceof Error) {
       errorData = {
@@ -476,7 +476,7 @@ export class Logger {
   private log(
     level: LogLevel,
     message: string,
-    data?: Record<string, any>,
+    data?: Record<string, unknown>,
     error?: LogEntry['error']
   ): void {
     if (level < this.config.level) {
@@ -528,7 +528,7 @@ export class Logger {
   /**
    * Sanitize sensitive data
    */
-  private sanitizeData(data: Record<string, any>): Record<string, any> {
+  private sanitizeData(data: Record<string, unknown>): Record<string, unknown> {
     if (!this.config.sanitizeFields || this.config.sanitizeFields.length === 0) {
       return this.truncateData(data)
     }
@@ -537,7 +537,7 @@ export class Logger {
     return this.truncateData(sanitized)
   }
 
-  private sanitizeObject(obj: any, sensitiveFields: string[]): any {
+  private sanitizeObject(obj: any, sensitiveFields: string[]): unknown {
     if (obj === null || obj === undefined) return obj
     
     if (Array.isArray(obj)) {
@@ -567,7 +567,7 @@ export class Logger {
   /**
    * Truncate large data objects
    */
-  private truncateData(data: Record<string, any>): Record<string, any> {
+  private truncateData(data: Record<string, unknown>): Record<string, unknown> {
     if (!this.config.maxDataSize) return data
 
     const serialized = JSON.stringify(data)
@@ -627,7 +627,7 @@ export class BusinessEventLogger extends Logger {
     userId: string,
     resource?: string,
     resourceId?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): void {
     this.withUser(userId).info(`User Action: ${action}`, {
       action,
@@ -641,7 +641,7 @@ export class BusinessEventLogger extends Logger {
   logSystemEvent(
     event: string,
     system: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): void {
     this.info(`System Event: ${event}`, {
       event,
@@ -654,7 +654,7 @@ export class BusinessEventLogger extends Logger {
   logBusinessRule(
     rule: string,
     decision: 'allowed' | 'denied',
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): void {
     this.info(`Business Rule: ${rule} - ${decision}`, {
       rule,

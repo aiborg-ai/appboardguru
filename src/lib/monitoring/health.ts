@@ -24,7 +24,7 @@ export interface HealthCheckResult {
   message?: string
   duration: number
   timestamp: Date
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   error?: {
     message: string
     stack?: string
@@ -50,7 +50,7 @@ export interface HealthCheckConfig {
 export type HealthCheckFunction = () => Promise<{
   status: HealthStatus
   message?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 }>
 
 /**

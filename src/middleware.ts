@@ -204,7 +204,7 @@ function setCorsHeaders(request: NextRequest, response: NextResponse): void {
  */
 async function logSecurityEvent(
   event: string,
-  details: Record<string, any>,
+  details: Record<string, unknown>,
   severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
 ): Promise<void> {
   // In production, this would send to your logging service

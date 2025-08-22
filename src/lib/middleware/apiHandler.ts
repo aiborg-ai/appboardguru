@@ -179,7 +179,7 @@ export const MiddlewareManager = {
   /**
    * Add custom middleware
    */
-  add(middleware: any, config: any) {
+  add(middleware: any, config: Record<string, unknown>) {
     globalPipeline.register(middleware, config)
   },
   

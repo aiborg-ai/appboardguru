@@ -13,7 +13,7 @@ interface CreateVaultRequest {
   meetingDate?: string
   location?: string
   priority?: VaultPriority
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
   tags?: string[]
   category?: string
   isPublic?: boolean
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     // Transform the data for frontend consumption
     const transformedVaults = vaults?.map(vault => ({
-      id: (vault as any).id,
+      id: vault.id,
       name: (vault as any).name,
       description: (vault as any).description,
       meetingDate: (vault as any).meeting_date,
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has permission to create vaults in this organization
-    const { data: membership, error: membershipError } = await (supabase as any)
+    const { data: membership, error: membershipError } = await supabase
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', body.organizationId)
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create vault
-    const { data: vault, error: vaultError } = await (supabase as any)
+    const { data: vault, error: vaultError } = await supabase
       .from('vaults')
       .insert(vaultData)
       .select(`
@@ -269,10 +269,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Add creator as vault owner
-    const { error: memberError } = await (supabase as any)
+    const { error: memberError } = await supabase
       .from('vault_members')
       .insert({
-        vault_id: (vault as any).id,
+        vault_id: vault.id,
         user_id: user.id,
         organization_id: body.organizationId,
         role: 'owner',
@@ -283,17 +283,17 @@ export async function POST(request: NextRequest) {
     if (memberError) {
       console.error('Vault member creation error:', memberError)
       // Clean up the vault if member creation fails
-      await supabase.from('vaults').delete().eq('id', (vault as any).id)
+      await supabase.from('vaults').delete().eq('id', vault.id)
       return NextResponse.json({ 
         error: 'Failed to set up vault permissions' 
       }, { status: 500 })
     }
 
     // Log activity
-    await (supabase as any)
+    await supabase
       .from('vault_activity_log')
       .insert({
-        vault_id: (vault as any).id,
+        vault_id: vault.id,
         organization_id: body.organizationId,
         activity_type: 'vault_created',
         performed_by_user_id: user.id,
@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
 
     // Transform response
     const transformedVault = {
-      id: (vault as any).id,
+      id: vault.id,
       name: (vault as any).name,
       description: (vault as any).description,
       meetingDate: (vault as any).meeting_date,

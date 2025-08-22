@@ -96,7 +96,7 @@ export function filterNotNullish<T>(array: (T | null | undefined)[]): T[] {
 /**
  * Safely assign properties only if they are defined
  */
-export function safeAssign<T extends Record<string, any>>(
+export function safeAssign<T extends Record<string, unknown>>(
   target: T,
   source: Partial<T>
 ): T {
@@ -112,7 +112,7 @@ export function safeAssign<T extends Record<string, any>>(
 /**
  * Create a type-safe optional object builder
  */
-export class OptionalObjectBuilder<T extends Record<string, any>> {
+export class OptionalObjectBuilder<T extends Record<string, unknown>> {
   private obj: Partial<T> = {}
 
   set<K extends keyof T>(key: K, value: T[K] | undefined): this {
@@ -137,7 +137,7 @@ export class OptionalObjectBuilder<T extends Record<string, any>> {
 /**
  * Create an optional object builder
  */
-export function createOptionalBuilder<T extends Record<string, any>>(): OptionalObjectBuilder<T> {
+export function createOptionalBuilder<T extends Record<string, unknown>>(): OptionalObjectBuilder<T> {
   return new OptionalObjectBuilder<T>()
 }
 
@@ -193,7 +193,7 @@ export type DeepPartial<T> = {
 /**
  * Pick only defined properties from an object
  */
-export function pickDefined<T extends Record<string, any>>(
+export function pickDefined<T extends Record<string, unknown>>(
   obj: T
 ): { [K in keyof T as T[K] extends undefined ? never : K]: T[K] } {
   const result = {} as any

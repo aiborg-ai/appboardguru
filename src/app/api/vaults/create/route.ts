@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
-        const { data: organization, error: orgError } = await (supabase as any)
+        const { data: organization, error: orgError } = await supabase
           .from('organizations')
           .insert({
             name: data.createNewOrganization.name,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         createdOrganization = organization;
 
         // Add creator as organization owner
-        await (supabase as any)
+        await supabase
           .from('organization_members')
           .insert({
             organization_id: organizationId,
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         organizationId = data.selectedOrganization.id;
         
         // Verify user has access to this organization
-        const { data: membership, error: membershipError } = await (supabase as any)
+        const { data: membership, error: membershipError } = await supabase
           .from('organization_members')
           .select('role, status')
           .eq('organization_id', organizationId)
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Step 2: Create the vault
-      const { data: vault, error: vaultError } = await (supabase as any)
+      const { data: vault, error: vaultError } = await supabase
         .from('vaults')
         .insert({
           organization_id: organizationId,
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       if (data.selectedAssets.length > 0) {
         for (const asset of data.selectedAssets) {
           assetUpdates.push(
-            (supabase as any)
+            supabase
               .from('assets')
               .update({ 
                 vault_id: (vault as any)?.id,
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       // Add existing board mates to organization if needed
       for (const mate of data.selectedBoardMates) {
         // Check if user is already in the organization
-        const { data: existingMembership } = await (supabase as any)
+        const { data: existingMembership } = await supabase
           .from('organization_members')
           .select('id')
           .eq('organization_id', organizationId)
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
 
         if (!existingMembership) {
           // Add to organization
-          const { error: memberError } = await (supabase as any)
+          const { error: memberError } = await supabase
             .from('organization_members')
             .insert({
               organization_id: organizationId,
@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
       for (const newMate of data.newBoardMates) {
         try {
           // Create user invitation
-          const { data: invitation, error: inviteError } = await (supabase as any)
+          const { data: invitation, error: inviteError } = await supabase
             .from('organization_invitations')
             .insert({
               organization_id: organizationId,
@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
       
       // Log failure audit event
       if (organizationId) {
-        await (supabase as any)
+        await supabase
           .from('audit_logs')
           .insert({
             organization_id: organizationId,

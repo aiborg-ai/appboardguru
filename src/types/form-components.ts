@@ -380,12 +380,12 @@ export interface FieldArrayProps {
   name: string
   children: (helpers: {
     fields: any[]
-    push: (item: any) => void
+    push: item: unknown) => void
     remove: (index: number) => void
     move: (from: number, to: number) => void
     insert: (index: number, item: any) => void
     replace: (index: number, item: any) => void
-    unshift: (item: any) => void
+    unshift: item: unknown) => void
     pop: () => any
   }) => ReactNode
 }
@@ -468,7 +468,7 @@ export interface FormFieldConfig {
   disabled?: boolean
   validation?: ValidationRule
   options?: Array<{ value: string; label: string; disabled?: boolean }>
-  props?: Record<string, any>
+  props?: Record<string, unknown>
 }
 
 export interface FormBuilderProps {

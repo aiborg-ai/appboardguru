@@ -92,7 +92,7 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
     }
 
     // Get user information
-    const { data: userData } = await (supabase as any)
+    const { data: userData } = await supabase
       .from('users')
       .select('id, full_name')
       .eq('id', userId)
@@ -152,7 +152,7 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
     };
 
     // Store annotation in database
-    const { error: dbError } = await (supabase as any)
+    const { error: dbError } = await supabase
       .from('voice_annotations')
       .insert({
         id: annotationId,
@@ -210,7 +210,7 @@ async function createAnnotation(params: CreateVoiceAnnotationRequest): Promise<N
   }
 }
 
-async function getAnnotations(params: any): Promise<NextResponse> {
+async function getAnnotations(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { documentId, sessionId, type, status = 'active', limit = 50, offset = 0 } = params;
@@ -271,7 +271,7 @@ async function getAnnotations(params: any): Promise<NextResponse> {
   }
 }
 
-async function updateAnnotation(params: any): Promise<NextResponse> {
+async function updateAnnotation(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { annotationId, updates } = params;
@@ -314,7 +314,7 @@ async function updateAnnotation(params: any): Promise<NextResponse> {
   }
 }
 
-async function deleteAnnotation(params: any): Promise<NextResponse> {
+async function deleteAnnotation(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { annotationId } = params;
@@ -355,7 +355,7 @@ async function deleteAnnotation(params: any): Promise<NextResponse> {
   }
 }
 
-async function createVoiceThread(params: any): Promise<NextResponse> {
+async function createVoiceThread(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { documentId, sectionId, title, description } = params;
@@ -416,7 +416,7 @@ async function createVoiceThread(params: any): Promise<NextResponse> {
   }
 }
 
-async function addThreadMessage(params: any): Promise<NextResponse> {
+async function addThreadMessage(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { threadId, audioData, replyToId } = params;
@@ -436,7 +436,7 @@ async function addThreadMessage(params: any): Promise<NextResponse> {
     const audioUrl = await storeAudioData(audioData, messageId);
     
     // Get user info
-    const { data: userData } = await (supabase as any)
+    const { data: userData } = await supabase
       .from('users')
       .select('full_name')
       .eq('id', userId)
@@ -494,7 +494,7 @@ async function addThreadMessage(params: any): Promise<NextResponse> {
   }
 }
 
-async function getThreadMessages(params: any): Promise<NextResponse> {
+async function getThreadMessages(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { threadId, limit = 50, offset = 0 } = params;
@@ -524,7 +524,7 @@ async function getThreadMessages(params: any): Promise<NextResponse> {
   }
 }
 
-async function transcribeAudio(params: any): Promise<NextResponse> {
+async function transcribeAudio(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const { audioData } = params;
     const result = await transcribeAudioData(audioData);
@@ -539,7 +539,7 @@ async function transcribeAudio(params: any): Promise<NextResponse> {
   }
 }
 
-async function generateAnnotationSummary(params: any): Promise<NextResponse> {
+async function generateAnnotationSummary(params: Record<string, unknown>): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient() as any;
     const { annotationId } = params;

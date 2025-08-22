@@ -350,7 +350,7 @@ export class InputSanitizer {
   /**
    * Sanitize JSON input
    */
-  static sanitizeJson(input: any, maxDepth = 5): any {
+  static sanitizeJson(input: any, maxDepth = 5): unknown {
     if (maxDepth <= 0) return null
     
     if (input === null || input === undefined) return input

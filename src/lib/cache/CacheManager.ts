@@ -388,7 +388,7 @@ export class CacheManager {
   /**
    * Generate cache key with hashing for long keys
    */
-  generateKey(namespace: string, identifier: string, params?: Record<string, any>): string {
+  generateKey(namespace: string, identifier: string, params?: Record<string, unknown>): string {
     let key = `${namespace}:${identifier}`
     
     if (params) {

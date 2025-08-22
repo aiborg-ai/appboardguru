@@ -5,6 +5,7 @@ export { assetStore, assetSelectors, useAssets, useCurrentAsset, useAssetUploads
 export { vaultStore, vaultSelectors, useVaults, useCurrentVault, useVaultInvitations, useVaultLoading, useVaultErrors, useVaultSelection } from './vault-store'
 export { notificationStore, notificationSelectors, useNotifications, useNotificationCounts, useNotificationPreferences, useNotificationLoading, useNotificationErrors, useNotificationSelection, useNotificationConnection } from './notification-store'
 export { uiStore, uiSelectors, useTheme, useColorScheme, useSidebar, useBreadcrumbs, useModals, useToasts, useUILoading, useLoadingOverlays, useCommandPalette, useScreenSize, useIsMobile } from './ui-store'
+export { documentStore, documentSelectors, useCurrentDocument, useDocumentAnnotations, useDocumentToc, useDocumentSummaries, useDocumentPodcast, useDocumentSearch, useDocumentViewSettings, useDocumentCollaborators, useDocumentChatHistory, useDocumentLoading, useDocumentErrors, useDocumentActions } from './document-store'
 
 // Export store utilities
 export { stores, optimisticUpdates, offlineSync, cacheManager, storeLogger, resetAllStores, waitForStoreHydration, monitorStorePerformance, useStoreSelector, batchStoreUpdates, handleStoreError, initializeStores } from './store-utils'
@@ -22,6 +23,7 @@ export type { AssetState } from './asset-store'
 export type { VaultState } from './vault-store'
 export type { NotificationState } from './notification-store'
 export type { UIState } from './ui-store'
+export type { DocumentState, DocumentCollaborator, DocumentViewSettings, DocumentAIChat } from './document-store'
 
 // Export data interfaces
 export type { CreateOrganizationData, UpdateOrganizationData, OrganizationInvitation, OrganizationMember, OrganizationSettings } from './organization-store'
@@ -38,6 +40,7 @@ export type StoreRegistry = {
   vault: typeof vaultStore
   notification: typeof notificationStore
   ui: typeof uiStore
+  document: typeof documentStore
 }
 
 // Global store state type
@@ -48,6 +51,7 @@ export type GlobalState = {
   vault: ReturnType<typeof vaultStore.getState>
   notification: ReturnType<typeof notificationStore.getState>
   ui: ReturnType<typeof uiStore.getState>
+  document: ReturnType<typeof documentStore.getState>
 }
 
 // Utility type for store names

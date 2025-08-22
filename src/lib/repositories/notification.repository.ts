@@ -44,7 +44,7 @@ export interface NotificationCreateData {
   resource_type?: string
   resource_id?: string
   sender_id?: UserId
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   scheduled_for?: Date
   expires_at?: Date
 }

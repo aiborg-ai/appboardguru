@@ -12,7 +12,7 @@ export interface VoiceShortcut {
   organizationId?: string;
   phrase: string;
   commandType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   useCount: number;
@@ -25,7 +25,7 @@ export interface CreateShortcutRequest {
   organizationId?: string;
   phrase: string;
   commandType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   isActive?: boolean;
 }
 
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       organizationId: record.organization_id,
       phrase: record.trigger_phrase,
       commandType: record.workflow_name,
-      parameters: (record.action_config as Record<string, any>) || {},
+      parameters: (record.action_config as Record<string, unknown>) || {},
       createdAt: new Date(record.created_at || ''),
       updatedAt: new Date(record.updated_at || ''),
       useCount: record.trigger_count || 0,
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       organizationId: shortcut.organization_id,
       phrase: shortcut.trigger_phrase,
       commandType: shortcut.workflow_name,
-      parameters: (shortcut.action_config as Record<string, any>) || {},
+      parameters: (shortcut.action_config as Record<string, unknown>) || {},
       createdAt: new Date(shortcut.created_at || ''),
       updatedAt: new Date(shortcut.updated_at || ''),
       useCount: 0,

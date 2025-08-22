@@ -14,9 +14,9 @@ export interface CreateOrganizationDTO {
   website?: string
   industry?: string
   organization_size?: OrganizationSize
-  settings?: Record<string, any>
-  compliance_settings?: Record<string, any>
-  billing_settings?: Record<string, any>
+  settings?: Record<string, unknown>
+  compliance_settings?: Record<string, unknown>
+  billing_settings?: Record<string, unknown>
 }
 
 // Update DTO
@@ -28,9 +28,9 @@ export interface UpdateOrganizationDTO {
   website?: string
   industry?: string
   organization_size?: OrganizationSize
-  settings?: Record<string, any>
-  compliance_settings?: Record<string, any>
-  billing_settings?: Record<string, any>
+  settings?: Record<string, unknown>
+  compliance_settings?: Record<string, unknown>
+  billing_settings?: Record<string, unknown>
 }
 
 // List filters
@@ -85,13 +85,13 @@ export interface OrganizationDetailResponse extends OrganizationEntityWithRelati
 export interface InviteMemberDTO {
   email: string
   role: 'admin' | 'member' | 'viewer'
-  custom_permissions?: Record<string, any>
+  custom_permissions?: Record<string, unknown>
   message?: string
 }
 
 export interface UpdateMemberDTO {
   role?: 'admin' | 'member' | 'viewer'
-  custom_permissions?: Record<string, any>
+  custom_permissions?: Record<string, unknown>
 }
 
 // Bulk operations

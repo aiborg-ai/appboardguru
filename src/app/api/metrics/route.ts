@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { monitor } from '@/lib/monitoring'
-import { telemetry, withTelemetry } from '@/lib/telemetry'
+// import { telemetry, withTelemetry } from '@/lib/telemetry' // Temporarily disabled for build compatibility
 
 interface MetricsData {
   timestamp: string
@@ -330,7 +330,7 @@ export const GET = withTelemetry(async (request: NextRequest) => {
 
   } catch (error) {
     console.error('Metrics API error:', error)
-    telemetry.recordError(error as Error)
+    // telemetry.recordError(error as Error) // Temporarily disabled for build compatibility
     
     return NextResponse.json({
       error: 'Failed to fetch metrics',

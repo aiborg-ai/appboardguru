@@ -10,7 +10,7 @@ export async function POST(
   try {
     const resolvedParams = await params
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     const workflowId = resolvedParams.id
     const body = await request.json() as AdvanceWorkflowStepRequest
     
@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Verify user is a participant in this workflow
-    const { data: participant } = await (supabase as any)
+    const { data: participant } = await supabase
       .from('compliance_participants')
       .select(`
         *,

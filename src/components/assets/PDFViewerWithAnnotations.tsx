@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { AnnotationPanel } from '@/components/organisms/annotation-panel'
 import { AssetId } from '@/types/annotation-types'
 
@@ -11,23 +11,23 @@ interface PDFViewerWithAnnotationsProps {
   onAnnotationChange?: () => void
 }
 
-export function PDFViewerWithAnnotations({
+export const PDFViewerWithAnnotations = React.memo<PDFViewerWithAnnotationsProps>(function PDFViewerWithAnnotations({
   assetId,
   filePath,
   annotationMode,
   onAnnotationChange
-}: PDFViewerWithAnnotationsProps) {
+}) {
   const [currentPage, setCurrentPage] = useState(1)
 
-  const handleAnnotationSelect = (annotationId: string) => {
+  const handleAnnotationSelect = useCallback((annotationId: string) => {
     // Handle annotation selection logic
     console.log('Selected annotation:', annotationId)
-  }
+  }, [])
 
-  const handlePageNavigate = (page: number) => {
+  const handlePageNavigate = useCallback((page: number) => {
     setCurrentPage(page)
     // You could also add logic to actually navigate to the page in the PDF
-  }
+  }, [])
 
   return (
     <div className="w-full h-full flex">
@@ -56,4 +56,6 @@ export function PDFViewerWithAnnotations({
       </div>
     </div>
   )
-}
+})
+
+PDFViewerWithAnnotations.displayName = 'PDFViewerWithAnnotations'

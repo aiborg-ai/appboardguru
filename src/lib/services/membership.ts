@@ -13,12 +13,12 @@ export interface AddMemberData {
   email: string
   role: OrganizationRole
   personalMessage?: string
-  customPermissions?: Record<string, any>
+  customPermissions?: Record<string, unknown>
 }
 
 export interface UpdateMemberRoleData {
   role: OrganizationRole
-  customPermissions?: Record<string, any>
+  customPermissions?: Record<string, unknown>
 }
 
 export interface MemberPermissions {
@@ -31,7 +31,7 @@ export interface MemberPermissions {
   canViewBoardPacks: boolean
   canManageSettings: boolean
   canViewAuditLogs: boolean
-  customPermissions: Record<string, any>
+  customPermissions: Record<string, unknown>
 }
 
 /**
@@ -588,7 +588,7 @@ async function createAuditLog(logData: {
   action: string
   resource_type: string
   resource_id?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   outcome: 'success' | 'failure' | 'error' | 'blocked'
   severity: 'low' | 'medium' | 'high' | 'critical'
 }) {

@@ -458,7 +458,7 @@ export class PatternRecognitionEngine {
       return []
     }
 
-    return (data as any) || []
+    return data || []
   }
 
   private async analyzeTimingPatterns(
@@ -717,7 +717,7 @@ export class PatternRecognitionEngine {
 
   private getDefaultOptimalTiming(notificationType: string) {
     // Default timing recommendations based on best practices
-    const defaults: Record<string, any> = {
+    const defaults: Record<string, unknown> = {
       meeting: { hour: 9, confidence: 0.5 },
       asset: { hour: 14, confidence: 0.4 },
       reminder: { hour: 8, confidence: 0.6 },
@@ -764,7 +764,7 @@ export class PatternRecognitionEngine {
 
       // Group by day and count meetings
       const dailyCounts = new Map<string, number>() as Map<string, number>
-      (data as any)?.forEach((meeting: any) => {
+      data?.forEach((meeting: any) => {
         const day = (meeting?.scheduled_start as string)?.split('T')[0]
         if (day) {
           dailyCounts.set(day, (dailyCounts.get(day) || 0) + 1)

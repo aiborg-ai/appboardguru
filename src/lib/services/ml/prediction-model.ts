@@ -63,13 +63,13 @@ export interface MLTrainingConfig {
 export interface PredictionContext {
   readonly userId: string
   readonly sessionId?: string
-  readonly deviceInfo?: Record<string, any>
+  readonly deviceInfo?: Record<string, unknown>
   readonly timeContext: {
     readonly timezone: string
     readonly localTime: Date
     readonly businessHours: boolean
   }
-  readonly preferences?: Record<string, any>
+  readonly preferences?: Record<string, unknown>
 }
 
 // Model interfaces

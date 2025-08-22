@@ -139,7 +139,7 @@ interface VoiceIntent {
   confidence: number;
   domain: 'board_governance' | 'document_management' | 'meeting_management' | 'compliance' | 'analytics' | 'general';
   action: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 }
 
 interface AssistantPreferences {
@@ -1119,7 +1119,7 @@ export default function VoiceAssistant({
       </CardHeader>
 
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
+        <Tabs value={activeTab} onValueChange={value: unknown) => setActiveTab(value)}>
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="chat" className="flex items-center space-x-1">
               <MessageSquare className="h-4 w-4" />

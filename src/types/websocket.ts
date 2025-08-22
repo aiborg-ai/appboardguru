@@ -3,16 +3,22 @@
  * Real-time collaboration and communication types
  */
 
-import type { UserId, OrganizationId, AssetId, VaultId } from './database'
+import type { 
+  UserId, 
+  OrganizationId, 
+  AssetId, 
+  VaultId, 
+  SocketId,
+  RoomId,
+  SessionId
+} from './branded'
 
-// Branded types for WebSocket-specific IDs
-export type SocketId = string & { readonly __brand: unique symbol }
-export type RoomId = string & { readonly __brand: unique symbol }
-export type SessionId = string & { readonly __brand: unique symbol }
-
-export const createSocketId = (id: string): SocketId => id as SocketId
-export const createRoomId = (id: string): RoomId => id as RoomId
-export const createSessionId = (id: string): SessionId => id as SessionId
+// Re-export the constructors for backward compatibility
+export { 
+  createSocketId,
+  createRoomId,
+  createSessionId
+} from './branded'
 
 /**
  * WebSocket Event Types
@@ -25,6 +31,10 @@ export type WebSocketEventType =
   | 'comment_added'
   | 'comment_updated'
   | 'comment_deleted'
+  | 'comment_resolved'
+  | 'comment_sync_request'
+  | 'comment_sync_response'
+  | 'comment_reply_added'
   | 'notification'
   | 'board_chat'
   | 'meeting_started'

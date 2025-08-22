@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
 
     // Log the feedback submission (optional - store in database for tracking)
     try {
-      await (supabase as any)
+      await supabase
         .from('feedback_submissions')
         .insert({
           reference_id: referenceId,

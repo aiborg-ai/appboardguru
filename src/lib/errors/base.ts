@@ -15,7 +15,7 @@ export interface IBaseError {
   statusCode: number
   correlationId: string
   timestamp: Date
-  context?: Record<string, any>
+  context?: Record<string, unknown>
   cause?: Error
   stack?: string
 }
@@ -29,14 +29,14 @@ export class BaseError extends Error implements IBaseError {
   public readonly statusCode: number
   public readonly correlationId: string
   public readonly timestamp: Date
-  public readonly context: Record<string, any>
+  public readonly context: Record<string, unknown>
   public readonly cause?: Error
 
   constructor(
     message: string,
     code: string,
     statusCode: number,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     correlationId?: string
   ) {
@@ -64,7 +64,7 @@ export class BaseError extends Error implements IBaseError {
   /**
    * Convert error to JSON for logging
    */
-  toJSON(): Record<string, any> {
+  toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       message: this.message,
@@ -85,7 +85,7 @@ export class BaseError extends Error implements IBaseError {
   /**
    * Get sanitized error for API responses
    */
-  toAPIResponse(includeStack: boolean = false): Record<string, any> {
+  toAPIResponse(includeStack: boolean = false): Record<string, unknown> {
     return {
       error: this.message,
       code: this.code,
@@ -105,7 +105,7 @@ export class BaseError extends Error implements IBaseError {
   /**
    * Add context to the error
    */
-  withContext(additionalContext: Record<string, any>): this {
+  withContext(additionalContext: Record<string, unknown>): this {
     Object.assign(this.context, additionalContext)
     return this
   }
@@ -137,7 +137,7 @@ export class ErrorFactory {
   static create<T extends BaseError>(
     errorClass: new (...args: any[]) => T,
     message: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error
   ): T {
     // Get constructor parameters dynamically
@@ -217,7 +217,7 @@ export class EnhancedBaseError extends BaseError {
     code: string,
     statusCode: number,
     metadata: Partial<ErrorMetadata> = {},
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     correlationId?: string
   ) {
@@ -266,7 +266,7 @@ export class EnhancedBaseError extends BaseError {
   /**
    * Enhanced JSON serialization
    */
-  toJSON(): Record<string, any> {
+  toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       metadata: this.metadata

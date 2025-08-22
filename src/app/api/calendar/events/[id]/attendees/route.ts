@@ -27,7 +27,7 @@ export async function GET(
     }
 
     const resolvedParams = await params;
-    const { data: attendees, error } = await (supabase as any)
+    const { data: attendees, error } = await supabase
       .from('calendar_attendees')
       .select(`
         *,
@@ -67,7 +67,7 @@ export async function POST(
     const validatedData = addAttendeeSchema.parse(body)
 
     // Check if user has permission to add attendees
-    const { data: event, error: eventError } = await (supabase as any)
+    const { data: event, error: eventError } = await supabase
       .from('calendar_events')
       .select('user_id')
       .eq('id', resolvedParams.id)
@@ -82,7 +82,7 @@ export async function POST(
 
     if (!isOwner) {
       // Check if user is an attendee with invite permissions
-      const { data: attendee } = await (supabase as any)
+      const { data: attendee } = await supabase
         .from('calendar_attendees')
         .select('can_invite_others')
         .eq('event_id', resolvedParams.id)
@@ -97,7 +97,7 @@ export async function POST(
     }
 
     // Look up user by email
-    const { data: invitedUser } = await (supabase as any)
+    const { data: invitedUser } = await supabase
       .from('users')
       .select('id')
       .eq('email', validatedData.email)
@@ -113,7 +113,7 @@ export async function POST(
       invited_by: user.id
     }
 
-    const { data: newAttendee, error: insertError } = await (supabase as any)
+    const { data: newAttendee, error: insertError } = await supabase
       .from('calendar_attendees')
       .insert(attendeeData as any)
       .select(`
@@ -165,7 +165,7 @@ export async function PUT(
     const validatedData = updateRsvpSchema.parse(body)
 
     // Update RSVP status
-    const { data: updatedAttendee, error: updateError } = await (supabase as any)
+    const { data: updatedAttendee, error: updateError } = await supabase
       .from('calendar_attendees')
       .update({
         rsvp_status: validatedData.rsvp_status,
@@ -228,7 +228,7 @@ export async function DELETE(
     }
 
     // Check if user has permission to remove attendees
-    const { data: event, error: eventError } = await (supabase as any)
+    const { data: event, error: eventError } = await supabase
       .from('calendar_events')
       .select('user_id')
       .eq('id', resolvedParams.id)
@@ -245,7 +245,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('calendar_attendees')
       .delete()
       .eq('event_id', resolvedParams.id)

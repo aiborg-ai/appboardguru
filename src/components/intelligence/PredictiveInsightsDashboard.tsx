@@ -22,7 +22,7 @@ interface PredictiveInsight {
   actionable: boolean
   recommendedActions: string[]
   affectedUsers?: string[]
-  data: Record<string, any>
+  data: Record<string, unknown>
   createdAt: Date
 }
 

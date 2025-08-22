@@ -11,7 +11,7 @@ export interface CreateTemplateDTO {
   description?: string
   status?: TemplateStatus
   organization_id: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   tags?: string[]
   
   // Add other fields that can be set during creation
@@ -22,7 +22,7 @@ export interface UpdateTemplateDTO {
   name?: string
   description?: string
   status?: TemplateStatus
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   tags?: string[]
   
   // Add other fields that can be updated

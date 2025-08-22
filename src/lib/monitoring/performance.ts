@@ -15,7 +15,7 @@ export interface PerformanceMetric {
   unit: string
   timestamp: Date
   labels: Record<string, string>
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 }
 
 /**
@@ -248,7 +248,7 @@ export class PerformanceMonitor {
     value: number,
     unit: string = 'ms',
     labels: Record<string, string> = {},
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): void {
     const metric: PerformanceMetric = {
       name,

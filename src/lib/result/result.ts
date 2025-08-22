@@ -168,7 +168,7 @@ export class AppErrorFactory {
     message: string,
     details?: any,
     cause?: Error,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): AppError {
     return {
       code,
@@ -225,7 +225,7 @@ export class AppErrorFactory {
     )
   }
 
-  static internal(message: string, cause?: Error, context?: Record<string, any>): AppError {
+  static internal(message: string, cause?: Error, context?: Record<string, unknown>): AppError {
     return this.create(
       ErrorCode.INTERNAL_ERROR,
       message,

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     if (!organizationId) {
       // Get all organizations the user has access to
-      const { data: userMemberships } = await (supabase as any)
+      const { data: userMemberships } = await supabase
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this specific organization
-    const { data: orgMember, error: orgError } = await (supabase as any)
+    const { data: orgMember, error: orgError } = await supabase
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', organizationId)
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has admin access to this organization
-    const { data: orgMember, error: orgError } = await (supabase as any)
+    const { data: orgMember, error: orgError } = await supabase
       .from('organization_members')
       .select('role')
       .eq('organization_id', organization_id)

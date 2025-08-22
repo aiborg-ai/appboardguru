@@ -13,7 +13,7 @@ export interface ChartDataPoint {
   y: number
   label?: string
   color?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ChartSeries {
@@ -141,7 +141,7 @@ export interface HeatmapDataPoint {
   y: string | number
   value: number
   color?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface HeatmapProps extends Omit<BaseChartProps, 'config'> {
@@ -158,7 +158,7 @@ export interface FunnelDataPoint {
   name: string
   value: number
   color?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface FunnelChartProps extends Omit<BaseChartProps, 'config'> {
@@ -408,7 +408,7 @@ export interface AdvancedChartConfig extends ChartConfig {
 export interface RealTimeDataSource {
   connect: () => Promise<void>
   disconnect: () => void
-  subscribe: (callback: (data: any) => void) => () => void
+  subscribe: (callback: data: unknown) => void) => () => void
   isConnected: boolean
   lastUpdate?: Date
 }

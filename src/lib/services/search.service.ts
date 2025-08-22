@@ -556,7 +556,7 @@ export class SearchService {
       const organizations = new Map<string, { count: number; label: string }>()
       const vaults = new Map<string, { count: number; label: string }>()
 
-      data.forEach((asset: Record<string, any>) => {
+      data.forEach((asset: Record<string, unknown>) => {
         // File types
         fileTypes.set(asset.file_type, (fileTypes.get(asset.file_type) || 0) + 1)
         
@@ -565,7 +565,7 @@ export class SearchService {
 
         // Organizations and vaults from vault_assets
         if (asset.vault_assets && Array.isArray(asset.vault_assets)) {
-          asset.vault_assets.forEach((va: Record<string, any>) => {
+          asset.vault_assets.forEach((va: Record<string, unknown>) => {
             if (va.vault?.organization) {
               const orgId = va.vault.organization.id
               const orgName = va.vault.organization.name
@@ -677,7 +677,7 @@ export class SearchService {
       }
 
       // Update relevance score
-      await (supabase as any).rpc('update_asset_relevance_score', { asset_uuid: assetId })
+      await supabase.rpc('update_asset_relevance_score', { asset_uuid: assetId })
 
     } catch (error) {
       console.error('Error in updateAssetSearchMetadata:', error)
@@ -725,7 +725,7 @@ export class SearchService {
     organizationId: string | undefined,
     accessType: 'view' | 'download' | 'search_result' | 'ai_reference',
     accessSource: 'chat' | 'search' | 'direct' | 'recommendation',
-    contextData?: Record<string, any>
+    contextData?: Record<string, unknown>
   ): Promise<void> {
     const supabase = await this.getSupabaseClient()
 
@@ -743,13 +743,13 @@ export class SearchService {
 
       // Update asset view count
       if (accessType === 'view') {
-        await (supabase as any).rpc('increment', {
+        await supabase.rpc('increment', {
           table_name: 'assets',
           row_id: assetId,
           column_name: 'view_count'
         } as any)
       } else if (accessType === 'download') {
-        await (supabase as any).rpc('increment', {
+        await supabase.rpc('increment', {
           table_name: 'assets',
           row_id: assetId,
           column_name: 'download_count'

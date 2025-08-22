@@ -15,23 +15,36 @@ export interface SoftDeletableEntity extends BaseEntity {
   readonly is_active: boolean
 }
 
-// Branded Types for Type Safety
-export type Brand<T, U> = T & { readonly __brand: U }
+// Re-export branded types from centralized system
+export type {
+  Brand,
+  UserId,
+  OrganizationId,
+  AssetId,
+  VaultId,
+  AnnotationId,
+  BoardMateId,
+  EventId,
+  WorkflowId,
+  RuleId,
+  SessionId,
+  NotificationId
+} from '../branded'
 
-export type UserId = Brand<string, 'UserId'>
-export type OrganizationId = Brand<string, 'OrganizationId'>
-export type AssetId = Brand<string, 'AssetId'>
-export type VaultId = Brand<string, 'VaultId'>
-export type AnnotationId = Brand<string, 'AnnotationId'>
-export type BoardMateId = Brand<string, 'BoardMateId'>
-
-// Utility functions for branded types
-export const createUserId = (id: string): UserId => id as UserId
-export const createOrganizationId = (id: string): OrganizationId => id as OrganizationId
-export const createAssetId = (id: string): AssetId => id as AssetId
-export const createVaultId = (id: string): VaultId => id as VaultId
-export const createAnnotationId = (id: string): AnnotationId => id as AnnotationId
-export const createBoardMateId = (id: string): BoardMateId => id as BoardMateId
+// Re-export utility functions for backward compatibility
+export {
+  unsafeUserId as createUserId,
+  unsafeOrganizationId as createOrganizationId,
+  unsafeAssetId as createAssetId,
+  unsafeVaultId as createVaultId,
+  unsafeAnnotationId as createAnnotationId,
+  unsafeBoardMateId as createBoardMateId,
+  unsafeEventId as createEventId,
+  unsafeWorkflowId as createWorkflowId,
+  unsafeRuleId as createRuleId,
+  unsafeSessionId as createSessionId,
+  unsafeNotificationId as createNotificationId
+} from '../branded'
 
 // Pagination Types
 export interface PaginationParams {

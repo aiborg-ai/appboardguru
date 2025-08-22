@@ -20,7 +20,7 @@ interface LogActivityParams {
   description?: string
   resourceType?: string
   resourceId?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export function useActivityLogger() {
@@ -68,7 +68,7 @@ export function useActivityLogger() {
     action: 'opened' | 'downloaded' | 'uploaded' | 'shared' | 'deleted',
     assetId: string,
     assetName: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) => {
     const actionTitles = {
       opened: `Opened asset "${assetName}"`,
@@ -96,7 +96,7 @@ export function useActivityLogger() {
     action: 'created' | 'opened' | 'updated' | 'deleted' | 'shared',
     vaultId: string,
     vaultName: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) => {
     const actionTitles = {
       created: `Created vault "${vaultName}"`,
@@ -124,7 +124,7 @@ export function useActivityLogger() {
     searchQuery: string,
     resultCount: number,
     searchContext?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) => {
     return logActivity({
       activityType: 'search_performed',
@@ -145,7 +145,7 @@ export function useActivityLogger() {
     annotationId: string,
     assetName: string,
     annotationText?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) => {
     const actionTitles = {
       created: `Added annotation to "${assetName}"`,
@@ -171,7 +171,7 @@ export function useActivityLogger() {
   const logAIChatActivity = useCallback((
     chatTopic: string,
     messageCount?: number,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) => {
     return logActivity({
       activityType: 'ai_chat_started',

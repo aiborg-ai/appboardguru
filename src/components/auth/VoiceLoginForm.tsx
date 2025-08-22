@@ -226,7 +226,7 @@ export default function VoiceLoginForm({
 
       onSuccess?.() || router.push('/dashboard');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       setLoginState(prev => ({
         ...prev,
         error: error.message || 'Login failed',

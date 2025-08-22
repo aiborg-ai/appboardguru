@@ -77,7 +77,7 @@ export class SmartNotificationEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: alertRule, error } = await (supabase as any)
+      const { data: alertRule, error } = await supabase
         .from('activity_alert_rules')
         .insert({
           organization_id: organizationId,
@@ -124,7 +124,7 @@ export class SmartNotificationEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get active alert rules for this organization
-      const { data: alertRules } = await (supabase as any)
+      const { data: alertRules } = await supabase
         .from('activity_alert_rules')
         .select('*')
         .eq('organization_id', organizationId)
@@ -253,7 +253,7 @@ export class SmartNotificationEngine {
     const windowMs = this.parseTimeWindow(timeWindow)
     const windowStart = new Date(Date.now() - windowMs).toISOString()
 
-    const { data: activities, count } = await (supabase as any)
+    const { data: activities, count } = await supabase
       .from('audit_logs')
       .select('id', { count: 'exact' })
       .eq('organization_id', organizationId)
@@ -307,7 +307,7 @@ export class SmartNotificationEngine {
     organizationId: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
-    const { data: anomalies } = await (supabase as any).rpc('detect_activity_anomalies', {
+    const { data: anomalies } = await supabase.rpc('detect_activity_anomalies', {
       input_user_id: activityData.userId,
       input_org_id: organizationId
     })
@@ -398,7 +398,7 @@ export class SmartNotificationEngine {
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
     // Get recent anomaly score for user
-    const { data: anomalies } = await (supabase as any)
+    const { data: anomalies } = await supabase
       .from('activity_insights')
       .select('confidence_score')
       .eq('organization_id', organizationId)
@@ -443,13 +443,13 @@ export class SmartNotificationEngine {
 
       // Update rule trigger count and timestamp  
       // Get current count first, then update
-      const { data: currentRule } = await (supabase as any)
+      const { data: currentRule } = await supabase
         .from('activity_alert_rules')
         .select('trigger_count')
         .eq('id', rule.id)
         .single()
       
-      await (supabase as any)
+      await supabase
         .from('activity_alert_rules')
         .update({
           trigger_count: (currentRule?.trigger_count || 0) + 1,
@@ -555,7 +555,7 @@ export class SmartNotificationEngine {
     try {
       // Get organization admin emails
       const supabase = await createSupabaseServerClient()
-      const { data: admins } = await (supabase as any)
+      const { data: admins } = await supabase
         .from('organization_members')
         .select('users(email, full_name)')
         .eq('organization_id', organizationId)
@@ -565,7 +565,7 @@ export class SmartNotificationEngine {
       const recipients = action.recipients || admins?.flatMap((admin: {
         users: { email: string; full_name: string } | { email: string; full_name: string }[]
       }) => 
-        Array.isArray((admin.users as any)) ? (admin.users as any).map((user: any) => user.email) : [(admin.users as any)?.email]
+        Array.isArray(admin.users) ? admin.users.map((user: any) => user.email) : [admin.users?.email]
       ).filter(Boolean) || []
 
       if (recipients.length === 0) {
@@ -637,13 +637,13 @@ export class SmartNotificationEngine {
       const supabase = await createSupabaseServerClient()
       
       // Get current failure count first
-      const { data: currentWebhook } = await (supabase as any)
+      const { data: currentWebhook } = await supabase
         .from('activity_webhooks')
         .select('failure_count')
         .eq('endpoint_url', (action.config as any)?.url || '')
         .single()
       
-      await (supabase as any)
+      await supabase
         .from('activity_webhooks')
         .update({
           failure_count: (currentWebhook?.failure_count || 0) + 1,
@@ -785,7 +785,7 @@ export class SmartNotificationEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get users who should receive push notifications
-      const { data: notificationUsers } = await (supabase as any)
+      const { data: notificationUsers } = await supabase
         .from('organization_members')
         .select('user_id, users(full_name)')
         .eq('organization_id', organizationId)
@@ -810,7 +810,7 @@ export class SmartNotificationEngine {
         }
       }))
 
-      await (supabase as any)
+      await supabase
         .from('notifications')
         .insert(notifications)
 
@@ -989,7 +989,7 @@ export class SmartNotificationEngine {
 
   private static async lockUserAccount(userId: string, organizationId: string, reason: string): Promise<void> {
     const supabase = supabaseAdmin
-    await (supabase as any)
+    await supabase
       .from('organization_members')
       .update({ 
         status: 'suspended',
@@ -1013,7 +1013,7 @@ export class SmartNotificationEngine {
 
   private static async limitUserPermissions(userId: string, organizationId: string): Promise<void> {
     const supabase = supabaseAdmin
-    await (supabase as any)
+    await supabase
       .from('organization_members')
       .update({
         role: 'viewer', // Downgrade to viewer
@@ -1172,7 +1172,7 @@ export class NotificationDigest {
       }
 
       // Get activity summary
-      const { data: activities } = await (supabase as any)
+      const { data: activities } = await supabase
         .from('audit_logs')
         .select('event_category, action, created_at, outcome, severity')
         .eq('organization_id', organizationId)
@@ -1180,7 +1180,7 @@ export class NotificationDigest {
         .lte('created_at', timeRange.end)
 
       // Get user's unread alerts
-      const { data: alerts, count: alertCount } = await (supabase as any)
+      const { data: alerts, count: alertCount } = await supabase
         .from('notifications')
         .select('id', { count: 'exact' })
         .eq('user_id', userId)

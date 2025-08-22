@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Get user's primary organization
-    const { data: userOrg } = await (supabase as any)
+    const { data: userOrg } = await supabase
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', user.id)
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     } = validation.data
 
     // Get user's organization
-    const { data: userOrg } = await (supabase as any)
+    const { data: userOrg } = await supabase
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', user.id)
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate participants are in the same organization
-    const { data: validParticipants, error: participantsError } = await (supabase as any)
+    const { data: validParticipants, error: participantsError } = await supabase
       .from('organization_members')
       .select('user_id, users(id, full_name, avatar_url)')
       .eq('organization_id', userOrg.organization_id)
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       const otherUserId = participant_ids[0]
       
       // Call create_direct_conversation function
-      const { data: conversationId, error: createError } = await (supabase as any)
+      const { data: conversationId, error: createError } = await supabase
         .rpc('create_direct_conversation', {
           p_organization_id: userOrg.organization_id,
           p_user1_id: user.id,
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For group conversations, create manually
-    const { data: conversation, error: conversationError } = await (supabase as any)
+    const { data: conversation, error: conversationError } = await supabase
       .from('chat_conversations')
       .insert({
         organization_id: userOrg.organization_id,
@@ -249,14 +249,14 @@ export async function POST(request: NextRequest) {
       }))
     ]
 
-    const { error: insertParticipantsError } = await (supabase as any)
+    const { error: insertParticipantsError } = await supabase
       .from('chat_participants')
       .insert(participantInserts)
 
     if (insertParticipantsError) {
       console.error('Participants creation error:', insertParticipantsError)
       // Try to clean up conversation
-      await (supabase as any).from('chat_conversations').delete().eq('id', conversation.id)
+      await supabase.from('chat_conversations').delete().eq('id', conversation.id)
       return NextResponse.json({ error: 'Failed to add participants' }, { status: 500 })
     }
 

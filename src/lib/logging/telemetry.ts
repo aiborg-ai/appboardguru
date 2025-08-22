@@ -25,10 +25,10 @@ export interface Span {
   startTime: number
   endTime?: number
   duration?: number
-  tags: Record<string, any>
+  tags: Record<string, unknown>
   logs: Array<{
     timestamp: number
-    fields: Record<string, any>
+    fields: Record<string, unknown>
   }>
   status: {
     code: SpanStatusCode
@@ -268,14 +268,14 @@ export class TelemetryManager {
   /**
    * Add tags to a span
    */
-  addSpanTags(span: Span, tags: Record<string, any>): void {
+  addSpanTags(span: Span, tags: Record<string, unknown>): void {
     Object.assign(span.tags, tags)
   }
 
   /**
    * Add log to a span
    */
-  addSpanLog(span: Span, fields: Record<string, any>): void {
+  addSpanLog(span: Span, fields: Record<string, unknown>): void {
     span.logs.push({
       timestamp: Date.now(),
       fields
@@ -402,7 +402,7 @@ export class TracedLogger extends Logger {
     return cloned
   }
 
-  trace(message: string, data?: Record<string, any>): void {
+  trace(message: string, data?: Record<string, unknown>): void {
     super.trace(message, data)
     if (this.currentSpan) {
       this.telemetry.addSpanLog(this.currentSpan, {
@@ -413,7 +413,7 @@ export class TracedLogger extends Logger {
     }
   }
 
-  debug(message: string, data?: Record<string, any>): void {
+  debug(message: string, data?: Record<string, unknown>): void {
     super.debug(message, data)
     if (this.currentSpan) {
       this.telemetry.addSpanLog(this.currentSpan, {
@@ -424,7 +424,7 @@ export class TracedLogger extends Logger {
     }
   }
 
-  info(message: string, data?: Record<string, any>): void {
+  info(message: string, data?: Record<string, unknown>): void {
     super.info(message, data)
     if (this.currentSpan) {
       this.telemetry.addSpanLog(this.currentSpan, {
@@ -435,7 +435,7 @@ export class TracedLogger extends Logger {
     }
   }
 
-  warn(message: string, data?: Record<string, any>): void {
+  warn(message: string, data?: Record<string, unknown>): void {
     super.warn(message, data)
     if (this.currentSpan) {
       this.telemetry.addSpanLog(this.currentSpan, {
@@ -446,7 +446,7 @@ export class TracedLogger extends Logger {
     }
   }
 
-  error(message: string, error?: Error | Record<string, any>): void {
+  error(message: string, error?: Error | Record<string, unknown>): void {
     super.error(message, error)
     if (this.currentSpan) {
       this.telemetry.addSpanTags(this.currentSpan, { error: true })

@@ -79,7 +79,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async create(organization: OrganizationInsert): Promise<Organization> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organizations')
         .insert(organization)
         .select()
@@ -101,7 +101,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async update(id: string, updates: OrganizationUpdate): Promise<Organization> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organizations')
         .update({
           ...updates,
@@ -128,7 +128,7 @@ export class OrganizationRepository extends BaseRepository {
   async delete(id: string): Promise<void> {
     try {
       // Soft delete by marking as inactive
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('organizations')
         .update({
           is_active: false,
@@ -147,7 +147,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async addMember(organizationId: string, userId: string, role: Database['public']['Enums']['organization_role'] = 'member', invitedBy?: string): Promise<OrganizationMember> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organization_members')
         .insert({
           organization_id: organizationId,
@@ -176,7 +176,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async updateMemberRole(organizationId: string, userId: string, role: Database['public']['Enums']['organization_role']): Promise<OrganizationMember> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organization_members')
         .update({ role })
         .eq('organization_id', organizationId)
@@ -200,7 +200,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async removeMember(organizationId: string, userId: string): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .from('organization_members')
         .delete()
         .eq('organization_id', organizationId)
@@ -216,7 +216,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async getMembers(organizationId: string): Promise<OrganizationMember[]> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organization_members')
         .select(`
           *,
@@ -230,7 +230,7 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'getMembers')
       }
 
-      return (data as any) || []
+      return data || []
     } catch (error) {
       this.handleError(error, 'getMembers')
       return []
@@ -239,7 +239,7 @@ export class OrganizationRepository extends BaseRepository {
 
   async getMemberRole(organizationId: string, userId: string): Promise<string | null> {
     try {
-      const { data, error } = await (this.supabase as any)
+      const { data, error } = await this.supabase
         .from('organization_members')
         .select('role')
         .eq('organization_id', organizationId)

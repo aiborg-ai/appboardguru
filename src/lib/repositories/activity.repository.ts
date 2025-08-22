@@ -95,7 +95,7 @@ export interface ActivityInsight {
   description: string
   severity: 'low' | 'medium' | 'high'
   confidence_score: number
-  data: Record<string, any>
+  data: Record<string, unknown>
   generated_at: Date
   is_actionable: boolean
   action_url?: string
@@ -105,7 +105,7 @@ export interface BehaviorPattern {
   pattern_id: string
   user_id: UserId
   pattern_type: 'login_time' | 'feature_usage' | 'navigation' | 'session_duration'
-  pattern_data: Record<string, any>
+  pattern_data: Record<string, unknown>
   confidence_score: number
   first_seen: Date
   last_seen: Date
@@ -580,7 +580,7 @@ export class ActivityRepository extends BaseRepository {
     }
   }
 
-  private applyFilters(query: any, filters: ActivityFilters): any {
+  private applyFilters(query: any, filters: ActivityFilters): unknown {
     if (filters.eventType) {
       query = query.eq('event_type', filters.eventType)
     }

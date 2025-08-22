@@ -81,8 +81,8 @@ interface TypeSafeFormData {
 
 // Type-safe modal props with enhanced generics
 interface TypeSafeInviteMemberModalProps<
-  TFormData extends Record<string, any> = TypeSafeFormData,
-  TInvitationData extends Record<string, any> = EnhancedInvitationData
+  TFormData extends Record<string, unknown> = TypeSafeFormData,
+  TInvitationData extends Record<string, unknown> = EnhancedInvitationData
 > {
   isOpen: boolean
   onClose: () => void
@@ -210,7 +210,7 @@ const expirationOptions = [
 /**
  * Advanced form hook with type bridge integration
  */
-function useTypeSafeForm<T extends Record<string, any>>(
+function useTypeSafeForm<T extends Record<string, unknown>>(
   config: FormBridgeConfig<T>,
   initialData: Partial<T> = {}
 ) {
@@ -228,7 +228,7 @@ function useTypeSafeForm<T extends Record<string, any>>(
         ...invitationValidators.expiresIn,
         validation: {
           ...invitationValidators.expiresIn.validation,
-          custom: (value: any) => {
+          custom: value: unknown) => {
             const result = formBridge.validateField('expiresIn' as keyof T, value)
             return result === true ? undefined : result
           }

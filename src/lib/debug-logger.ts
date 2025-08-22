@@ -401,13 +401,13 @@ export function createOperationTracker(
     autoLogStart?: boolean
   } = {}
 ): {
-  readonly success: (details?: Record<string, any>) => void
-  readonly error: (error: any, details?: Record<string, any>) => void
-  readonly warn: (message: string, details?: Record<string, any>) => void
-  readonly info: (message: string, details?: Record<string, any>) => void
-  readonly addCheckpoint: (name: string, details?: Record<string, any>) => void
+  readonly success: (details?: Record<string, unknown>) => void
+  readonly error: (error: any, details?: Record<string, unknown>) => void
+  readonly warn: (message: string, details?: Record<string, unknown>) => void
+  readonly info: (message: string, details?: Record<string, unknown>) => void
+  readonly addCheckpoint: (name: string, details?: Record<string, unknown>) => void
   readonly getDuration: () => number
-  readonly getMetadata: () => Record<string, any>
+  readonly getMetadata: () => Record<string, unknown>
 } {
   const startTime = Date.now()
   const metadata = {
@@ -424,7 +424,7 @@ export function createOperationTracker(
   }
 
   return {
-    success: (details?: Record<string, any>) => {
+    success: (details?: Record<string, unknown>) => {
       const duration = Date.now() - startTime
       debugLogger.info(`${operationName}_SUCCESS`, options.email, { 
         duration: `${duration}ms`,
@@ -433,7 +433,7 @@ export function createOperationTracker(
       }, metadata)
     },
     
-    error: (error: any, details?: Record<string, any>) => {
+    error: (error: any, details?: Record<string, unknown>) => {
       const duration = Date.now() - startTime
       debugLogger.error(`${operationName}_ERROR`, options.email, { 
         duration: `${duration}ms`,
@@ -447,7 +447,7 @@ export function createOperationTracker(
       }, metadata)
     },
     
-    warn: (message: string, details?: Record<string, any>) => {
+    warn: (message: string, details?: Record<string, unknown>) => {
       const duration = Date.now() - startTime
       debugLogger.warning(`${operationName}_WARN`, options.email, {
         message,
@@ -456,7 +456,7 @@ export function createOperationTracker(
       }, metadata)
     },
     
-    info: (message: string, details?: Record<string, any>) => {
+    info: (message: string, details?: Record<string, unknown>) => {
       const duration = Date.now() - startTime
       debugLogger.info(`${operationName}_INFO`, options.email, {
         message,
@@ -465,7 +465,7 @@ export function createOperationTracker(
       }, metadata)
     },
     
-    addCheckpoint: (name: string, details?: Record<string, any>) => {
+    addCheckpoint: (name: string, details?: Record<string, unknown>) => {
       checkpoints.push({
         name,
         timestamp: Date.now() - startTime,

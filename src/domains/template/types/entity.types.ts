@@ -22,7 +22,7 @@ export interface TemplateEntity extends BaseEntity {
   created_by: string
   
   // Metadata
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   tags?: string[]
   
   // Business specific fields

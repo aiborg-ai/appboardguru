@@ -266,7 +266,7 @@ export class OrganizationService extends BaseService {
    */
   private async getUserRole(organizationId: string, userId: string): Promise<OrganizationRole | null> {
     try {
-      const { data } = await (this.supabase as any)
+      const { data } = await this.supabase
         .from('organization_members')
         .select('role')
         .eq('organization_id', organizationId)
@@ -344,7 +344,7 @@ export class OrganizationService extends BaseService {
    * Add member to organization
    */
   private async addMember(organizationId: string, userId: string, role: OrganizationRole): Promise<void> {
-    await (this.supabase as any).from('organization_members').insert({
+    await this.supabase.from('organization_members').insert({
       organization_id: organizationId,
       user_id: userId,
       role: role as any,
@@ -411,7 +411,7 @@ export class OrganizationService extends BaseService {
    */
   private async validateDelete(organizationId: string): Promise<void> {
     // Check if there are multiple owners
-    const { data: owners } = await (this.supabase as any)
+    const { data: owners } = await this.supabase
       .from('organization_members')
       .select('user_id')
       .eq('organization_id', organizationId)

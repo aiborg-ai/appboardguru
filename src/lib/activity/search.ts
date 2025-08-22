@@ -341,7 +341,7 @@ export class ActivitySearchEngine {
         const timeWindow = 60 * 60 * 1000 // 1 hour
         const resultTime = new Date(result.timestamp).getTime()
         
-        const { data: correlatedEvents } = await (supabase as any)
+        const { data: correlatedEvents } = await supabase
           .from('audit_logs')
           .select(`
             id, event_description, created_at, action, user_id,
@@ -395,7 +395,7 @@ export class ActivitySearchEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: savedTemplate, error } = await (supabase as any)
+      const { data: savedTemplate, error } = await supabase
         .from('activity_search_templates')
         .insert({
           organization_id: organizationId,
@@ -427,7 +427,7 @@ export class ActivitySearchEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: templates } = await (supabase as any)
+      const { data: templates } = await supabase
         .from('activity_search_templates')
         .select(`
           id, name, description, search_query, is_public, 
@@ -465,7 +465,7 @@ export class ActivitySearchEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get the template
-      const { data: template } = await (supabase as any)
+      const { data: template } = await supabase
         .from('activity_search_templates')
         .select('search_query')
         .eq('id', templateId)
@@ -475,7 +475,7 @@ export class ActivitySearchEngine {
       if (!template) throw new Error('Search template not found')
 
       // Update usage count
-      await (supabase as any)
+      await supabase
         .from('activity_search_templates')
         .update({
           usage_count: 1, // Will be incremented via SQL function
@@ -502,7 +502,7 @@ export class ActivitySearchEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get user's recent activity patterns
-      const { data: userActivity } = await (supabase as any)
+      const { data: userActivity } = await supabase
         .from('audit_logs')
         .select('event_category, action, resource_type')
         .eq('organization_id', organizationId)
@@ -608,7 +608,7 @@ export class ActivitySearchEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get the source activity
-      const { data: sourceActivity } = await (supabase as any)
+      const { data: sourceActivity } = await supabase
         .from('audit_logs')
         .select('*')
         .eq('id', activityId)
@@ -665,7 +665,7 @@ export class ActivitySearchEngine {
     windowStart: string,
     windowEnd: string
   ): Promise<SearchResult[]> {
-    const { data: correlations } = await (supabase as any)
+    const { data: correlations } = await supabase
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -687,7 +687,7 @@ export class ActivitySearchEngine {
     windowStart: string,
     windowEnd: string
   ): Promise<SearchResult[]> {
-    const { data: correlations } = await (supabase as any)
+    const { data: correlations } = await supabase
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -711,7 +711,7 @@ export class ActivitySearchEngine {
   ): Promise<SearchResult[]> {
     if (!sourceActivity.resource_id) return []
 
-    const { data: correlations } = await (supabase as any)
+    const { data: correlations } = await supabase
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -734,7 +734,7 @@ export class ActivitySearchEngine {
     action: string
   ): Promise<SearchResult[]> {
     // Find similar patterns in the past
-    const { data: patterns } = await (supabase as any)
+    const { data: patterns } = await supabase
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -752,7 +752,7 @@ export class ActivitySearchEngine {
   }
 
   private static transformToSearchResults(data: any[]): SearchResult[] {
-    return data.map((item: any) => ({
+    return data.map(item: unknown) => ({
       id: item.id,
       type: `${item.event_category}:${item.action}`,
       title: item.event_description,

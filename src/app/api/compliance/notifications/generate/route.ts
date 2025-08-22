@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     
     // Generate notifications for all organizations
     const result = await complianceEngine.generateScheduledNotifications()
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 export async function GET(_request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase as any)
+    const complianceEngine = new ComplianceEnginesupabase
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -52,7 +52,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Check if user is admin/owner in any organization
-    const { data: orgMember } = await (supabase as any)
+    const { data: orgMember } = await supabase
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)

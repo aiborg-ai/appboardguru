@@ -47,7 +47,7 @@ export interface DocumentAnnotation {
   userId: UserId
   annotationType: 'comment' | 'question' | 'note' | 'voice'
   content: string
-  positionData?: Record<string, any>
+  positionData?: Record<string, unknown>
   highlightedText?: string
   pageNumber?: number
   voiceUrl?: string
@@ -136,7 +136,7 @@ export interface CreateDocumentAnnotationData {
   documentId: DocumentId
   annotationType: 'comment' | 'question' | 'note' | 'voice'
   content: string
-  positionData?: Record<string, any>
+  positionData?: Record<string, unknown>
   highlightedText?: string
   pageNumber?: number
   voiceUrl?: string
@@ -146,7 +146,7 @@ export interface CreateDocumentAnnotationData {
 
 export interface UpdateDocumentAnnotationData {
   content?: string
-  positionData?: Record<string, any>
+  positionData?: Record<string, unknown>
   highlightedText?: string
   voiceUrl?: string
   isShared?: boolean
