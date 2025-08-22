@@ -9,9 +9,9 @@ import { X, Scale, Save, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   CreateResolutionRequest,
-  ResolutionType,
-  UserId 
+  ResolutionType
 } from '@/types/meetings';
+import type { UserId } from '@/types/database';
 
 interface CreateResolutionModalProps {
   meetingId: string;
