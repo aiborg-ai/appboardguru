@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   CheckCircle
 } from 'lucide-react';
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
 
 export default function CreateVaultPage() {
   const router = useRouter();
@@ -148,7 +149,30 @@ export default function CreateVaultPage() {
                 <span>Back to Vaults</span>
               </Button>
               <div className="h-6 border-l border-gray-300" />
-              <h1 className="text-xl font-semibold text-gray-900">Create New Vault</h1>
+              <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                Create New Vault
+                <InfoTooltip
+                  content={
+                    <InfoSection
+                      title="Vault Creation Process"
+                      description="Our guided wizard will help you set up your secure vault in just a few steps."
+                      features={[
+                        "Choose or create organization context",
+                        "Configure security and access settings", 
+                        "Set up initial document structure",
+                        "Invite team members with appropriate roles",
+                        "Automated backup and sync configuration"
+                      ]}
+                      tips={[
+                        "Prepare your organization details beforehand",
+                        "Consider your team structure for permissions",
+                        "Start with essential documents and expand later"
+                      ]}
+                    />
+                  }
+                  size="sm"
+                />
+              </h1>
             </div>
           </div>
         </div>
@@ -176,8 +200,12 @@ export default function CreateVaultPage() {
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Plus className="w-6 h-6 text-green-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 justify-center">
                 Organization Setup
+                <InfoTooltip
+                  content="Choose an existing organization or create a new one. Organizations help you manage multiple vaults and control access across your board governance structure."
+                  size="sm"
+                />
               </h3>
               <p className="text-sm text-gray-600">
                 Choose existing organization or create a new one with automated setup
@@ -190,8 +218,12 @@ export default function CreateVaultPage() {
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Vault className="w-6 h-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 justify-center">
                 Asset Management
+                <InfoTooltip
+                  content="Upload and organize your board documents with automatic categorization. Supports version control, digital signatures, and secure sharing."
+                  size="sm"
+                />
               </h3>
               <p className="text-sm text-gray-600">
                 Add documents from your library with intelligent organization and search
@@ -204,8 +236,12 @@ export default function CreateVaultPage() {
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-6 h-6 text-purple-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 justify-center">
                 Team Collaboration
+                <InfoTooltip
+                  content="Invite board members with customizable roles and permissions. Features real-time notifications, activity tracking, and secure communication channels."
+                  size="sm"
+                />
               </h3>
               <p className="text-sm text-gray-600">
                 Invite board mates with role-based access and instant notifications

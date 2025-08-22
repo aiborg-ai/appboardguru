@@ -16,24 +16,24 @@ async function globalSetup(config: FullConfig) {
     console.log('👥 Creating test users...')
     const adminUser = await testDb.createUser(UserFactory.buildAdmin({
       email: 'admin@e2e-test.com',
-      full_// name: 'E2E Admin User',
+      full_name: 'E2E Admin User',
     }))
     
     const directorUser = await testDb.createUser(UserFactory.buildDirector({
       email: 'director@e2e-test.com',
-      full_// name: 'E2E Director User',
+      full_name: 'E2E Director User',
     }))
     
     const viewerUser = await testDb.createUser(UserFactory.buildViewer({
       email: 'viewer@e2e-test.com',
-      full_// name: 'E2E Viewer User',
+      full_name: 'E2E Viewer User',
     }))
     
     // Create test organizations
     console.log('🏢 Creating test organizations...')
     const testOrg = await testDb.createOrganization({
       created_by: adminUser.id,
-      // name: 'E2E Test Organization',
+      name: 'E2E Test Organization',
       slug: 'e2e-test-org',
       description: 'Organization for E2E testing',
     })
@@ -47,7 +47,7 @@ async function globalSetup(config: FullConfig) {
     const activeVault = await testDb.createVault({
       organization_id: testOrg.id,
       created_by: adminUser.id,
-      // name: 'E2E Test Vault - Active',
+      name: 'E2E Test Vault - Active',
       status: 'processing',
       priority: 'high',
       meeting_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -56,7 +56,7 @@ async function globalSetup(config: FullConfig) {
     const draftVault = await testDb.createVault({
       organization_id: testOrg.id,
       created_by: adminUser.id,
-      // name: 'E2E Test Vault - Draft',
+      name: 'E2E Test Vault - Draft',
       status: 'processing',
       priority: 'medium',
     })
@@ -67,16 +67,16 @@ async function globalSetup(config: FullConfig) {
       organization_id: testOrg.id,
       uploaded_by: adminUser.id,
       title: 'E2E Financial Report',
-      file_// name: 'e2e-financial-report.pdf',
-      // processing_status: 'ready',
+      file_name: 'e2e-financial-report.pdf',
+      processing_status: 'ready',
     })
     
     const testAsset2 = await testDb.createAsset({
       organization_id: testOrg.id,
       uploaded_by: adminUser.id,
       title: 'E2E Strategic Plan',
-      file_// name: 'e2e-strategic-plan.docx',
-      // processing_status: 'ready',
+      file_name: 'e2e-strategic-plan.docx',
+      processing_status: 'ready',
     })
     
     // Associate assets with vaults
@@ -149,10 +149,10 @@ async function globalSetup(config: FullConfig) {
         director: { id: directorUser.id, email: 'director@e2e-test.com' },
         viewer: { id: viewerUser.id, email: 'viewer@e2e-test.com' },
       },
-      organization: { id: testOrg.id, // name: testOrg.name, slug: testOrg.slug },
+      organization: { id: testOrg.id, name: testOrg.name, slug: testOrg.slug },
       vaults: {
-        active: { id: activeVault.id, // name: activeVault.name },
-        draft: { id: draftVault.id, // name: draftVault.name },
+        active: { id: activeVault.id, name: activeVault.name },
+        draft: { id: draftVault.id, name: draftVault.name },
       },
       assets: {
         financial: { id: testAsset1.id, title: testAsset1.title },

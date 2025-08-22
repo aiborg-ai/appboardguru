@@ -16,6 +16,7 @@ import {
   Download,
   Filter
 } from 'lucide-react'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
 interface CalendarEvent {
   id: string
@@ -315,35 +316,80 @@ export default function CalendarPage() {
           <div className="flex items-center space-x-3">
             <Calendar className="h-8 w-8 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                Calendar
+                <InfoTooltip
+                  content={
+                    <InfoSection
+                      title="Board Calendar System"
+                      description="Comprehensive scheduling and meeting management system designed for board governance and executive coordination."
+                      features={[
+                        "Multiple view modes: Month, Week, and Day views",
+                        "Event categorization with color coding",
+                        "Attendee management and notifications",
+                        "Location tracking for in-person meetings",
+                        "Export functionality for external calendars",
+                        "Real-time synchronization across devices",
+                        "Meeting statistics and analytics",
+                        "Integration with board document vaults"
+                      ]}
+                      tips={[
+                        "Use color-coded event types for quick identification",
+                        "Export events to sync with your personal calendar",
+                        "Set up location details for hybrid meetings",
+                        "Track attendance for compliance reporting"
+                      ]}
+                    />
+                  }
+                  side="right"
+                />
+              </h1>
               <p className="text-gray-600">Manage your meetings and events</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              {(['month', 'week', 'day'] as const).map(mode => (
-                <Button
-                  key={mode}
-                  variant={viewMode === mode ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode(mode)}
-                  className="text-xs px-3 py-1"
-                >
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                </Button>
-              ))}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                {(['month', 'week', 'day'] as const).map(mode => (
+                  <Button
+                    key={mode}
+                    variant={viewMode === mode ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode(mode)}
+                    className="text-xs px-3 py-1"
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </Button>
+                ))}
+              </div>
+              <InfoTooltip
+                content="Switch between Month view for overview, Week view for detailed planning, or Day view for focused scheduling."
+                size="sm"
+              />
             </div>
             
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <InfoTooltip
+                content="Export your calendar events to sync with external calendar applications like Outlook, Google Calendar, or Apple Calendar."
+                size="sm"
+              />
+            </div>
             
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Event
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Event
+              </Button>
+              <InfoTooltip
+                content="Create new board meetings, deadlines, reminders, or personal events. All events support attendee management, location details, and integration with board documents."
+                size="sm"
+              />
+            </div>
           </div>
         </div>
 
@@ -426,7 +472,13 @@ export default function CalendarPage() {
 
         {/* Calendar Legend */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Event Types</h3>
+          <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+            Event Types
+            <InfoTooltip
+              content="Different event types are color-coded for easy identification. Board meetings (blue), personal events (green), deadlines (red), reminders (yellow), and holidays (purple)."
+              size="sm"
+            />
+          </h3>
           <div className="flex flex-wrap gap-4">
             {Object.entries(EVENT_COLORS).map(([type, color]) => (
               <div key={type} className="flex items-center space-x-2">

@@ -1,0 +1,489 @@
+/**
+ * CRDT Hook - Conflict-free Replicated Data Types
+ * React hook for collaborative document editing
+ * Following CLAUDE.md patterns with Result handling
+ */
+
+'use client'
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useUser } from '../lib/stores'
+import { CRDTService, type DocumentSnapshot } from '../lib/services/crdt.service'
+import type { AssetId, OrganizationId, UserId } from '../types/database'
+import type { Result } from '../lib/types/result'
+
+export interface UseCRDTOptions {
+  assetId: AssetId
+  organizationId: OrganizationId
+  initialContent?: string
+  enabled?: boolean
+  autoSync?: boolean
+  syncInterval?: number
+}
+
+export interface UseCRDTReturn {
+  // Document state
+  content: string
+  isInitialized: boolean
+  isConnected: boolean
+  isSyncing: boolean
+  lastSync: Date | null
+  
+  // Document info
+  version: number
+  collaborators: string[]
+  totalOperations: number
+  conflictResolutions: number
+  
+  // Actions
+  updateContent: (newContent: string) => Promise<Result<void>>
+  insertText: (position: number, text: string) => Promise<Result<void>>
+  deleteText: (position: number, length: number) => Promise<Result<void>>
+  formatText: (position: number, length: number, attributes: Record<string, any>) => Promise<Result<void>>
+  getSnapshot: () => Promise<Result<DocumentSnapshot>>
+  
+  // Connection management
+  connect: () => Promise<Result<void>>
+  disconnect: () => Promise<Result<void>>
+  
+  // Error handling
+  error: string | null
+  clearError: () => void
+}
+
+export function useCRDT({
+  assetId,
+  organizationId,
+  initialContent = '',
+  enabled = true,
+  autoSync = true,
+  syncInterval = 30000
+}: UseCRDTOptions): UseCRDTReturn {
+  const user = useUser()
+
+  // State
+  const [content, setContent] = useState(initialContent)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [lastSync, setLastSync] = useState<Date | null>(null)
+  const [version, setVersion] = useState(1)
+  const [collaborators, setCollaborators] = useState<string[]>([])
+  const [totalOperations, setTotalOperations] = useState(0)
+  const [conflictResolutions, setConflictResolutions] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+
+  // Refs
+  const crdtServiceRef = useRef<CRDTService | null>(null)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
+  const syncIntervalRef = useRef<NodeJS.Timeout>()
+  const lastContentRef = useRef(initialContent)
+
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
+
+  // Initialize CRDT service
+  const initializeCRDT = useCallback(async (): Promise<Result<void>> => {
+    try {
+      if (!user || isInitialized) {
+        return Result.success(undefined)
+      }
+
+      setIsSyncing(true)
+      clearError()
+
+      // Create CRDT service
+      crdtServiceRef.current = new CRDTService({})
+
+      // Initialize document
+      const result = await crdtServiceRef.current.initializeDocument(
+        assetId,
+        organizationId,
+        initialContent
+      )
+
+      if (!result.success) {
+        setError(result.error.message)
+        return Result.failure(result.error.code, result.error.message)
+      }
+
+      // Subscribe to changes
+      const subscribeResult = crdtServiceRef.current.subscribeToChanges(
+        assetId,
+        handleDocumentUpdate
+      )
+
+      if (subscribeResult.success) {
+        unsubscribeRef.current = subscribeResult.data
+      }
+
+      // Load initial state
+      await loadDocumentState()
+
+      setIsInitialized(true)
+      setIsConnected(true)
+      setLastSync(new Date())
+
+      // Start auto-sync if enabled
+      if (autoSync) {
+        startAutoSync()
+      }
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize CRDT'
+      setError(errorMessage)
+      return Result.failure('CRDT_INIT_ERROR', errorMessage)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [user, assetId, organizationId, initialContent, isInitialized, autoSync])
+
+  // Handle document updates from CRDT
+  const handleDocumentUpdate = useCallback((event: any) => {
+    loadDocumentState().catch(error => {
+      console.error('Failed to load document state after update:', error)
+    })
+  }, [])
+
+  // Load current document state
+  const loadDocumentState = useCallback(async () => {
+    if (!crdtServiceRef.current) return
+
+    try {
+      const snapshotResult = await crdtServiceRef.current.getDocumentSnapshot(assetId)
+      if (snapshotResult.success) {
+        const snapshot = snapshotResult.data
+        
+        if (snapshot.content !== lastContentRef.current) {
+          setContent(snapshot.content)
+          lastContentRef.current = snapshot.content
+        }
+        
+        setVersion(snapshot.version)
+        setLastSync(new Date())
+      }
+
+      const statsResult = await crdtServiceRef.current.getConflictStats(assetId)
+      if (statsResult.success) {
+        setTotalOperations(statsResult.data.totalOperations)
+        setConflictResolutions(statsResult.data.conflictResolutions)
+      }
+
+    } catch (error) {
+      console.error('Failed to load document state:', error)
+    }
+  }, [assetId])
+
+  // Start auto-sync
+  const startAutoSync = useCallback(() => {
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current)
+    }
+
+    syncIntervalRef.current = setInterval(() => {
+      loadDocumentState()
+    }, syncInterval)
+  }, [syncInterval, loadDocumentState])
+
+  // Stop auto-sync
+  const stopAutoSync = useCallback(() => {
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current)
+      syncIntervalRef.current = undefined
+    }
+  }, [])
+
+  // Connect to CRDT
+  const connect = useCallback(async (): Promise<Result<void>> => {
+    return await initializeCRDT()
+  }, [initializeCRDT])
+
+  // Disconnect from CRDT
+  const disconnect = useCallback(async (): Promise<Result<void>> => {
+    try {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        unsubscribeRef.current = null
+      }
+
+      stopAutoSync()
+
+      if (crdtServiceRef.current) {
+        await crdtServiceRef.current.cleanupDocument(assetId)
+        crdtServiceRef.current = null
+      }
+
+      setIsConnected(false)
+      setIsInitialized(false)
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect'
+      setError(errorMessage)
+      return Result.failure('DISCONNECT_ERROR', errorMessage)
+    }
+  }, [assetId, stopAutoSync])
+
+  // Update content (full replace)
+  const updateContent = useCallback(async (newContent: string): Promise<Result<void>> => {
+    if (!crdtServiceRef.current || !user) {
+      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+    }
+
+    try {
+      setIsSyncing(true)
+      clearError()
+
+      // Calculate diff and apply operations
+      const currentContent = lastContentRef.current
+      
+      // Simple diff - delete all and insert new (could be optimized)
+      if (currentContent.length > 0) {
+        const deleteResult = await crdtServiceRef.current.applyTextOperation(
+          assetId,
+          {
+            type: 'delete',
+            position: 0,
+            length: currentContent.length
+          },
+          user.id as UserId
+        )
+
+        if (!deleteResult.success) {
+          setError(deleteResult.error.message)
+          return deleteResult
+        }
+      }
+
+      if (newContent.length > 0) {
+        const insertResult = await crdtServiceRef.current.applyTextOperation(
+          assetId,
+          {
+            type: 'insert',
+            position: 0,
+            content: newContent
+          },
+          user.id as UserId
+        )
+
+        if (!insertResult.success) {
+          setError(insertResult.error.message)
+          return insertResult
+        }
+      }
+
+      setContent(newContent)
+      lastContentRef.current = newContent
+      setLastSync(new Date())
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update content'
+      setError(errorMessage)
+      return Result.failure('UPDATE_ERROR', errorMessage)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [assetId, user])
+
+  // Insert text at position
+  const insertText = useCallback(async (position: number, text: string): Promise<Result<void>> => {
+    if (!crdtServiceRef.current || !user) {
+      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+    }
+
+    try {
+      setIsSyncing(true)
+      clearError()
+
+      const result = await crdtServiceRef.current.applyTextOperation(
+        assetId,
+        {
+          type: 'insert',
+          position,
+          content: text
+        },
+        user.id as UserId
+      )
+
+      if (!result.success) {
+        setError(result.error.message)
+        return result
+      }
+
+      // Update local content
+      const newContent = content.slice(0, position) + text + content.slice(position)
+      setContent(newContent)
+      lastContentRef.current = newContent
+      setLastSync(new Date())
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to insert text'
+      setError(errorMessage)
+      return Result.failure('INSERT_ERROR', errorMessage)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [assetId, user, content])
+
+  // Delete text at position
+  const deleteText = useCallback(async (position: number, length: number): Promise<Result<void>> => {
+    if (!crdtServiceRef.current || !user) {
+      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+    }
+
+    try {
+      setIsSyncing(true)
+      clearError()
+
+      const result = await crdtServiceRef.current.applyTextOperation(
+        assetId,
+        {
+          type: 'delete',
+          position,
+          length
+        },
+        user.id as UserId
+      )
+
+      if (!result.success) {
+        setError(result.error.message)
+        return result
+      }
+
+      // Update local content
+      const newContent = content.slice(0, position) + content.slice(position + length)
+      setContent(newContent)
+      lastContentRef.current = newContent
+      setLastSync(new Date())
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete text'
+      setError(errorMessage)
+      return Result.failure('DELETE_ERROR', errorMessage)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [assetId, user, content])
+
+  // Format text at position
+  const formatText = useCallback(async (
+    position: number, 
+    length: number, 
+    attributes: Record<string, any>
+  ): Promise<Result<void>> => {
+    if (!crdtServiceRef.current || !user) {
+      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+    }
+
+    try {
+      setIsSyncing(true)
+      clearError()
+
+      const result = await crdtServiceRef.current.applyTextOperation(
+        assetId,
+        {
+          type: 'format',
+          position,
+          length,
+          attributes
+        },
+        user.id as UserId
+      )
+
+      if (!result.success) {
+        setError(result.error.message)
+        return result
+      }
+
+      setLastSync(new Date())
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to format text'
+      setError(errorMessage)
+      return Result.failure('FORMAT_ERROR', errorMessage)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [assetId, user])
+
+  // Get document snapshot
+  const getSnapshot = useCallback(async (): Promise<Result<DocumentSnapshot>> => {
+    if (!crdtServiceRef.current) {
+      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+    }
+
+    try {
+      return await crdtServiceRef.current.getDocumentSnapshot(assetId)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get snapshot'
+      return Result.failure('SNAPSHOT_ERROR', errorMessage)
+    }
+  }, [assetId])
+
+  // Initialize on mount
+  useEffect(() => {
+    if (enabled && user) {
+      initializeCRDT()
+    }
+
+    return () => {
+      disconnect()
+    }
+  }, [enabled, user, initializeCRDT, disconnect])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopAutoSync()
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+      }
+      if (crdtServiceRef.current) {
+        crdtServiceRef.current.cleanupDocument(assetId)
+      }
+    }
+  }, [assetId, stopAutoSync])
+
+  return {
+    // Document state
+    content,
+    isInitialized,
+    isConnected,
+    isSyncing,
+    lastSync,
+    
+    // Document info
+    version,
+    collaborators,
+    totalOperations,
+    conflictResolutions,
+    
+    // Actions
+    updateContent,
+    insertText,
+    deleteText,
+    formatText,
+    getSnapshot,
+    
+    // Connection management
+    connect,
+    disconnect,
+    
+    // Error handling
+    error,
+    clearError
+  }
+}

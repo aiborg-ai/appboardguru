@@ -5,13 +5,13 @@
  */
 
 import { BaseService } from './base.service';
-import { AssetRepository } from '../repositories/asset.repository.enhanced';
+import { AssetRepository, AssetUploadData, AssetWithDetails } from '../repositories/asset.repository.enhanced';
 import { Result, Ok, Err } from '../result';
 import { Asset, AssetMetadata, AssetVersion } from '../../types/entities/asset.types';
 import { AssetId, UserId, OrganizationId, VaultId } from '../../types/core';
 
 export interface IAssetService {
-  uploadAsset(data: UploadAssetData): Promise<Result<Asset>>;
+  uploadAsset(data: AssetUploadData): Promise<Result<AssetWithDetails>>;
   getAsset(assetId: AssetId): Promise<Result<Asset>>;
   updateAsset(assetId: AssetId, data: UpdateAssetData): Promise<Result<Asset>>;
   deleteAsset(assetId: AssetId): Promise<Result<void>>;
@@ -100,75 +100,57 @@ export class AssetService extends BaseService implements IAssetService {
     super();
   }
 
-  async uploadAsset(data: UploadAssetData): Promise<Result<Asset>> {
+  async uploadAsset(data: AssetUploadData): Promise<Result<AssetWithDetails>> {
     try {
       // Validate upload data
       const validation = this.validateUploadData(data);
-      if (!validation.isValid) {
-        return Err(new Error(`Invalid upload data: ${validation.errors.join(', ')}`));
+      if (!validation.success) {
+        return validation;
       }
 
-      // Check file size limits
-      const maxSize = this.getMaxFileSize(data.mimeType);
-      if (data.size > maxSize) {
-        return Err(new Error(`File size exceeds limit of ${this.formatFileSize(maxSize)}`));
+      // Check file size limits (50MB default)
+      const MAX_FILE_SIZE = 50 * 1024 * 1024;
+      if (data.fileSize > MAX_FILE_SIZE) {
+        return Err(new Error(`File size exceeds limit of ${this.formatFileSize(MAX_FILE_SIZE)}`));
       }
 
-      // Scan for viruses
+      // Validate file type
+      const allowedTypes = this.getAllowedMimeTypes();
+      if (!allowedTypes.includes(data.mimeType)) {
+        return Err(new Error(`File type ${data.mimeType} is not allowed`));
+      }
+
+      // Scan for viruses (stub for now)
       const virusScanResult = await this.scanForViruses(data.file);
       if (!virusScanResult.clean) {
         return Err(new Error('File failed security scan'));
       }
 
-      // Generate file hash for deduplication
-      const fileHash = await this.generateFileHash(data.file);
-      
-      // Check for existing file with same hash
-      const existingAsset = await this.assetRepository.findByHash(fileHash);
-      if (existingAsset && existingAsset.vaultId === data.vaultId) {
-        return Err(new Error('File already exists in this vault'));
+      // Upload to storage first
+      const storageResult = await this.assetRepository.uploadFileToStorage(data);
+      if (!storageResult.success) {
+        return storageResult;
       }
 
-      // Extract metadata based on file type
-      const extractedMetadata = await this.extractMetadata(data.file, data.mimeType, data.fileName);
-
-      // Create asset record
-      const assetData = {
-        fileName: data.fileName,
-        mimeType: data.mimeType,
-        size: data.size,
-        vaultId: data.vaultId,
-        organizationId: data.organizationId,
-        uploadedBy: data.userId,
-        fileHash,
-        metadata: {
-          ...extractedMetadata,
-          ...data.metadata
-        },
-        tags: data.tags || [],
-        description: data.description,
-        status: 'active' as const,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const asset = await this.assetRepository.create(assetData);
-
-      // Upload file to storage
-      const uploadResult = await this.uploadToStorage(asset.id, data.file, data.mimeType);
-      if (!uploadResult.success) {
-        // Clean up database record if upload fails
-        await this.assetRepository.delete(asset.id);
-        return Err(uploadResult.error);
+      // Create asset record with storage info
+      const assetResult = await this.assetRepository.createAssetRecord(data, storageResult.data);
+      if (!assetResult.success) {
+        // Clean up uploaded file if database creation fails
+        await this.assetRepository.deleteFileFromStorage(storageResult.data.filePath);
+        return assetResult;
       }
 
-      // Update asset with storage path
-      const updatedAsset = await this.assetRepository.update(asset.id, {
-        storagePath: uploadResult.path,
-        url: uploadResult.url,
-      });
+      // Log activity
+      await this.logAssetActivity(
+        data.uploadedBy,
+        data.organizationId,
+        'uploaded',
+        assetResult.data.id,
+        data.title
+      );
 
-      return Ok(updatedAsset);
+      return assetResult;
+
     } catch (error) {
       return this.handleError(error, 'Failed to upload asset');
     }
@@ -433,6 +415,106 @@ export class AssetService extends BaseService implements IAssetService {
   private async generateDownloadUrl(storagePath: string, fileName: string): Promise<string> {
     // TODO: Generate signed URL for secure download
     return `https://storage.example.com/${storagePath}?download=${fileName}`;
+  }
+
+  private getAllowedMimeTypes(): string[] {
+    return [
+      // Documents
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'text/markdown',
+      // Images
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      // Videos
+      'video/mp4',
+      'video/quicktime',
+      'video/x-msvideo',
+      'video/x-ms-wmv',
+      // Audio
+      'audio/mpeg',
+      'audio/wav',
+      'audio/mp4',
+      // Archives
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed'
+    ];
+  }
+
+  private async logAssetActivity(
+    userId: UserId,
+    organizationId: OrganizationId,
+    action: string,
+    assetId: string,
+    assetTitle: string
+  ): Promise<void> {
+    try {
+      // TODO: Implement proper activity logging using activity service
+      console.log(`Asset Activity: ${action} - Asset: ${assetTitle} (${assetId}) by User: ${userId} in Org: ${organizationId}`);
+    } catch (error) {
+      // Log error but don't fail the upload
+      console.error('Failed to log asset activity:', error);
+    }
+  }
+
+  private validateUploadData(data: AssetUploadData): Result<boolean> {
+    const errors: string[] = [];
+
+    if (!data.file || data.file.length === 0) {
+      errors.push('File is required');
+    }
+
+    if (!data.title || data.title.trim().length === 0) {
+      errors.push('Title is required');
+    }
+
+    if (data.title && data.title.length > 255) {
+      errors.push('Title must be less than 255 characters');
+    }
+
+    if (!data.fileName || data.fileName.trim().length === 0) {
+      errors.push('File name is required');
+    }
+
+    if (!data.mimeType || data.mimeType.trim().length === 0) {
+      errors.push('MIME type is required');
+    }
+
+    if (!data.organizationId) {
+      errors.push('Organization ID is required');
+    }
+
+    if (!data.uploadedBy) {
+      errors.push('Uploaded by user ID is required');
+    }
+
+    if (data.description && data.description.length > 1000) {
+      errors.push('Description must be less than 1000 characters');
+    }
+
+    if (data.tags && data.tags.length > 10) {
+      errors.push('Maximum 10 tags allowed');
+    }
+
+    if (data.tags && data.tags.some(tag => tag.length > 50)) {
+      errors.push('Each tag must be less than 50 characters');
+    }
+
+    if (errors.length > 0) {
+      return Err(new Error(`Validation failed: ${errors.join(', ')}`));
+    }
+
+    return Ok(true);
   }
 
   private isDocumentType(mimeType: string): boolean {

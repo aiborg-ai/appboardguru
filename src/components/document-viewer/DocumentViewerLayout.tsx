@@ -24,19 +24,33 @@ import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import { useDocumentContext, useDocumentState, useDocumentActions } from './DocumentContextProvider'
+import { LiveCursorOverlay } from '../collaboration/LiveCursorOverlay'
+import { useLiveCursors } from '../../hooks/useLiveCursors'
 import DocumentTabs from './DocumentTabs'
+import type { AssetId } from '../../types/database'
 
 interface DocumentViewerLayoutProps {
   children: React.ReactNode
+  assetId?: AssetId
   className?: string
 }
 
-export default function DocumentViewerLayout({ children, className = '' }: DocumentViewerLayoutProps) {
+export default function DocumentViewerLayout({ children, assetId, className = '' }: DocumentViewerLayoutProps) {
   const { state } = useDocumentContext()
   const actions = useDocumentActions()
   const [isToolbarVisible, setIsToolbarVisible] = useState(true)
   const [lastMouseMove, setLastMouseMove] = useState(Date.now())
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Live cursor tracking for document viewing
+  const {
+    cursors: liveCursors,
+    isTracking: isCursorTracking
+  } = useLiveCursors({
+    assetId: assetId || ('' as AssetId),
+    enabled: !!assetId && !state.isFullscreen // Only enable when not in fullscreen
+  })
 
   // Auto-hide toolbar in fullscreen mode
   useEffect(() => {
@@ -252,13 +266,27 @@ export default function DocumentViewerLayout({ children, className = '' }: Docum
         <div className="flex-1 relative overflow-hidden">
           {/* Document viewer */}
           <div 
-            className="h-full w-full bg-gray-100 overflow-auto"
+            ref={containerRef}
+            className="h-full w-full bg-gray-100 overflow-auto relative"
             style={{
               transform: `scale(${state.zoom})`,
               transformOrigin: 'top left'
             }}
           >
             {children}
+            
+            {/* Live cursor overlay for document viewing */}
+            {assetId && (
+              <LiveCursorOverlay
+                assetId={assetId}
+                cursors={liveCursors}
+                containerRef={containerRef}
+                isVisible={isCursorTracking && !state.isFullscreen}
+                showSelections={true}
+                showUserInfo={true}
+                className="absolute inset-0 pointer-events-none"
+              />
+            )}
           </div>
 
           {/* Floating collaborators indicator */}

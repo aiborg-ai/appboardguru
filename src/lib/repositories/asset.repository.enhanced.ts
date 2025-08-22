@@ -95,6 +95,28 @@ export interface AssetShareData {
   is_active: boolean
 }
 
+export interface AssetUploadData {
+  file: Buffer
+  fileName: string
+  originalFileName: string
+  mimeType: string
+  fileSize: number
+  title: string
+  description?: string
+  category: string
+  tags: string[]
+  organizationId: OrganizationId
+  vaultId?: VaultId
+  folderPath: string
+  uploadedBy: UserId
+}
+
+export interface StorageUploadResult {
+  filePath: string
+  fileName: string
+  publicUrl?: string
+}
+
 export interface AssetStats {
   totalAssets: number
   totalSize: number
@@ -620,5 +642,217 @@ export class AssetRepository extends BaseRepository {
     }
 
     return query
+  }
+
+  // Storage Operations
+  async uploadFileToStorage(uploadData: AssetUploadData): Promise<Result<StorageUploadResult>> {
+    return this.executeTransaction(async () => {
+      try {
+        // Validate organization access
+        const orgValidation = await this.validateOrganizationAccess(
+          uploadData.organizationId,
+          uploadData.uploadedBy
+        )
+        if (!orgValidation.success) {
+          return failure(new RepositoryError(
+            'User does not have access to this organization',
+            'ORGANIZATION_ACCESS_DENIED',
+            { organizationId: uploadData.organizationId, userId: uploadData.uploadedBy }
+          ))
+        }
+
+        // Generate unique file path
+        const fileExtension = uploadData.fileName.split('.').pop()?.toLowerCase() || ''
+        const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`
+        const sanitizedFolderPath = this.sanitizeFolderPath(uploadData.folderPath)
+        const filePath = `${uploadData.uploadedBy}/${uploadData.organizationId}/${sanitizedFolderPath}/${uniqueFileName}`.replace(/\/+/g, '/')
+
+        // Upload to Supabase Storage
+        const { data: uploadResult, error: uploadError } = await this.supabase.storage
+          .from('assets')
+          .upload(filePath, uploadData.file, {
+            contentType: uploadData.mimeType,
+            metadata: {
+              originalName: uploadData.originalFileName,
+              uploadedBy: uploadData.uploadedBy,
+              title: uploadData.title,
+              organizationId: uploadData.organizationId
+            }
+          })
+
+        if (uploadError) {
+          return failure(new RepositoryError(
+            'Failed to upload file to storage',
+            'STORAGE_UPLOAD_FAILED',
+            { error: uploadError.message, filePath }
+          ))
+        }
+
+        // Get public URL if needed
+        const { data: { publicUrl } } = this.supabase.storage
+          .from('assets')
+          .getPublicUrl(uploadResult.path)
+
+        return success({
+          filePath: uploadResult.path,
+          fileName: uniqueFileName,
+          publicUrl
+        })
+
+      } catch (error) {
+        return failure(new RepositoryError(
+          'Storage upload operation failed',
+          'STORAGE_OPERATION_ERROR',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
+        ))
+      }
+    })
+  }
+
+  async createAssetRecord(uploadData: AssetUploadData, storageResult: StorageUploadResult): Promise<Result<AssetWithDetails>> {
+    return this.executeTransaction(async () => {
+      try {
+        const assetData: AssetInsert = {
+          title: uploadData.title,
+          description: uploadData.description,
+          file_name: storageResult.fileName,
+          original_file_name: uploadData.originalFileName,
+          file_path: storageResult.filePath,
+          file_size: uploadData.fileSize,
+          file_type: uploadData.fileName.split('.').pop()?.toLowerCase() || '',
+          mime_type: uploadData.mimeType,
+          category: uploadData.category,
+          tags: uploadData.tags,
+          organization_id: uploadData.organizationId,
+          vault_id: uploadData.vaultId,
+          folder_path: uploadData.folderPath,
+          uploaded_by: uploadData.uploadedBy,
+          storage_bucket: 'assets',
+          is_processed: false,
+          processing_status: 'pending',
+          visibility: 'private',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+
+        const { data: asset, error: dbError } = await this.supabase
+          .from('assets')
+          .insert(assetData)
+          .select(`
+            *,
+            uploaded_by_user:users!uploaded_by(
+              id, full_name, email, avatar_url
+            ),
+            vault:vaults(id, name, organization_id),
+            organization:organizations(id, name, slug)
+          `)
+          .single()
+
+        if (dbError) {
+          // Clean up uploaded file if database insert fails
+          await this.deleteFileFromStorage(storageResult.filePath)
+          
+          return failure(new RepositoryError(
+            'Failed to create asset record',
+            'DATABASE_INSERT_FAILED',
+            { error: dbError.message }
+          ))
+        }
+
+        return success(asset as AssetWithDetails)
+
+      } catch (error) {
+        return failure(new RepositoryError(
+          'Asset creation failed',
+          'ASSET_CREATION_ERROR',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
+        ))
+      }
+    })
+  }
+
+  async deleteFileFromStorage(filePath: string): Promise<Result<void>> {
+    try {
+      const { error } = await this.supabase.storage
+        .from('assets')
+        .remove([filePath])
+
+      if (error) {
+        return failure(new RepositoryError(
+          'Failed to delete file from storage',
+          'STORAGE_DELETE_FAILED',
+          { error: error.message, filePath }
+        ))
+      }
+
+      return success(undefined)
+    } catch (error) {
+      return failure(new RepositoryError(
+        'Storage delete operation failed',
+        'STORAGE_OPERATION_ERROR',
+        { error: error instanceof Error ? error.message : 'Unknown error' }
+      ))
+    }
+  }
+
+  async getFileDownloadUrl(filePath: string, expiresIn: number = 3600): Promise<Result<string>> {
+    try {
+      const { data, error } = await this.supabase.storage
+        .from('assets')
+        .createSignedUrl(filePath, expiresIn)
+
+      if (error) {
+        return failure(new RepositoryError(
+          'Failed to generate download URL',
+          'DOWNLOAD_URL_FAILED',
+          { error: error.message, filePath }
+        ))
+      }
+
+      return success(data.signedUrl)
+    } catch (error) {
+      return failure(new RepositoryError(
+        'Download URL generation failed',
+        'DOWNLOAD_URL_ERROR',
+        { error: error instanceof Error ? error.message : 'Unknown error' }
+      ))
+    }
+  }
+
+  // Helper methods
+  private sanitizeFolderPath(folderPath: string): string {
+    // Remove leading/trailing slashes and sanitize path
+    return folderPath
+      .replace(/^\/+|\/+$/g, '')
+      .replace(/[^a-zA-Z0-9\-_\/]/g, '_')
+      .replace(/\/+/g, '/')
+  }
+
+  private async validateOrganizationAccess(organizationId: OrganizationId, userId: UserId): Promise<Result<boolean>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('organization_members')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single()
+
+      if (error || !data) {
+        return failure(new RepositoryError(
+          'User is not a member of this organization',
+          'ORGANIZATION_ACCESS_DENIED',
+          { organizationId, userId }
+        ))
+      }
+
+      return success(true)
+    } catch (error) {
+      return failure(new RepositoryError(
+        'Failed to validate organization access',
+        'ORGANIZATION_VALIDATION_ERROR',
+        { error: error instanceof Error ? error.message : 'Unknown error' }
+      ))
+    }
   }
 }

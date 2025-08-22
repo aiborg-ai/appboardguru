@@ -2,6 +2,7 @@
 
 import { OrganizationProvider } from '@/contexts/OrganizationContext'
 import { QueryProvider } from '@/lib/providers/query-provider'
+import { Toaster } from '@/features/shared/ui/toaster'
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
     <QueryProvider>
       <OrganizationProvider>
         {children}
+        <Toaster />
       </OrganizationProvider>
     </QueryProvider>
   )

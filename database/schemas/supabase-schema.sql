@@ -8,6 +8,7 @@ ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 CREATE TYPE user_role AS ENUM ('pending', 'director', 'admin', 'viewer');
 CREATE TYPE user_status AS ENUM ('pending', 'approved', 'rejected');
 CREATE TYPE pack_status AS ENUM ('processing', 'ready', 'failed', 'archived');
+CREATE TYPE email_processing_status AS ENUM ('received', 'processing', 'completed', 'failed', 'rejected');
 
 -- Create users table (extends auth.users)
 CREATE TABLE IF NOT EXISTS users (
@@ -272,6 +273,92 @@ CREATE POLICY "Directors and admins can update files" ON storage.objects
 CREATE POLICY "Directors and admins can delete files" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'board-packs' AND
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('admin', 'director') 
+      AND status = 'approved'
+    )
+  );
+
+-- Email to Assets Integration Tables
+-- Create email_processing_logs table for email-to-asset ingestion
+CREATE TABLE IF NOT EXISTS email_processing_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id TEXT NOT NULL,
+  from_email TEXT NOT NULL,
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  status email_processing_status DEFAULT 'received',
+  user_id UUID REFERENCES users(id),
+  organization_id UUID,
+  assets_created UUID[] DEFAULT '{}',
+  error_message TEXT,
+  processing_time_ms INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for email processing logs
+CREATE INDEX IF NOT EXISTS idx_email_processing_logs_message_id ON email_processing_logs(message_id);
+CREATE INDEX IF NOT EXISTS idx_email_processing_logs_from_email ON email_processing_logs(from_email);
+CREATE INDEX IF NOT EXISTS idx_email_processing_logs_user_id ON email_processing_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_processing_logs_status ON email_processing_logs(status);
+CREATE INDEX IF NOT EXISTS idx_email_processing_logs_created_at ON email_processing_logs(created_at);
+
+-- Add trigger for email processing logs updated_at
+CREATE TRIGGER update_email_processing_logs_updated_at 
+  BEFORE UPDATE ON email_processing_logs 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security for email processing logs
+ALTER TABLE email_processing_logs ENABLE ROW LEVEL SECURITY;
+
+-- Email processing logs policies
+CREATE POLICY "Users can view their own email processing logs" ON email_processing_logs
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all email processing logs" ON email_processing_logs
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('admin', 'director') 
+      AND status = 'approved'
+    )
+  );
+
+CREATE POLICY "System can insert email processing logs" ON email_processing_logs
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "System can update email processing logs" ON email_processing_logs
+  FOR UPDATE USING (true);
+
+-- Create storage bucket for email assets
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('email-assets', 'email-assets', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for email-assets bucket
+CREATE POLICY "Users can view their email assets" ON storage.objects
+  FOR SELECT USING (
+    bucket_id = 'email-assets' AND
+    auth.uid() IS NOT NULL
+  );
+
+CREATE POLICY "System can upload email assets" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'email-assets'
+  );
+
+CREATE POLICY "System can update email assets" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'email-assets'
+  );
+
+CREATE POLICY "Admins can delete email assets" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'email-assets' AND
     EXISTS (
       SELECT 1 FROM users 
       WHERE id = auth.uid() 

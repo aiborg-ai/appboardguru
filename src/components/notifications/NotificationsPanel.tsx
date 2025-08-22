@@ -342,7 +342,7 @@ const NotificationsPanel = React.memo<NotificationsPanelProps>(({ isOpen, onTogg
       </div>
     </div>
   )
-}
+})
 
 // Notification Item Component
 interface NotificationItemProps {

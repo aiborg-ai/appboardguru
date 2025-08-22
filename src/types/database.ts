@@ -5389,6 +5389,178 @@ export type Database = {
         }
         Relationships: []
       }
+      crdt_documents: {
+        Row: {
+          id: string
+          asset_id: string
+          organization_id: string
+          content: string | null
+          metadata: Json | null
+          version: number
+          last_modified_by: string | null
+          last_modified_at: string | null
+          state_vector: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          asset_id: string
+          organization_id: string
+          content?: string | null
+          metadata?: Json | null
+          version?: number
+          last_modified_by?: string | null
+          last_modified_at?: string | null
+          state_vector?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          asset_id?: string
+          organization_id?: string
+          content?: string | null
+          metadata?: Json | null
+          version?: number
+          last_modified_by?: string | null
+          last_modified_at?: string | null
+          state_vector?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crdt_documents_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crdt_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crdt_documents_last_modified_by_fkey"
+            columns: ["last_modified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      crdt_operations: {
+        Row: {
+          id: string
+          document_id: string
+          user_id: string
+          operation_type: string
+          position: number
+          content: string | null
+          length: number | null
+          attributes: Json | null
+          timestamp: string
+          vector_clock: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          user_id: string
+          operation_type: string
+          position: number
+          content?: string | null
+          length?: number | null
+          attributes?: Json | null
+          timestamp: string
+          vector_clock?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          user_id?: string
+          operation_type?: string
+          position?: number
+          content?: string | null
+          length?: number | null
+          attributes?: Json | null
+          timestamp?: string
+          vector_clock?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crdt_operations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "crdt_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crdt_operations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      crdt_conflicts: {
+        Row: {
+          id: string
+          document_id: string
+          operation_ids: string[]
+          conflict_type: string
+          resolution_strategy: string | null
+          resolved_by: string | null
+          resolved_at: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          operation_ids: string[]
+          conflict_type: string
+          resolution_strategy?: string | null
+          resolved_by?: string | null
+          resolved_at?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          operation_ids?: string[]
+          conflict_type?: string
+          resolution_strategy?: string | null
+          resolved_by?: string | null
+          resolved_at?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crdt_conflicts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "crdt_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crdt_conflicts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never;

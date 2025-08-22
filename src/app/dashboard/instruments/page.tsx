@@ -188,8 +188,8 @@ const INSTRUMENTS = [
 
 export default function InstrumentsPage() {
   const handlePlayInstrument = (instrumentId: string, href: string) => {
-    // Navigate to the specific instrument
-    window.location.href = href
+    // Navigate to the new play workflow
+    window.location.href = `/dashboard/instruments/play/${instrumentId}`
   }
 
   return (
@@ -314,12 +314,12 @@ export default function InstrumentsPage() {
             <Sparkles className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold text-blue-900 mb-2">
-                AI-Powered Board Intelligence
+                Harmonized Instrument Workflow
               </h3>
               <p className="text-blue-800 text-sm leading-relaxed">
-                Each instrument leverages advanced AI to analyze your board materials and generate actionable insights. 
-                Click the play button on any card to launch the full instrument experience. All generated reports, 
-                summaries, and analysis files will be automatically saved to your Assets for easy access and sharing.
+                Each instrument now follows a unified 4-step workflow: <strong>Goal Selection → Asset Selection → AI Analysis → Save & Share</strong>. 
+                Click the play button on any card to launch the guided workflow. Choose your analysis objectives, select relevant documents, 
+                review AI-generated insights, and easily save results to vaults or share with board mates.
               </p>
             </div>
           </div>

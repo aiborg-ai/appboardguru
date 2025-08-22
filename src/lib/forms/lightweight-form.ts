@@ -412,7 +412,7 @@ export const validators = {
     return regex.test(value) ? undefined : message
   },
 
-  compose: (...validators: Array<value: unknown) => string | undefined>) => 
+  compose: (...validators: Array<(value: unknown) => string | undefined>) => 
     (value: any): string | undefined => {
       for (const validate of validators) {
         const error = validate(value)

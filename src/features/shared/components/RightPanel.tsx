@@ -428,6 +428,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   };
   
   const handleScopeChange = (newScope: ContextScope) => {
+    console.log('[RightPanel] Scope changed to:', newScope);
     setContextScope(newScope);
     // Clear selected context when changing scope
     setSelectedContext({});
@@ -647,12 +648,13 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                       </div>
                     )}
                     
-                    <DropdownMenu modal={false}>
+                    <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
                           className="w-full justify-between text-xs h-8"
+                          onClick={() => console.log('[RightPanel] Dropdown trigger clicked')}
                         >
                           <div className="flex items-center space-x-2">
                             {React.createElement(
@@ -664,7 +666,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                           <ChevronDown className="h-3 w-3 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-80" align="start" side="bottom" sideOffset={4}>
+                      <DropdownMenuContent className="w-80 z-50" align="start" side="bottom" sideOffset={4}>
                         {/* Basic scopes */}
                         <DropdownMenuLabel>Basic Scopes</DropdownMenuLabel>
                         {getAvailableScopes().filter(s => s.id === 'general' || s.id === 'boardguru').map((scopeOption) => {

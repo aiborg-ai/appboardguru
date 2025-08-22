@@ -24,8 +24,13 @@ import {
   XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRouter } from 'next/navigation';
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle';
+import { MeetingCardsView } from '@/features/meetings/components/views/MeetingCardsView';
+import { MeetingListView } from '@/features/meetings/components/views/MeetingListView';
+import { MeetingDetailsView } from '@/features/meetings/components/views/MeetingDetailsView';
 
 // Mock meeting data
 const MOCK_MEETINGS = [
@@ -127,7 +132,7 @@ export default function MeetingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
 
   const { currentOrganization } = useOrganization();
   const router = useRouter();
@@ -178,18 +183,53 @@ export default function MeetingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Meetings</h1>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            Meetings
+            <InfoTooltip
+              content={
+                <InfoSection
+                  title="Meeting Management & Compliance"
+                  description="Comprehensive meeting management system designed for board governance, regulatory compliance, and executive coordination."
+                  features={[
+                    "AGM, Board, and Committee meeting support",
+                    "Automated compliance tracking and reporting",
+                    "Digital agenda management with approvals",
+                    "Attendee RSVP and presence tracking",
+                    "Meeting minutes with digital signatures",
+                    "Document distribution and version control",
+                    "Action item tracking and follow-up",
+                    "Regulatory reporting and audit trails",
+                    "Hybrid meeting support (in-person + virtual)"
+                  ]}
+                  tips={[
+                    "Use meeting templates for consistent agendas",
+                    "Track attendance for compliance requirements",
+                    "Set up automatic document distribution",
+                    "Enable digital signatures for quick approvals",
+                    "Use action item tracking for accountability"
+                  ]}
+                />
+              }
+              side="right"
+            />
+          </h1>
           <p className="text-gray-600 mt-1">
             Manage and organize your board meetings, AGMs, and committee sessions
           </p>
         </div>
-        <Button
-          onClick={handleCreateMeeting}
-          className="flex items-center space-x-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Create Meeting</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleCreateMeeting}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create Meeting</span>
+          </Button>
+          <InfoTooltip
+            content="Create new board meetings, AGMs, committee sessions, or other governance meetings. Includes agenda templates, attendee management, and compliance tracking."
+            size="sm"
+          />
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -249,7 +289,7 @@ export default function MeetingsPage() {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Filters and View Toggle */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -290,122 +330,25 @@ export default function MeetingsPage() {
                 <option value="committee">Committee</option>
                 <option value="other">Other</option>
               </select>
+
+              <div className="flex items-center gap-2">
+                <ViewToggle
+                  currentView={viewMode}
+                  onViewChange={setViewMode}
+                />
+                <InfoTooltip
+                  content="Switch between Cards view for visual overview, List view for quick scanning, or Details view for comprehensive meeting information and compliance data."
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Meetings List */}
-      <div className="space-y-4">
-        {filteredMeetings.map((meeting) => {
-          const statusConfig = MEETING_STATUS_CONFIG[meeting.status];
-          const StatusIcon = statusConfig.icon;
-          const dateTime = formatDateTime(meeting.scheduledStart);
-          const duration = getDuration(meeting.scheduledStart, meeting.scheduledEnd);
-          
-          return (
-            <Card key={meeting.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {meeting.title}
-                      </h3>
-                      <Badge className={cn("text-xs", statusConfig.color)}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {statusConfig.label}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {MEETING_TYPE_LABELS[meeting.meetingType]}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-gray-600 text-sm mb-4">
-                      {meeting.description}
-                    </p>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="font-medium">{dateTime.date}</p>
-                          <p className="text-gray-500">{dateTime.time}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="font-medium">{duration}</p>
-                          <p className="text-gray-500">Duration</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="font-medium">
-                            {meeting.rsvpCount}/{meeting.attendeeCount}
-                          </p>
-                          <p className="text-gray-500">RSVP'd</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        {meeting.location && meeting.virtualMeetingUrl ? (
-                          <>
-                            <MapPin className="h-4 w-4 text-gray-400" />
-                            <div>
-                              <p className="font-medium">Hybrid</p>
-                              <p className="text-gray-500">In-person + Virtual</p>
-                            </div>
-                          </>
-                        ) : meeting.location ? (
-                          <>
-                            <MapPin className="h-4 w-4 text-gray-400" />
-                            <div>
-                              <p className="font-medium">In-person</p>
-                              <p className="text-gray-500">Physical location</p>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Video className="h-4 w-4 text-gray-400" />
-                            <div>
-                              <p className="font-medium">Virtual</p>
-                              <p className="text-gray-500">Online only</p>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 mt-4 text-xs text-gray-500">
-                      <span>{meeting.agendaItemCount} agenda items</span>
-                      <span>•</span>
-                      <span>{meeting.documentCount} documents</span>
-                      <span>•</span>
-                      <span>Organized by {meeting.organizer.name}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-        
-        {filteredMeetings.length === 0 && (
+      {/* Meetings Views */}
+      <div>
+        {filteredMeetings.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Calendar className="h-12 w-12 mx-auto text-gray-300 mb-4" />
@@ -426,6 +369,12 @@ export default function MeetingsPage() {
               )}
             </CardContent>
           </Card>
+        ) : (
+          <>
+            {viewMode === 'cards' && <MeetingCardsView meetings={filteredMeetings} />}
+            {viewMode === 'list' && <MeetingListView meetings={filteredMeetings} />}
+            {viewMode === 'details' && <MeetingDetailsView meetings={filteredMeetings} />}
+          </>
         )}
       </div>
 

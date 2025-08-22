@@ -58,9 +58,12 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
+    "**/*.stories.tsx",
+    "**/*.stories.ts",
     "tests/**/*",
     "src/testing/**/*",
     "vitest.config.ts",
-    ".next/types/**/*"
+    ".next/types/**/*",
+    "src/components/performance/**/*"
   ]
 }

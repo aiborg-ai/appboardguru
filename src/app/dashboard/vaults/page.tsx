@@ -38,6 +38,7 @@ import ItemDetails from '@/features/shared/components/views/ItemDetails'
 import EmptyState from '@/features/shared/components/views/EmptyState'
 import FilterBar from '@/features/shared/components/views/FilterBar'
 import { cn } from '@/lib/utils'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
 type ViewMode = 'card' | 'list' | 'details'
 
@@ -320,6 +321,28 @@ export default function VaultsPage() {
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Package className="h-7 w-7 text-blue-600" />
               Vaults
+              <InfoTooltip
+                content={
+                  <InfoSection
+                    title="Secure Document Vaults"
+                    description="Vaults are secure containers for your sensitive board documents and files with enterprise-grade encryption."
+                    features={[
+                      "End-to-end encryption for all documents",
+                      "Role-based access control with granular permissions",
+                      "Audit trail for all document activities",
+                      "Version control with automatic backups",
+                      "Real-time collaboration with team members"
+                    ]}
+                    tips={[
+                      "Organize documents by board meeting or project",
+                      "Use descriptive names for easy identification",
+                      "Set appropriate access permissions for each member",
+                      "Regular review of vault contents keeps them organized"
+                    ]}
+                  />
+                }
+                side="right"
+              />
             </h1>
             <p className="text-gray-600 mt-1">
               Manage your secure document vaults and collaborate with team members
@@ -341,7 +364,13 @@ export default function VaultsPage() {
 
         {/* View Controls */}
         <div className="flex flex-col lg:flex-row gap-4">
-          <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+          <div className="flex items-center gap-2">
+            <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+            <InfoTooltip
+              content="Choose how to display your vaults: Card view for visual overview, List view for quick scanning, or Details view for comprehensive information."
+              size="sm"
+            />
+          </div>
           <FilterBar
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}

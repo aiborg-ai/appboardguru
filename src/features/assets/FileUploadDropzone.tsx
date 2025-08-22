@@ -20,31 +20,41 @@ import { Card } from '@/features/shared/ui/card'
 import { Input } from '@/features/shared/ui/input'
 import { Textarea } from '@/features/shared/ui/textarea'
 import { Select } from '@/features/shared/ui/select'
-
-interface FileUploadItem {
-  id: string
-  file: File
-  title: string
-  description?: string
-  category: string
-  folder: string
-  tags: string[]
-  status: 'pending' | 'uploading' | 'success' | 'error'
-  progress: number
-  error?: string
-  preview?: string
-}
+import { 
+  FileUploadItem, 
+  BulkUploadSettings, 
+  FileCategory,
+  UploadedAsset,
+  ALLOWED_FILE_EXTENSIONS,
+  MAX_FILE_SIZE,
+  MAX_FILES_PER_UPLOAD,
+  formatFileSize,
+  generateFileId,
+  isValidFileType
+} from '@/types/upload'
+import { useUploadCollaborationStore } from '@/lib/stores/upload-collaboration.store'
+import { CollaborativeUploadHub } from '@/components/collaboration'
+import { createUserId } from '@/lib/utils/branded-type-helpers'
 
 interface FileUploadDropzoneProps {
   onUploadComplete?: (files: FileUploadItem[]) => void
   onUploadProgress?: (fileId: string, progress: number) => void
-  maxFileSize?: number // in bytes
-  allowedFileTypes?: string[]
+  maxFileSize?: number
+  allowedFileTypes?: readonly string[]
   maxFiles?: number
   className?: string
+  organizationId?: string
+  vaultId?: string
+  showCollaborationHub?: boolean
+  currentUser?: {
+    id: string
+    name: string
+    email: string
+    avatar?: string
+  }
 }
 
-const CATEGORIES = [
+const CATEGORIES: Array<{ value: FileCategory; label: string }> = [
   { value: 'board-documents', label: 'Board Documents' },
   { value: 'financial', label: 'Financial Reports' },
   { value: 'legal', label: 'Legal Documents' },
@@ -67,26 +77,28 @@ const FOLDERS = [
 export function FileUploadDropzone({
   onUploadComplete,
   onUploadProgress,
-  maxFileSize = 50 * 1024 * 1024, // 50MB default
-  allowedFileTypes = [
-    '.pdf', '.docx', '.pptx', '.xlsx', '.txt', '.md',
-    '.jpg', '.jpeg', '.png', '.gif', '.svg',
-    '.mp4', '.mov', '.avi', '.wmv',
-    '.mp3', '.wav', '.m4a',
-    '.zip', '.rar', '.7z'
-  ],
-  maxFiles = 10,
-  className = ''
+  maxFileSize = MAX_FILE_SIZE,
+  allowedFileTypes = ALLOWED_FILE_EXTENSIONS,
+  maxFiles = MAX_FILES_PER_UPLOAD,
+  className = '',
+  organizationId,
+  vaultId,
+  showCollaborationHub = true,
+  currentUser
 }: FileUploadDropzoneProps) {
   const [files, setFiles] = useState<FileUploadItem[]>([])
   const [isDragActive, setIsDragActive] = useState(false)
   const [showBulkEdit, setShowBulkEdit] = useState(false)
-  const [bulkSettings, setBulkSettings] = useState({
+  const [bulkSettings, setBulkSettings] = useState<BulkUploadSettings>({
     category: 'general',
     folder: '/',
     tags: ''
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Collaboration features
+  const collaboration = useUploadCollaborationStore()
+  const [uploadStartTimes] = useState<Map<string, number>>(new Map())
 
   const getFileIcon = (fileType: string) => {
     if (fileType.includes('image')) return Image
@@ -96,22 +108,15 @@ export function FileUploadDropzone({
     return FileText
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+  // formatFileSize is imported from types/upload.ts
 
   const validateFile = (file: File): string | null => {
     if (file.size > maxFileSize) {
       return `File size exceeds ${formatFileSize(maxFileSize)} limit`
     }
 
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
-    if (!allowedFileTypes.includes(fileExtension)) {
-      return `File type ${fileExtension} is not allowed`
+    if (!isValidFileType(file.type)) {
+      return `File type ${file.type} is not allowed`
     }
 
     return null
@@ -140,7 +145,7 @@ export function FileUploadDropzone({
       const preview = await createFilePreview(file)
       
       const fileItem: FileUploadItem = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        id: generateFileId(),
         file,
         title: file.name.split('.').slice(0, -1).join('.'),
         category: bulkSettings.category,
@@ -202,31 +207,206 @@ export function FileUploadDropzone({
     setShowBulkEdit(false)
   }
 
-  const simulateUpload = async (fileItem: FileUploadItem) => {
-    updateFileProperty(fileItem.id, 'status', 'uploading')
+  const uploadFile = async (fileItem: FileUploadItem): Promise<UploadedAsset> => {
+    return new Promise((resolve, reject) => {
+      updateFileProperty(fileItem.id, 'status', 'uploading')
+      updateFileProperty(fileItem.id, 'progress', 0)
+      
+      // Record start time for duration calculation
+      const startTime = Date.now()
+      uploadStartTimes.set(fileItem.id, startTime)
+      
+      // Broadcast upload started to team
+      collaboration.broadcastUploadStarted(fileItem)
+
+      // Use XMLHttpRequest for real progress tracking
+      const xhr = new XMLHttpRequest()
+      
+      // Set up progress handler
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100)
+          updateFileProperty(fileItem.id, 'progress', progress)
+          onUploadProgress?.(fileItem.id, progress)
+          
+          // Calculate upload speed
+          const elapsed = Date.now() - startTime
+          const speed = elapsed > 0 ? (event.loaded / elapsed) * 1000 : 0
+          
+          // Broadcast progress to team
+          collaboration.broadcastUploadProgress(
+            fileItem.id,
+            fileItem.file.name,
+            progress,
+            event.loaded,
+            event.total,
+            speed
+          )
+        }
+      })
+
+      // Set up completion handlers
+      xhr.addEventListener('load', () => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (data.success) {
+              updateFileProperty(fileItem.id, 'status', 'success')
+              updateFileProperty(fileItem.id, 'progress', 100)
+              
+              // Broadcast upload completed to team
+              collaboration.broadcastUploadCompleted(fileItem.id, data.asset, duration)
+              
+              resolve(data.asset)
+            } else {
+              throw new Error(data.error || 'Upload failed')
+            }
+          } catch (error) {
+            updateFileProperty(fileItem.id, 'status', 'error')
+            updateFileProperty(fileItem.id, 'error', 'Invalid server response')
+            
+            // Broadcast upload failed to team
+            collaboration.broadcastUploadFailed(fileItem.id, fileItem.file.name, 'Invalid server response', 0)
+            
+            reject(error)
+          }
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText)
+            const errorMessage = errorData.error || `HTTP ${xhr.status}`
+            
+            // Broadcast upload failed to team
+            collaboration.broadcastUploadFailed(fileItem.id, fileItem.file.name, errorMessage, 0)
+            
+            throw new Error(errorMessage)
+          } catch {
+            const errorMessage = `Upload failed with status ${xhr.status}`
+            collaboration.broadcastUploadFailed(fileItem.id, fileItem.file.name, errorMessage, 0)
+            throw new Error(errorMessage)
+          }
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        updateFileProperty(fileItem.id, 'status', 'error')
+        updateFileProperty(fileItem.id, 'error', 'Network error')
+        
+        // Broadcast upload failed to team
+        collaboration.broadcastUploadFailed(fileItem.id, fileItem.file.name, 'Network error', 0)
+        
+        reject(new Error('Network error'))
+      })
+
+      xhr.addEventListener('timeout', () => {
+        updateFileProperty(fileItem.id, 'status', 'error')
+        updateFileProperty(fileItem.id, 'error', 'Upload timeout')
+        
+        // Broadcast upload failed to team
+        collaboration.broadcastUploadFailed(fileItem.id, fileItem.file.name, 'Upload timeout', 0)
+        
+        reject(new Error('Upload timeout'))
+      })
+
+      // Prepare form data
+      const formData = new FormData()
+      formData.append('file', fileItem.file)
+      formData.append('title', fileItem.title)
+      formData.append('category', fileItem.category)
+      formData.append('folderPath', fileItem.folder)
+      
+      // Add organization context
+      if (organizationId) {
+        formData.append('organizationId', organizationId)
+      }
+      
+      if (vaultId) {
+        formData.append('vaultId', vaultId)
+      }
+
+      if (fileItem.description) {
+        formData.append('description', fileItem.description)
+      }
+      
+      if (fileItem.tags.length > 0) {
+        formData.append('tags', fileItem.tags.join(','))
+      }
+
+      // Configure and send request
+      xhr.timeout = 300000 // 5 minutes timeout
+      xhr.open('POST', '/api/assets/upload')
+      xhr.send(formData)
+    })
+  }
+
+  const uploadFileWithRetry = async (fileItem: FileUploadItem, maxRetries = 2): Promise<UploadedAsset> => {
+    let lastError: Error
     
-    // Simulate upload progress
-    for (let progress = 0; progress <= 100; progress += 10) {
-      await new Promise(resolve => setTimeout(resolve, 100))
-      updateFileProperty(fileItem.id, 'progress', progress)
-      onUploadProgress?.(fileItem.id, progress)
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          // Wait before retry (exponential backoff)
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          
+          // Reset status for retry
+          updateFileProperty(fileItem.id, 'status', 'uploading')
+          updateFileProperty(fileItem.id, 'progress', 0)
+          updateFileProperty(fileItem.id, 'error', undefined)
+        }
+        
+        return await uploadFile(fileItem)
+      } catch (error) {
+        lastError = error as Error
+        
+        if (attempt < maxRetries) {
+          updateFileProperty(fileItem.id, 'error', `Upload failed, retrying... (${attempt + 1}/${maxRetries})`)
+        }
+      }
     }
     
-    updateFileProperty(fileItem.id, 'status', 'success')
+    // All retries failed
+    updateFileProperty(fileItem.id, 'status', 'error')
+    updateFileProperty(fileItem.id, 'error', lastError.message)
+    throw lastError
   }
 
   const handleUpload = async () => {
+    if (!organizationId) {
+      console.error('Organization ID is required for upload')
+      return
+    }
+
     const pendingFiles = files.filter(file => file.status === 'pending')
     
-    // Upload files concurrently
-    const uploadPromises = pendingFiles.map(file => simulateUpload(file))
-    
-    try {
-      await Promise.all(uploadPromises)
-      onUploadComplete?.(files.filter(file => file.status === 'success'))
-    } catch (error) {
-      console.error('Upload failed:', error)
+    if (pendingFiles.length === 0) {
+      return
     }
+
+    // Upload files with concurrency limit (max 3 at once)
+    const CONCURRENT_UPLOADS = 3
+    const results: UploadedAsset[] = []
+    
+    for (let i = 0; i < pendingFiles.length; i += CONCURRENT_UPLOADS) {
+      const batch = pendingFiles.slice(i, i + CONCURRENT_UPLOADS)
+      
+      const batchPromises = batch.map(file => 
+        uploadFileWithRetry(file).catch(error => {
+          console.error(`Failed to upload ${file.file.name}:`, error)
+          return null
+        })
+      )
+      
+      const batchResults = await Promise.all(batchPromises)
+      results.push(...batchResults.filter(result => result !== null))
+    }
+
+    // Get all successfully uploaded files
+    const successfulUploads = files.filter(file => file.status === 'success')
+    
+    onUploadComplete?.(successfulUploads)
   }
 
   const canUpload = files.some(file => file.status === 'pending') && 
@@ -505,6 +685,38 @@ export function FileUploadDropzone({
               )}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Collaborative Upload Hub */}
+      {showCollaborationHub && organizationId && currentUser && (
+        <div className="mt-8">
+          <CollaborativeUploadHub
+            organizationId={organizationId as any} // TODO: Use proper branded type
+            vaultId={vaultId as any} // TODO: Use proper branded type
+            userId={createUserId(currentUser.id)}
+            userInfo={{
+              name: currentUser.name,
+              email: currentUser.email,
+              avatar: currentUser.avatar
+            }}
+            defaultTab="queue"
+            compactMode={false}
+            config={{
+              enablePresence: true,
+              enableRealTimeProgress: true,
+              enableNotifications: true,
+              enableActivityFeed: true,
+              enableAutoSharing: true,
+              notificationSettings: {
+                uploadStarted: true,
+                uploadCompleted: true,
+                uploadFailed: true,
+                uploadShared: true,
+                mentions: true
+              }
+            }}
+          />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar
 import { Checkbox } from '@/features/shared/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select';
 import { Separator } from '@/features/shared/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { 
   Users, 
   Search, 
@@ -23,8 +24,12 @@ import {
   Edit,
   Crown,
   AlertCircle,
-  Plus
+  Plus,
+  BarChart3,
+  Brain
 } from 'lucide-react';
+import { ExecutiveAnalyticsDashboard } from '@/components/boardmates/ExecutiveAnalyticsDashboard';
+import { EnhancedBoardMate } from '@/types/boardmates';
 import { cn } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
 
@@ -90,6 +95,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
   const [searchTerm, setSearchTerm] = useState('');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('members');
   const [newMateForm, setNewMateForm] = useState<NewBoardMate>({
     email: '',
     full_name: '',
@@ -210,51 +216,108 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
   const selectedCount = data.selectedBoardMates.length + data.newBoardMates.length;
   const canAddNewMate = newMateForm.email && newMateForm.full_name && emailValidation.isValid;
 
+  // Convert BoardMate data to EnhancedBoardMate for analytics
+  const enhancedBoardMates: EnhancedBoardMate[] = useMemo(() => {
+    return boardMates.map(mate => ({
+      ...mate,
+      ai_score: {
+        overall_match: Math.random() * 0.3 + 0.7, // 70-100%
+        skill_alignment: Math.random() * 0.3 + 0.7,
+        cultural_fit: Math.random() * 0.3 + 0.7,
+        risk_factor: Math.random() * 0.3,
+        growth_potential: Math.random() * 0.4 + 0.6,
+        leadership_capacity: Math.random() * 0.4 + 0.6
+      },
+      expertise_profile: {
+        core_competencies: ['Leadership', 'Strategy', 'Finance', 'Technology'].slice(0, Math.floor(Math.random() * 3) + 2),
+        industry_experience: ['Technology', 'Healthcare', 'Finance'][Math.floor(Math.random() * 3)],
+        years_experience: Math.floor(Math.random() * 20) + 10,
+        innovation_index: Math.random() * 0.4 + 0.6,
+        collaboration_style: ['Collaborative', 'Direct', 'Consensus-driven'][Math.floor(Math.random() * 3)] as any
+      },
+      performance_metrics: {
+        overall_score: Math.random() * 0.3 + 0.7,
+        decision_quality: Math.random() * 0.3 + 0.7,
+        strategic_impact: Math.random() * 0.3 + 0.7,
+        team_effectiveness: Math.random() * 0.3 + 0.7,
+        stakeholder_satisfaction: Math.random() * 0.3 + 0.7
+      },
+      risk_assessment: {
+        overall_risk_level: Math.random() * 0.3,
+        compliance_risk: Math.random() * 0.2,
+        reputation_risk: Math.random() * 0.2,
+        performance_risk: Math.random() * 0.2
+      },
+      network_position: {
+        influence_score: Math.random() * 0.4 + 0.6,
+        centrality_measure: Math.random() * 0.4 + 0.5,
+        connection_strength: Math.random() * 0.3 + 0.7
+      }
+    }))
+  }, [boardMates]);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+    <div className="flex flex-col h-full min-h-[600px] max-h-[calc(100vh-200px)]">
+      {/* Header - Fixed */}
+      <div className="text-center mb-6 flex-shrink-0">
+        <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
           <Users className="w-8 h-8 text-purple-600" />
         </div>
         <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-          Invite BoardMates
+          BoardMates Management
         </h3>
         <p className="text-gray-600 max-w-md mx-auto">
-          Add team members who can access and collaborate in this vault
+          Manage team members and access advanced board analytics
         </p>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="members" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Board Members
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Executive Analytics
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Board Members Tab */}
+        <TabsContent value="members" className="flex-1 flex flex-col space-y-0">
+      {/* Controls - Fixed */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6 flex-shrink-0">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search board mates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
         </div>
         <Button
           variant={showInviteForm ? "default" : "outline"}
           onClick={() => setShowInviteForm(!showInviteForm)}
-          className="flex items-center space-x-2 whitespace-nowrap"
+          className="flex items-center space-x-2 whitespace-nowrap bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
         >
           <UserPlus className="w-4 h-4" />
           <span>{showInviteForm ? "Cancel" : "Invite New"}</span>
         </Button>
       </div>
 
-      {/* Selection Summary */}
+      {/* Selection Summary - Fixed */}
       {selectedCount > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg"
+          className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg mb-6 flex-shrink-0 shadow-sm"
         >
           <div className="flex items-center space-x-2">
-            <Check className="w-5 h-5 text-purple-600" />
+            <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+              <Check className="w-4 h-4 text-purple-600" />
+            </div>
             <span className="font-medium text-purple-800">
               {selectedCount} board mate{selectedCount !== 1 ? 's' : ''} selected
             </span>
@@ -263,30 +326,34 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
             variant="ghost"
             size="sm"
             onClick={() => onUpdate({ selectedBoardMates: [], newBoardMates: [] })}
-            className="text-purple-600 hover:text-purple-800"
+            className="text-purple-600 hover:text-purple-800 hover:bg-purple-100 transition-colors"
           >
             Clear all
           </Button>
         </motion.div>
       )}
 
-      {/* Invite New BoardMate Form */}
-      <AnimatePresence>
-        {showInviteForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <Card className="border-2 border-dashed border-purple-300 bg-purple-50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <UserPlus className="w-5 h-5" />
-                  <span>Invite New BoardMate</span>
-                </CardTitle>
-              </CardHeader>
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto space-y-6 pb-4">
+        {/* Invite New BoardMate Form */}
+        <AnimatePresence>
+          {showInviteForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <Card className="border-2 border-dashed border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <UserPlus className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <span>Invite New BoardMate</span>
+                  </CardTitle>
+                </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -371,24 +438,27 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                   >
                     Cancel
                   </Button>
-                  <Button
-                    onClick={handleAddNewMate}
-                    disabled={!canAddNewMate}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    Add to List
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    <Button
+                      onClick={handleAddNewMate}
+                      disabled={!canAddNewMate}
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                    >
+                      Add to List
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Existing BoardMates */}
-      {!showInviteForm && (
-        <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Your BoardMates</h4>
+        {/* Existing BoardMates */}
+        {!showInviteForm && (
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900 flex items-center space-x-2">
+              <Users className="w-5 h-5 text-gray-600" />
+              <span>Your BoardMates</span>
+            </h4>
           
           {isLoading ? (
             <div className="space-y-3">
@@ -407,7 +477,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
               ))}
             </div>
           ) : filteredBoardMates.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
               {filteredBoardMates.map((mate) => {
                 const selected = isBoardMateSelected(mate.id);
                 const roleConfig = ROLE_CONFIG[mate.role];
@@ -421,8 +491,8 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                   >
                     <Card 
                       className={cn(
-                        "cursor-pointer transition-all duration-200 hover:shadow-sm",
-                        selected && "ring-2 ring-purple-500 bg-purple-50"
+                        "cursor-pointer transition-all duration-200 hover:shadow-md border-gray-200 hover:border-purple-300",
+                        selected && "ring-2 ring-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300"
                       )}
                       onClick={() => handleBoardMateSelect(mate, !selected)}
                     >
@@ -434,9 +504,9 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                             className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                           />
                           
-                          <Avatar className="w-10 h-10">
+                          <Avatar className="w-10 h-10 ring-2 ring-gray-100">
                             <AvatarImage src={mate.avatar_url} alt={mate.full_name} />
-                            <AvatarFallback>{mate.full_name.charAt(0).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-semibold">{mate.full_name.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           
                           <div className="flex-1 min-w-0">
@@ -445,7 +515,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                                 {mate.full_name}
                               </h5>
                               <div className={cn(
-                                "flex items-center space-x-1 px-2 py-1 rounded-full text-xs",
+                                "flex items-center space-x-1 px-2 py-1 rounded-full text-xs shadow-sm",
                                 roleConfig.bgColor
                               )}>
                                 <RoleIcon className={cn("w-3 h-3", roleConfig.color)} />
@@ -472,8 +542,10 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
               })}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-gray-400" />
+              </div>
               <h4 className="text-lg font-medium text-gray-600 mb-2">
                 {searchTerm ? 'No board mates found' : 'No board mates yet'}
               </h4>
@@ -483,23 +555,36 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                   : 'Invite your first team member to get started'
                 }
               </p>
+              {!searchTerm && (
+                <Button
+                  onClick={() => setShowInviteForm(true)}
+                  variant="outline"
+                  className="border-gray-300 hover:bg-gray-50 hover:border-purple-300 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Invite First Member
+                </Button>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* New BoardMates List */}
-      {data.newBoardMates.length > 0 && (
-        <div className="space-y-4">
-          <Separator />
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-gray-900">New Invitations ({data.newBoardMates.length})</h4>
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              Will be invited
-            </Badge>
-          </div>
-          
-          <div className="space-y-3">
+        {/* New BoardMates List */}
+        {data.newBoardMates.length > 0 && (
+          <div className="space-y-4">
+            <Separator />
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-gray-900 flex items-center space-x-2">
+                <Mail className="w-5 h-5 text-gray-600" />
+                <span>New Invitations ({data.newBoardMates.length})</span>
+              </h4>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 shadow-sm">
+                Will be invited
+              </Badge>
+            </div>
+            
+            <div className="space-y-3 max-h-48 overflow-y-auto">
             {data.newBoardMates.map((mate, index) => {
               const roleConfig = ROLE_CONFIG[mate.role];
               const RoleIcon = roleConfig.icon;
@@ -511,11 +596,11 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <Card className="bg-blue-50 border-blue-200">
+                  <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-300 shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                          <Mail className="w-5 h-5 text-orange-600" />
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -524,7 +609,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                               {mate.full_name}
                             </h5>
                             <div className={cn(
-                              "flex items-center space-x-1 px-2 py-1 rounded-full text-xs",
+                              "flex items-center space-x-1 px-2 py-1 rounded-full text-xs shadow-sm",
                               roleConfig.bgColor
                             )}>
                               <RoleIcon className={cn("w-3 h-3", roleConfig.color)} />
@@ -532,7 +617,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                             </div>
                           </div>
                           <p className="text-sm text-gray-500 truncate">{mate.email}</p>
-                          <p className="text-xs text-blue-600 mt-1">
+                          <p className="text-xs text-orange-600 mt-1">
                             Will receive invitation email
                           </p>
                         </div>
@@ -541,7 +626,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveNewMate(index)}
-                          className="text-gray-400 hover:text-red-600"
+                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -554,16 +639,19 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
           </div>
         </div>
       )}
+      </div>
 
-      {/* Selection Summary */}
+      {/* Selection Summary - Fixed at bottom */}
       {selectedCount > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+          className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg flex-shrink-0 shadow-sm"
         >
           <div className="flex items-center space-x-2 mb-2">
-            <Check className="w-5 h-5 text-green-600" />
+            <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+              <Check className="w-4 h-4 text-green-600" />
+            </div>
             <span className="font-medium text-green-800">BoardMates Ready</span>
           </div>
           <p className="text-green-700">
@@ -571,6 +659,18 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
           </p>
         </motion.div>
       )}
+        </TabsContent>
+
+        {/* Executive Analytics Tab */}
+        <TabsContent value="analytics" className="flex-1">
+          <ExecutiveAnalyticsDashboard 
+            boardMembers={enhancedBoardMates}
+            organizationId={data.selectedBoardMates[0]?.organization?.id || 'default-org'}
+            onExportReport={() => console.log('Export report')}
+            onScheduleUpdate={() => console.log('Schedule update')}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

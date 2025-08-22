@@ -5,6 +5,7 @@ import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import BoardChatButton from '@/components/boardchat/BoardChatButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircle, Users, Hash, Lock } from 'lucide-react'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
 export default function BoardChatPage() {
   return (
@@ -16,6 +17,31 @@ export default function BoardChatPage() {
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <MessageCircle className="h-6 w-6 text-blue-600" />
               BoardChat
+              <InfoTooltip
+                content={
+                  <InfoSection
+                    title="Secure Board Communication"
+                    description="Enterprise-grade messaging system designed specifically for board governance and secure collaboration."
+                    features={[
+                      "End-to-end encryption for all messages",
+                      "Role-based access control and permissions",
+                      "Vault-specific communication channels",
+                      "File sharing with security controls",
+                      "Message threading and reactions",
+                      "Real-time delivery confirmations",
+                      "Search through conversation history",
+                      "@mentions and notification system"
+                    ]}
+                    tips={[
+                      "Use @mentions to notify specific board members",
+                      "Create vault groups for document-specific discussions",
+                      "Share files directly within conversations",
+                      "Use threads to keep discussions organized"
+                    ]}
+                  />
+                }
+                side="right"
+              />
             </h1>
             <p className="text-gray-600 mt-1">Collaborate with BoardMates and vault members</p>
           </div>
@@ -28,6 +54,10 @@ export default function BoardChatPage() {
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-blue-600" />
                 Direct Messages
+                <InfoTooltip
+                  content="Send private, encrypted messages to individual board members for confidential discussions and sensitive information sharing."
+                  size="sm"
+                />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -47,6 +77,10 @@ export default function BoardChatPage() {
               <CardTitle className="text-lg flex items-center gap-2">
                 <Hash className="h-5 w-5 text-green-600" />
                 Group Chats
+                <InfoTooltip
+                  content="Create secure group conversations for team discussions, committee work, and collaborative board activities with role-based permissions."
+                  size="sm"
+                />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -66,6 +100,10 @@ export default function BoardChatPage() {
               <CardTitle className="text-lg flex items-center gap-2">
                 <Lock className="h-5 w-5 text-purple-600" />
                 Vault Groups
+                <InfoTooltip
+                  content="Discuss specific vault contents with authorized members only. Vault-based conversations ensure only those with access can participate in document discussions."
+                  size="sm"
+                />
               </CardTitle>
             </CardHeader>
             <CardContent>

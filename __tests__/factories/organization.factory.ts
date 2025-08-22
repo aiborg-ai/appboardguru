@@ -69,7 +69,7 @@ export const OrganizationFactory = {
       description: 'Innovative technology startup disrupting the industry',
       // compliance_requirements: ['gdpr'],
       subscription_tier: 'standard',
-      // features_enabled: {
+      features_enabled: {
         advanced_analytics: false,
         voice_integration: true,
         ai_insights: true,
@@ -144,7 +144,7 @@ export const OrganizationFactory = {
       // compliance_requirements: ['gdpr'],
       subscription_tier: 'standard',
       board_meeting_frequency: 'quarterly',
-      // features_enabled: {
+      features_enabled: {
         advanced_analytics: false,
         voice_integration: false,
         ai_insights: true,
@@ -164,7 +164,7 @@ export const OrganizationFactory = {
       // subscription_status: 'suspended',
       deleted_at: new Date().toISOString(),
       description: 'Inactive organization for testing edge cases',
-      // features_enabled: {
+      features_enabled: {
         advanced_analytics: false,
         voice_integration: false,
         ai_insights: false,

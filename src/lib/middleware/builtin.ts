@@ -137,17 +137,58 @@ export function errorHandlingMiddleware(): MiddlewareFunction {
       // Enhanced error handling with context
       console.error(`[${context.requestId}] Middleware error:`, error)
       
-      // Add error context
-      const enhancedError = new Error(error.message)
+      // Check for rate limiting errors and enhance with actionable feedback
+      if (error instanceof Error && error.message?.includes('Rate limit exceeded')) {
+        const rateLimitError = new Error(error.message)
+        ;(rateLimitError as any).code = 'RATE_LIMIT_EXCEEDED'
+        ;(rateLimitError as any).statusCode = 429
+        ;(rateLimitError as any).userFacing = true
+        ;(rateLimitError as any).actionableMessage = 'You have exceeded the rate limit. Please wait before making more requests.'
+        ;(rateLimitError as any).retryAfter = extractRetryAfter(error.message)
+        ;(rateLimitError as any).requestId = context.requestId
+        ;(rateLimitError as any).path = context.request.nextUrl.pathname
+        ;(rateLimitError as any).method = context.request.method
+        ;(rateLimitError as any).timestamp = new Date().toISOString()
+        
+        context.error = rateLimitError
+        return
+      }
+      
+      // Check for validation errors
+      if (error instanceof Error && error.message?.includes('validation')) {
+        const validationError = new Error(error.message)
+        ;(validationError as any).code = 'VALIDATION_ERROR'
+        ;(validationError as any).statusCode = 400
+        ;(validationError as any).userFacing = true
+        ;(validationError as any).actionableMessage = 'Please check your input and try again.'
+        ;(validationError as any).requestId = context.requestId
+        ;(validationError as any).path = context.request.nextUrl.pathname
+        ;(validationError as any).method = context.request.method
+        ;(validationError as any).timestamp = new Date().toISOString()
+        
+        context.error = validationError
+        return
+      }
+      
+      // Add error context for generic errors
+      const enhancedError = new Error(error instanceof Error ? error.message : String(error))
       ;(enhancedError as any).originalError = error
       ;(enhancedError as any).requestId = context.requestId
       ;(enhancedError as any).path = context.request.nextUrl.pathname
       ;(enhancedError as any).method = context.request.method
       ;(enhancedError as any).timestamp = new Date().toISOString()
+      ;(enhancedError as any).statusCode = 500 // Default to server error
+      ;(enhancedError as any).userFacing = false
       
       context.error = enhancedError
     }
   }
+}
+
+// Helper function to extract retry-after value from rate limit error messages
+function extractRetryAfter(message: string): number {
+  const match = message.match(/Try again in (\d+) seconds/)
+  return match ? parseInt(match[1], 10) : 60 // Default to 60 seconds
 }
 
 /**

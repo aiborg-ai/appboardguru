@@ -3,13 +3,14 @@
 // Disable static generation for this page since it uses useOrganization context
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { FileUploadDropzone } from '@/features/assets/FileUploadDropzone'
 import { AssetGrid } from '@/features/assets/AssetGrid'
 import { AssetList } from '@/features/assets/AssetList'
 import { AssetShareModal } from '@/features/assets/AssetShareModal'
 import { useOrganization } from '@/contexts/OrganizationContext'
+import { FileUploadItem } from '@/types/upload'
 import { Loader2, Building2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
 import { 
@@ -32,11 +33,16 @@ import {
   DollarSign,
   Shield,
   Monitor,
-  File
+  File,
+  Mail,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { Button } from '@/features/shared/ui/button'
 import { Input } from '@/features/shared/ui/input'
 import { Card } from '@/features/shared/ui/card'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { EmailToAssetInstructions } from '@/components/email-integration/EmailToAssetInstructions'
 
 type ViewMode = 'grid' | 'list' | 'details'
 type SortOption = 'name' | 'date' | 'size' | 'type'
@@ -114,6 +120,7 @@ export default function AssetsPage() {
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [showUpload, setShowUpload] = useState(false)
+  const [showEmailInstructions, setShowEmailInstructions] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -126,66 +133,8 @@ export default function AssetsPage() {
 
   // Fetch assets for current organization
   useEffect(() => {
-    if (!currentOrganization) {
-      setAssets([])
-      setIsLoadingAssets(false)
-      return
-    }
-
-    const fetchAssets = async () => {
-      setIsLoadingAssets(true)
-      setAssetsError(null)
-      
-      try {
-        const response = await fetch('/api/assets', {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            // Transform API response to match component Asset interface
-            const transformedAssets = data.assets.map((asset: any) => ({
-              id: asset.id,
-              title: asset.title,
-              fileName: asset.fileName || asset.file_name,
-              fileType: asset.fileType || asset.file_type,
-              fileSize: asset.fileSize || asset.file_size,
-              category: asset.category || 'uncategorized',
-              folder: '/uploads', // Default folder
-              tags: asset.tags || [],
-              thumbnail: asset.thumbnailUrl || asset.thumbnail_url,
-              createdAt: asset.createdAt || asset.created_at,
-              updatedAt: asset.updatedAt || asset.updated_at,
-              owner: {
-                id: asset.owner?.id || asset.owner_id,
-                name: asset.owner?.email?.split('@')[0] || 'Unknown',
-                email: asset.owner?.email || 'unknown@email.com'
-              },
-              sharedWith: [],
-              downloadCount: asset.downloadCount || 0,
-              viewCount: asset.viewCount || 0,
-              isShared: false
-            }))
-            setAssets(transformedAssets)
-          } else {
-            setAssetsError(data.error || 'Failed to load assets')
-          }
-        } else {
-          setAssetsError('Failed to load assets')
-        }
-      } catch (error) {
-        console.error('Error fetching assets:', error)
-        setAssetsError('Error loading assets')
-      } finally {
-        setIsLoadingAssets(false)
-      }
-    }
-
     fetchAssets()
-  }, [currentOrganization])
+  }, [fetchAssets])
 
   // Filter and search logic
   useEffect(() => {
@@ -245,12 +194,72 @@ export default function AssetsPage() {
     setFilteredAssets(filtered)
   }, [assets, searchQuery, selectedCategory, selectedFolder, sortBy, sortOrder])
 
-  const handleUploadComplete = (uploadedFiles: any[]) => {
-    // In real implementation, this would call an API
+  const handleUploadComplete = (uploadedFiles: FileUploadItem[]) => {
     console.log('Files uploaded:', uploadedFiles)
     setShowUpload(false)
-    // Refresh assets list
+    // Refresh assets list by refetching data
+    if (currentOrganization) {
+      fetchAssets()
+    }
   }
+
+  const fetchAssets = useCallback(async () => {
+    if (!currentOrganization) {
+      setAssets([])
+      setIsLoadingAssets(false)
+      return
+    }
+
+    setIsLoadingAssets(true)
+    setAssetsError(null)
+    
+    try {
+      const response = await fetch('/api/assets', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // Transform API response to match component Asset interface
+          const transformedAssets = data.assets.map((asset: any) => ({
+            id: asset.id,
+            title: asset.title,
+            fileName: asset.fileName || asset.file_name,
+            fileType: asset.fileType || asset.file_type,
+            fileSize: asset.fileSize || asset.file_size,
+            category: asset.category || 'uncategorized',
+            folder: '/uploads', // Default folder
+            tags: asset.tags || [],
+            thumbnail: asset.thumbnailUrl || asset.thumbnail_url,
+            createdAt: asset.createdAt || asset.created_at,
+            updatedAt: asset.updatedAt || asset.updated_at,
+            owner: {
+              id: asset.owner?.id || asset.owner_id,
+              name: asset.owner?.email?.split('@')[0] || 'Unknown',
+              email: asset.owner?.email || 'unknown@email.com'
+            },
+            sharedWith: [],
+            downloadCount: asset.downloadCount || 0,
+            viewCount: asset.viewCount || 0,
+            isShared: false
+          }))
+          setAssets(transformedAssets)
+        } else {
+          setAssetsError(data.error || 'Failed to load assets')
+        }
+      } else {
+        setAssetsError('Failed to load assets')
+      }
+    } catch (error) {
+      console.error('Error fetching assets:', error)
+      setAssetsError('Error loading assets')
+    } finally {
+      setIsLoadingAssets(false)
+    }
+  }, [currentOrganization])
 
   const handleShareAsset = (asset: Asset) => {
     setSelectedAsset(asset)
@@ -290,7 +299,32 @@ export default function AssetsPage() {
           <div className="flex items-center space-x-3">
             <Folder className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Assets</h1>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                Assets
+                <InfoTooltip
+                  content={
+                    <InfoSection
+                      title="Asset Management System"
+                      description="Centralized storage and management for all your board documents with advanced organization and security features."
+                      features={[
+                        "Secure file upload with virus scanning",
+                        "Advanced categorization and tagging system",
+                        "Version control with audit trails",
+                        "Granular sharing permissions and access control",
+                        "Smart search and filtering capabilities",
+                        "Bulk operations and folder organization"
+                      ]}
+                      tips={[
+                        "Use descriptive filenames for better searchability",
+                        "Tag documents with relevant keywords",
+                        "Organize files in folders by meeting or project",
+                        "Review and update access permissions regularly"
+                      ]}
+                    />
+                  }
+                  side="right"
+                />
+              </h1>
               <div className="flex items-center space-x-2">
                 {currentOrganization ? (
                   <div className="flex items-center space-x-2 text-gray-600">
@@ -305,14 +339,42 @@ export default function AssetsPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowUpload(!showUpload)}
-              disabled={!currentOrganization}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Files
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowUpload(!showUpload)}
+                disabled={!currentOrganization}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Files
+              </Button>
+              <InfoTooltip
+                content="Upload board documents, presentations, reports, and other files. All uploads are automatically scanned for security and organized with smart categorization."
+                size="sm"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailInstructions(!showEmailInstructions)}
+                disabled={!currentOrganization}
+                className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email Assets
+                {showEmailInstructions ? (
+                  <ChevronUp className="h-4 w-4 ml-1" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                )}
+              </Button>
+              <InfoTooltip
+                content="Send documents directly via email to create assets automatically. A groundbreaking feature that bridges email workflow with platform management."
+                size="sm"
+              />
+            </div>
+            
             <Button disabled={!currentOrganization}>
               <Plus className="h-4 w-4 mr-2" />
               New Folder
@@ -356,7 +418,31 @@ export default function AssetsPage() {
             {showUpload && (
               <Card className="mb-6 p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">Upload Documents</h2>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    Upload Documents
+                    <InfoTooltip
+                      content={
+                        <InfoSection
+                          title="File Upload Guidelines"
+                          description="Upload your board documents securely with automatic processing and organization."
+                          features={[
+                            "Supports PDF, DOC, PPT, XLS, and image formats",
+                            "Automatic virus scanning and security checks",
+                            "Smart categorization based on content analysis",
+                            "Version control for document updates",
+                            "Metadata extraction and indexing for search"
+                          ]}
+                          tips={[
+                            "Files are automatically categorized by type and content",
+                            "Use descriptive filenames for better organization",
+                            "Maximum file size is 100MB per upload",
+                            "Drag and drop multiple files for batch upload"
+                          ]}
+                        />
+                      }
+                      size="sm"
+                    />
+                  </h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -365,13 +451,23 @@ export default function AssetsPage() {
                     ✕
                   </Button>
                 </div>
-                <FileUploadDropzone onUploadComplete={handleUploadComplete} />
+                <FileUploadDropzone 
+                  onUploadComplete={handleUploadComplete}
+                  organizationId={currentOrganization?.id}
+                />
               </Card>
+            )}
+
+            {/* Email to Assets Instructions */}
+            {showEmailInstructions && (
+              <div className="mb-6">
+                <EmailToAssetInstructions />
+              </div>
             )}
 
             {/* Filters and Search */}
             <Card className="mb-6 p-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <div className="relative">
@@ -444,14 +540,15 @@ export default function AssetsPage() {
               </div>
 
               {/* View Mode Toggle */}
-              <div className="flex items-center border border-gray-300 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center border border-gray-300 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
@@ -467,6 +564,10 @@ export default function AssetsPage() {
                   <Eye className="h-4 w-4" />
                 </Button>
               </div>
+              <InfoTooltip
+                content="Choose your preferred view: Grid for visual thumbnails, List for compact overview, or Details for comprehensive information including file properties and sharing status."
+                size="sm"
+              />
             </div>
           </div>
         </Card>
@@ -521,7 +622,7 @@ export default function AssetsPage() {
               )}
             </>
           )}
-            </div>
+        </div>
 
             {/* Assets Summary */}
             {filteredAssets.length > 0 && (

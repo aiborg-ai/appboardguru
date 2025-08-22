@@ -1,5 +1,4 @@
 import './globals.css'
-import './disable-overlays.css'
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 

@@ -256,10 +256,10 @@ interface FormBridgeConfig<T extends Record<string, unknown>> {
 }
 
 interface TypeAdapter<T> {
-  fromNative: value: unknown) => T
+  fromNative: (value: unknown) => T
   toNative: (value: T) => any
-  validate: value: unknown) => boolean
-  transform: value: unknown) => T
+  validate: (value: unknown) => boolean
+  transform: (value: unknown) => T
 }
 
 // ============================================================================
@@ -603,9 +603,9 @@ export function createFieldValueTransformer<
   reverse?: (output: TOutput, context?: TContext) => TInput
 ): TypeAdapter<TOutput> {
   return {
-    fromNative: value: unknown) => transform(value),
+    fromNative: (value: unknown) => transform(value),
     toNative: (value: TOutput) => reverse ? reverse(value) : value,
-    validate: value: unknown) => {
+    validate: (value: unknown) => {
       try {
         transform(value)
         return true
@@ -613,7 +613,7 @@ export function createFieldValueTransformer<
         return false
       }
     },
-    transform: value: unknown) => transform(value)
+    transform: (value: unknown) => transform(value)
   }
 }
 

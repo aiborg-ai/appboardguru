@@ -1,15 +1,29 @@
 /**
- * Performance Monitoring Dashboard
- * Real-time performance metrics visualization and monitoring
+ * Enhanced Performance Monitoring Dashboard
+ * Real-time performance metrics visualization and monitoring with advanced optimization
  */
 
 import React, { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Progress } from '@/components/ui/progress'
 import { usePerformanceMonitoring, usePagePerformance, useResourceTiming } from '@/hooks/usePerformanceMonitoring'
 import { getComponentMetrics } from '@/components/performance/LazyComponentWrapper'
+import { 
+  Activity, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  Database, 
+  HardDrive, 
+  RefreshCw, 
+  Zap,
+  TrendingUp,
+  Gauge
+} from 'lucide-react'
 
 interface PerformanceDashboardProps {
   showAdvanced?: boolean
@@ -68,6 +82,9 @@ export function PerformanceDashboard({
   const [healthData, setHealthData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [optimizing, setOptimizing] = useState(false)
+  const [alerts, setAlerts] = useState<any[]>([])
+  const [recommendations, setRecommendations] = useState<any[]>([])
 
   const pagePerformance = usePagePerformance('performance-dashboard')
   const resourceMetrics = useResourceTiming()
@@ -77,53 +94,144 @@ export function PerformanceDashboard({
     trackMemory: true
   })
 
-  // Fetch metrics data
+  // Fetch enhanced metrics data from our new performance dashboard API
   const fetchMetrics = async () => {
     try {
       setLoading(true)
       setError(null)
 
+      const [dashboardResponse, metricsResponse, healthResponse] = await Promise.all([
+        fetch('/api/performance/dashboard?timeRange=1h'),
+        fetch('/api/performance/dashboard/metrics?start=' + new Date(Date.now() - 3600000).toISOString() + '&end=' + new Date().toISOString()),
+        fetch('/api/health/detailed')
+      ])
+
+      if (!dashboardResponse.ok) {
+        throw new Error('Failed to fetch performance dashboard data')
+      }
+
+      const dashboardData = await dashboardResponse.json()
+      const data = dashboardData.data || dashboardData
+
+      setHealthData(data.health)
+      setAlerts(data.alerts?.recent || [])
+      setRecommendations(data.recommendations?.recommendations || [])
+      setMetricsData({
+        api: {
+          totalCalls: data.overview?.totalRequests || 0,
+          averageDuration: data.overview?.averageResponseTime || 0,
+          errorRate: data.overview?.errorRate || 0,
+          slowestEndpoints: data.database?.queries?.topSlowQueries?.map((q: any) => ({
+            endpoint: q.query,
+            averageDuration: q.avgTime,
+            callCount: q.count
+          })) || []
+        },
+        database: {
+          totalQueries: data.database?.queries?.totalQueries || 0,
+          averageDuration: data.database?.queries?.averageResponseTime || 0,
+          slowestQueries: data.database?.queries?.topSlowQueries?.map((q: any) => ({
+            query: q.query,
+            averageDuration: q.avgTime,
+            callCount: q.count
+          })) || []
+        },
+        frontend: {
+          bundleSize: data.bundle?.totalSize || resourceMetrics.totalSize,
+          loadTime: pagePerformance.lcp || 0,
+          renderTime: componentMetrics.renderTime,
+          memoryUsage: data.cache?.memoryUsage || componentMetrics.memorUsage?.used || 0
+        },
+        system: {
+          uptime: data.overview?.uptime || 0,
+          memory: {
+            used: Math.round((data.cache?.memoryUsage || 0) / 1024 / 1024),
+            total: 1024, // Mock total memory
+            percentage: Math.round((data.cache?.memoryUsage || 0) / 1024 / 1024 / 1024 * 100)
+          },
+          activeUsers: data.overview?.totalRequests || 0
+        }
+      })
+
+      // If enhanced API fails, fallback to legacy endpoints
+      if (!metricsResponse.ok && !healthResponse.ok) {
+        console.warn('Enhanced performance endpoints not available, using fallback')
+        await fetchLegacyMetrics()
+      }
+    } catch (error) {
+      console.warn('Enhanced performance dashboard not available, using fallback:', error)
+      await fetchLegacyMetrics()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fallback to legacy metrics if enhanced dashboard is not available
+  const fetchLegacyMetrics = async () => {
+    try {
       const [healthResponse, metricsResponse] = await Promise.all([
         fetch('/api/health?metrics=true&detailed=true'),
         fetch('/api/metrics')
       ])
 
-      if (!healthResponse.ok || !metricsResponse.ok) {
-        throw new Error('Failed to fetch performance data')
+      if (healthResponse.ok && metricsResponse.ok) {
+        const healthData = await healthResponse.json()
+        const metricsData = await metricsResponse.json()
+
+        setHealthData(healthData)
+        setMetricsData({
+          api: metricsData.performance?.api || {
+            totalCalls: 0,
+            averageDuration: 0,
+            errorRate: 0,
+            slowestEndpoints: []
+          },
+          database: metricsData.performance?.database || {
+            totalQueries: 0,
+            averageDuration: 0,
+            slowestQueries: []
+          },
+          frontend: {
+            bundleSize: resourceMetrics.totalSize,
+            loadTime: pagePerformance.lcp || 0,
+            renderTime: componentMetrics.renderTime,
+            memoryUsage: componentMetrics.memorUsage?.used || 0
+          },
+          system: {
+            uptime: metricsData.uptime || 0,
+            memory: metricsData.system?.memory || { used: 0, total: 0, percentage: 0 },
+            activeUsers: metricsData.business?.activeUsers || 0
+          }
+        })
+      } else {
+        throw new Error('Legacy endpoints also unavailable')
       }
-
-      const healthData = await healthResponse.json()
-      const metricsData = await metricsResponse.json()
-
-      setHealthData(healthData)
-      setMetricsData({
-        api: metricsData.performance?.api || {
-          totalCalls: 0,
-          averageDuration: 0,
-          errorRate: 0,
-          slowestEndpoints: []
-        },
-        database: metricsData.performance?.database || {
-          totalQueries: 0,
-          averageDuration: 0,
-          slowestQueries: []
-        },
-        frontend: {
-          bundleSize: resourceMetrics.totalSize,
-          loadTime: pagePerformance.lcp || 0,
-          renderTime: componentMetrics.renderTime,
-          memoryUsage: componentMetrics.memorUsage?.used || 0
-        },
-        system: {
-          uptime: metricsData.uptime || 0,
-          memory: metricsData.system?.memory || { used: 0, total: 0, percentage: 0 },
-          activeUsers: metricsData.business?.activeUsers || 0
-        }
-      })
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Unknown error')
+      setError(error instanceof Error ? error.message : 'All performance endpoints unavailable')
+    }
+  }
+
+  // Trigger performance optimization
+  const handleOptimize = async () => {
+    setOptimizing(true)
+    try {
+      const response = await fetch('/api/performance/dashboard/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          categories: ['cache', 'database'], 
+          autoApply: true 
+        })
+      })
+      
+      if (!response.ok) throw new Error('Optimization failed')
+      
+      // Refresh metrics after optimization
+      await fetchMetrics()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Optimization failed')
     } finally {
-      setLoading(false)
+      setOptimizing(false)
     }
   }
 
@@ -206,19 +314,92 @@ export function PerformanceDashboard({
     <div className="space-y-6">
       {/* System Health Overview */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Performance Dashboard</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Enhanced Performance Dashboard</h2>
+          <p className="text-gray-600">Real-time monitoring with intelligent optimization</p>
+        </div>
         <div className="flex items-center gap-4">
           <Badge 
             variant={healthStatus.status === 'healthy' ? 'default' : 
                     healthStatus.status === 'warning' ? 'secondary' : 'destructive'}
+            className="flex items-center gap-1"
           >
+            {healthStatus.status === 'healthy' ? <CheckCircle className="h-3 w-3" /> : 
+             <AlertTriangle className="h-3 w-3" />}
             {healthStatus.status.toUpperCase()}
           </Badge>
+          <Button 
+            onClick={handleOptimize} 
+            disabled={optimizing}
+            variant="outline" 
+            size="sm"
+          >
+            <Zap className="h-4 w-4 mr-2" />
+            {optimizing ? 'Optimizing...' : 'Auto Optimize'}
+          </Button>
           <Button onClick={fetchMetrics} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
       </div>
+
+      {/* Active Alerts */}
+      {alerts.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Performance Alerts ({alerts.length})</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1">
+              {alerts.slice(0, 3).map((alert, index) => (
+                <div key={index} className="text-sm">
+                  <strong>{alert.message}</strong> on {alert.endpoint}
+                </div>
+              ))}
+              {alerts.length > 3 && (
+                <div className="text-sm text-muted-foreground">
+                  +{alerts.length - 3} more alerts
+                </div>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Performance Recommendations */}
+      {recommendations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2" />
+              Performance Recommendations
+            </CardTitle>
+            <CardDescription>
+              {recommendations.filter(r => r.priority === 'high').length} high priority optimizations available
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {recommendations.slice(0, 3).map((rec, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div>
+                    <Badge variant={rec.priority === 'high' ? 'destructive' : 'secondary'}>
+                      {rec.priority}
+                    </Badge>
+                    <span className="ml-2 text-sm">{rec.description}</span>
+                  </div>
+                  <Badge variant="outline">{rec.category}</Badge>
+                </div>
+              ))}
+              {recommendations.length > 3 && (
+                <div className="text-sm text-gray-500 text-center">
+                  +{recommendations.length - 3} more recommendations
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

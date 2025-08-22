@@ -163,9 +163,9 @@ export default function CreateVaultWizard({
         return wizardData.selectedOrganization || 
                (wizardData.createNewOrganization?.name && wizardData.createNewOrganization?.industry);
       case 'assets':
-        return wizardData.selectedAssets.length > 0;
+        return true; // Assets are optional
       case 'boardmates':
-        return wizardData.selectedBoardMates.length > 0 || wizardData.newBoardMates.length > 0;
+        return true; // BoardMates are optional
       case 'review':
         return wizardData.vaultName.trim().length > 0;
       default:

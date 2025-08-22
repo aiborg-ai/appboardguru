@@ -30,6 +30,36 @@ const fixes = [
     name: 'Generic callback parameter fix',
     pattern: /\{(\w+): (\w+)\)\s*=>/g,
     replacement: '{($1: $2) =>'
+  },
+  {
+    name: 'Fix Select onValueChange with setChartType',
+    pattern: /onValueChange=\{\(value:\s*unknown\)\s*=>\s*setChartType\(value\)\}/g,
+    replacement: 'onValueChange={(value: string) => setChartType(value as any)}'
+  },
+  {
+    name: 'Fix missing closing parenthesis in arrow functions',
+    pattern: /onValueChange=\{\((\w+): unknown\)\s*=>/g,
+    replacement: 'onValueChange={($1: string) =>'
+  },
+  {
+    name: 'Fix template literal type assertions',
+    pattern: /as\s*`([^`]+)`/g,
+    replacement: 'as "$1"'
+  },
+  {
+    name: 'Fix property access on unknown type',
+    pattern: /\((\w+)\s+as\s+any\)\.(\w+)/g,
+    replacement: '($1 as any).$2'
+  },
+  {
+    name: 'Fix JSX unclosed tags - div',
+    pattern: /<div([^>]*)>\s*$(?!\s*<\/div>)/gm,
+    replacement: '<div$1></div>'
+  },
+  {
+    name: 'Fix export default function syntax',
+    pattern: /export\s+default\s+function\s+(\w+)\s*\(/g,
+    replacement: 'export default function $1('
   }
 ]
 

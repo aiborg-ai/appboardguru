@@ -16,6 +16,10 @@ export class FYIRepository extends BaseRepository {
     return ['title', 'summary', 'source']
   }
 
+  protected getTableName(): string {
+    return 'fyi_insights_cache'
+  }
+
   private handleError(error: any, operation: string): void {
     console.error(`FYIRepository.${operation}:`, error)
   }

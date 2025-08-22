@@ -396,7 +396,7 @@ export function OrganizationSettings({
                 <div className="space-y-2">
                   <Label htmlFor="organizationSize">Organization Size</Label>
                   <Select
-                    onValueChange={(value: unknown) => setValue('organizationSize', value)}
+                    onValueChange={(value: string) => setValue('organizationSize', value as any)}
                     value={watch('organizationSize') || ''}
                     disabled={!canEdit}
                   >

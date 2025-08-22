@@ -152,11 +152,23 @@ export function registerServices(supabase?: SupabaseClient<Database>) {
     const { OrganizationRepository } = require('@/domains/organizations/repository/organization.repository')
     return new OrganizationRepository(c.resolve('supabase'))
   }, ['supabase'])
+
+  // Register enhanced repositories
+  container.scoped('EnhancedOrganizationRepository', (c) => {
+    const { EnhancedOrganizationRepository } = require('@/lib/repositories/enhanced-organization.repository')
+    return new EnhancedOrganizationRepository(c.resolve('supabase'))
+  }, ['supabase'])
   
   // Register services
   container.scoped('OrganizationService', (c) => {
     const { OrganizationService } = require('@/domains/organizations/services/organization.service')
     return new OrganizationService(c.resolve('supabase'))
+  }, ['supabase'])
+
+  // Register enhanced services
+  container.scoped('EnhancedOrganizationService', (c) => {
+    const { EnhancedOrganizationService } = require('@/lib/services/enhanced-organization.service')
+    return new EnhancedOrganizationService(c.resolve('supabase'))
   }, ['supabase'])
   
   return container
@@ -194,6 +206,8 @@ export interface ServiceMap {
   supabase: SupabaseClient<Database>
   OrganizationRepository: any
   OrganizationService: any
+  EnhancedOrganizationRepository: any
+  EnhancedOrganizationService: any
 }
 
 // Type-safe resolver

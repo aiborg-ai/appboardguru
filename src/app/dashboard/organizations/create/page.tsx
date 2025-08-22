@@ -46,6 +46,14 @@ export default function CreateOrganizationPage() {
         throw new Error('User not authenticated');
       }
 
+      console.log('Creating organization with data:', {
+        name: data.organizationDetails.name,
+        slug: data.organizationDetails.slug,
+        description: data.organizationDetails.description,
+        industry: data.organizationDetails.industry,
+        organizationSize: data.organizationDetails.organizationSize,
+      });
+
       // Use the authenticated hook instead of raw fetch
       const result = await createOrganizationMutation.mutateAsync({
         name: data.organizationDetails.name,
@@ -55,6 +63,19 @@ export default function CreateOrganizationPage() {
         industry: data.organizationDetails.industry,
         organizationSize: data.organizationDetails.organizationSize,
       });
+
+      console.log('Organization creation API response:', result);
+
+      // Validate the result has required fields
+      if (!result.id || !result.name || !result.slug) {
+        console.error('Invalid API response - missing required fields:', {
+          hasId: !!result.id,
+          hasName: !!result.name,
+          hasSlug: !!result.slug,
+          result
+        });
+        throw new Error('Organization created but response is missing required fields');
+      }
 
       // Transform the result to match expected response format
       const response: OrganizationCreationResponse = {
@@ -67,6 +88,7 @@ export default function CreateOrganizationPage() {
         invitationsSent: data.members?.invitations?.length || 0,
       };
       
+      console.log('Setting created organization:', response);
       setCreatedOrganization(response);
       setIsCompleted(true);
     } catch (error) {
@@ -91,8 +113,27 @@ export default function CreateOrganizationPage() {
 
   const handleGoToOrganization = () => {
     if (createdOrganization?.organization) {
-      // TODO: Navigate to the organization dashboard
-      router.push(`/dashboard/organizations/${createdOrganization.organization.slug}`);
+      const slug = createdOrganization.organization.slug;
+      
+      // Debug logging
+      console.log('Navigating to organization:', {
+        name: createdOrganization.organization.name,
+        slug: slug,
+        id: createdOrganization.organization.id,
+        fullUrl: `/dashboard/organizations/${slug}`
+      });
+      
+      if (!slug) {
+        console.error('Organization slug is missing, falling back to organizations list');
+        router.push('/dashboard/organizations');
+        return;
+      }
+      
+      // Navigate to the organization dashboard
+      router.push(`/dashboard/organizations/${slug}`);
+    } else {
+      console.error('Created organization data is missing, redirecting to organizations list');
+      router.push('/dashboard/organizations');
     }
   };
 
@@ -154,8 +195,12 @@ export default function CreateOrganizationPage() {
                 onClick={handleBackToOrganizations}
                 className="w-full"
               >
-                Back to Organizations
+                View All Organizations
               </Button>
+              
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Having trouble? Use "View All Organizations" to return to the main page.
+              </p>
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-200">

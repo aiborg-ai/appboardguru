@@ -365,3 +365,377 @@ export interface UpdateAssociationApiRequest {
   organization_id: string
   updates: AssociationUpdate[]
 }
+
+// Premium AI Enhancement Types
+export interface AIRecommendationScore {
+  overall: number
+  skillMatch: number
+  culturalFit: number
+  diversityContribution: number
+  riskMitigation: number
+  confidence: number
+}
+
+export interface EnhancedBoardMate extends BoardMateProfile {
+  ai_score?: AIRecommendationScore
+  expertise_profile?: ExpertiseProfile
+  network_position?: NetworkPosition
+  compliance_status?: ComplianceStatus
+  performance_metrics?: PerformanceMetrics
+  risk_assessment?: RiskAssessment
+}
+
+export interface ExpertiseProfile {
+  skills: Skill[]
+  industries: string[]
+  certifications: Certification[]
+  experience_years: number
+  board_experience_years: number
+  specializations: string[]
+  languages: string[]
+  education: Education[]
+  achievements: Achievement[]
+}
+
+export interface Skill {
+  id: string
+  name: string
+  category: 'technical' | 'business' | 'leadership' | 'domain' | 'compliance'
+  level: number // 1-10
+  verified: boolean
+  endorsements: number
+  last_validated: string
+  certifying_body?: string
+}
+
+export interface Certification {
+  id: string
+  name: string
+  issuer: string
+  issue_date: string
+  expiry_date?: string
+  credential_id?: string
+  verification_url?: string
+  status: 'active' | 'expired' | 'pending'
+}
+
+export interface Education {
+  institution: string
+  degree: string
+  field_of_study: string
+  graduation_year: number
+  honors?: string
+  gpa?: number
+}
+
+export interface Achievement {
+  title: string
+  description: string
+  date: string
+  category: 'award' | 'publication' | 'patent' | 'speaking' | 'other'
+  verification_url?: string
+}
+
+export interface NetworkPosition {
+  centrality_score: number
+  influence_score: number
+  collaboration_count: number
+  mentor_relationships: number
+  advisory_roles: number
+  network_reach: number
+}
+
+export interface ComplianceStatus {
+  independence_qualified: boolean
+  conflict_checks_passed: boolean
+  background_verified: boolean
+  regulatory_clearances: string[]
+  pending_reviews: string[]
+  last_compliance_check: string
+  compliance_score: number
+}
+
+export interface PerformanceMetrics {
+  meeting_attendance_rate: number
+  contribution_score: number
+  decision_influence: number
+  collaboration_rating: number
+  innovation_index: number
+  leadership_effectiveness: number
+  stakeholder_feedback: number
+}
+
+export interface RiskAssessment {
+  overall_risk_score: number
+  conflict_risk: number
+  reputation_risk: number
+  operational_risk: number
+  regulatory_risk: number
+  mitigation_strategies: string[]
+  risk_factors: RiskFactor[]
+}
+
+export interface RiskFactor {
+  type: 'conflict' | 'reputation' | 'compliance' | 'performance' | 'availability'
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  description: string
+  likelihood: number
+  impact: number
+  mitigation?: string
+}
+
+// Team Intelligence Types
+export interface TeamIntelligence {
+  composition_score: number
+  diversity_index: number
+  expertise_coverage: number
+  collaboration_potential: number
+  decision_efficiency: number
+  innovation_capacity: number
+  risk_tolerance: number
+  predicted_performance: PredictedPerformance
+}
+
+export interface PredictedPerformance {
+  decision_quality: number
+  decision_speed: number
+  consensus_likelihood: number
+  innovation_potential: number
+  risk_management: number
+  stakeholder_satisfaction: number
+}
+
+// Voice Command Types
+export interface VoiceCommand {
+  command: string
+  confidence: number
+  intent: 'add_member' | 'remove_member' | 'search_member' | 'analyze_team' | 'get_recommendations'
+  parameters: VoiceParameters
+  context: VoiceContext
+}
+
+export interface VoiceParameters {
+  member_name?: string
+  skills_required?: string[]
+  role_type?: BoardRole
+  urgency?: 'low' | 'normal' | 'high' | 'critical'
+  constraints?: string[]
+  criteria?: string[]
+}
+
+export interface VoiceContext {
+  vault_id: string
+  organization_id: string
+  current_members: string[]
+  meeting_type?: string
+  user_id: string
+}
+
+// Real-time Collaboration Types
+export interface UserPresence {
+  user_id: string
+  full_name: string
+  avatar_url?: string
+  status: 'online' | 'away' | 'busy' | 'offline'
+  current_action: 'viewing' | 'editing' | 'analyzing' | 'idle'
+  last_seen: string
+  cursor_position?: CursorPosition
+}
+
+export interface CursorPosition {
+  x: number
+  y: number
+  element_id?: string
+  selection?: Selection
+}
+
+export interface Selection {
+  member_id: string
+  action_type: 'selecting' | 'editing' | 'analyzing'
+  timestamp: string
+}
+
+// Analytics Dashboard Types
+export interface AnalyticsDashboard {
+  team_composition: TeamCompositionAnalytics
+  performance_trends: PerformanceTrends
+  risk_monitoring: RiskMonitoring
+  compliance_tracking: ComplianceTracking
+  predictive_insights: PredictiveInsights
+}
+
+export interface TeamCompositionAnalytics {
+  diversity_metrics: DiversityMetrics
+  skill_distribution: SkillDistribution
+  experience_matrix: ExperienceMatrix
+  network_analysis: NetworkAnalysis
+}
+
+export interface DiversityMetrics {
+  gender_balance: number
+  age_distribution: AgeDistribution
+  ethnic_diversity: number
+  geographic_spread: number
+  educational_diversity: number
+  industry_background: IndustryDistribution
+}
+
+export interface AgeDistribution {
+  under_40: number
+  '40-50': number
+  '50-60': number
+  over_60: number
+  average_age: number
+}
+
+export interface IndustryDistribution {
+  [industry: string]: number
+}
+
+export interface SkillDistribution {
+  technical: number
+  business: number
+  leadership: number
+  compliance: number
+  domain_specific: number
+  gaps: string[]
+  overlaps: string[]
+}
+
+export interface ExperienceMatrix {
+  board_experience: ExperienceLevel[]
+  industry_experience: ExperienceLevel[]
+  functional_experience: ExperienceLevel[]
+}
+
+export interface ExperienceLevel {
+  category: string
+  junior: number
+  mid: number
+  senior: number
+  expert: number
+}
+
+export interface NetworkAnalysis {
+  internal_connections: number
+  external_network_value: number
+  influence_paths: InfluencePath[]
+  collaboration_clusters: CollaborationCluster[]
+}
+
+export interface InfluencePath {
+  from_member: string
+  to_member: string
+  influence_score: number
+  relationship_type: string
+}
+
+export interface CollaborationCluster {
+  members: string[]
+  cohesion_score: number
+  performance_score: number
+}
+
+// Advanced Search Types
+export interface AdvancedSearchCriteria {
+  basic_filters: BoardMateFilters
+  expertise_filters: ExpertiseFilters
+  performance_filters: PerformanceFilters
+  network_filters: NetworkFilters
+  ai_criteria: AICriteria
+}
+
+export interface ExpertiseFilters {
+  required_skills?: string[]
+  skill_levels?: { [skill: string]: number }
+  industries?: string[]
+  certifications?: string[]
+  experience_range?: { min: number; max: number }
+  languages?: string[]
+}
+
+export interface PerformanceFilters {
+  min_attendance_rate?: number
+  min_contribution_score?: number
+  min_collaboration_rating?: number
+  performance_trends?: 'improving' | 'stable' | 'declining'
+}
+
+export interface NetworkFilters {
+  min_centrality_score?: number
+  min_influence_score?: number
+  connection_types?: string[]
+  network_reach?: number
+}
+
+export interface AICriteria {
+  team_chemistry_optimization?: boolean
+  diversity_enhancement?: boolean
+  skill_gap_filling?: boolean
+  risk_mitigation?: boolean
+  performance_prediction?: boolean
+}
+
+// Scenario Planning Types
+export interface BoardScenario {
+  id: string
+  name: string
+  description: string
+  members: EnhancedBoardMate[]
+  predicted_metrics: TeamIntelligence
+  created_by: string
+  created_at: string
+  tags: string[]
+  status: 'draft' | 'active' | 'archived'
+}
+
+export interface ScenarioComparison {
+  scenarios: BoardScenario[]
+  comparison_metrics: ComparisonMetrics
+  recommendations: ScenarioRecommendation[]
+}
+
+export interface ComparisonMetrics {
+  [scenario_id: string]: {
+    strengths: string[]
+    weaknesses: string[]
+    risks: string[]
+    opportunities: string[]
+    overall_score: number
+  }
+}
+
+export interface ScenarioRecommendation {
+  scenario_id: string
+  recommendation_type: 'optimal' | 'balanced' | 'risk_averse' | 'innovative'
+  rationale: string
+  confidence: number
+}
+
+// Blockchain Audit Types
+export interface BlockchainAuditEntry {
+  transaction_hash: string
+  block_number: number
+  timestamp: string
+  action_type: 'member_added' | 'member_removed' | 'role_changed' | 'access_granted' | 'access_revoked'
+  member_id: string
+  performed_by: string
+  details: AuditDetails
+  verification_status: 'verified' | 'pending' | 'failed'
+}
+
+export interface AuditDetails {
+  old_value?: any
+  new_value?: any
+  reason?: string
+  approval_required?: boolean
+  approver_id?: string
+  compliance_check?: ComplianceCheckResult
+}
+
+export interface ComplianceCheckResult {
+  passed: boolean
+  checks_performed: string[]
+  violations?: string[]
+  risk_score: number
+}
