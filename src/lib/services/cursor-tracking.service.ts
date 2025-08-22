@@ -5,7 +5,7 @@
  */
 
 import { BaseService } from './base.service'
-import { Result } from '../types/result'
+import { Result } from '../repositories/result'
 import type { AssetId, UserId, OrganizationId } from '../../types/database'
 import type { WebSocketService } from './websocket.service'
 import type { RoomId } from '../../types/websocket'

@@ -10,7 +10,7 @@ import { Users, Upload, Clock, Wifi, WifiOff } from 'lucide-react'
 import { Card } from '@/features/shared/ui/card'
 import { Avatar } from '@/features/shared/ui/avatar'
 import { Badge } from '@/features/shared/ui/badge'
-import { Tooltip } from '@/features/shared/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useUploadCollaborationStore, selectPresence, selectConnectionState } from '@/lib/stores/upload-collaboration.store'
 import { formatFileSize } from '@/types/upload'
 

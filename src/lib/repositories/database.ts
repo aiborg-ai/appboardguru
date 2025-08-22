@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import type { Database } from '../../types/database'
 
 /**
@@ -95,9 +94,13 @@ export function createClientConnection(): SupabaseClient<Database> {
 
 /**
  * Create a server-side Supabase connection with cookie handling
+ * Only works in server components
  */
 export async function createServerConnection(): Promise<SupabaseClient<Database>> {
   const config = getDatabaseConfig()
+  
+  // Dynamic import to avoid issues in client-side code
+  const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
 
   return createServerClient<Database>(

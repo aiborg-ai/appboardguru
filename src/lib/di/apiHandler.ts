@@ -7,7 +7,6 @@ import { NextRequest } from 'next/server'
 import { createAPIHandler, APIHandlerConfig, ValidatedRequest } from '@/lib/api/createAPIHandler'
 import { Container, registerServices, ServiceMap } from './container'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 // Enhanced request with service container
 export interface DIRequest<T = any> extends ValidatedRequest<T> {
@@ -36,6 +35,7 @@ export function createDIAPIHandler<TInput = any, TOutput = any>(
 ) {
   return createAPIHandler(config, async (req: ValidatedRequest<TInput>) => {
     // Create request-scoped container
+    const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env['NEXT_PUBLIC_SUPABASE_URL']!,

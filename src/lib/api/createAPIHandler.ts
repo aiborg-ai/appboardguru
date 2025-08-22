@@ -12,7 +12,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, ZodSchema } from 'zod'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { monitor } from '@/lib/monitoring'
 // Note: featureFlags is client-side only, using server-side defaults
 
@@ -221,6 +220,7 @@ export function createAPIHandler<TInput = any, TOutput = any>(
  */
 async function authenticateRequest(request: NextRequest) {
   try {
+    const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env['NEXT_PUBLIC_SUPABASE_URL']!,
@@ -358,6 +358,7 @@ async function logAuditEvent(
   duration: number
 ) {
   try {
+    const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env['NEXT_PUBLIC_SUPABASE_URL']!,

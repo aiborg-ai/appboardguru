@@ -10,15 +10,5 @@ export { default as UploadActivityFeed } from './UploadActivityFeed'
 export { default as UploadNotificationToast } from './UploadNotificationToast'
 export { default as UploadAnalyticsDashboard } from './UploadAnalyticsDashboard'
 
-// Named exports for easier importing
-export { 
-  CollaborativeUploadHub,
-  UploadPresenceIndicator,
-  TeamUploadQueue,
-  UploadActivityFeed,
-  UploadNotificationToast,
-  UploadAnalyticsDashboard
-}
-
 // Component type exports
 export type { default as CollaborativeUploadHubProps } from './CollaborativeUploadHub'
