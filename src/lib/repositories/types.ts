@@ -10,6 +10,11 @@ export type ActivityLogId = string & { __brand: 'ActivityLogId' }
 export type ComplianceWorkflowId = string & { __brand: 'ComplianceWorkflowId' }
 export type BoardId = string & { __brand: 'BoardId' }
 export type CommitteeId = string & { __brand: 'CommitteeId' }
+export type DocumentId = string & { __brand: 'DocumentId' }
+export type AnnotationId = string & { __brand: 'AnnotationId' }
+export type TocId = string & { __brand: 'TocId' }
+export type SummaryId = string & { __brand: 'SummaryId' }
+export type PodcastId = string & { __brand: 'PodcastId' }
 
 // Type constructors for branded types
 export const createUserId = (id: string): UserId => id as UserId
@@ -23,6 +28,11 @@ export const createActivityLogId = (id: string): ActivityLogId => id as Activity
 export const createComplianceWorkflowId = (id: string): ComplianceWorkflowId => id as ComplianceWorkflowId
 export const createBoardId = (id: string): BoardId => id as BoardId
 export const createCommitteeId = (id: string): CommitteeId => id as CommitteeId
+export const createDocumentId = (id: string): DocumentId => id as DocumentId
+export const createAnnotationId = (id: string): AnnotationId => id as AnnotationId
+export const createTocId = (id: string): TocId => id as TocId
+export const createSummaryId = (id: string): SummaryId => id as SummaryId
+export const createPodcastId = (id: string): PodcastId => id as PodcastId
 
 // Common query options
 export interface PaginationOptions {
