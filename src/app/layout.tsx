@@ -1,12 +1,12 @@
-// import './globals.css' // Temporarily disabled due to PostCSS configuration issue
-// import './disable-overlays.css' // Temporarily disabled due to CSS parsing errors
-// import { Inter } from 'next/font/google' // Temporarily disabled due to build issue
+import './globals.css'
+import './disable-overlays.css'
+import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 
-// const inter = Inter({ 
-//   subsets: ['latin'],
-//   variable: '--font-inter',
-// })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'BoardGuru - Enterprise Board Management Platform',
@@ -120,7 +120,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans antialiased">
+      <body className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans antialiased ${inter.variable}`}>
         <div className="relative flex min-h-screen flex-col">
           <main className="flex-1">
             {children}
