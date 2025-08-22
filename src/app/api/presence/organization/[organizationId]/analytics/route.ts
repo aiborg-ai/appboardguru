@@ -9,8 +9,8 @@ import { createServerRepositoryFactory } from '../../../../../../lib/repositorie
 import { PresenceService } from '../../../../../../lib/services/presence.service'
 import { ApiResponse } from '../../../../../../lib/api/response'
 import { createOrganizationId } from '../../../../../../types/branded'
-import { rateLimit } from '../../../../../../lib/rate-limiter'
-import { requireAuth } from '../../../../../../lib/api/middleware/auth'
+import { rateLimiter } from '../../../../../../lib/rate-limiter'
+import { validateAuth } from '../../../../../../lib/api/middleware/auth'
 
 interface RouteParams {
   params: {

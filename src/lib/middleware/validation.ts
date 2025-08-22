@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { z, ZodSchema, ZodError } from 'zod'
+import { z, ZodType, ZodError } from 'zod'
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
 import { MiddlewareContext } from './types'
@@ -19,11 +19,11 @@ const ajv = new Ajv({
 addFormats(ajv)
 
 export interface ValidationConfig {
-  requestBody?: ZodSchema | any // OpenAPI schema object
-  queryParameters?: ZodSchema | any
-  pathParameters?: ZodSchema | any
-  headers?: ZodSchema | any
-  response?: Record<number, ZodSchema | any> // Response schemas by status code
+  requestBody?: ZodType | any // OpenAPI schema object
+  queryParameters?: ZodType | any
+  pathParameters?: ZodType | any
+  headers?: ZodType | any
+  response?: Record<number, ZodType | any> // Response schemas by status code
   skipValidation?: boolean
   strictMode?: boolean
   sanitizeInput?: boolean
@@ -45,7 +45,7 @@ export interface ValidationResult {
 /**
  * Validate data against Zod schema
  */
-function validateWithZod(schema: ZodSchema, data: any): ValidationResult {
+function validateWithZod(schema: ZodType, data: any): ValidationResult {
   try {
     const result = schema.parse(data)
     return {
@@ -121,8 +121,8 @@ function validateWithOpenAPI(schema: any, data: any): ValidationResult {
 /**
  * Generic validation function
  */
-function validateData(schema: ZodSchema | any, data: any): ValidationResult {
-  if (schema instanceof ZodSchema || (schema && typeof schema.parse === 'function')) {
+function validateData(schema: ZodType | any, data: any): ValidationResult {
+  if (schema instanceof ZodType || (schema && typeof schema.parse === 'function')) {
     return validateWithZod(schema, data)
   } else if (schema && typeof schema === 'object') {
     return validateWithOpenAPI(schema, data)
@@ -537,7 +537,7 @@ export const ValidationUtils = {
   /**
    * Validate against multiple schemas (oneOf, anyOf)
    */
-  validateOneOf(schemas: (ZodSchema | any)[], data: any): ValidationResult {
+  validateOneOf(schemas: (ZodType | any)[], data: any): ValidationResult {
     const errors: ValidationError[] = []
     
     for (const schema of schemas) {

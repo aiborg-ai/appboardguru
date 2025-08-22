@@ -228,7 +228,7 @@ function useTypeSafeForm<T extends Record<string, unknown>>(
         ...invitationValidators.expiresIn,
         validation: {
           ...invitationValidators.expiresIn.validation,
-          custom: value: unknown) => {
+          custom: (value: unknown) => {
             const result = formBridge.validateField('expiresIn' as keyof T, value)
             return result === true ? undefined : result
           }

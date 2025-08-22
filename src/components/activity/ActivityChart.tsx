@@ -229,7 +229,7 @@ export function ActivityChart({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium">{title}</CardTitle>
           <div className="flex items-center gap-2">
-            <Select value={chartType} onValueChange={value: unknown) => setChartType(value)}>
+            <Select value={chartType} onValueChange={(value: unknown) => setChartType(value)}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>

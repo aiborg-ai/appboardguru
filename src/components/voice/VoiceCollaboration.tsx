@@ -1150,7 +1150,7 @@ export default function VoiceCollaboration({
       </CardHeader>
       
       <CardContent>
-        <Tabs value={state.currentView} onValueChange={value: unknown) => setState(prev => ({ ...prev, currentView: value }))}>
+        <Tabs value={state.currentView} onValueChange={(value: unknown) => setState(prev => ({ ...prev, currentView: value }))}>
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">
               <Eye className="h-4 w-4" />

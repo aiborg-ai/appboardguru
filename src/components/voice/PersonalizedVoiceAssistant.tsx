@@ -921,7 +921,7 @@ export default function PersonalizedVoiceAssistant({
       </CardHeader>
 
       <CardContent>
-        <Tabs value={activeTab} onValueChange={value: unknown) => setActiveTab(value)}>
+        <Tabs value={activeTab} onValueChange={(value: unknown) => setActiveTab(value)}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="chat" className="flex items-center space-x-1">
               <MessageCircle className="h-4 w-4" />

@@ -278,7 +278,7 @@ export function CreateOrganizationModal({
             <div className="space-y-2">
               <Label htmlFor="organizationSize">Organization Size</Label>
               <Select
-                onValueChange={value: unknown) => setValue('organizationSize', value)}
+                onValueChange={(value: unknown) => setValue('organizationSize', value)}
                 disabled={isLoading}
               >
                 <SelectTrigger>

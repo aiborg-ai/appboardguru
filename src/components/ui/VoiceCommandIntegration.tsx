@@ -72,7 +72,7 @@ export function VoiceCommandIntegration({
       const response = await fetch(`/api/voice/commands?userId=${userId}&limit=10`);
       if (response.ok) {
         const data = await response.json();
-        const activities: VoiceActivity[] = (data.history || []).map(item: unknown) => ({
+        const activities: VoiceActivity[] = (data.history || []).map((item: unknown) => ({
           id: item.id,
           timestamp: new Date(item.created_at),
           command: item.details?.original_text || 'Unknown command',
