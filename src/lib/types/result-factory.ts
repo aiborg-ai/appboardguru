@@ -552,7 +552,7 @@ export class ResultPattern {
 // ==== Result Builders ====
 
 export class ResultBuilder<T, E = AppError> {
-  private operations: Array<value: unknown) => Result<any, E>> = []
+  private operations: Array<(value: unknown) => Result<any, E>> = []
 
   static create<T, E = AppError>(): ResultBuilder<T, E> {
     return new ResultBuilder<T, E>()
@@ -638,7 +638,7 @@ export type Chain<T, E = AppError> = {
  * Create a chainable Result operations pipeline
  */
 export function chain<T, E = AppError>(result: Result<T, E>): Chain<T, E> {
-  const ops: Array<value: unknown) => Result<any, E>> = []
+  const ops: Array<(value: unknown) => Result<any, E>> = []
   let current = result
 
   const createChain = <U>(newResult: Result<U, E>): Chain<U, E> => {

@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Failed to fetch assets' }, { status: 500 })
     }
 
     // Transform data for frontend consumption
@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
     }))
 
     return NextResponse.json({
+      success: true,
       assets: transformedAssets,
       totalCount: count,
       page,
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Assets API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 

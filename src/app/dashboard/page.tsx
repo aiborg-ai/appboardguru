@@ -26,6 +26,7 @@ import {
   Eye,
   Folder as FolderIcon
 } from 'lucide-react'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -62,7 +63,33 @@ export default function DashboardPage() {
         <div className="px-6 py-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Welcome back, Board Member!</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">Welcome back, Board Member!</h1>
+                <InfoTooltip
+                  content={
+                    <InfoSection
+                      title="Board Governance Dashboard"
+                      description="Your centralized command center for all board activities, document management, and collaboration tools."
+                      features={[
+                        "Real-time board pack access and reviews",
+                        "AI-powered document summarization and insights",
+                        "Secure collaboration with fellow board members",
+                        "Meeting coordination and compliance tracking",
+                        "Advanced security with audit trails"
+                      ]}
+                      tips={[
+                        "Click on any metric card for detailed insights",
+                        "Use the AI chat for quick document analysis",
+                        "Check BoardChat for urgent communications",
+                        "Review compliance status regularly"
+                      ]}
+                    />
+                  }
+                  side="bottom"
+                  size="lg"
+                  className="text-white hover:text-blue-200 bg-white/20 hover:bg-white/30 border-white/30"
+                />
+              </div>
               <p className="text-blue-100 text-lg">Your governance intelligence dashboard</p>
               <div className="flex items-center mt-4 space-x-6">
                 <div className="flex items-center space-x-2">
@@ -92,6 +119,10 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-2">
                   <Target className="h-5 w-5 text-blue-600" />
                   <span className="text-sm text-gray-600 font-medium">Board Packs</span>
+                  <InfoTooltip
+                    content="Total number of board packs available for review. Board packs contain meeting agendas, financial reports, strategic documents, and supporting materials for board decision-making."
+                    size="sm"
+                  />
                 </div>
                 <div className="text-3xl font-bold text-gray-900 mt-2">12</div>
               </div>
@@ -107,6 +138,10 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-2">
                   <Shield className="h-5 w-5 text-green-600" />
                   <span className="text-sm text-gray-600 font-medium">Secure Files</span>
+                  <InfoTooltip
+                    content="Total number of encrypted and secure files in your board document vault. All files are protected with enterprise-grade encryption and access controls."
+                    size="sm"
+                  />
                 </div>
                 <div className="text-3xl font-bold text-gray-900 mt-2">3.4k</div>
               </div>

@@ -40,13 +40,13 @@ export interface MiddlewareConfig {
 export interface RequestTransformConfig {
   camelCaseToSnakeCase?: boolean
   snakeCaseToCamelCase?: boolean
-  customTransforms?: Record<string, value: unknown) => any>
+  customTransforms?: Record<string, (value: unknown) => any>
 }
 
 export interface ResponseTransformConfig {
   snakeCaseToCamelCase?: boolean
   camelCaseToSnakeCase?: boolean
-  customTransforms?: Record<string, value: unknown) => any>
+  customTransforms?: Record<string, (value: unknown) => any>
 }
 
 export interface AuditConfig {

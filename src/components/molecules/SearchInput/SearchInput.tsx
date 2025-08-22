@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 import { Input, type InputProps } from "../../atoms/Input"
 import { Button } from "../../atoms/Button"
 import { Icon } from "../../atoms/Icon"
+import { VoiceInputButton } from "../../../ui/VoiceInputButton"
 
 export interface SearchInputProps extends Omit<InputProps, 'type' | 'leftIcon' | 'rightIcon'> {
   onSearch?: (query: string) => void
@@ -10,6 +11,7 @@ export interface SearchInputProps extends Omit<InputProps, 'type' | 'leftIcon' |
   loading?: boolean
   showSearchButton?: boolean
   showClearButton?: boolean
+  showVoiceInput?: boolean
   debounceMs?: number
 }
 
@@ -20,6 +22,7 @@ const SearchInput = React.memo(React.forwardRef<HTMLInputElement, SearchInputPro
     loading = false,
     showSearchButton = false,
     showClearButton = true,
+    showVoiceInput = true,
     debounceMs = 300,
     className,
     value,
@@ -76,6 +79,25 @@ const SearchInput = React.memo(React.forwardRef<HTMLInputElement, SearchInputPro
       onSearch?.(internalValue)
     }, [onSearch, internalValue])
 
+    const handleVoiceTranscription = React.useCallback((text: string) => {
+      const newValue = internalValue + (internalValue ? ' ' : '') + text
+      setInternalValue(newValue)
+      
+      // Create synthetic event for onChange
+      const syntheticEvent = {
+        target: { value: newValue },
+        currentTarget: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>
+      
+      onChange?.(syntheticEvent)
+      
+      if (onSearch && debounceMs > 0) {
+        debouncedSearch(newValue)
+      } else if (onSearch) {
+        onSearch(newValue)
+      }
+    }, [internalValue, onChange, onSearch, debouncedSearch, debounceMs])
+
     const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter' && onSearch) {
         e.preventDefault()
@@ -103,6 +125,16 @@ const SearchInput = React.memo(React.forwardRef<HTMLInputElement, SearchInputPro
 
     const rightElement = (
       <div className="flex items-center gap-1">
+        {showVoiceInput && (
+          <VoiceInputButton
+            onTranscription={handleVoiceTranscription}
+            disabled={loading}
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0"
+            aria-label="Voice search"
+          />
+        )}
         {showClearButton && internalValue && (
           <Button
             type="button"

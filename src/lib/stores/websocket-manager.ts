@@ -37,7 +37,7 @@ export class WebSocketManager {
   private messageQueue: WebSocketMessage[] = []
   private heartbeatInterval: NodeJS.Timeout | null = null
   private reconnectTimeout: NodeJS.Timeout | null = null
-  private eventListeners: Map<string, Set<data: unknown) => void>> = new Map()
+  private eventListeners: Map<string, Set<(data: unknown) => void>> = new Map()
 
   constructor(config: Partial<WebSocketConfig> = {}) {
     this.config = { ...defaultConfig, ...config }
@@ -446,7 +446,7 @@ export class WebSocketManager {
   }
 
   // Event listener methods
-  on(event: string, callback: data: unknown) => void): () => void {
+  on(event: string, callback: (data: unknown) => void): () => void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set())
     }
@@ -499,7 +499,7 @@ export const useWebSocket = () => {
     send: (message: Omit<WebSocketMessage, 'timestamp'>) => webSocketManager.send(message),
     getState: () => webSocketManager.getState(),
     getConnectionInfo: () => webSocketManager.getConnectionInfo(),
-    on: (event: string, callback: data: unknown) => void) => webSocketManager.on(event, callback)
+    on: (event: string, callback: (data: unknown) => void) => webSocketManager.on(event, callback)
   }
 }
 

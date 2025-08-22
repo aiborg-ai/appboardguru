@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { cn, formatBytes, formatDate } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
+import { FileUploadDropzone } from '@/features/assets/FileUploadDropzone';
+import { FileUploadItem } from '@/types/upload';
 
 interface Asset {
   id: string;
@@ -177,6 +179,27 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
   const getFileTypeColor = (fileType: string) => {
     return FILE_TYPE_COLORS[fileType.toLowerCase()] || FILE_TYPE_COLORS.default;
   };
+
+  // Handle upload completion
+  const handleUploadComplete = useCallback((uploadedFiles: FileUploadItem[]) => {
+    // Convert uploaded files to the Asset format expected by the wizard
+    const newAssets = uploadedFiles.map(file => ({
+      id: file.id,
+      name: file.title,
+      file_type: file.file.type.split('/')[1] || 'unknown',
+      file_size: file.file.size,
+      created_at: new Date().toISOString(),
+    }));
+
+    // Add to selected assets
+    onUpdate({ 
+      selectedAssets: [...data.selectedAssets, ...newAssets]
+    });
+
+    // Close modal and refresh assets list
+    setShowUploadModal(false);
+    loadAssets();
+  }, [data.selectedAssets, onUpdate]);
 
   const selectedCount = data.selectedAssets.length;
   const allFilteredSelected = filteredAssets.length > 0 && 
@@ -473,6 +496,55 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
           </div>
         </motion.div>
       )}
+
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+          >
+            {/* Modal Header */}
+            <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Upload Assets to Vault
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowUploadModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Upload documents and files to include in your new vault
+              </p>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <FileUploadDropzone 
+                onUploadComplete={handleUploadComplete}
+                organizationId="vault-creation" // Placeholder for vault creation context
+                currentUser={{
+                  id: 'vault-creator',
+                  name: 'Vault Creator',
+                  email: 'creator@example.com'
+                }}
+                showCollaborationHub={false}
+                className="min-h-[300px]"
+              />
+            </div>
+          </motion.div>
+        </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

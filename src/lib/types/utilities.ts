@@ -299,7 +299,7 @@ export type FluentBuilder<T> = {
 /**
  * Type for builder methods that validate before setting
  */
-export type ValidatedBuilder<T, V extends Record<keyof T, value: unknown) => boolean> = Record<keyof T, value: unknown) => boolean>> = {
+export type ValidatedBuilder<T, V extends Record<keyof T, (value: unknown) => boolean>> = {
   [K in keyof T as `set${Capitalize<string & K>}`]: (
     value: T[K],
     validator?: V[K]
@@ -361,7 +361,7 @@ export function createBuilder<T extends Record<string, unknown>>(): FluentBuilde
       
       if (typeof prop === 'string' && prop.startsWith('set')) {
         const key = prop.slice(3).toLowerCase()
-        return value: unknown) => {
+        return (value: unknown) => {
           ;data[key] = value
           return builder
         }

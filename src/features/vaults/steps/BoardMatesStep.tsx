@@ -257,9 +257,9 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
   }, [boardMates]);
 
   return (
-    <div className="flex flex-col h-full min-h-[600px] max-h-[calc(100vh-200px)]">
-      {/* Header - Fixed */}
-      <div className="text-center mb-6 flex-shrink-0">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center mb-6">
         <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
           <Users className="w-8 h-8 text-purple-600" />
         </div>
@@ -272,7 +272,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
       </div>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="members" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
@@ -285,9 +285,9 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
         </TabsList>
 
         {/* Board Members Tab */}
-        <TabsContent value="members" className="flex-1 flex flex-col space-y-0">
-      {/* Controls - Fixed */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6 flex-shrink-0">
+        <TabsContent value="members" className="space-y-6">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
@@ -333,8 +333,8 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
         </motion.div>
       )}
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto space-y-6 pb-4">
+      {/* Content Area */}
+      <div className="space-y-6">
         {/* Invite New BoardMate Form */}
         <AnimatePresence>
           {showInviteForm && (
@@ -662,7 +662,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
         </TabsContent>
 
         {/* Executive Analytics Tab */}
-        <TabsContent value="analytics" className="flex-1">
+        <TabsContent value="analytics">
           <ExecutiveAnalyticsDashboard 
             boardMembers={enhancedBoardMates}
             organizationId={data.selectedBoardMates[0]?.organization?.id || 'default-org'}

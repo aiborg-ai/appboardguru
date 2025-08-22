@@ -95,6 +95,12 @@ const baseMenuItems: MenuItem[] = [
         href: '/dashboard/annual-report-ai'
       },
       {
+        id: 'calendar',
+        label: 'Calendar',
+        icon: Calendar,
+        href: '/dashboard/calendar'
+      },
+      {
         id: 'board-effectiveness',
         label: 'Board Effectiveness',
         icon: Target,

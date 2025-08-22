@@ -380,12 +380,12 @@ export interface FieldArrayProps {
   name: string
   children: (helpers: {
     fields: any[]
-    push: item: unknown) => void
+    push: (item: unknown) => void
     remove: (index: number) => void
     move: (from: number, to: number) => void
     insert: (index: number, item: any) => void
     replace: (index: number, item: any) => void
-    unshift: item: unknown) => void
+    unshift: (item: unknown) => void
     pop: () => any
   }) => ReactNode
 }

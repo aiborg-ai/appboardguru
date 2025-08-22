@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
+import { SearchInput } from '@/components/molecules/SearchInput/SearchInput'
 import {
   Collapsible,
   CollapsibleContent,
@@ -257,6 +258,12 @@ export default function DocumentSearch() {
     }
   }
 
+  const handleVoiceTranscription = (text: string) => {
+    const newQuery = localQuery + (localQuery ? ' ' : '') + text
+    setLocalQuery(newQuery)
+    handleSearch(newQuery)
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch(localQuery)
@@ -337,13 +344,18 @@ export default function DocumentSearch() {
 
           {/* Search input */}
           <div className="relative">
-            <Input
+            <SearchInput
               ref={searchInputRef}
               placeholder="Search for text in document..."
               value={localQuery}
               onChange={(e) => setLocalQuery(e.target.value)}
+              onSearch={handleSearch}
+              onClear={handleClearSearch}
               onKeyDown={handleKeyPress}
               className="pr-20"
+              showClearButton={false}
+              showVoiceInput={true}
+              loading={state.isSearching}
             />
             
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">

@@ -5,21 +5,25 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import CreateVaultWizard, { VaultWizardData } from '@/features/vaults/CreateVaultWizard';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { 
   Vault,
   Plus,
   ArrowLeft,
-  CheckCircle
+  CheckCircle,
+  Building2
 } from 'lucide-react';
 import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
 
 export default function CreateVaultPage() {
   const router = useRouter();
+  const { refreshOrganizations } = useOrganization();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [creationResult, setCreationResult] = useState<{
     success: boolean;
     vault?: any;
+    organization?: any;
     message?: string;
   } | null>(null);
 
@@ -36,6 +40,8 @@ export default function CreateVaultPage() {
     setIsCreating(true);
     
     try {
+      console.log('Creating vault with data:', data);
+      
       const response = await fetch('/api/vaults/create', {
         method: 'POST',
         headers: {
@@ -45,18 +51,28 @@ export default function CreateVaultPage() {
       });
 
       const result = await response.json();
+      console.log('Vault creation result:', result);
 
       if (response.ok) {
+        // If a new organization was created, refresh the organization list
+        if (result.organization) {
+          console.log('New organization created:', result.organization);
+          await refreshOrganizations();
+        }
+
         setCreationResult({
           success: true,
           vault: result.vault,
-          message: 'Vault created successfully!',
+          organization: result.organization,
+          message: result.organization 
+            ? `Organization "${result.organization.name}" and vault "${result.vault?.name}" created successfully!`
+            : 'Vault created successfully!',
         });
 
         // Redirect to the new vault after a short delay
         setTimeout(() => {
           router.push(`/dashboard/vaults/${result.vault.id}`);
-        }, 2000);
+        }, 3000); // Slightly longer delay to show success message
       } else {
         setCreationResult({
           success: false,
@@ -77,19 +93,61 @@ export default function CreateVaultPage() {
   if (creationResult?.success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center">
+        <Card className="max-w-lg w-full text-center">
           <CardContent className="p-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              Vault Created Successfully!
+              {creationResult.organization ? 'Organization & Vault Created!' : 'Vault Created Successfully!'}
             </h2>
             <p className="text-gray-600 mb-6">
-              Your vault "{creationResult.vault?.name}" has been created and is ready for collaboration.
+              {creationResult.message}
             </p>
-            <div className="text-sm text-gray-500">
-              Redirecting to your new vault...
+            
+            {/* Organization info if created */}
+            {creationResult.organization && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">New Organization</span>
+                </div>
+                <p className="text-sm text-blue-800">
+                  <strong>{creationResult.organization?.name}</strong> is now available in your organizations list!
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  You can invite team members and create more vaults under this organization.
+                </p>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <div className="text-sm text-gray-500">
+                Redirecting to your new vault in 3 seconds...
+              </div>
+              <div className="w-8 h-8 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin mx-auto" />
+              
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-3">Or choose where to go:</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/dashboard/vaults/${creationResult.vault?.id}`)}
+                    className="w-full"
+                  >
+                    Go to Vault
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push('/dashboard/organizations')}
+                    className="w-full"
+                  >
+                    View Organizations
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -118,13 +176,22 @@ export default function CreateVaultPage() {
               >
                 Try Again
               </Button>
-              <Button 
-                variant="outline"
-                onClick={() => router.push('/dashboard/vaults')}
-                className="w-full"
-              >
-                Back to Vaults
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={() => router.push('/dashboard/vaults')}
+                  className="w-full"
+                >
+                  Back to Vaults
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => router.push('/dashboard/organizations')}
+                  className="w-full"
+                >
+                  View Organizations
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

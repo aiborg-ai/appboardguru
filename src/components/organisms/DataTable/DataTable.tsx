@@ -4,6 +4,7 @@ import { Button } from "../../atoms/Button"
 import { Input } from "../../atoms/Input"
 import { Icon, type IconName } from "../../atoms/Icon"
 import { Badge } from "../../atoms/Badge"
+import { SearchInput } from "../../../molecules/SearchInput/SearchInput"
 
 // Context for sharing state between compound components
 interface DataTableContextValue {
@@ -197,12 +198,12 @@ const DataTableSearch: React.FC<{ placeholder?: string; className?: string }> = 
   const { searchQuery, setSearchQuery } = useDataTableContext()
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Icon name="Search" size="sm" />
-      <Input
+    <div className={cn(className)}>
+      <SearchInput
         placeholder={placeholder}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
+        onSearch={setSearchQuery}
         className="max-w-sm"
       />
     </div>

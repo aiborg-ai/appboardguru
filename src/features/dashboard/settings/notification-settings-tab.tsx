@@ -18,6 +18,7 @@ import {
   Zap
 } from 'lucide-react'
 import type { NotificationSettingsProps } from '@/types/notification-types'
+import type { UserId, OrganizationId } from '@/types/branded'
 
 type NotificationTab = 
   | 'preferences' 
@@ -26,7 +27,14 @@ type NotificationTab =
   | 'templates' 
   | 'analytics'
 
-export function NotificationSettingsTab({ accountType, userId, organizationId }: NotificationSettingsProps) {
+// Make the props optional to match the pattern used in export settings
+type NotificationSettingsPropsOptional = {
+  accountType: 'Superuser' | 'Administrator' | 'User' | 'Viewer'
+  userId: UserId
+  organizationId?: OrganizationId | null
+}
+
+export function NotificationSettingsTab({ accountType, userId, organizationId }: NotificationSettingsPropsOptional) {
   const [activeTab, setActiveTab] = useState<NotificationTab>('preferences')
 
   const tabs = [

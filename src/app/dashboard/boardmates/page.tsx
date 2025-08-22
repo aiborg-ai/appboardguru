@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/c
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Badge } from '@/features/shared/ui/badge';
+import { SearchInput } from '@/components/molecules/SearchInput/SearchInput';
 import { 
   Plus,
   Users,
@@ -328,15 +329,13 @@ export default function BoardMatesPage() {
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by name, email, designation, or company..."
-                      value={searchTerm}
-                      onChange={handleSearchChange}
-                      className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
+                  <SearchInput
+                    placeholder="Search by name, email, designation, or company..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    onSearch={setSearchTerm}
+                    className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-3">

@@ -1,6 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -120,11 +121,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans antialiased ${inter.variable}`}>
-        <div className="relative flex min-h-screen flex-col">
-          <main className="flex-1">
-            {children}
-          </main>
-        </div>
+        <TooltipProvider delayDuration={300}>
+          <div className="relative flex min-h-screen flex-col">
+            <main className="flex-1">
+              {children}
+            </main>
+          </div>
+        </TooltipProvider>
       </body>
     </html>
   )

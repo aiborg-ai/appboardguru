@@ -8,6 +8,9 @@ import { FYITab } from '@/features/dashboard/settings/FYITab'
 import { SecurityActivityTab } from '@/features/dashboard/settings/security-activity-tab'
 import { AccountSettingsTab } from '@/features/dashboard/settings/AccountSettingsTab'
 import { ExportBackupSettingsTab } from '@/features/dashboard/settings/export-backup-settings-tab'
+import { NotificationSettingsTab } from '@/features/dashboard/settings/notification-settings-tab'
+import { useUserContext, useUserContextLoading } from '@/hooks/useUserContext'
+import type { UserId, OrganizationId } from '@/types/branded'
 import { 
   Settings, 
   Brain, 
@@ -16,7 +19,9 @@ import {
   Bell, 
   Download,
   Upload,
-  Activity
+  Activity,
+  AlertCircle,
+  Loader2
 } from 'lucide-react'
 import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
@@ -24,6 +29,56 @@ type SettingsTab = 'ai' | 'account' | 'security' | 'notifications' | 'export'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ai')
+  
+  // Get user context with proper error handling following CLAUDE.md patterns
+  const userContextResult = useUserContext()
+  const { isLoading, hasError, errorMessage } = useUserContextLoading()
+  
+  // Early return for loading state
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex flex-col items-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <p className="text-gray-600">Loading user settings...</p>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+  
+  // Error state with proper error handling
+  if (hasError || !userContextResult.success) {
+    const error = userContextResult.error || { message: errorMessage || 'Unknown error' }
+    
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+              <div className="flex items-center space-x-3 mb-4">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+                <h3 className="text-lg font-medium text-red-900">Settings Unavailable</h3>
+              </div>
+              <p className="text-red-700 mb-4">
+                {error.message}
+              </p>
+              <p className="text-sm text-red-600">
+                Please try refreshing the page or contact support if the issue persists.
+              </p>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+  
+  // Extract user context data
+  const userContext = userContextResult.data!
+  const { accountType, userId, organizationId } = userContext
 
   const tabs = [
     { 
@@ -76,15 +131,21 @@ export default function SettingsPage() {
       
       case 'notifications':
         return (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Notification Settings</h3>
-            <p className="text-gray-600">Notification preferences coming soon.</p>
-          </div>
+          <NotificationSettingsTab 
+            accountType={accountType}
+            userId={userId!}
+            organizationId={organizationId}
+          />
         )
       
       case 'export':
-        return <ExportBackupSettingsTab accountType="User" userId="user-123" organizationId="org-456" />
+        return (
+          <ExportBackupSettingsTab 
+            accountType={accountType}
+            userId={userId!}
+            organizationId={organizationId}
+          />
+        )
       
       default:
         return null
@@ -125,7 +186,18 @@ export default function SettingsPage() {
                 side="right"
               />
             </h1>
-            <p className="text-gray-600">Manage your account and application preferences</p>
+            <div className="space-y-1">
+              <p className="text-gray-600">Manage your account and application preferences</p>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <span>Account: <span className="font-medium text-gray-700">{accountType}</span></span>
+                {userContext.user?.full_name && (
+                  <span>User: <span className="font-medium text-gray-700">{userContext.user.full_name}</span></span>
+                )}
+                {userContext.currentOrganization && (
+                  <span>Organization: <span className="font-medium text-gray-700">{userContext.currentOrganization.name}</span></span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
         

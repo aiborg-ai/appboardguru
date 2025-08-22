@@ -21,7 +21,11 @@ import {
   BarChart3,
   Globe
 } from 'lucide-react'
-import type { ExportBackupSettingsProps } from '@/types/export-backup-types'
+import type { 
+  ExportBackupSettingsPropsOptional, 
+  hasOrganizationContext,
+  ACCOUNT_TYPE_PERMISSIONS 
+} from '@/types/export-backup-types'
 
 type ExportBackupTab = 
   | 'data_export' 
@@ -30,7 +34,7 @@ type ExportBackupTab =
   | 'compliance_exports'
   | 'analytics'
 
-export function ExportBackupSettingsTab({ accountType, userId, organizationId }: ExportBackupSettingsProps) {
+export function ExportBackupSettingsTab({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
   const [activeTab, setActiveTab] = useState<ExportBackupTab>('data_export')
 
   const tabs = [
@@ -74,9 +78,22 @@ export function ExportBackupSettingsTab({ accountType, userId, organizationId }:
     }
   ]
 
-  const visibleTabs = tabs.filter(tab => 
-    !tab.adminOnly || ['Superuser', 'Administrator'].includes(accountType)
-  )
+  // Get account permissions
+  const permissions = ACCOUNT_TYPE_PERMISSIONS[accountType]
+  
+  const visibleTabs = tabs.filter(tab => {
+    // Filter admin-only tabs based on account type
+    if (tab.adminOnly && !['Superuser', 'Administrator'].includes(accountType)) {
+      return false
+    }
+    
+    // Some tabs require organization context
+    if (['backup_policies', 'compliance_exports', 'analytics'].includes(tab.id) && !organizationId) {
+      return false
+    }
+    
+    return true
+  })
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -141,7 +158,7 @@ export function ExportBackupSettingsTab({ accountType, userId, organizationId }:
 }
 
 // Component for data export
-function DataExport({ accountType, userId, organizationId }: ExportBackupSettingsProps) {
+function DataExport({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['board_governance'])
   const [exportFormat, setExportFormat] = useState('json')
   const [includeFiles, setIncludeFiles] = useState(true)
@@ -204,9 +221,32 @@ function DataExport({ accountType, userId, organizationId }: ExportBackupSetting
     }
   ]
 
-  const visibleCategories = exportCategories.filter(category => 
-    !category.adminOnly || ['Superuser', 'Administrator'].includes(accountType)
-  )
+  // Get account permissions and filter categories
+  const permissions = ACCOUNT_TYPE_PERMISSIONS[accountType]
+  
+  const visibleCategories = exportCategories.filter(category => {
+    // Filter admin-only categories
+    if (category.adminOnly && !['Superuser', 'Administrator'].includes(accountType)) {
+      return false
+    }
+    
+    // Check if category is allowed for this account type
+    const categoryMapping: Record<string, string> = {
+      'board_governance': 'board_governance',
+      'documents': 'documents',
+      'communications': 'communications',
+      'calendar': 'calendar',
+      'compliance': 'compliance',
+      'security_logs': 'security_logs'
+    }
+    
+    const categoryKey = categoryMapping[category.id]
+    if (categoryKey && !permissions.allowedCategories.includes(categoryKey as any)) {
+      return false
+    }
+    
+    return true
+  })
 
   const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -420,7 +460,30 @@ function DataExport({ accountType, userId, organizationId }: ExportBackupSetting
 }
 
 // Component for scheduled exports
-function ScheduledExports({ accountType, userId, organizationId }: ExportBackupSettingsProps) {
+function ScheduledExports({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
+  const permissions = ACCOUNT_TYPE_PERMISSIONS[accountType]
+  
+  // Show permission message if user cannot schedule exports
+  if (!permissions.canScheduleExports) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-yellow-900 mb-1">Scheduled Exports Unavailable</h3>
+          <p className="text-sm text-yellow-700">
+            Your account type ({accountType}) does not have permission to create scheduled exports.
+          </p>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+          <Clock className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Scheduled Exports</h3>
+          <p className="text-gray-600">
+            Contact your administrator to upgrade your account for scheduled export capabilities.
+          </p>
+        </div>
+      </div>
+    )
+  }
   const scheduledExports = [
     {
       id: 1,
@@ -525,7 +588,20 @@ function ScheduledExports({ accountType, userId, organizationId }: ExportBackupS
 }
 
 // Component for backup policies (Admin only)
-function BackupPolicies({ accountType, userId, organizationId }: ExportBackupSettingsProps) {
+function BackupPolicies({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
+  // Check if organization context is available
+  if (!hasOrganizationContext({ accountType, userId, organizationId })) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-orange-900 mb-1">Organization Required</h3>
+          <p className="text-sm text-orange-700">
+            Backup policies require organization context. Please select an organization or contact support.
+          </p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="space-y-6">
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -547,7 +623,20 @@ function BackupPolicies({ accountType, userId, organizationId }: ExportBackupSet
 }
 
 // Component for compliance exports (Admin only)
-function ComplianceExports({ accountType, userId, organizationId }: ExportBackupSettingsProps) {
+function ComplianceExports({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
+  // Check if organization context is available
+  if (!hasOrganizationContext({ accountType, userId, organizationId })) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-orange-900 mb-1">Organization Required</h3>
+          <p className="text-sm text-orange-700">
+            Compliance exports require organization context. Please select an organization or contact support.
+          </p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="space-y-6">
       <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -615,7 +704,20 @@ function ComplianceExports({ accountType, userId, organizationId }: ExportBackup
 }
 
 // Component for export analytics (Admin only)
-function ExportAnalytics({ accountType, userId, organizationId }: ExportBackupSettingsProps) {
+function ExportAnalytics({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
+  // Check if organization context is available
+  if (!hasOrganizationContext({ accountType, userId, organizationId })) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-teal-900 mb-1">Organization Required</h3>
+          <p className="text-sm text-teal-700">
+            Export analytics require organization context. Please select an organization or contact support.
+          </p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="space-y-6">
       <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">

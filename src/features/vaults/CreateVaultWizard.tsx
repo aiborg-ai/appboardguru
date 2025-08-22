@@ -185,12 +185,12 @@ export default function CreateVaultWizard({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
-          "bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden",
+          "bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col",
           className
         )}
       >
         {/* Header */}
-        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold text-gray-900">
               Create New Vault
@@ -216,7 +216,7 @@ export default function CreateVaultWizard({
         </div>
 
         {/* Step indicators */}
-        <div className="px-6 py-4 border-b bg-gray-50">
+        <div className="px-6 py-4 border-b bg-gray-50 flex-shrink-0">
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => {
               const isActive = step.id === currentStep;
@@ -273,7 +273,7 @@ export default function CreateVaultWizard({
         </div>
 
         {/* Step content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -294,7 +294,7 @@ export default function CreateVaultWizard({
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-gray-50 px-6 py-4">
+        <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <Button
               variant="outline"

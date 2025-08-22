@@ -406,44 +406,140 @@ export default function OrganizationsPage() {
           <>
             {viewMode === 'card' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Create Organization Card - Always First */}
+                <div className="relative group">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-blue-300 hover:border-blue-400 rounded-xl p-6 transition-all duration-300 hover:shadow-lg cursor-pointer">
+                    <Link href="/dashboard/organizations/create" className="block h-full">
+                      <div className="flex flex-col items-center justify-center h-40 text-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
+                          <Plus className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Create Organization</h3>
+                        <p className="text-sm text-gray-600">Start a new organization and invite your team members</p>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Organization Cards */}
                 {filteredOrganizations.map((org) => {
-                  const RoleIcon = getRoleIcon((org as any).role)
+                  const RoleIcon = getRoleIcon((org as any).userRole || (org as any).role)
                   return (
-                    <ItemCard
-                      key={org.id}
-                      id={org.id}
-                      title={org.name}
-                      description={org.description || 'No description available'}
-                      icon={Building2}
-                      iconColor="text-blue-600"
-                      badges={[
-                        {
-                          label: (org as any).role,
-                          color: getRoleColor((org as any).role)
-                        },
-                        ...(currentOrganization?.id === org.id ? [{ label: 'Current', variant: 'outline' as const }] : [])
-                      ]}
-                      metrics={[
-                        {
-                          label: 'Members',
-                          value: (org as any).memberCount || 0,
-                          icon: Users,
-                          color: 'text-gray-500'
-                        },
-                        {
-                          label: 'Created',
-                          value: new Date((org as any).created_at || Date.now()).toLocaleDateString(),
-                          icon: CalendarIcon,
-                          color: 'text-gray-500'
-                        }
-                      ]}
-                      actions={getCardActions(org)}
-                      onClick={() => selectOrganization(org)}
-                      isSelected={currentOrganization?.id === org.id}
-                      status={(org as any).status}
-                      createdAt={(org as any).created_at}
-                      lastActivity="2 hours ago"
-                    />
+                    <div key={org.id} className="relative group">
+                      <div className="bg-white border border-gray-200 hover:border-gray-300 rounded-xl p-6 transition-all duration-300 hover:shadow-lg cursor-pointer">
+                        <div onClick={() => selectOrganization(org)}>
+                          {/* Organization Header */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                                {org.logo_url ? (
+                                  <img 
+                                    src={org.logo_url} 
+                                    alt={`${org.name} logo`} 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      target.nextElementSibling!.classList.remove('hidden');
+                                    }}
+                                  />
+                                ) : null}
+                                <Building2 className={`h-6 w-6 text-blue-600 ${org.logo_url ? 'hidden' : ''}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-semibold text-gray-900 truncate">{org.name}</h3>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  {org.industry && (
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                      {org.industry}
+                                    </span>
+                                  )}
+                                  {org.organization_size && (
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded capitalize">
+                                      {org.organization_size}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Role Badge */}
+                            <div className="flex items-center space-x-2">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                getRoleColor((org as any).userRole || (org as any).role)
+                              }`}>
+                                <RoleIcon className="h-3 w-3 mr-1" />
+                                {(org as any).userRole || (org as any).role}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                            {org.description || 'No description available'}
+                          </p>
+
+                          {/* Metrics */}
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-gray-900">{(org as any).memberCount || '1'}</div>
+                              <div className="text-xs text-gray-500">Members</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-gray-900">
+                                {new Date((org as any).created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </div>
+                              <div className="text-xs text-gray-500">Created</div>
+                            </div>
+                          </div>
+
+                          {/* Current Organization Indicator */}
+                          {currentOrganization?.id === org.id && (
+                            <div className="absolute top-2 right-2">
+                              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleViewDetails(org)
+                              }}
+                              className="text-xs text-gray-500 hover:text-blue-600 transition-colors"
+                            >
+                              <Eye className="h-4 w-4 inline mr-1" />
+                              View
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleSettingsOpen(org.id)
+                              }}
+                              className="text-xs text-gray-500 hover:text-blue-600 transition-colors"
+                            >
+                              <Settings className="h-4 w-4 inline mr-1" />
+                              Settings
+                            </button>
+                          </div>
+                          {org.website && (
+                            <a
+                              href={org.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-gray-500 hover:text-blue-600 transition-colors"
+                            >
+                              <Globe className="h-4 w-4 inline mr-1" />
+                              Website
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   )
                 })}
               </div>

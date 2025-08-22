@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/c
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Badge } from '@/features/shared/ui/badge';
+import { SearchInput } from '@/components/molecules/SearchInput/SearchInput';
 import { 
   Plus,
   Calendar,
@@ -294,15 +295,12 @@ export default function MeetingsPage() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search meetings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              <SearchInput
+                placeholder="Search meetings..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onSearch={setSearchTerm}
+              />
             </div>
             
             <div className="flex gap-2">

@@ -49,7 +49,7 @@ interface WebSocketState {
   unreadMessages: Map<RoomId, number>
 
   // Event handlers
-  eventHandlers: Map<WebSocketEventType, Set<data: unknown) => void>>
+  eventHandlers: Map<WebSocketEventType, Set<(data: unknown) => void>>
 }
 
 interface WebSocketActions {
@@ -87,8 +87,8 @@ interface WebSocketActions {
   incrementUnreadCount: (roomId: RoomId) => void
 
   // Event handler actions
-  addEventListener: (event: WebSocketEventType, handler: data: unknown) => void) => () => void
-  removeEventListener: (event: WebSocketEventType, handler: data: unknown) => void) => void
+  addEventListener: (event: WebSocketEventType, handler: (data: unknown) => void) => () => void
+  removeEventListener: (event: WebSocketEventType, handler: (data: unknown) => void) => void
   triggerEvent: (event: WebSocketEventType, data: any) => void
 
   // Utility actions

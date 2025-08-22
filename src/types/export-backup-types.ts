@@ -301,3 +301,104 @@ export interface ExportBackupSettingsProps {
   userId: UserId
   organizationId: OrganizationId
 }
+
+// Helper type for settings components that might not have organization context
+export interface ExportBackupSettingsPropsOptional {
+  accountType: 'Superuser' | 'Administrator' | 'User' | 'Viewer'
+  userId: UserId
+  organizationId?: OrganizationId | null
+}
+
+// Type guard for checking if organization context is available
+export function hasOrganizationContext(
+  props: ExportBackupSettingsPropsOptional
+): props is ExportBackupSettingsProps {
+  return !!(props.organizationId)
+}
+
+// Default export permissions based on account type
+export const ACCOUNT_TYPE_PERMISSIONS: Record<
+  'Superuser' | 'Administrator' | 'User' | 'Viewer',
+  AccountTypeExportConfig
+> = {
+  Superuser: {
+    accountType: 'Superuser',
+    allowedCategories: [
+      'board_governance',
+      'documents',
+      'communications',
+      'calendar',
+      'compliance',
+      'security_logs',
+      'user_data',
+      'financial_records',
+      'audit_trails',
+      'system_logs'
+    ],
+    allowedFormats: ['json', 'csv', 'xlsx', 'pdf', 'xml', 'zip', 'encrypted_zip'],
+    canScheduleExports: true,
+    canCreateBackupPolicies: true,
+    maxExportSize: 50000, // 50GB
+    canExportOtherUsers: true,
+    canAccessSystemLogs: true,
+    requiresApproval: false,
+    canUseEncryption: true,
+    allowedRetentionPeriods: ['30_days', '90_days', '6_months', '1_year', '3_years', '7_years', '10_years', 'permanent']
+  },
+  Administrator: {
+    accountType: 'Administrator',
+    allowedCategories: [
+      'board_governance',
+      'documents',
+      'communications',
+      'calendar',
+      'compliance',
+      'security_logs',
+      'user_data',
+      'audit_trails'
+    ],
+    allowedFormats: ['json', 'csv', 'xlsx', 'pdf', 'zip', 'encrypted_zip'],
+    canScheduleExports: true,
+    canCreateBackupPolicies: true,
+    maxExportSize: 10000, // 10GB
+    canExportOtherUsers: true,
+    canAccessSystemLogs: false,
+    requiresApproval: false,
+    canUseEncryption: true,
+    allowedRetentionPeriods: ['30_days', '90_days', '6_months', '1_year', '3_years', '7_years']
+  },
+  User: {
+    accountType: 'User',
+    allowedCategories: [
+      'board_governance',
+      'documents',
+      'communications',
+      'calendar',
+      'user_data'
+    ],
+    allowedFormats: ['json', 'csv', 'xlsx', 'pdf', 'zip'],
+    canScheduleExports: true,
+    canCreateBackupPolicies: false,
+    maxExportSize: 1000, // 1GB
+    canExportOtherUsers: false,
+    canAccessSystemLogs: false,
+    requiresApproval: false,
+    canUseEncryption: false,
+    allowedRetentionPeriods: ['30_days', '90_days', '6_months', '1_year']
+  },
+  Viewer: {
+    accountType: 'Viewer',
+    allowedCategories: [
+      'board_governance'
+    ],
+    allowedFormats: ['pdf'],
+    canScheduleExports: false,
+    canCreateBackupPolicies: false,
+    maxExportSize: 100, // 100MB
+    canExportOtherUsers: false,
+    canAccessSystemLogs: false,
+    requiresApproval: true,
+    canUseEncryption: false,
+    allowedRetentionPeriods: ['30_days']
+  }
+}

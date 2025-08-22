@@ -408,7 +408,7 @@ export interface AdvancedChartConfig extends ChartConfig {
 export interface RealTimeDataSource {
   connect: () => Promise<void>
   disconnect: () => void
-  subscribe: (callback: data: unknown) => void) => () => void
+  subscribe: (callback: (data: unknown) => void) => () => void
   isConnected: boolean
   lastUpdate?: Date
 }

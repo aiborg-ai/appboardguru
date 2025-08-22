@@ -15,7 +15,7 @@ export interface MonitoringConfig {
   enableRealTimeMetrics: boolean
   metricsRetentionDays: number
   alertThresholds: AlertThresholds
-  enableDetailed Tracing: boolean
+  enableDetailedTracing: boolean
   enablePerformanceAnalytics: boolean
   enableAnomalyDetection: boolean
   samplingRate: number // 0.0 to 1.0
