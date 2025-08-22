@@ -10,9 +10,9 @@ import { cn } from '@/lib/utils';
 import { 
   CreateActionableRequest,
   ActionablePriority,
-  ActionableCategory,
-  UserId 
+  ActionableCategory
 } from '@/types/meetings';
+import type { UserId } from '@/types/database';
 
 interface CreateActionableModalProps {
   meetingId: string;
