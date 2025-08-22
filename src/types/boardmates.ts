@@ -4,6 +4,7 @@
  */
 
 import { ReactNode, MouseEventHandler, ChangeEventHandler } from 'react'
+import type { VaultStatus } from './entities/vault.types'
 
 // Core BoardMates Types
 export type BoardMembershipStatus = 'active' | 'inactive' | 'resigned' | 'terminated'
@@ -39,7 +40,7 @@ export type CommitteeRole = 'chair' | 'vice_chair' | 'member' | 'secretary' | 'a
 export type CommitteeStatus = 'active' | 'inactive' | 'dissolved' | 'temporary'
 
 export type VaultRole = 'owner' | 'admin' | 'moderator' | 'contributor' | 'viewer'
-export type VaultStatus = 'draft' | 'active' | 'archived' | 'expired' | 'cancelled'
+// VaultStatus is defined in entities/vault.types.ts - import from there
 export type VaultMemberStatus = 'active' | 'suspended' | 'pending' | 'left'
 
 export type UserStatus = 'pending' | 'approved' | 'rejected'

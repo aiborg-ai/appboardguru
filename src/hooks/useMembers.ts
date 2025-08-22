@@ -11,7 +11,14 @@ type OrganizationMember = Database['public']['Tables']['organization_members']['
 type MemberRole = 'owner' | 'admin' | 'member' | 'viewer'
 type MemberStatus = 'active' | 'suspended' | 'pending_activation'
 
-interface MemberWithUser extends OrganizationMember {
+export interface MemberWithUser extends OrganizationMember {
+  id: string
+  user_id: string
+  organization_id: string
+  role: MemberRole
+  status: MemberStatus
+  joined_at: string
+  updated_at: string
   user: {
     id: string
     email: string

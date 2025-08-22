@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
       .map(insight => ({
         ...insight,
         timeAgo: formatTimeAgo(new Date(insight.created_at)),
-        organization_id: userOrg?.organization_id
+        organization_id: (userOrg as any)?.organization_id
       }))
 
     // Calculate summary statistics
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
     const response = {
       insights,
       summary,
-      organization: userOrg?.organization,
+      organization: (userOrg as any)?.organization,
       user_id: user.id,
       fetched_at: new Date().toISOString()
     }
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
       .from('ai_insights')
       .insert({
         user_id: user.id,
-        organization_id: userOrg?.organization_id,
+        organization_id: (userOrg as any)?.organization_id,
         insight_type: type,
         category,
         title,
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
     const insight = {
       id: Math.random().toString(36).substr(2, 9),
       user_id: user.id,
-      organization_id: userOrg?.organization_id,
+      organization_id: (userOrg as any)?.organization_id,
       type,
       category,
       title,

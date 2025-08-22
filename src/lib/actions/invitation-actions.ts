@@ -100,7 +100,7 @@ export async function createInvitationsAction(
       .select('role')
       .eq('organization_id', organizationId)
       .eq('user_id', user.id)
-      .single()
+      .single() as any
 
     if (membershipError || !membership) {
       return { success: false, error: 'You do not have permission to invite members to this organization' }
@@ -239,9 +239,9 @@ export async function updateInvitationAction(
     const { data: membership, error: membershipError } = await supabase
       .from('organization_members')
       .select('role')
-      .eq('organization_id', invitation.organization_id)
+      .eq('organization_id', (invitation as any)?.organization_id)
       .eq('user_id', user.id)
-      .single()
+      .single() as any
 
     if (membershipError || !membership || !['owner', 'admin'].includes(membership.role)) {
       return { success: false, error: 'Permission denied' }
@@ -269,7 +269,7 @@ export async function updateInvitationAction(
     const result = await response.json()
 
     // Revalidate relevant pages
-    revalidatePath(`/organizations/${invitation.organization_id}/members`)
+    revalidatePath(`/organizations/${(invitation as any)?.organization_id}/members`)
 
     return {
       success: true,
@@ -308,7 +308,7 @@ export async function bulkInvitationAction(
       .select('role')
       .eq('organization_id', organizationId)
       .eq('user_id', user.id)
-      .single()
+      .single() as any
 
     if (membershipError || !membership || !['owner', 'admin'].includes(membership.role)) {
       return { success: false, error: 'Permission denied' }

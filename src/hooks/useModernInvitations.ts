@@ -40,7 +40,8 @@ type InvitationList = readonly OptimisticInvitation[];
 type FormStateAction = 
   | { readonly type: 'add' }
   | { readonly type: 'remove'; readonly index: number }
-  | { readonly type: 'update'; readonly index: number; readonly field: 'email' | 'role'; readonly value: string }
+  | { readonly type: 'update'; readonly index: number; readonly field: 'email'; readonly value: string }
+  | { readonly type: 'update'; readonly index: number; readonly field: 'role'; readonly value: 'admin' | 'member' | 'viewer' }
   | { readonly type: 'reset' };
 
 // Type-safe form state
@@ -177,7 +178,8 @@ export function useCreateModernInvitations(organizationId: string) {
         throw new Error(result.error || 'Failed to send invitations')
       }
     },
-    onError: (error: Error, variables, context) => {
+    onError: (error: unknown, variables, context) => {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       // Rollback optimistic updates
       if (context?.previousInvitations) {
         queryClient.setQueryData(
@@ -192,7 +194,7 @@ export function useCreateModernInvitations(organizationId: string) {
 
       toast({
         title: 'Failed to send invitations',
-        description: error.message || 'An unexpected error occurred',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
         variant: 'destructive',
       })
     },
@@ -401,13 +403,13 @@ export function useInvitationFormState() {
         case 'add':
           return {
             ...state,
-            invitations: [...state.invitations, { email: '', role: 'member' }]
-          }
+            invitations: [...state.invitations, { email: '', role: 'member' as const }]
+          } satisfies InvitationFormState
         case 'remove':
           return {
             ...state,
             invitations: state.invitations.filter((_, i: number) => i !== action.index)
-          }
+          } satisfies InvitationFormState
         case 'update':
           return {
             ...state,
@@ -416,9 +418,9 @@ export function useInvitationFormState() {
                 ? { ...inv, [action.field]: action.value }
                 : inv
             )
-          }
+          } satisfies InvitationFormState
         case 'reset':
-          return { invitations: [{ email: '', role: 'member' }] }
+          return { invitations: [{ email: '', role: 'member' as const }] } satisfies InvitationFormState
         default:
           return state
       }

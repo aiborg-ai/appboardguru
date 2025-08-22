@@ -218,7 +218,7 @@ export default function MembersStep({ data, onUpdate }: MembersStepProps) {
 
     const newInvitations = emails.map(email => ({
       email,
-      fullName: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      fullName: (email.split('@')[0] || email).replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       role: 'member' as OrganizationRole,
       department: '',
       personalMessage: newInvitation.personalMessage

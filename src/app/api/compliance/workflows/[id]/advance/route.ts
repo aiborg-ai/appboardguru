@@ -10,7 +10,7 @@ export async function POST(
   try {
     const resolvedParams = await params
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     const workflowId = resolvedParams.id
     const body = await request.json() as AdvanceWorkflowStepRequest
     
@@ -43,7 +43,7 @@ export async function POST(
     }
 
     // Check if participant can advance (is in current step and status allows it)
-    if (participant.status !== 'in_progress' && participant.status !== 'assigned') {
+    if ((participant as any)?.status !== 'in_progress' && (participant as any)?.status !== 'assigned') {
       return NextResponse.json({ 
         error: 'Cannot advance workflow from current participant status' 
       }, { status: 400 })

@@ -6,7 +6,7 @@ import type { CreateWorkflowRequest, UpdateWorkflowRequest } from '@/types'
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     const { searchParams } = new URL(request.url)
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         calendar_entry:compliance_calendar(*),
         assigned_user:assigned_to(id, full_name, email)
       `)
-      .eq('organization_id', orgMember.organization_id)
+      .eq('organization_id', (orgMember as any)?.organization_id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     const body = await request.json() as CreateWorkflowRequest
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions - only admins and owners can create workflows
-    if (!['owner', 'admin'].includes(orgMember.role)) {
+    if (!['owner', 'admin'].includes((orgMember as any)?.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create workflow
-    const result = await complianceEngine.createWorkflow(orgMember.organization_id, body)
+    const result = await complianceEngine.createWorkflow((orgMember as any)?.organization_id, body)
 
     return NextResponse.json(result, { status: 201 })
 
@@ -177,7 +177,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update workflow
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('notification_workflows')
       .update({
         ...body,
@@ -190,7 +190,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get updated workflow details
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     const result = await complianceEngine.getWorkflowDetails(workflowId)
 
     return NextResponse.json(result)

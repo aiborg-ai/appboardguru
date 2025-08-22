@@ -18,7 +18,7 @@ export async function GET(
     const meetingId = params.id;
 
     // Check if user has access to this meeting
-    const { data: meeting, error: meetingError } = await supabase
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .select(`
         id,
@@ -34,10 +34,10 @@ export async function GET(
     }
 
     // Verify user has access to the organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
-      .eq('organization_id', meeting.organization_id)
+      .eq('organization_id', (meeting as any)?.organization_id)
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
@@ -47,7 +47,7 @@ export async function GET(
     }
 
     // Get actionables for the meeting
-    const { data: actionables, error: actionablesError } = await supabase
+    const { data: actionables, error: actionablesError } = await (supabase as any)
       .from('meeting_actionables')
       .select(`
         id,
@@ -105,53 +105,53 @@ export async function GET(
     }
 
     // Transform to match our TypeScript interface
-    const formattedActionables: MeetingActionable[] = actionables.map(actionable => ({
-      id: actionable.id,
-      meetingId: actionable.meeting_id,
-      agendaItemId: actionable.agenda_item_id,
-      resolutionId: actionable.resolution_id,
-      assignedTo: actionable.assigned_to,
-      assignedBy: actionable.assigned_by,
-      delegatedFrom: actionable.delegated_from,
-      actionNumber: actionable.action_number,
-      title: actionable.title,
-      description: actionable.description,
-      detailedRequirements: actionable.detailed_requirements,
-      category: actionable.category,
-      priority: actionable.priority,
-      estimatedEffortHours: actionable.estimated_effort_hours,
-      actualEffortHours: actionable.actual_effort_hours,
-      dueDate: actionable.due_date,
-      reminderIntervals: actionable.reminder_intervals || [],
-      lastReminderSent: actionable.last_reminder_sent,
-      status: actionable.status,
-      progressPercentage: actionable.progress_percentage,
-      completionNotes: actionable.completion_notes,
-      dependsOnActionableIds: actionable.depends_on_actionable_ids || [],
-      blocksActionableIds: actionable.blocks_actionable_ids || [],
-      requiresApproval: actionable.requires_approval,
-      approvedBy: actionable.approved_by,
-      approvedAt: actionable.approved_at,
-      approvalNotes: actionable.approval_notes,
-      deliverableType: actionable.deliverable_type,
-      deliverableLocation: actionable.deliverable_location,
-      successMetrics: actionable.success_metrics,
-      actualResults: actionable.actual_results,
-      stakeholdersToNotify: actionable.stakeholders_to_notify || [],
-      communicationRequired: actionable.communication_required,
-      communicationTemplate: actionable.communication_template,
-      escalationLevel: actionable.escalation_level,
-      escalationPath: actionable.escalation_path || [],
-      escalatedAt: actionable.escalated_at,
-      escalatedTo: actionable.escalated_to,
-      escalationReason: actionable.escalation_reason,
-      assignedAt: actionable.assigned_at,
-      startedAt: actionable.started_at,
-      completedAt: actionable.completed_at,
-      cancelledAt: actionable.cancelled_at,
-      createdAt: actionable.created_at,
-      updatedAt: actionable.updated_at
-    }));
+    const formattedActionables: MeetingActionable[] = (actionables as any)?.map((actionable: any) => ({
+      id: (actionable as any)?.id,
+      meetingId: (actionable as any)?.meeting_id,
+      agendaItemId: (actionable as any)?.agenda_item_id,
+      resolutionId: (actionable as any)?.resolution_id,
+      assignedTo: (actionable as any)?.assigned_to,
+      assignedBy: (actionable as any)?.assigned_by,
+      delegatedFrom: (actionable as any)?.delegated_from,
+      actionNumber: (actionable as any)?.action_number,
+      title: (actionable as any)?.title,
+      description: (actionable as any)?.description,
+      detailedRequirements: (actionable as any)?.detailed_requirements,
+      category: (actionable as any)?.category as any,
+      priority: (actionable as any)?.priority as any,
+      estimatedEffortHours: (actionable as any)?.estimated_effort_hours,
+      actualEffortHours: (actionable as any)?.actual_effort_hours,
+      dueDate: (actionable as any)?.due_date,
+      reminderIntervals: (actionable as any)?.reminder_intervals || [],
+      lastReminderSent: (actionable as any)?.last_reminder_sent,
+      status: (actionable as any)?.status as any,
+      progressPercentage: (actionable as any)?.progress_percentage || 0,
+      completionNotes: (actionable as any)?.completion_notes,
+      dependsOnActionableIds: (actionable as any)?.depends_on_actionable_ids || [],
+      blocksActionableIds: (actionable as any)?.blocks_actionable_ids || [],
+      requiresApproval: (actionable as any)?.requires_approval || false,
+      approvedBy: (actionable as any)?.approved_by,
+      approvedAt: (actionable as any)?.approved_at,
+      approvalNotes: (actionable as any)?.approval_notes,
+      deliverableType: (actionable as any)?.deliverable_type,
+      deliverableLocation: (actionable as any)?.deliverable_location,
+      successMetrics: (actionable as any)?.success_metrics,
+      actualResults: (actionable as any)?.actual_results,
+      stakeholdersToNotify: (actionable as any)?.stakeholders_to_notify || [],
+      communicationRequired: (actionable as any)?.communication_required || false,
+      communicationTemplate: (actionable as any)?.communication_template,
+      escalationLevel: (actionable as any)?.escalation_level || 1,
+      escalationPath: (actionable as any)?.escalation_path || [],
+      escalatedAt: (actionable as any)?.escalated_at,
+      escalatedTo: (actionable as any)?.escalated_to,
+      escalationReason: (actionable as any)?.escalation_reason,
+      assignedAt: (actionable as any)?.assigned_at || (actionable as any)?.created_at,
+      startedAt: (actionable as any)?.started_at,
+      completedAt: (actionable as any)?.completed_at,
+      cancelledAt: (actionable as any)?.cancelled_at,
+      createdAt: (actionable as any)?.created_at,
+      updatedAt: (actionable as any)?.updated_at
+    })) || [];
 
     return NextResponse.json({
       actionables: formattedActionables,
@@ -188,7 +188,7 @@ export async function POST(
     }
 
     // Check if user has access to this meeting and can manage it
-    const { data: meeting, error: meetingError } = await supabase
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .select(`
         id,
@@ -203,26 +203,26 @@ export async function POST(
     }
 
     // Check if user is meeting organizer or has admin/superuser role
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
-      .eq('organization_id', meeting.organization_id)
+      .eq('organization_id', (meeting as any)?.organization_id)
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
 
-    const canManage = meeting.created_by === user.id || 
-                     (orgMember && ['owner', 'admin', 'superuser'].includes(orgMember.role));
+    const canManage = (meeting as any)?.created_by === user.id || 
+                     ((orgMember as any) && ['owner', 'admin', 'superuser'].includes((orgMember as any)?.role));
 
     if (!canManage) {
       return NextResponse.json({ error: 'Insufficient permissions to assign actions' }, { status: 403 });
     }
 
     // Validate assignee exists and has access to the organization
-    const { data: assigneeCheck } = await supabase
+    const { data: assigneeCheck } = await (supabase as any)
       .from('organization_members')
       .select('user_id, status')
-      .eq('organization_id', meeting.organization_id)
+      .eq('organization_id', (meeting as any)?.organization_id)
       .eq('user_id', body.assignedTo)
       .eq('status', 'active')
       .single();
@@ -234,7 +234,7 @@ export async function POST(
     }
 
     // Create the actionable
-    const { data: actionable, error: insertError } = await supabase
+    const { data: actionable, error: insertError } = await (supabase as any)
       .from('meeting_actionables')
       .insert({
         meeting_id: meetingId,
@@ -245,8 +245,8 @@ export async function POST(
         title: body.title,
         description: body.description,
         detailed_requirements: body.detailedRequirements,
-        category: body.category || 'follow_up',
-        priority: body.priority || 'medium',
+        category: (body.category || 'follow_up') as any,
+        priority: (body.priority || 'medium') as any,
         estimated_effort_hours: body.estimatedEffortHours,
         due_date: body.dueDate,
         reminder_intervals: body.reminderIntervals || [7, 3, 1],
@@ -256,8 +256,11 @@ export async function POST(
         success_metrics: body.successMetrics,
         stakeholders_to_notify: body.stakeholdersToNotify || [],
         communication_required: body.communicationRequired || false,
-        escalation_path: body.escalationPath || []
-      })
+        escalation_path: body.escalationPath || [],
+        status: 'assigned' as any,
+        progress_percentage: 0,
+        escalation_level: 1
+      } as any)
       .select()
       .single();
 

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const eventType = searchParams.get('event_type')
     const includeDeclined = searchParams.get('include_declined') === 'true'
 
-    let query = supabase
+    let query = (supabase as any)
       .from('calendar_events')
       .select(`
         *,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     // Filter out declined events if not requested
     let filteredEvents = events || []
     if (!includeDeclined) {
-      filteredEvents = events?.filter(event => {
+      filteredEvents = (events as any[])?.filter((event: any) => {
         const userAttendee = event.attendees?.find((a: any) => a.user_id === user.id)
         return !userAttendee || userAttendee.rsvp_status !== 'declined'
       }) || []
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     const validatedData = createEventSchema.parse(body)
 
     // Check for scheduling conflicts
-    const { data: conflicts } = await supabase
+    const { data: conflicts } = await (supabase as any)
       .rpc('check_calendar_conflicts', {
         p_user_id: user.id,
         p_start_datetime: validatedData.start_datetime,
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the calendar event
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await (supabase as any)
       .from('calendar_events')
       .insert({
         ...validatedData,
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         invited_by: user.id
       }))
 
-      const { error: attendeesError } = await supabase
+      const { error: attendeesError } = await (supabase as any)
         .from('calendar_attendees')
         .insert(attendeesToInsert)
 
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         minutes_before: reminder.minutes_before
       }))
 
-      const { error: remindersError } = await supabase
+      const { error: remindersError } = await (supabase as any)
         .from('calendar_reminders')
         .insert(remindersToInsert)
 
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the complete event with relations
-    const { data: completeEvent } = await supabase
+    const { data: completeEvent } = await (supabase as any)
       .from('calendar_events')
       .select(`
         *,

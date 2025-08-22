@@ -78,7 +78,7 @@ export class OrganizationRepository extends BaseRepository {
     try {
       const { data, error } = await this.supabase
         .from('organizations')
-        .insert(organization)
+        .insert(organization as any)
         .select()
         .single()
 
@@ -99,7 +99,7 @@ export class OrganizationRepository extends BaseRepository {
         .update({
           ...updates,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', id)
         .select()
         .single()
@@ -123,7 +123,7 @@ export class OrganizationRepository extends BaseRepository {
           is_active: false,
           deleted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', id)
 
       if (error) {
@@ -145,7 +145,7 @@ export class OrganizationRepository extends BaseRepository {
           invited_by: invitedBy,
           joined_at: new Date().toISOString(),
           status: 'active'
-        })
+        } as any)
         .select()
         .single()
 
@@ -163,7 +163,7 @@ export class OrganizationRepository extends BaseRepository {
     try {
       const { data, error } = await this.supabase
         .from('organization_members')
-        .update({ role })
+        .update({ role } as any)
         .eq('organization_id', organizationId)
         .eq('user_id', userId)
         .select()
@@ -231,7 +231,7 @@ export class OrganizationRepository extends BaseRepository {
         this.handleError(error, 'getMemberRole')
       }
 
-      return data?.role || null
+      return (data as any)?.role || null
     } catch (error) {
       return null
     }

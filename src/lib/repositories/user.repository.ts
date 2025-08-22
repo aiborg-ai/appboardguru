@@ -46,7 +46,7 @@ export class UserRepository extends BaseRepository {
     try {
       const { data, error } = await this.supabase
         .from('users')
-        .insert(user)
+        .insert(user as any)
         .select()
         .single()
 
@@ -67,7 +67,7 @@ export class UserRepository extends BaseRepository {
         .update({
           ...updates,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', id)
         .select()
         .single()
@@ -129,7 +129,7 @@ export class UserRepository extends BaseRepository {
         .update({
           last_accessed: new Date().toISOString(),
           access_count: 1 // Will be incremented via SQL trigger or separate query
-        })
+        } as any)
         .eq('user_id', id)
 
       if (error) {

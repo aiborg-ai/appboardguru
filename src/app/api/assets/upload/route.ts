@@ -40,48 +40,7 @@ function getFileExtension(filename: string): string {
   return filename.split('.').pop()?.toLowerCase() || ''
 }
 
-function generateThumbnail(file: File): Promise<string | null> {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) {
-      resolve(null)
-      return
-    }
-
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
-    const img = new Image()
-
-    img.onload = () => {
-      // Set thumbnail dimensions
-      const maxWidth = 300
-      const maxHeight = 200
-      let { width, height } = img
-
-      // Calculate aspect ratio
-      if (width > height) {
-        if (width > maxWidth) {
-          height *= maxWidth / width
-          width = maxWidth
-        }
-      } else {
-        if (height > maxHeight) {
-          width *= maxHeight / height
-          height = maxHeight
-        }
-      }
-
-      canvas.width = width
-      canvas.height = height
-
-      // Draw and compress
-      ctx?.drawImage(img, 0, 0, width, height)
-      resolve(canvas.toDataURL('image/jpeg', 0.8))
-    }
-
-    img.onerror = () => resolve(null)
-    img.src = URL.createObjectURL(file)
-  })
-}
+// TODO: Implement thumbnail generation when needed
 
 export async function POST(request: NextRequest) {
   try {

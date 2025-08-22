@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: shortcut, error } = await supabase
+    const { data: shortcut, error } = await (supabase as any)
       .from('user_behavior_metrics')
       .select('*')
       .eq('id', resolvedParams.id)
@@ -31,17 +31,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const voiceShortcut = {
-      id: shortcut.id,
-      userId: shortcut.user_id,
-      organizationId: shortcut.organization_id,
-      phrase: shortcut.context.phrase,
-      commandType: shortcut.context.command_type,
-      parameters: shortcut.context.parameters || {},
-      createdAt: new Date(shortcut.created_at),
-      updatedAt: new Date(shortcut.timestamp),
-      useCount: shortcut.engagement_score || 0,
-      lastUsed: shortcut.context.last_used ? new Date(shortcut.context.last_used) : undefined,
-      isActive: shortcut.context.is_active !== false
+      id: (shortcut as any)?.id,
+      userId: (shortcut as any)?.user_id,
+      organizationId: (shortcut as any)?.organization_id,
+      phrase: (shortcut as any)?.context?.phrase,
+      commandType: (shortcut as any)?.context?.command_type,
+      parameters: (shortcut as any)?.context?.parameters || {},
+      createdAt: new Date((shortcut as any)?.created_at),
+      updatedAt: new Date((shortcut as any)?.timestamp),
+      useCount: (shortcut as any)?.engagement_score || 0,
+      lastUsed: (shortcut as any)?.context?.last_used ? new Date((shortcut as any)?.context?.last_used) : undefined,
+      isActive: (shortcut as any)?.context?.is_active !== false
     };
 
     return NextResponse.json({
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { phrase, commandType, parameters, isActive } = body;
 
     // Get existing shortcut
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing, error: fetchError } = await (supabase as any)
       .from('user_behavior_metrics')
       .select('*')
       .eq('id', resolvedParams.id)
@@ -85,8 +85,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if new phrase conflicts with existing shortcuts (excluding current one)
-    if (phrase && phrase.trim() !== existing.context.phrase) {
-      const { data: conflicting } = await supabase
+    if (phrase && phrase.trim() !== (existing as any)?.context?.phrase) {
+      const { data: conflicting } = await (supabase as any)
         .from('user_behavior_metrics')
         .select('id')
         .eq('user_id', user.id)
@@ -103,7 +103,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Update the shortcut
     const updatedContext = {
-      ...existing.context,
+      ...(existing as any)?.context,
       ...(phrase && { phrase: phrase.toLowerCase().trim() }),
       ...(commandType && { command_type: commandType }),
       ...(parameters !== undefined && { parameters }),
@@ -111,12 +111,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updated_at: new Date().toISOString()
     };
 
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await (supabase as any)
       .from('user_behavior_metrics')
       .update({
         context: updatedContext,
         timestamp: new Date().toISOString()
-      })
+      } as any)
       .eq('id', resolvedParams.id)
       .select()
       .single();
@@ -126,11 +126,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Log the update
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,
-        organization_id: existing.organization_id,
+        organization_id: (existing as any)?.organization_id,
         event_type: 'user_action',
         event_category: 'voice',
         action: 'update_voice_shortcut',
@@ -139,24 +139,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         event_description: `User updated voice shortcut: "${updatedContext.phrase}"`,
         outcome: 'success',
         details: {
-          old_phrase: existing.context.phrase,
+          old_phrase: (existing as any)?.context?.phrase,
           new_phrase: updatedContext.phrase,
           command_type: updatedContext.command_type
         },
-      });
+      } as any);
 
     const updatedShortcut = {
-      id: updated.id,
-      userId: updated.user_id,
-      organizationId: updated.organization_id,
-      phrase: updated.context.phrase,
-      commandType: updated.context.command_type,
-      parameters: updated.context.parameters || {},
-      createdAt: new Date(updated.created_at),
-      updatedAt: new Date(updated.timestamp),
-      useCount: updated.engagement_score || 0,
-      lastUsed: updated.context.last_used ? new Date(updated.context.last_used) : undefined,
-      isActive: updated.context.is_active !== false
+      id: (updated as any)?.id,
+      userId: (updated as any)?.user_id,
+      organizationId: (updated as any)?.organization_id,
+      phrase: (updated as any)?.context?.phrase,
+      commandType: (updated as any)?.context?.command_type,
+      parameters: (updated as any)?.context?.parameters || {},
+      createdAt: new Date((updated as any)?.created_at),
+      updatedAt: new Date((updated as any)?.timestamp),
+      useCount: (updated as any)?.engagement_score || 0,
+      lastUsed: (updated as any)?.context?.last_used ? new Date((updated as any)?.context?.last_used) : undefined,
+      isActive: (updated as any)?.context?.is_active !== false
     };
 
     return NextResponse.json({
@@ -184,7 +184,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get shortcut details before deletion for logging
-    const { data: shortcut, error: fetchError } = await supabase
+    const { data: shortcut, error: fetchError } = await (supabase as any)
       .from('user_behavior_metrics')
       .select('*')
       .eq('id', resolvedParams.id)
@@ -197,7 +197,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete the shortcut
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('user_behavior_metrics')
       .delete()
       .eq('id', resolvedParams.id)
@@ -208,24 +208,24 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Log the deletion
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,
-        organization_id: shortcut.organization_id,
+        organization_id: (shortcut as any)?.organization_id,
         event_type: 'user_action',
         event_category: 'voice',
         action: 'delete_voice_shortcut',
         resource_type: 'voice_shortcut',
         resource_id: resolvedParams.id,
-        event_description: `User deleted voice shortcut: "${shortcut.context.phrase}"`,
+        event_description: `User deleted voice shortcut: "${(shortcut as any)?.context?.phrase}"`,
         outcome: 'success',
         details: {
-          phrase: shortcut.context.phrase,
-          command_type: shortcut.context.command_type,
-          use_count: shortcut.engagement_score || 0
+          phrase: (shortcut as any)?.context?.phrase,
+          command_type: (shortcut as any)?.context?.command_type,
+          use_count: (shortcut as any)?.engagement_score || 0
         },
-      });
+      } as any);
 
     return NextResponse.json({
       success: true,

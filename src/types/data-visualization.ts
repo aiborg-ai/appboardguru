@@ -3,7 +3,7 @@
  * Type definitions for charts, graphs, and data visualization components
  */
 
-import { ReactNode, CSSProperties } from 'react'
+import { ReactNode, CSSProperties, HTMLAttributes } from 'react'
 
 // Base Chart Types
 export type ChartType = 'line' | 'bar' | 'pie' | 'donut' | 'area' | 'scatter' | 'heatmap' | 'gauge' | 'funnel' | 'radar'

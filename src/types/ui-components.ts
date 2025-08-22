@@ -585,7 +585,7 @@ export interface CommandGroupProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode
 }
 
-export interface CommandItemProps extends HTMLAttributes<HTMLDivElement> {
+export interface CommandItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onSelect'> {
   value?: string
   disabled?: boolean
   onSelect?: (value: string) => void

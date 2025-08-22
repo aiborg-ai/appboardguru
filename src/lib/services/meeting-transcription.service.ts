@@ -612,8 +612,11 @@ class MeetingTranscriptionService {
     const view = new Uint8Array(audioData);
     let hash = 0;
     for (let i = 0; i < view.length; i++) {
-      hash = (hash << 5) - hash + view[i];
-      hash = hash & hash; // Convert to 32-bit integer
+      const byte = view[i];
+      if (byte !== undefined) {
+        hash = (hash << 5) - hash + byte;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
     }
     return hash.toString(16);
   }

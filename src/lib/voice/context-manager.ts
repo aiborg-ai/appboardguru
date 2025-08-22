@@ -302,7 +302,7 @@ export class VoiceContextManager {
 
     // Save to database
     const supabase = await createSupabaseServerClient();
-    await supabase
+    await (supabase as any)
       .from('user_behavior_metrics')
       .insert({
         user_id: userId,
@@ -313,7 +313,7 @@ export class VoiceContextManager {
           phrase: shortcut.phrase,
           command_type: shortcut.commandType
         }
-      });
+      } as any);
 
     return shortcut;
   }
@@ -431,14 +431,14 @@ export class VoiceContextManager {
     const supabase = await createSupabaseServerClient();
     
     // Load user's timezone and preferences
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('*')
       .eq('id', userId)
       .single();
 
     // Load custom shortcuts
-    const { data: shortcuts } = await supabase
+    const { data: shortcuts } = await (supabase as any)
       .from('user_behavior_metrics')
       .select('*')
       .eq('user_id', userId)
@@ -450,13 +450,13 @@ export class VoiceContextManager {
       preferredMeetingDuration: 120,
       defaultVaultVisibility: 'private',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      voiceCommandShortcuts: shortcuts?.map(s => ({
-        id: s.context.shortcut_id,
-        phrase: s.context.phrase,
-        commandType: s.context.command_type,
-        parameters: s.context.parameters || {},
-        createdAt: new Date(s.created_at),
-        useCount: s.engagement_score || 0
+      voiceCommandShortcuts: shortcuts?.map((s: any) => ({
+        id: (s as any)?.context?.shortcut_id,
+        phrase: (s as any)?.context?.phrase,
+        commandType: (s as any)?.context?.command_type,
+        parameters: (s as any)?.context?.parameters || {},
+        createdAt: new Date((s as any)?.created_at),
+        useCount: (s as any)?.engagement_score || 0
       })) || []
     };
   }
@@ -469,7 +469,7 @@ export class VoiceContextManager {
     const entities: RecentEntity[] = [];
 
     // Recent vaults
-    const { data: vaults } = await supabase
+    const { data: vaults } = await (supabase as any)
       .from('board_packs')
       .select('id, title, updated_at')
       .eq('uploaded_by', userId)
@@ -478,17 +478,17 @@ export class VoiceContextManager {
       .limit(5);
 
     if (vaults) {
-      entities.push(...vaults.map(v => ({
+      entities.push(...vaults.map((v: any) => ({
         type: 'vault' as const,
-        id: v.id,
-        name: v.title,
-        lastReferenced: new Date(v.updated_at),
+        id: (v as any)?.id,
+        name: (v as any)?.title,
+        lastReferenced: new Date((v as any)?.updated_at),
         referenceCount: 1
       })));
     }
 
     // Recent meetings
-    const { data: meetings } = await supabase
+    const { data: meetings } = await (supabase as any)
       .from('meetings')
       .select('id, title, updated_at')
       .eq('created_by', userId)
@@ -497,11 +497,11 @@ export class VoiceContextManager {
       .limit(5);
 
     if (meetings) {
-      entities.push(...meetings.map(m => ({
+      entities.push(...meetings.map((m: any) => ({
         type: 'meeting' as const,
-        id: m.id,
-        name: m.title,
-        lastReferenced: new Date(m.updated_at),
+        id: (m as any)?.id,
+        name: (m as any)?.title,
+        lastReferenced: new Date((m as any)?.updated_at),
         referenceCount: 1
       })));
     }
@@ -574,14 +574,14 @@ export class VoiceContextManager {
    */
   private async updateShortcutUsage(userId: string, shortcutId: string): Promise<void> {
     const supabase = await createSupabaseServerClient();
-    await supabase
+    await (supabase as any)
       .from('user_behavior_metrics')
       .insert({
         user_id: userId,
         action_type: 'voice_shortcut_used',
         timestamp: new Date().toISOString(),
         context: { shortcut_id: shortcutId }
-      });
+      } as any);
   }
 
   /**

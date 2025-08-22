@@ -59,7 +59,7 @@ export class ActivityAnalytics {
 
     try {
       // Get basic activity counts
-      const { data: activityData } = await supabase
+      const { data: activityData } = await (supabase as any)
         .from('audit_logs')
         .select('event_category, action, created_at, user_id')
         .eq('organization_id', organizationId)
@@ -134,7 +134,7 @@ export class ActivityAnalytics {
 
     try {
       // Get user activity data
-      let query = supabase
+      let query = (supabase as any)
         .from('audit_logs')
         .select(`
           user_id,
@@ -264,7 +264,7 @@ export class ActivityAnalytics {
 
       // Store insights in database
       if (insights.length > 0) {
-        const insightInserts = insights.map(insight => ({
+        const insightInserts = insights.map((insight: any) => ({
           organization_id: organizationId,
           insight_type: insight.type,
           insight_category: insight.type === 'anomaly' ? 'security' : 'engagement',
@@ -276,7 +276,7 @@ export class ActivityAnalytics {
           action_required: insight.actionRequired
         }))
 
-        await supabase
+        await (supabase as any)
           .from('activity_insights')
           .insert(insightInserts)
       }
@@ -294,7 +294,7 @@ export class ActivityAnalytics {
 
     try {
       // Get user activity anomalies
-      const { data: users } = await supabase
+      const { data: users } = await (supabase as any)
         .from('organization_members')
         .select('user_id')
         .eq('organization_id', organizationId)
@@ -302,8 +302,8 @@ export class ActivityAnalytics {
 
       if (!users) return insights
 
-      for (const user of users) {
-        const { data: anomalyData } = await supabase
+      for (const user of users as any[]) {
+        const { data: anomalyData } = await (supabase as any)
           .rpc('detect_activity_anomalies', {
             input_user_id: user.user_id,
             input_org_id: organizationId
@@ -312,13 +312,13 @@ export class ActivityAnalytics {
         if (anomalyData) {
           const anomalies = anomalyData as any
 
-          if (anomalies.high_activity) {
+          if ((anomalies as any).high_activity) {
             insights.push({
               id: `anomaly-${user.user_id}-high-activity`,
               type: 'anomaly',
               severity: 'warning',
               title: 'Unusually High Activity Detected',
-              description: `User has ${anomalies.activity_today} activities today, significantly above their average of ${Math.round(anomalies.average_daily)}`,
+              description: `User has ${(anomalies as any).activity_today} activities today, significantly above their average of ${Math.round((anomalies as any).average_daily)}`,
               data: anomalies,
               actionRequired: false,
               confidence: 0.85,
@@ -326,13 +326,13 @@ export class ActivityAnalytics {
             })
           }
 
-          if (anomalies.unusual_hours) {
+          if ((anomalies as any).unusual_hours) {
             insights.push({
               id: `anomaly-${user.user_id}-unusual-hours`,
               type: 'anomaly',
               severity: 'critical',
               title: 'After-Hours Activity Detected',
-              description: `User has ${anomalies.unusual_hours_count} activities outside normal business hours today`,
+              description: `User has ${(anomalies as any).unusual_hours_count} activities outside normal business hours today`,
               data: anomalies,
               actionRequired: true,
               confidence: 0.95,
@@ -340,13 +340,13 @@ export class ActivityAnalytics {
             })
           }
 
-          if (anomalies.bulk_downloads) {
+          if ((anomalies as any).bulk_downloads) {
             insights.push({
               id: `anomaly-${user.user_id}-bulk-downloads`,
               type: 'anomaly',
               severity: 'critical',
               title: 'Bulk Download Activity',
-              description: `User has downloaded ${anomalies.downloads_today} assets today, which may indicate data exfiltration`,
+              description: `User has downloaded ${(anomalies as any).downloads_today} assets today, which may indicate data exfiltration`,
               data: anomalies,
               actionRequired: true,
               confidence: 0.90,
@@ -369,7 +369,7 @@ export class ActivityAnalytics {
 
     try {
       // Analyze activity trends over the past 30 days
-      const { data: trendData } = await supabase
+      const { data: trendData } = await (supabase as any)
         .from('daily_activity_summary')
         .select('*')
         .eq('organization_id', organizationId)
@@ -382,8 +382,8 @@ export class ActivityAnalytics {
       const recentWeek = trendData.slice(-7)
       const previousWeek = trendData.slice(-14, -7)
 
-      const recentAvg = recentWeek.reduce((sum, day) => sum + day.total_activities, 0) / 7
-      const previousAvg = previousWeek.reduce((sum, day) => sum + day.total_activities, 0) / 7
+      const recentAvg = recentWeek.reduce((sum: number, day: any) => sum + day.total_activities, 0) / 7
+      const previousAvg = previousWeek.reduce((sum: number, day: any) => sum + day.total_activities, 0) / 7
       const trendChange = ((recentAvg - previousAvg) / previousAvg) * 100
 
       if (Math.abs(trendChange) > 25) {
@@ -418,7 +418,7 @@ export class ActivityAnalytics {
 
     try {
       // Check for compliance violations
-      const { data: violations } = await supabase
+      const { data: violations } = await (supabase as any)
         .from('audit_logs')
         .select('*')
         .eq('organization_id', organizationId)
@@ -435,7 +435,7 @@ export class ActivityAnalytics {
           description: `${violations.length} compliance violations found in the past 7 days`,
           data: {
             violationCount: violations.length,
-            violationTypes: violations.map(v => v.event_category),
+            violationTypes: violations.map((v: any) => v.event_category),
             recentViolations: violations.slice(0, 5)
           },
           actionRequired: true,
@@ -445,7 +445,7 @@ export class ActivityAnalytics {
       }
 
       // Check for missing activity (potential compliance gap)
-      const { data: recentActivity } = await supabase
+      const { data: recentActivity } = await (supabase as any)
         .from('audit_logs')
         .select('created_at')
         .eq('organization_id', organizationId)
@@ -489,7 +489,7 @@ export class ActivityAnalytics {
       const previousEnd = timeRange.start
 
       const [currentPeriod, previousPeriod] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -497,7 +497,7 @@ export class ActivityAnalytics {
           .gte('created_at', timeRange.start)
           .lte('created_at', timeRange.end),
         
-        supabase
+        (supabase as any)
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -525,7 +525,7 @@ export class ActivityAnalytics {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: riskEvents } = await supabase
+      const { data: riskEvents } = await (supabase as any)
         .from('audit_logs')
         .select('severity, outcome, event_type')
         .eq('organization_id', organizationId)
@@ -535,7 +535,7 @@ export class ActivityAnalytics {
       if (!riskEvents) return 0
 
       let riskScore = 0
-      riskEvents.forEach(event => {
+      riskEvents.forEach((event: any) => {
         // Weight by severity
         if (event.severity === 'critical') riskScore += 10
         else if (event.severity === 'high') riskScore += 5
@@ -570,7 +570,7 @@ export class ActivityAnalytics {
         { data: auditCoverage }
       ] = await Promise.all([
         // Total events
-        supabase
+        (supabase as any)
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -578,7 +578,7 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end),
 
         // Security events
-        supabase
+        (supabase as any)
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -587,7 +587,7 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end),
 
         // Failed events
-        supabase
+        (supabase as any)
           .from('audit_logs')
           .select('id', { count: 'exact' })
           .eq('organization_id', organizationId)
@@ -596,7 +596,7 @@ export class ActivityAnalytics {
           .lte('created_at', timeRange.end),
 
         // Check audit coverage (all major actions should be logged)
-        supabase
+        (supabase as any)
           .from('audit_logs')
           .select('event_category')
           .eq('organization_id', organizationId)
@@ -607,7 +607,7 @@ export class ActivityAnalytics {
       const totalEventsCount = totalCount || 0
       const securityEventsCount = securityCount || 0
       const failureEventsCount = failureCount || 0
-      const coverageCategories = new Set(auditCoverage?.map(e => e.event_category) || [])
+      const coverageCategories = new Set(auditCoverage?.map((e: any) => e.event_category) || [])
 
       // Calculate compliance score (0-100)
       let score = 100
@@ -646,7 +646,7 @@ export class ActivityAnalytics {
     try {
       const supabase = await createSupabaseServerClient()
 
-      let query = supabase
+      let query = (supabase as any)
         .from('audit_logs')
         .select(`
           id,
@@ -667,23 +667,23 @@ export class ActivityAnalytics {
         .order('created_at', { ascending: false })
 
       if (filters.userId) {
-        query = query.eq('user_id', filters.userId)
+        query = (query as any).eq('user_id', filters.userId)
       }
 
       if (filters.activityTypes?.length) {
-        query = query.in('event_category', filters.activityTypes)
+        query = (query as any).in('event_category', filters.activityTypes)
       }
 
       if (filters.timeRange) {
-        query = query
+        query = (query as any)
           .gte('created_at', filters.timeRange.start)
           .lte('created_at', filters.timeRange.end)
       } else {
         // Default to last 24 hours
-        query = query.gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        query = (query as any).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       }
 
-      const { data: activities } = await query.limit(filters.limit || 50)
+      const { data: activities } = await (query as any).limit(filters.limit || 50)
 
       return activities || []
     } catch (error) {

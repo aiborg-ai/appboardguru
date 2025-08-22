@@ -525,8 +525,9 @@ class MultilingualService {
     allTerms.forEach(term => {
       result[term] = {};
       Object.entries(terms).forEach(([lang, langTerms]) => {
-        if (langTerms[term]) {
-          result[term][lang] = langTerms[term];
+        const termValue = langTerms?.[term];
+        if (termValue) {
+          result[term]![lang] = termValue;
         }
       });
     });

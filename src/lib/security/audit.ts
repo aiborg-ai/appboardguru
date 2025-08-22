@@ -176,17 +176,20 @@ export class RiskScoreCalculator {
 
     // Event type factor
     if (event.eventType) {
-      score *= this.RISK_FACTORS.eventType[event.eventType] || 1.0
+      const factor = this.RISK_FACTORS.eventType[event.eventType as keyof typeof this.RISK_FACTORS.eventType]
+      score *= factor || 1.0
     }
 
     // Severity factor
     if (event.severity) {
-      score *= this.RISK_FACTORS.severity[event.severity]
+      const factor = this.RISK_FACTORS.severity[event.severity as keyof typeof this.RISK_FACTORS.severity]
+      score *= factor || 1.0
     }
 
     // Outcome factor
     if (event.outcome) {
-      score *= this.RISK_FACTORS.outcome[event.outcome]
+      const factor = this.RISK_FACTORS.outcome[event.outcome as keyof typeof this.RISK_FACTORS.outcome]
+      score *= factor || 1.0
     }
 
     // Time-based analysis
@@ -693,11 +696,11 @@ export async function generateSecurityReport(
       if (!riskCounts[event.description]) {
         riskCounts[event.description] = { count: 0, maxRisk: 0 }
       }
-      riskCounts[event.description].count++
-      riskCounts[event.description].maxRisk = Math.max(
-        riskCounts[event.description].maxRisk,
-        event.riskScore
-      )
+      const riskCount = riskCounts[event.description]
+      if (riskCount) {
+        riskCount.count++
+        riskCount.maxRisk = Math.max(riskCount.maxRisk, event.riskScore)
+      }
     })
 
     const topRisks = Object.entries(riskCounts)

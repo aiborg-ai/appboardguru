@@ -337,7 +337,7 @@ async function handleEnrollment(
             qualityScore,
             signalToNoiseRatio: voiceCharacteristics.voiceQualityMetrics.harmonicToNoiseRatio,
             recordedAt: new Date().toISOString(),
-            ...(deviceInfo && { deviceInfo })
+            ...(deviceInfo ? { deviceInfo } : {})
           }],
           qualityScore,
           templateVersion: '1.0',

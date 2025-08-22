@@ -27,7 +27,7 @@ export const supabaseAdmin = createClient(
  */
 export async function createUserForApprovedRegistration(email: string, fullName: string) {
   const { debugLogger, createOperationTracker } = await import('@/lib/debug-logger')
-  const tracker = createOperationTracker('CREATE_USER_FOR_APPROVED_REGISTRATION', email)
+  const tracker = createOperationTracker('CREATE_USER_FOR_APPROVED_REGISTRATION', { email })
   
   debugLogger.authUserCreateStart(email, fullName)
 

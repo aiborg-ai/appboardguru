@@ -23,19 +23,19 @@ export async function GET(request: NextRequest) {
 
     if (!organizationId) {
       // Get all organizations the user has access to
-      const { data: userMemberships } = await supabase
+      const { data: userMemberships } = await (supabase as any)
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
         .eq('status', 'active');
 
-      const orgIds = userMemberships?.map(m => m.organization_id) || [];
+      const orgIds = userMemberships?.map((m: any) => m.organization_id) || [];
       
       if (orgIds.length === 0) {
         return NextResponse.json({ committees: [], total: 0 });
       }
 
-      let query = supabaseAdmin
+      let query = (supabaseAdmin as any)
         .from('committees')
         .select(`
           *,
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Transform the data to include board name
-      const transformedCommittees = committees?.map(committee => ({
+      const transformedCommittees = (committees as any[])?.map((committee: any) => ({
         ...committee,
         board_name: (committee.boards as any)?.name
       })) || [];
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this specific organization
-    const { data: orgMember, error: orgError } = await supabase
+    const { data: orgMember, error: orgError } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
       .eq('organization_id', organizationId)
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get committees for the specific organization
-    let query = supabaseAdmin
+    let query = (supabaseAdmin as any)
       .from('committees')
       .select(`
         *,
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to include board name
-    const transformedCommittees = committees?.map(committee => ({
+    const transformedCommittees = (committees as any[])?.map((committee: any) => ({
       ...committee,
       board_name: (committee.boards as any)?.name
     })) || [];
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has admin access to this organization
-    const { data: orgMember, error: orgError } = await supabase
+    const { data: orgMember, error: orgError } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organization_id)
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the board exists and belongs to this organization
-    const { data: board, error: boardError } = await supabaseAdmin
+    const { data: board, error: boardError } = await (supabaseAdmin as any)
       .from('boards')
       .select('id, name')
       .eq('id', board_id)
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the committee
-    const { data: newCommittee, error: createError } = await supabaseAdmin
+    const { data: newCommittee, error: createError } = await (supabaseAdmin as any)
       .from('committees')
       .insert({
         organization_id,
@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      })
+      } as any)
       .select()
       .single();
 
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       message: 'Committee created successfully',
       committee: {
         ...newCommittee,
-        board_name: board.name
+        board_name: (board as any)?.name
       }
     }, { status: 201 });
 

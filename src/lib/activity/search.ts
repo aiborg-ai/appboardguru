@@ -163,7 +163,7 @@ export class ActivitySearchEngine {
         dbQuery = dbQuery.limit(query.limit || 50)
       }
 
-      const { data: activities } = await dbQuery
+      const { data: activities } = await (dbQuery as any)
 
       if (!activities) return []
 
@@ -176,13 +176,13 @@ export class ActivitySearchEngine {
         timestamp: activity.created_at,
         user: {
           id: activity.user_id || 'system',
-          name: Array.isArray(activity.users) ? (activity.users[0] as any)?.full_name || 'System' : (activity.users as any)?.full_name || 'System',
-          email: Array.isArray(activity.users) ? (activity.users[0] as any)?.email || '' : (activity.users as any)?.email || ''
+          name: Array.isArray(activity.users) ? ((activity.users as any)[0] as any)?.full_name || 'System' : ((activity.users as any) as any)?.full_name || 'System',
+          email: Array.isArray(activity.users) ? ((activity.users as any)[0] as any)?.email || '' : ((activity.users as any) as any)?.email || ''
         },
         resource: activity.resource_id ? {
           type: activity.resource_type,
           id: activity.resource_id,
-          name: activity.details?.resource_name || activity.resource_id
+          name: (activity.details as any)?.resource_name || activity.resource_id
         } : undefined,
         severity: activity.severity,
         outcome: activity.outcome,
@@ -341,7 +341,7 @@ export class ActivitySearchEngine {
         const timeWindow = 60 * 60 * 1000 // 1 hour
         const resultTime = new Date(result.timestamp).getTime()
         
-        const { data: correlatedEvents } = await supabase
+        const { data: correlatedEvents } = await (supabase as any)
           .from('audit_logs')
           .select(`
             id, event_description, created_at, action, user_id,
@@ -354,7 +354,7 @@ export class ActivitySearchEngine {
           .limit(5)
 
         if (correlatedEvents?.length) {
-          result.correlatedEvents = correlatedEvents.map(event => ({
+          result.correlatedEvents = correlatedEvents.map((event: any) => ({
             id: event.id,
             type: 'correlated',
             title: event.event_description,
@@ -365,8 +365,8 @@ export class ActivitySearchEngine {
               name: (event.users as any)?.full_name || 'System',
               email: (event.users as any)?.email || ''
             },
-            severity: 'medium',
-            outcome: 'success',
+            severity: 'medium' as const,
+            outcome: 'success' as const,
             relevanceScore: 0.5
           }))
         }
@@ -395,7 +395,7 @@ export class ActivitySearchEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: savedTemplate, error } = await supabase
+      const { data: savedTemplate, error } = await (supabase as any)
         .from('activity_search_templates')
         .insert({
           organization_id: organizationId,
@@ -427,7 +427,7 @@ export class ActivitySearchEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: templates } = await supabase
+      const { data: templates } = await (supabase as any)
         .from('activity_search_templates')
         .select(`
           id, name, description, search_query, is_public, 
@@ -438,7 +438,7 @@ export class ActivitySearchEngine {
         .or(`created_by.eq.${userId},is_public.eq.true`)
         .order('usage_count', { ascending: false })
 
-      return templates?.map(template => ({
+      return templates?.map((template: any) => ({
         id: template.id,
         name: template.name,
         description: template.description,
@@ -465,7 +465,7 @@ export class ActivitySearchEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get the template
-      const { data: template } = await supabase
+      const { data: template } = await (supabase as any)
         .from('activity_search_templates')
         .select('search_query')
         .eq('id', templateId)
@@ -475,7 +475,7 @@ export class ActivitySearchEngine {
       if (!template) throw new Error('Search template not found')
 
       // Update usage count
-      await supabase
+      await (supabase as any)
         .from('activity_search_templates')
         .update({
           usage_count: 1, // Will be incremented via SQL function
@@ -502,7 +502,7 @@ export class ActivitySearchEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get user's recent activity patterns
-      const { data: userActivity } = await supabase
+      const { data: userActivity } = await (supabase as any)
         .from('audit_logs')
         .select('event_category, action, resource_type')
         .eq('organization_id', organizationId)
@@ -515,7 +515,7 @@ export class ActivitySearchEngine {
       }
 
       // Analyze patterns and generate suggestions
-      const categories = userActivity.reduce((acc, activity) => {
+      const categories = userActivity.reduce((acc: Record<string, number>, activity: any) => {
         acc[activity.event_category] = (acc[activity.event_category] || 0) + 1
         return acc
       }, {} as Record<string, number>)
@@ -584,8 +584,8 @@ export class ActivitySearchEngine {
   }
 
   private static generateDescription(activity: any): string {
-    const user = activity.users?.full_name || 'Unknown user'
-    const action = activity.action.replace(/_/g, ' ')
+    const user = (activity.users as any)?.full_name || 'Unknown user'
+    const action = (activity.action as string).replace(/_/g, ' ')
     const resource = activity.resource_type || 'system'
     
     return `${user} performed ${action} on ${resource} with ${activity.outcome} outcome`
@@ -608,7 +608,7 @@ export class ActivitySearchEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get the source activity
-      const { data: sourceActivity } = await supabase
+      const { data: sourceActivity } = await (supabase as any)
         .from('audit_logs')
         .select('*')
         .eq('id', activityId)
@@ -665,7 +665,7 @@ export class ActivitySearchEngine {
     windowStart: string,
     windowEnd: string
   ): Promise<SearchResult[]> {
-    const { data: correlations } = await supabase
+    const { data: correlations } = await (supabase as any)
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -687,7 +687,7 @@ export class ActivitySearchEngine {
     windowStart: string,
     windowEnd: string
   ): Promise<SearchResult[]> {
-    const { data: correlations } = await supabase
+    const { data: correlations } = await (supabase as any)
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -711,7 +711,7 @@ export class ActivitySearchEngine {
   ): Promise<SearchResult[]> {
     if (!sourceActivity.resource_id) return []
 
-    const { data: correlations } = await supabase
+    const { data: correlations } = await (supabase as any)
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -734,7 +734,7 @@ export class ActivitySearchEngine {
     action: string
   ): Promise<SearchResult[]> {
     // Find similar patterns in the past
-    const { data: patterns } = await supabase
+    const { data: patterns } = await (supabase as any)
       .from('audit_logs')
       .select(`
         id, event_description, created_at, event_category, action,
@@ -752,7 +752,7 @@ export class ActivitySearchEngine {
   }
 
   private static transformToSearchResults(data: any[]): SearchResult[] {
-    return data.map(item => ({
+    return data.map((item: any) => ({
       id: item.id,
       type: `${item.event_category}:${item.action}`,
       title: item.event_description,
@@ -760,8 +760,8 @@ export class ActivitySearchEngine {
       timestamp: item.created_at,
       user: {
         id: item.user_id || 'system',
-        name: item.users?.full_name || 'System',
-        email: item.users?.email || ''
+        name: (item.users as any)?.full_name || 'System',
+        email: (item.users as any)?.email || ''
       },
       resource: item.resource_id ? {
         type: item.resource_type,

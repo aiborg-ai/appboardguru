@@ -27,25 +27,25 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify the security token from database
-    if (!registrationRequest.approval_token || registrationRequest.approval_token !== token) {
+    if (!(registrationRequest as any).approval_token || (registrationRequest as any).approval_token !== token) {
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Security Error&message=Invalid security token&details=This link appears to be invalid or tampered with. Please contact support if you believe this is an error.`
       return NextResponse.redirect(errorUrl, 302)
     }
 
     // Check if token has expired
-    if (registrationRequest.token_expires_at && new Date(registrationRequest.token_expires_at) < new Date()) {
+    if ((registrationRequest as any).token_expires_at && new Date((registrationRequest as any).token_expires_at) < new Date()) {
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Link Expired&message=This rejection link has expired&details=For security reasons, approval links expire after 24 hours. Please contact support if needed.`
       return NextResponse.redirect(errorUrl, 302)
     }
 
     // Check if already processed
-    if (registrationRequest.status !== 'pending') {
-      const warningUrl = `${getAppUrl()}/approval-result?type=warning&title=Already Processed&message=This registration request has already been ${registrationRequest.status}&details=No further action is needed&name=${encodeURIComponent(registrationRequest.full_name)}&email=${encodeURIComponent(registrationRequest.email)}`
+    if ((registrationRequest as any).status !== 'pending') {
+      const warningUrl = `${getAppUrl()}/approval-result?type=warning&title=Already Processed&message=This registration request has already been ${(registrationRequest as any).status}&details=No further action is needed&name=${encodeURIComponent((registrationRequest as any).full_name)}&email=${encodeURIComponent((registrationRequest as any).email)}`
       return NextResponse.redirect(warningUrl, 302)
     }
 
     // Reject the registration request and clear the token (one-time use)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('registration_requests')
       .update({
         status: 'rejected',
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
             <h2 style="color: #1f2937; margin-bottom: 20px;">Thank you for your interest in BoardGuru</h2>
             
             <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px;">
-              Dear ${registrationRequest.full_name},
+              Dear ${(registrationRequest as any).full_name},
             </p>
             
             <p style="color: #6b7280; line-height: 1.6; margin-bottom: 20px;">
@@ -122,19 +122,19 @@ export async function GET(request: NextRequest) {
 
       await transporter.sendMail({
         from: process.env.SMTP_USER,
-        to: registrationRequest.email,
+        to: (registrationRequest as any).email,
         subject: 'BoardGuru Registration Update',
         html: rejectionEmailHTML,
       })
 
-      console.log(`❌ Rejection email sent to ${registrationRequest.email}`)
+      console.log(`❌ Rejection email sent to ${(registrationRequest as any).email}`)
     } catch (emailError) {
       console.error('Failed to send rejection email:', emailError)
       // Don't fail the rejection process if email fails
     }
 
     // Redirect to beautiful rejection page
-    const rejectionUrl = `${getAppUrl()}/approval-result?type=error&title=Registration Rejected&message=${encodeURIComponent(`${registrationRequest.full_name}'s registration request has been rejected`)}&details=A notification email has been sent to the applicant&name=${encodeURIComponent(registrationRequest.full_name)}&email=${encodeURIComponent(registrationRequest.email)}&company=${encodeURIComponent(registrationRequest.company)}&position=${encodeURIComponent(registrationRequest.position)}`
+    const rejectionUrl = `${getAppUrl()}/approval-result?type=error&title=Registration Rejected&message=${encodeURIComponent(`${(registrationRequest as any).full_name}'s registration request has been rejected`)}&details=A notification email has been sent to the applicant&name=${encodeURIComponent((registrationRequest as any).full_name)}&email=${encodeURIComponent((registrationRequest as any).email)}&company=${encodeURIComponent((registrationRequest as any).company)}&position=${encodeURIComponent((registrationRequest as any).position)}`
     return NextResponse.redirect(rejectionUrl, 302)
 
   } catch (error) {

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const { data: membership } = await supabase
+    const { data: membership } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query for anomaly detections
-    let query = supabase
+    let query = (supabase as any)
       .from('anomaly_detections')
       .select(`
         *,
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count for pagination
-    let countQuery = supabase
+    let countQuery = (supabase as any)
       .from('anomaly_detections')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', organizationId)
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to organization
-    const { data: membership } = await supabase
+    const { data: membership } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'anomalyId required' }, { status: 400 })
       }
 
-      const { data: updatedAnomaly, error } = await supabase
+      const { data: updatedAnomaly, error } = await (supabase as any)
         .from('anomaly_detections')
         .update({
           investigation_status: 'in_progress',
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      const { data: updatedAnomaly, error } = await supabase
+      const { data: updatedAnomaly, error } = await (supabase as any)
         .from('anomaly_detections')
         .update({
           investigation_status: resolution,
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      const { data: updatedAnomalies, error } = await supabase
+      const { data: updatedAnomalies, error } = await (supabase as any)
         .from('anomaly_detections')
         .update({
           investigation_status: resolution,
@@ -337,7 +337,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify user has admin access to organization
-    const { data: membership } = await supabase
+    const { data: membership } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)
@@ -401,7 +401,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify user has admin access to organization
-    const { data: membership } = await supabase
+    const { data: membership } = await (supabase as any)
       .from('organization_members')
       .select('role')
       .eq('organization_id', organizationId)

@@ -5,25 +5,113 @@ import { Database } from '../database'
 import { BaseEntity, AuditableEntity, ID, Timestamp, JSONValue } from '../common'
 
 // Database table types
-export type ComplianceTemplate = Database['public']['Tables']['compliance_templates']['Row']
-export type ComplianceTemplateInsert = Database['public']['Tables']['compliance_templates']['Insert']
-export type ComplianceTemplateUpdate = Database['public']['Tables']['compliance_templates']['Update']
+// Note: These tables don't exist in the current database schema yet
+// Using placeholder types until the tables are created in the database
 
-export type ComplianceCalendarEntry = Database['public']['Tables']['compliance_calendar']['Row']
-export type ComplianceCalendarInsert = Database['public']['Tables']['compliance_calendar']['Insert']
-export type ComplianceCalendarUpdate = Database['public']['Tables']['compliance_calendar']['Update']
+export interface ComplianceTemplate extends BaseEntity {
+  name: string
+  description?: string
+  regulation_type: string
+  category?: string
+  workflow_steps: JSONValue
+  reminder_schedule: JSONValue
+  escalation_rules: JSONValue
+  is_mandatory: boolean
+  regulatory_authority?: string
+  tags?: string[]
+  external_reference?: string
+  metadata?: JSONValue
+  organization_id: string
+  created_by: string
+  is_active: boolean
+}
 
-export type NotificationWorkflow = Database['public']['Tables']['notification_workflows']['Row']
-export type NotificationWorkflowInsert = Database['public']['Tables']['notification_workflows']['Insert']
-export type NotificationWorkflowUpdate = Database['public']['Tables']['notification_workflows']['Update']
+export type ComplianceTemplateInsert = Omit<ComplianceTemplate, 'id' | 'created_at' | 'updated_at'>
+export type ComplianceTemplateUpdate = Partial<ComplianceTemplateInsert>
 
-export type ComplianceParticipant = Database['public']['Tables']['compliance_participants']['Row']
-export type ComplianceParticipantInsert = Database['public']['Tables']['compliance_participants']['Insert']
-export type ComplianceParticipantUpdate = Database['public']['Tables']['compliance_participants']['Update']
+export interface ComplianceCalendarEntry extends BaseEntity {
+  template_id?: string
+  title: string
+  description?: string
+  regulation_type: string
+  category?: string
+  due_date: Timestamp
+  start_date?: Timestamp
+  business_days_notice?: number
+  is_recurring: boolean
+  recurrence_pattern?: JSONValue
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  is_mandatory: boolean
+  regulatory_authority?: string
+  tags?: string[]
+  external_reference?: string
+  metadata?: JSONValue
+  organization_id: string
+  created_by: string
+  status: ComplianceStatus
+}
 
-export type NotificationAuditLog = Database['public']['Tables']['notification_audit_log']['Row']
-export type NotificationAuditLogInsert = Database['public']['Tables']['notification_audit_log']['Insert']
-export type NotificationAuditLogUpdate = Database['public']['Tables']['notification_audit_log']['Update']
+export type ComplianceCalendarInsert = Omit<ComplianceCalendarEntry, 'id' | 'created_at' | 'updated_at'>
+export type ComplianceCalendarUpdate = Partial<ComplianceCalendarInsert>
+
+export interface NotificationWorkflow extends BaseEntity {
+  template_id?: string
+  calendar_entry_id?: string
+  name: string
+  description?: string
+  workflow_steps: JSONValue
+  assigned_to?: string
+  assigned_role?: string
+  due_date?: Timestamp
+  current_step: number
+  completed_steps: number[]
+  compliance_notes?: string
+  risk_level: RiskLevel
+  metadata?: JSONValue
+  organization_id: string
+  created_by: string
+  status: WorkflowStatus
+}
+
+export type NotificationWorkflowInsert = Omit<NotificationWorkflow, 'id' | 'created_at' | 'updated_at'>
+export type NotificationWorkflowUpdate = Partial<NotificationWorkflowInsert>
+
+export interface ComplianceParticipant extends BaseEntity {
+  workflow_id: string
+  user_id?: string
+  assigned_role?: string
+  participant_type: ParticipantType
+  step_number: number
+  assigned_date: Timestamp
+  due_date?: Timestamp
+  completed_date?: Timestamp
+  acknowledgment_method?: AcknowledgmentMethod
+  evidence_url?: string
+  completion_notes?: string
+  delegated_to?: string
+  escalated_to?: string
+  organization_id: string
+  status: ParticipantStatus
+}
+
+export type ComplianceParticipantInsert = Omit<ComplianceParticipant, 'id' | 'created_at' | 'updated_at'>
+export type ComplianceParticipantUpdate = Partial<ComplianceParticipantInsert>
+
+export interface NotificationAuditLog extends BaseEntity {
+  workflow_id: string
+  participant_id?: string
+  notification_id?: string
+  action: string
+  details: JSONValue
+  user_id?: string
+  ip_address?: string
+  user_agent?: string
+  organization_id: string
+  outcome: AuditOutcome
+}
+
+export type NotificationAuditLogInsert = Omit<NotificationAuditLog, 'id' | 'created_at' | 'updated_at'>
+export type NotificationAuditLogUpdate = Partial<NotificationAuditLogInsert>
 
 // Enum types
 export type ComplianceFrequency = Database['public']['Enums']['compliance_frequency']

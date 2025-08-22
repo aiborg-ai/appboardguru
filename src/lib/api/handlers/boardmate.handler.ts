@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { BoardMateAPI } from '@/types/api'
 import { createAPIHandler } from '../createAPIHandler'
-import { validateAuth, validateOrgAccess } from '../middleware/auth'
+import { validateAuth, validateOrgAccess } from '@/lib/api/middleware/auth'
 import { PaginationParams, PaginationMeta, createPaginationMeta } from '@/types/core'
 
 // Type-safe query parameters
@@ -148,7 +148,7 @@ export class BoardMateHandler {
       }),
       organization: {
         id: query.organization_id,
-        name: org?.name || 'Unknown Organization'
+        name: (org as any)?.name ?? 'Unknown Organization'
       }
     }
   }

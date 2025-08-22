@@ -186,8 +186,8 @@ class DeviceFingerprinting {
 
     // Check for very old or very new browser versions (potential spoofing)
     const chromeMatch = ua.match(/chrome\/(\d+)/)
-    if (chromeMatch) {
-      const version = parseInt(chromeMatch[1])
+    if (chromeMatch && chromeMatch[1]) {
+      const version = parseInt(chromeMatch[1], 10)
       if (version < 70 || version > 120) {
         flags.push('unusual_browser_version')
         riskScore += 10
@@ -571,7 +571,7 @@ export class ThreatDetectionEngine {
 
       // Analyze timing patterns
       const timestamps = actions.map(a => a.timestamp.getTime())
-      const intervals = timestamps.slice(1).map((t, i) => t - timestamps[i])
+      const intervals = timestamps.slice(1).map((t, i) => t - (timestamps[i] || 0))
       const avgInterval = intervals.length > 0 ? intervals.reduce((sum, i) => sum + i, 0) / intervals.length : 0
 
       // Very short intervals suggest automated access
@@ -613,9 +613,13 @@ export class ThreatDetectionEngine {
         let sequentialCount = 0
         
         for (let i = 1; i < sortedActions.length; i++) {
-          const timeDiff = sortedActions[i].timestamp.getTime() - sortedActions[i-1].timestamp.getTime()
-          if (timeDiff < 5000) { // Less than 5 seconds apart
-            sequentialCount++
+          const current = sortedActions[i]
+          const previous = sortedActions[i-1]
+          if (current && previous) {
+            const timeDiff = current.timestamp.getTime() - previous.timestamp.getTime()
+            if (timeDiff < 5000) { // Less than 5 seconds apart
+              sequentialCount++
+            }
           }
         }
         

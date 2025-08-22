@@ -22,7 +22,8 @@ import {
   canModifyRole,
   canRemoveMember,
   canTransferOwnership,
-  availableRoles
+  availableRoles,
+  type MemberWithUser
 } from "@/hooks/useMembers"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
 import { Button } from "@/features/shared/ui/button"

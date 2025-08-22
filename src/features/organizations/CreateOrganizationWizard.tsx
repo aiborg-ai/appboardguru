@@ -132,14 +132,14 @@ export default function CreateOrganizationWizard({
   const goToNextStep = useCallback(() => {
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < STEPS.length) {
-      setCurrentStep(STEPS[nextIndex].id);
+      setCurrentStep(STEPS[nextIndex]!.id);
     }
   }, [currentStepIndex]);
 
   const goToPreviousStep = useCallback(() => {
     const prevIndex = currentStepIndex - 1;
     if (prevIndex >= 0) {
-      setCurrentStep(STEPS[prevIndex].id);
+      setCurrentStep(STEPS[prevIndex]!.id);
     }
   }, [currentStepIndex]);
 

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const organizationId = url.searchParams.get('organizationId');
 
     // Fetch shortcuts from user behavior metrics table
-    let query = supabase
+    let query = (supabase as any)
       .from('user_behavior_metrics')
       .select('*')
       .eq('user_id', userId)
@@ -56,18 +56,18 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    const shortcuts: VoiceShortcut[] = (shortcutRecords || []).map(record => ({
-      id: record.id,
-      userId: record.user_id,
-      organizationId: record.organization_id,
-      phrase: record.context.phrase,
-      commandType: record.context.command_type,
-      parameters: record.context.parameters || {},
-      createdAt: new Date(record.created_at),
-      updatedAt: new Date(record.timestamp),
-      useCount: record.engagement_score || 0,
-      ...(record.context.last_used && { lastUsed: new Date(record.context.last_used) }),
-      isActive: record.context.is_active !== false
+    const shortcuts: VoiceShortcut[] = (shortcutRecords || []).map((record: any) => ({
+      id: (record as any)?.id,
+      userId: (record as any)?.user_id,
+      organizationId: (record as any)?.organization_id,
+      phrase: (record as any)?.context?.phrase,
+      commandType: (record as any)?.context?.command_type,
+      parameters: (record as any)?.context?.parameters || {},
+      createdAt: new Date((record as any)?.created_at),
+      updatedAt: new Date((record as any)?.timestamp),
+      useCount: (record as any)?.engagement_score || 0,
+      ...((record as any)?.context?.last_used && { lastUsed: new Date((record as any)?.context?.last_used) }),
+      isActive: (record as any)?.context?.is_active !== false
     }));
 
     return NextResponse.json({
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if phrase already exists for this user
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from('user_behavior_metrics')
       .select('*')
       .eq('user_id', user.id)
@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    const { data: shortcut, error: insertError } = await supabase
+    const { data: shortcut, error: insertError } = await (supabase as any)
       .from('user_behavior_metrics')
-      .insert(shortcutData)
+      .insert(shortcutData as any)
       .select()
       .single();
 
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
         event_category: 'voice',
         action: 'create_voice_shortcut',
         resource_type: 'voice_shortcut',
-        resource_id: shortcut.id,
+        resource_id: (shortcut as any)?.id,
         event_description: `User created voice shortcut: "${body.phrase}"`,
         outcome: 'success',
         details: {
@@ -166,19 +166,19 @@ export async function POST(request: NextRequest) {
           command_type: body.commandType,
           parameters: body.parameters
         },
-      });
+      } as any);
 
     const createdShortcut: VoiceShortcut = {
-      id: shortcut.id,
-      userId: shortcut.user_id,
-      organizationId: shortcut.organization_id,
-      phrase: shortcut.context.phrase,
-      commandType: shortcut.context.command_type,
-      parameters: shortcut.context.parameters,
-      createdAt: new Date(shortcut.created_at),
-      updatedAt: new Date(shortcut.timestamp),
+      id: (shortcut as any)?.id,
+      userId: (shortcut as any)?.user_id,
+      organizationId: (shortcut as any)?.organization_id,
+      phrase: (shortcut as any)?.context?.phrase,
+      commandType: (shortcut as any)?.context?.command_type,
+      parameters: (shortcut as any)?.context?.parameters,
+      createdAt: new Date((shortcut as any)?.created_at),
+      updatedAt: new Date((shortcut as any)?.timestamp),
       useCount: 0,
-      isActive: shortcut.context.is_active
+      isActive: (shortcut as any)?.context?.is_active
     };
 
     return NextResponse.json({
@@ -213,7 +213,7 @@ export async function PUT(request: NextRequest) {
 
     if (incrementUsage) {
       // Increment usage count
-      const { data: shortcut, error: fetchError } = await supabase
+      const { data: shortcut, error: fetchError } = await (supabase as any)
         .from('user_behavior_metrics')
         .select('*')
         .eq('id', shortcutId)
@@ -226,17 +226,17 @@ export async function PUT(request: NextRequest) {
 
       // Update usage count and last used
       const updatedContext = {
-        ...shortcut.context,
+        ...(shortcut as any)?.context,
         last_used: new Date().toISOString()
       };
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('user_behavior_metrics')
         .update({
-          engagement_score: (shortcut.engagement_score || 0) + 1,
+          engagement_score: ((shortcut as any)?.engagement_score || 0) + 1,
           context: updatedContext,
           timestamp: new Date().toISOString()
-        })
+        } as any)
         .eq('id', shortcutId);
 
       if (updateError) {
@@ -244,20 +244,20 @@ export async function PUT(request: NextRequest) {
       }
 
       // Log the usage
-      await supabase
+      await (supabase as any)
         .from('user_behavior_metrics')
         .insert({
           user_id: user.id,
-          organization_id: shortcut.organization_id,
+          organization_id: (shortcut as any)?.organization_id,
           action_type: 'voice_shortcut_used',
           timestamp: new Date().toISOString(),
           context: {
             shortcut_id: shortcutId,
-            phrase: shortcut.context.phrase,
-            command_type: shortcut.context.command_type
+            phrase: (shortcut as any)?.context?.phrase,
+            command_type: (shortcut as any)?.context?.command_type
           },
           engagement_score: 1
-        });
+        } as any);
     }
 
     return NextResponse.json({

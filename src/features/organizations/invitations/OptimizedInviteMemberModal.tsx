@@ -202,7 +202,8 @@ export function OptimizedInviteMemberModal({
 
   const updateInvitation = React.useCallback((index: number, field: keyof InvitationData, value: string) => {
     const newInvitations = [...invitations]
-    newInvitations[index] = { ...newInvitations[index], [field]: value }
+    const currentInvitation = newInvitations[index] || { email: '', role: 'member' as InvitationRole }
+    newInvitations[index] = { ...currentInvitation, [field]: value }
     
     // Since we're using native state, we need to trigger re-render manually
     invitationActions.clear()

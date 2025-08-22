@@ -161,7 +161,7 @@ class InvitationErrorBoundary extends React.Component<
     console.error('Invitation form error:', error, errorInfo)
   }
 
-  render() {
+  override render() {
     if (this.state.hasError && this.state.error) {
       const Fallback = this.props.fallback
       return <Fallback error={this.state.error} />
@@ -383,7 +383,7 @@ export function ModernInviteMemberModal({
       {invitations[0] && (
         <div className="bg-gray-50 rounded-lg p-4">
           {(() => {
-            const selectedRoleInfo = roles.find(r => r.value === invitations[0].role)
+            const selectedRoleInfo = roles.find(r => r.value === invitations[0]?.role)
             return selectedRoleInfo ? (
               <>
                 <h4 className="font-medium text-gray-900 mb-2 flex items-center space-x-2">

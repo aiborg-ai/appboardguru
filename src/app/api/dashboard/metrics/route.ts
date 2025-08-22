@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    const organizationId = userOrg?.organization_id
+    const organizationId = (userOrg as any)?.organization_id
 
     // Calculate Board Packs count (accessible to user)
     const { count: boardPacksCount } = await supabase
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     // Add metadata
     const response = {
       metrics,
-      organization: userOrg?.organization,
+      organization: (userOrg as any)?.organization,
       calculated_at: new Date().toISOString(),
       period: 'daily'
     }

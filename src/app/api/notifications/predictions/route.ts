@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
           .eq('status', 'active')
           .single()
 
-        if (!senderMembership || !['owner', 'admin', 'member'].includes(senderMembership.role)) {
+        if (!senderMembership || !['owner', 'admin', 'member'].includes((senderMembership as any)?.role)) {
           return NextResponse.json({ error: 'Access denied' }, { status: 403 })
         }
       }
@@ -244,8 +244,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify user has permission to update this prediction
-    const canUpdate = prediction.user_id === user.id || 
-      (prediction.organization_id && await hasOrgAccess(supabase, user.id, prediction.organization_id))
+    const canUpdate = (prediction as any)?.user_id === user.id || 
+      ((prediction as any)?.organization_id && await hasOrgAccess(supabase, user.id, (prediction as any)?.organization_id))
 
     if (!canUpdate) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })

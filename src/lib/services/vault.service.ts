@@ -5,11 +5,13 @@ import type {
   VaultInsert, 
   VaultUpdate,
   VaultWithDetails,
-  VaultBroadcast,
+  VaultBroadcast
+} from '@/types/entities/vault.types'
+import type {
   CreateVaultRequest,
   UpdateVaultRequest,
   VaultInviteRequest
-} from '@/types'
+} from '@/types/api/requests'
 
 // Validation schemas
 const createVaultSchema = z.object({
@@ -241,7 +243,7 @@ export class VaultService extends BaseService {
       if (data.emails && data.emails.length > 0) {
         for (const email of data.emails) {
           // Create invitation record
-          await this.supabase.from('vault_invitations').insert({
+          await (this.supabase as any).from('vault_invitations').insert({
             vault_id: vaultId,
             email,
             role: data.role || 'viewer',
@@ -296,7 +298,7 @@ export class VaultService extends BaseService {
         status: 'pending' as const,
       }))
 
-      await this.supabase.from('vault_invitations').insert(invitations)
+      await (this.supabase as any).from('vault_invitations').insert(invitations)
 
       // Send notification emails
       const users = await Promise.all(
@@ -328,7 +330,7 @@ export class VaultService extends BaseService {
     try {
       const user = await this.getCurrentUser()
 
-      const { data: invitation, error } = await this.supabase
+      const { data: invitation, error } = await (this.supabase as any)
         .from('vault_invitations')
         .select('*')
         .eq('id', invitationId)
@@ -341,19 +343,19 @@ export class VaultService extends BaseService {
       }
 
       // Check if invitation is still valid
-      if (invitation.deadline && new Date(invitation.deadline) < new Date()) {
+      if ((invitation as any).deadline && new Date((invitation as any).deadline) < new Date()) {
         throw new Error('Invitation has expired')
       }
 
       // Add user to vault
       await this.repositories.vaults.addMember(
-        invitation.vault_id, 
+        (invitation as any).vault_id, 
         user.id, 
-        invitation.role || 'viewer'
+        (invitation as any).role || 'viewer'
       )
 
       // Update invitation status
-      await this.supabase
+      await (this.supabase as any)
         .from('vault_invitations')
         .update({ 
           status: 'accepted',
@@ -361,7 +363,7 @@ export class VaultService extends BaseService {
         })
         .eq('id', invitationId)
 
-      await this.logActivity('accept_vault_invitation', 'vault', invitation.vault_id, {
+      await this.logActivity('accept_vault_invitation', 'vault', (invitation as any).vault_id, {
         invitationId,
       })
     } catch (error) {

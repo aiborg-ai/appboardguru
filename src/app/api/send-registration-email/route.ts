@@ -66,18 +66,18 @@ async function handleRegistrationEmail(request: NextRequest) {
 
     if (existingRequest) {
       // Email already has a registration request
-      if (existingRequest.status === 'pending') {
+      if ((existingRequest as any).status === 'pending') {
         return createErrorResponse('A registration request for this email is already pending review', 409)
-      } else if (existingRequest.status === 'approved') {
+      } else if ((existingRequest as any).status === 'approved') {
         return createErrorResponse('This email has already been approved. Please sign in or request a password reset link.', 409)
-      } else if (existingRequest.status === 'rejected') {
+      } else if ((existingRequest as any).status === 'rejected') {
         // Allow resubmission after rejection
         console.log(`Allowing resubmission for previously rejected email: ${sanitizedData.email}`)
       }
     }
 
     // Insert registration request into database
-    const { data: insertData, error: dbError } = await supabase
+    const { data: insertData, error: dbError } = await (supabase as any)
       .from('registration_requests')
       .upsert([
         {
@@ -108,7 +108,10 @@ async function handleRegistrationEmail(request: NextRequest) {
       return createErrorResponse(`Failed to create registration request: ${dbError?.message || 'Unknown database error'}`, 500)
     }
 
-    const registrationId = insertData[0].id
+    const registrationId = insertData[0]?.id
+    if (!registrationId) {
+      return createErrorResponse('Failed to create registration request: Missing ID', 500)
+    }
 
     // Generate secure token for approval links
     const securityToken = generateSecureApprovalToken(registrationId)
@@ -117,7 +120,7 @@ async function handleRegistrationEmail(request: NextRequest) {
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
     // Update registration with token and expiration
-    const { error: tokenUpdateError } = await supabase
+    const { error: tokenUpdateError } = await (supabase as any)
       .from('registration_requests')
       .update({
         approval_token: securityToken,

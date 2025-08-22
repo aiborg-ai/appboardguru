@@ -27,7 +27,7 @@ export async function GET(
     }
 
     const resolvedParams = await params;
-    const { data: attendees, error } = await supabase
+    const { data: attendees, error } = await (supabase as any)
       .from('calendar_attendees')
       .select(`
         *,
@@ -67,7 +67,7 @@ export async function POST(
     const validatedData = addAttendeeSchema.parse(body)
 
     // Check if user has permission to add attendees
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await (supabase as any)
       .from('calendar_events')
       .select('user_id')
       .eq('id', resolvedParams.id)
@@ -77,19 +77,19 @@ export async function POST(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    const isOwner = event.user_id === user.id
+    const isOwner = (event as any)?.user_id === user.id
     let canInvite = isOwner
 
     if (!isOwner) {
       // Check if user is an attendee with invite permissions
-      const { data: attendee } = await supabase
+      const { data: attendee } = await (supabase as any)
         .from('calendar_attendees')
         .select('can_invite_others')
         .eq('event_id', resolvedParams.id)
         .eq('user_id', user.id)
         .single()
 
-      canInvite = attendee?.can_invite_others || false
+      canInvite = (attendee as any)?.can_invite_others || false
     }
 
     if (!canInvite) {
@@ -97,7 +97,7 @@ export async function POST(
     }
 
     // Look up user by email
-    const { data: invitedUser } = await supabase
+    const { data: invitedUser } = await (supabase as any)
       .from('users')
       .select('id')
       .eq('email', validatedData.email)
@@ -105,7 +105,7 @@ export async function POST(
 
     const attendeeData = {
       event_id: resolvedParams.id,
-      user_id: invitedUser?.id || user.id, // Fallback if email not found
+      user_id: (invitedUser as any)?.id || user.id, // Fallback if email not found
       email: validatedData.email,
       role: validatedData.role,
       can_edit: validatedData.can_edit,
@@ -113,9 +113,9 @@ export async function POST(
       invited_by: user.id
     }
 
-    const { data: newAttendee, error: insertError } = await supabase
+    const { data: newAttendee, error: insertError } = await (supabase as any)
       .from('calendar_attendees')
-      .insert(attendeeData)
+      .insert(attendeeData as any)
       .select(`
         *,
         user:users(id, full_name, email, avatar_url)
@@ -165,13 +165,13 @@ export async function PUT(
     const validatedData = updateRsvpSchema.parse(body)
 
     // Update RSVP status
-    const { data: updatedAttendee, error: updateError } = await supabase
+    const { data: updatedAttendee, error: updateError } = await (supabase as any)
       .from('calendar_attendees')
       .update({
         rsvp_status: validatedData.rsvp_status,
         rsvp_note: validatedData.rsvp_note,
         rsvp_responded_at: new Date().toISOString()
-      })
+      } as any)
       .eq('event_id', resolvedParams.id)
       .eq('user_id', user.id)
       .select(`
@@ -228,7 +228,7 @@ export async function DELETE(
     }
 
     // Check if user has permission to remove attendees
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await (supabase as any)
       .from('calendar_events')
       .select('user_id')
       .eq('id', resolvedParams.id)
@@ -238,14 +238,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    const isOwner = event.user_id === user.id
+    const isOwner = (event as any)?.user_id === user.id
     const isSelf = attendeeEmail === user.email
 
     if (!isOwner && !isSelf) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('calendar_attendees')
       .delete()
       .eq('event_id', resolvedParams.id)

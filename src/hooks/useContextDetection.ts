@@ -70,14 +70,14 @@ export function useContextDetection(): ContextDetectionResult & {
     words.forEach(word => {
       const cleanWord = word.replace(/[^\w]/g, '')
       
-      if (cleanWord.length > 3 && cleanWord[0] === cleanWord[0].toUpperCase()) {
+      if (cleanWord.length > 3 && cleanWord[0] && cleanWord[0] === cleanWord[0].toUpperCase()) {
         if (!entities.includes(cleanWord) && !commonFirstNames.includes(cleanWord)) {
           entities.push(cleanWord)
         }
       }
 
       // Extract keywords (longer words that aren't proper nouns)
-      if (cleanWord.length > 5 && cleanWord[0] === cleanWord[0].toLowerCase()) {
+      if (cleanWord.length > 5 && cleanWord[0] && cleanWord[0] === cleanWord[0].toLowerCase()) {
         if (!keywords.includes(cleanWord.toLowerCase())) {
           keywords.push(cleanWord.toLowerCase())
         }
@@ -143,11 +143,11 @@ export function useContextDetection(): ContextDetectionResult & {
     let primaryContext: string | null = null
     
     if (contextAnalysis.type === 'organization' && entities.organizationNames.length > 0) {
-      primaryContext = entities.organizationNames[0]
+      primaryContext = entities.organizationNames[0] || null
     } else if (contextAnalysis.type === 'person' && entities.personNames.length > 0) {
-      primaryContext = entities.personNames[0]
+      primaryContext = entities.personNames[0] || null
     } else if (entities.entities.length > 0) {
-      primaryContext = entities.entities[0]
+      primaryContext = entities.entities[0] || null
     }
 
     // Combine entities and keywords for context

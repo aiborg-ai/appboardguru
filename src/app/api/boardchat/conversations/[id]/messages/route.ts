@@ -172,7 +172,7 @@ export async function GET(
     const response = {
       messages: sampleMessages.reverse(), // Oldest first for display
       conversation_id: conversationId,
-      participant_role: participant.role,
+      participant_role: (participant as any)?.role,
       has_more: false, // For pagination
       fetched_at: new Date().toISOString()
     }

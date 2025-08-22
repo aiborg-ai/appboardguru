@@ -13,7 +13,7 @@ import type {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     const { searchParams } = new URL(request.url)
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('organization_id, role')
       .eq('user_id', user.id)
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log report generation
-    await supabase
+    await (supabase as any)
       .from('notification_audit_log')
       .insert({
         organization_id: orgMember.organization_id,
@@ -259,7 +259,7 @@ async function generateAuditSummaryReport(
   readonly entries: readonly any[]
 }> {
   // Get audit activities in date range
-  const { data: auditEntries } = await supabase
+  const { data: auditEntries } = await (supabase as any)
     .from('notification_audit_log')
     .select('*')
     .eq('organization_id', organizationId)
@@ -299,7 +299,7 @@ async function generateComplianceOverviewReport(
   }
 }> {
   // Get workflows by status
-  const { data: workflows } = await supabase
+  const { data: workflows } = await (supabase as any)
     .from('notification_workflows')
     .select(`
       *,
@@ -308,7 +308,7 @@ async function generateComplianceOverviewReport(
     .eq('organization_id', organizationId)
 
   // Get calendar entries by status  
-  const { data: calendarEntries } = await supabase
+  const { data: calendarEntries } = await (supabase as any)
     .from('compliance_calendar')
     .select('*')
     .eq('organization_id', organizationId)
@@ -351,13 +351,13 @@ async function generateRegulatoryCoverageReport(
   readonly coverage_percentage: number
 }[]> {
   // Get all regulation types and their coverage
-  const { data: templates } = await supabase
+  const { data: templates } = await (supabase as any)
     .from('compliance_templates')
     .select('regulation_type, category')
     .eq('organization_id', organizationId)
     .eq('is_active', true)
 
-  const { data: workflows } = await supabase
+  const { data: workflows } = await (supabase as any)
     .from('notification_workflows')
     .select(`
       status,
@@ -414,7 +414,7 @@ async function generateComplianceSummaryReport(
   endDate: string,
   filters?: AuditReportFilters
 ): Promise<readonly any[]> {
-  let query = supabase
+  let query = (supabase as any)
     .from('notification_workflows')
     .select(`
       *,
@@ -445,7 +445,7 @@ async function generateWorkflowDetailReport(
   filters?: AuditReportFilters
 ): Promise<readonly any[]> {
   // Detailed workflow report with participants
-  let query = supabase
+  let query = (supabase as any)
     .from('notification_workflows')
     .select(`
       *,
@@ -472,7 +472,7 @@ async function generateParticipantActivityReport(
   filters?: AuditReportFilters
 ): Promise<readonly any[]> {
   // Participant activity report
-  const { data: participants } = await supabase
+  const { data: participants } = await (supabase as any)
     .from('compliance_participants')
     .select(`
       *,
@@ -498,7 +498,7 @@ async function generateRegulatoryOverviewReport(
   filters?: AuditReportFilters
 ): Promise<readonly any[]> {
   // Regulatory overview grouped by regulation type
-  const { data: data } = await supabase
+  const { data: data } = await (supabase as any)
     .from('compliance_calendar')
     .select(`
       *,

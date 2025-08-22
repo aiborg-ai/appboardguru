@@ -91,7 +91,7 @@ export class VaultRepository extends BaseRepository {
     try {
       const { data, error } = await this.supabase
         .from('board_packs')
-        .insert(vault)
+        .insert(vault as any)
         .select()
         .single()
 
@@ -112,7 +112,7 @@ export class VaultRepository extends BaseRepository {
         .update({
           ...updates,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', id)
         .select()
         .single()
@@ -149,11 +149,11 @@ export class VaultRepository extends BaseRepository {
         .insert({
           board_pack_id: vaultId,
           granted_to_user_id: userId,
-          granted_to_role: role as 'admin' | 'member' | 'viewer',
+          granted_to_role: role,
           granted_by: 'system', // This should be set to actual user
           granted_at: new Date().toISOString(),
           organization_id: 'default' // This should be set properly
-        })
+        } as any)
         .select()
         .single()
 

@@ -15,6 +15,7 @@ export interface UserBehaviorData {
   readonly engagement_score?: number;
   readonly response_time_ms?: number;
   readonly success?: boolean;
+  readonly session_id?: string;
   readonly context?: {
     readonly device?: string;
     readonly location?: string;
@@ -121,7 +122,7 @@ export class UserSegmentation {
 
     // Extract features for all users
     const userFeatures = users.map(userId => {
-      const features = this.extractUserFeatures(userBehaviorData[userId])
+      const features = this.extractUserFeatures(userBehaviorData[userId] ?? [])
       return {
         userId,
         features: this.normalizeFeatures(features)
@@ -178,9 +179,10 @@ export class UserSegmentation {
     // Calculate average engagement
     const engagementScores = behaviorData
       .filter(d => d.engagement_score !== null && d.engagement_score !== undefined)
-      .map(d => d.engagement_score)
+      .map(d => d.engagement_score!)
+      .filter((score): score is number => score !== undefined)
     const avgEngagement = engagementScores.length > 0 
-      ? engagementScores.reduce((sum, score) => sum + score, 0) / engagementScores.length 
+      ? engagementScores.reduce((sum, score) => sum + (score ?? 0), 0) / engagementScores.length 
       : 0
 
     // Calculate activity frequency (actions per day)
@@ -600,7 +602,7 @@ export class UserSegmentation {
       const timestamp = typeof item.timestamp === 'string' ? new Date(item.timestamp) : item.timestamp
       const dayOfWeek = timestamp.getDay()
       if (dayOfWeek >= 0 && dayOfWeek < 7) {
-        dayOfWeekCounts[dayOfWeek]++
+        dayOfWeekCounts[dayOfWeek] = (dayOfWeekCounts[dayOfWeek] ?? 0) + 1
       }
     })
 
@@ -626,7 +628,7 @@ export class UserSegmentation {
       const timestamp = typeof item.timestamp === 'string' ? new Date(item.timestamp) : item.timestamp
       const hour = timestamp.getHours()
       if (hour >= 0 && hour < 24) {
-        hourCounts[hour]++
+        hourCounts[hour] = (hourCounts[hour] ?? 0) + 1
       }
     })
 

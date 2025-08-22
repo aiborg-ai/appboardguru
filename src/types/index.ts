@@ -71,8 +71,7 @@ export type {
   BoardRole,
   CommitteeType,
   CommitteeRole,
-  VaultRole,
-  VaultStatus
+  VaultRole
 } from './boardmates'
 
 // Entity Types
@@ -92,8 +91,38 @@ export type {
   CreateCalendarEntryRequest,
   AuditReportRequest,
   AuditReportFilters,
-  ComplianceApiResponse
+  ComplianceApiResponse,
+  ComplianceSearchResponse
 } from './entities/compliance.types'
+
+// Vault Types
+export type {
+  Vault,
+  VaultInsert,
+  VaultUpdate,
+  VaultWithDetails,
+  VaultMember,
+  VaultMemberWithUser,
+  VaultAsset,
+  VaultAssetWithDetails,
+  VaultInvitation,
+  VaultInvitationWithUser,
+  VaultPermissions,
+  VaultBroadcast,
+  VaultActivity,
+  VaultStatus,
+  VaultPriority,
+  VaultAction
+} from './entities/vault.types'
+
+// API Request Types
+export type {
+  CreateVaultRequest,
+  UpdateVaultRequest,
+  VaultInviteRequest,
+  VaultBroadcastRequest,
+  InviteUserRequest
+} from './api/requests'
 
 // Hook Types
 export type {
@@ -119,7 +148,8 @@ export type {
   MemberStatus,
   InvitationStatus,
   MeetingType,
-  MeetingStatus
+  MeetingStatus,
+  Database
 } from './database'
 
 // Meetings Types
@@ -138,6 +168,28 @@ export type {
   CreateResolutionRequest,
   UpdateResolutionRequest
 } from './meetings'
+
+// Activity and Notification Types
+export type {
+  ActivityLog,
+  ActivityEventType,
+  ActivityEventCategory,
+  NotificationPayload,
+  NotificationType,
+  NotificationCategory,
+  NotificationPriority,
+  NotificationChannel,
+  NotificationDelivery,
+  NotificationDeliveryStatus,
+  ActivityMetadata,
+  EmailDeliveryConfig,
+  RetryPolicy
+} from './entities/activity.types'
+
+// Common Types
+export type {
+  Notification
+} from './common'
 
 // Type Utilities
 export type Prettify<T> = {

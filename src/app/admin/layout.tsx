@@ -23,7 +23,7 @@ export default async function AdminLayout({
     .eq('id', user.id)
     .single()
   
-  if (!userProfile || !['admin', 'director'].includes(userProfile.role)) {
+  if (!userProfile || !['admin', 'director'].includes((userProfile as any).role)) {
     redirect('/dashboard')
   }
 

@@ -11,13 +11,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id, role')
       .eq('id', authUser.id)
       .single()
 
-    if (!user?.organization_id) {
+    if (!(user as any)?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     switch (reportType) {
       case 'activity': {
-        let query = supabase
+        let query = (supabase as any)
           .from('audit_logs')
           .select(`
             id,
@@ -73,19 +73,19 @@ export async function POST(request: NextRequest) {
             source,
             users!inner(id, name, email)
           `)
-          .eq('organization_id', user.organization_id)
+          .eq('organization_id', (user as any)?.organization_id)
           .gte('timestamp', startDate.toISOString())
           .lte('timestamp', endDate.toISOString())
           .order('timestamp', { ascending: false })
 
-        if (filters.eventTypes?.length) {
-          query = query.in('event_type', filters.eventTypes)
+        if ((filters as any)?.eventTypes?.length) {
+          query = query.in('event_type', (filters as any).eventTypes)
         }
-        if (filters.entityTypes?.length) {
-          query = query.in('entity_type', filters.entityTypes)
+        if ((filters as any)?.entityTypes?.length) {
+          query = query.in('entity_type', (filters as any).entityTypes)
         }
-        if (filters.userIds?.length) {
-          query = query.in('user_id', filters.userIds)
+        if ((filters as any)?.userIds?.length) {
+          query = query.in('user_id', (filters as any).userIds)
         }
 
         const { data: activities, error } = await query
@@ -94,31 +94,31 @@ export async function POST(request: NextRequest) {
 
         exportData = {
           reportType: 'Activity Log',
-          organizationId: user.organization_id,
+          organizationId: (user as any)?.organization_id,
           timeRange: {
             start: startDate.toISOString(),
             end: endDate.toISOString(),
             label: timeRange
           },
-          totalEvents: activities?.length || 0,
-          activities: activities?.map(activity => ({
-            id: activity.id,
-            timestamp: activity.timestamp,
-            eventType: activity.event_type,
-            entityType: activity.entity_type,
-            entityId: activity.entity_id,
+          totalEvents: (activities as any)?.length || 0,
+          activities: (activities as any)?.map((activity: any) => ({
+            id: (activity as any)?.id,
+            timestamp: (activity as any)?.timestamp,
+            eventType: (activity as any)?.event_type,
+            entityType: (activity as any)?.entity_type,
+            entityId: (activity as any)?.entity_id,
             user: {
-              id: (activity.users as any)?.id || 'unknown',
-              name: (activity.users as any)?.name || 'Unknown User',
-              email: (activity.users as any)?.email || 'unknown'
+              id: (activity as any)?.users?.id || 'unknown',
+              name: (activity as any)?.users?.name || 'Unknown User',
+              email: (activity as any)?.users?.email || 'unknown'
             },
             ...(includeMetadata && {
-              metadata: activity.metadata,
-              correlationId: activity.correlation_id,
-              sessionId: activity.session_id,
-              ipAddress: activity.ip_address,
-              userAgent: activity.user_agent,
-              source: activity.source
+              metadata: (activity as any)?.metadata,
+              correlationId: (activity as any)?.correlation_id,
+              sessionId: (activity as any)?.session_id,
+              ipAddress: (activity as any)?.ip_address,
+              userAgent: (activity as any)?.user_agent,
+              source: (activity as any)?.source
             })
           })) || []
         }
@@ -130,20 +130,20 @@ export async function POST(request: NextRequest) {
         exportData = {
           message: 'Compliance report generation not implemented yet',
           timestamp: new Date().toISOString(),
-          organization_id: user.organization_id
+          organization_id: (user as any)?.organization_id
         }
         break
       }
 
       case 'security': {
-        if (user.role !== 'admin') {
+        if ((user as any)?.role !== 'admin') {
           return NextResponse.json({ error: 'Admin access required for security reports' }, { status: 403 })
         }
 
-        const { data: securityEvents } = await supabase
+        const { data: securityEvents } = await (supabase as any)
           .from('audit_logs')
           .select('*')
-          .eq('organization_id', user.organization_id)
+          .eq('organization_id', (user as any)?.organization_id)
           .in('event_type', ['user_login', 'user_logout', 'failed_login', 'permission_change', 'security_alert'])
           .gte('timestamp', startDate.toISOString())
           .lte('timestamp', endDate.toISOString())
@@ -151,14 +151,14 @@ export async function POST(request: NextRequest) {
 
         exportData = {
           reportType: 'Security Activity Report',
-          organizationId: user.organization_id,
+          organizationId: (user as any)?.organization_id,
           timeRange: { start: startDate.toISOString(), end: endDate.toISOString() },
-          securityEvents: securityEvents || [],
+          securityEvents: (securityEvents as any) || [],
           summary: {
-            totalSecurityEvents: securityEvents?.length || 0,
-            uniqueUsers: [...new Set(securityEvents?.map(e => e.user_id))].length,
-            loginAttempts: securityEvents?.filter(e => e.event_type === 'user_login').length || 0,
-            failedLogins: securityEvents?.filter(e => e.event_type === 'failed_login').length || 0
+            totalSecurityEvents: (securityEvents as any)?.length || 0,
+            uniqueUsers: [...new Set((securityEvents as any)?.map((e: any) => (e as any)?.user_id))].length,
+            loginAttempts: (securityEvents as any)?.filter((e: any) => (e as any)?.event_type === 'user_login').length || 0,
+            failedLogins: (securityEvents as any)?.filter((e: any) => (e as any)?.event_type === 'failed_login').length || 0
           }
         }
         break
@@ -178,17 +178,17 @@ export async function POST(request: NextRequest) {
         if (reportType === 'activity') {
           csvContent = [
             'Timestamp,User Name,User Email,Event Type,Entity Type,Entity ID' + (includeMetadata ? ',Metadata,IP Address,Session ID' : ''),
-            ...exportData.activities.map((activity: any) => [
-              activity.timestamp,
-              activity.user.name,
-              activity.user.email,
-              activity.eventType,
-              activity.entityType,
-              activity.entityId,
+            ...(exportData as any)?.activities?.map((activity: any) => [
+              (activity as any)?.timestamp,
+              (activity as any)?.user?.name,
+              (activity as any)?.user?.email,
+              (activity as any)?.eventType,
+              (activity as any)?.entityType,
+              (activity as any)?.entityId,
               ...(includeMetadata ? [
-                JSON.stringify(activity.metadata).replace(/"/g, '""'),
-                activity.ipAddress,
-                activity.sessionId
+                JSON.stringify((activity as any)?.metadata).replace(/"/g, '""'),
+                (activity as any)?.ipAddress,
+                (activity as any)?.sessionId
               ] : [])
             ].join(','))
           ].join('\n')

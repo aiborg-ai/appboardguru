@@ -267,6 +267,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
       return () => clearInterval(interval)
     }
+    return () => {}
   }, [autoRefresh, refreshInterval, fetchCounts])
 
   useEffect(() => {

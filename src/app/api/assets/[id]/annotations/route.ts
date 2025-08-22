@@ -64,7 +64,7 @@ export async function GET(
     const assetId = (await params).id;
     
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('board_packs')
       .select(`
         id,
@@ -80,7 +80,7 @@ export async function GET(
     }
 
     // Get annotations with user information
-    const { data: annotations, error: annotationsError } = await supabase
+    const { data: annotations, error: annotationsError } = await (supabase as any)
       .from('asset_annotations')
       .select(`
         *,
@@ -111,13 +111,13 @@ export async function GET(
     }
 
     // Transform annotations to include replies count
-    const transformedAnnotations = annotations.map(annotation => ({
+    const transformedAnnotations = (annotations as any[])?.map((annotation: any) => ({
       ...annotation,
-      user: annotation.users,
-      replies_count: annotation.annotation_replies?.length || 0,
-      replies: annotation.annotation_replies?.map((reply: any) => ({
+      user: (annotation as any)?.users,
+      replies_count: (annotation as any)?.annotation_replies?.length || 0,
+      replies: (annotation as any)?.annotation_replies?.map((reply: any) => ({
         ...reply,
-        user: reply.users,
+        user: (reply as any)?.users,
       })) || [],
     }));
 
@@ -150,7 +150,7 @@ export async function POST(
     }
 
     // Get user profile for full name
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await (supabase as any)
       .from('users')
       .select('full_name')
       .eq('id', user.id)
@@ -175,7 +175,7 @@ export async function POST(
     const annotationData = validationResult.data;
 
     // Verify user has access to this asset and can create annotations
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('board_packs')
       .select(`
         id,
@@ -191,11 +191,11 @@ export async function POST(
     }
 
     // Create annotation
-    const { data: annotation, error: createError } = await supabase
+    const { data: annotation, error: createError } = await (supabase as any)
       .from('asset_annotations')
       .insert({
         asset_id: assetId,
-        organization_id: asset.organization_id,
+        organization_id: (asset as any)?.organization_id,
         created_by: user.id,
         annotation_type: annotationData.annotation_type,
         content: annotationData.content,
@@ -206,7 +206,7 @@ export async function POST(
         color: annotationData.color,
         opacity: annotationData.opacity,
         is_private: annotationData.is_private,
-      })
+      } as any)
       .select(`
         *,
         users!created_by (
@@ -228,10 +228,10 @@ export async function POST(
     
     await logAnnotationActivity(
       user.id,
-      asset.organization_id,
+      (asset as any)?.organization_id,
       'created',
-      annotation.id,
-      asset.title,
+      (annotation as any)?.id,
+      (asset as any)?.title,
       {
         ...requestContext,
         annotation_type: annotationData.annotation_type,
@@ -245,45 +245,45 @@ export async function POST(
     )
 
     // Get all organization members to notify them about the annotation
-    const { data: orgMembers } = await supabase
+    const { data: orgMembers } = await (supabase as any)
       .from('organization_members')
       .select('user_id')
-      .eq('organization_id', asset.organization_id)
+      .eq('organization_id', (asset as any)?.organization_id)
       .eq('status', 'active')
       .neq('user_id', user.id); // Exclude the annotation creator
 
     // Create activity log entries for all vault members
     if (orgMembers && orgMembers.length > 0) {
-      const notificationLogs = orgMembers.map(member => ({
-        organization_id: asset.organization_id,
+      const notificationLogs = (orgMembers as any[])?.map((member: any) => ({
+        organization_id: (asset as any)?.organization_id,
         user_id: member.user_id,
         event_type: 'notification',
         event_category: 'annotations',
         action: 'annotation_created',
         resource_type: 'asset_annotation',
-        resource_id: annotation.id,
-        event_description: `${userProfile?.full_name || user.email} made an annotation on "${asset.title}"`,
+        resource_id: (annotation as any)?.id,
+        event_description: `${(userProfile as any)?.full_name || user.email} made an annotation on "${(asset as any)?.title}"`,
         outcome: 'success',
         details: {
           asset_id: assetId,
-          asset_title: asset.title,
+          asset_title: (asset as any)?.title,
           annotation_creator_id: user.id,
-          annotation_creator_name: userProfile?.full_name || user.email,
+          annotation_creator_name: (userProfile as any)?.full_name || user.email,
           annotation_type: annotationData.annotation_type,
           page_number: annotationData.page_number,
           has_comment: !!annotationData.comment_text,
         },
-      }));
+      })) || [];
 
-      await supabase
+      await (supabase as any)
         .from('audit_logs')
-        .insert(notificationLogs);
+        .insert(notificationLogs as any);
     }
 
     return NextResponse.json({
       annotation: {
-        ...annotation,
-        user: annotation.users,
+        ...(annotation as any),
+        user: (annotation as any)?.users,
         replies_count: 0,
         replies: [],
       },

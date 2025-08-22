@@ -17,7 +17,7 @@ export async function GET(
     const meetingId = params.id;
 
     // Get meeting details
-    const { data: meeting, error: meetingError } = await supabase
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .select(`
         id,
@@ -60,10 +60,10 @@ export async function GET(
     }
 
     // Verify user has access to the organization
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
-      .eq('organization_id', meeting.organization_id)
+      .eq('organization_id', (meeting as any)?.organization_id)
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
@@ -74,37 +74,37 @@ export async function GET(
 
     // Transform to match our interface
     const formattedMeeting = {
-      id: meeting.id,
-      organizationId: meeting.organization_id,
-      createdBy: meeting.created_by,
-      title: meeting.title,
-      description: meeting.description,
-      meetingType: meeting.meeting_type,
-      status: meeting.status,
-      visibility: meeting.visibility,
-      scheduledStart: meeting.scheduled_start,
-      scheduledEnd: meeting.scheduled_end,
-      timezone: meeting.timezone,
-      location: meeting.location,
-      virtualMeetingUrl: meeting.virtual_meeting_url,
-      isRecurring: meeting.is_recurring,
-      recurrenceType: meeting.recurrence_type,
-      recurrenceInterval: meeting.recurrence_interval,
-      recurrenceEndDate: meeting.recurrence_end_date,
-      parentMeetingId: meeting.parent_meeting_id,
-      agendaFinalized: meeting.agenda_finalized,
-      invitationsSent: meeting.invitations_sent,
-      documentsLocked: meeting.documents_locked,
-      estimatedDurationMinutes: meeting.estimated_duration_minutes,
-      actualStart: meeting.actual_start,
-      actualEnd: meeting.actual_end,
-      settings: meeting.settings,
-      tags: meeting.tags,
-      category: meeting.category,
-      createdAt: meeting.created_at,
-      updatedAt: meeting.updated_at,
-      cancelledAt: meeting.cancelled_at,
-      cancelledReason: meeting.cancelled_reason
+      id: (meeting as any)?.id,
+      organizationId: (meeting as any)?.organization_id,
+      createdBy: (meeting as any)?.created_by,
+      title: (meeting as any)?.title,
+      description: (meeting as any)?.description,
+      meetingType: (meeting as any)?.meeting_type,
+      status: (meeting as any)?.status,
+      visibility: (meeting as any)?.visibility,
+      scheduledStart: (meeting as any)?.start_time,
+      scheduledEnd: (meeting as any)?.end_time,
+      timezone: (meeting as any)?.timezone,
+      location: (meeting as any)?.location,
+      virtualMeetingUrl: (meeting as any)?.virtual_meeting_url,
+      isRecurring: (meeting as any)?.is_recurring,
+      recurrenceType: (meeting as any)?.recurrence_type,
+      recurrenceInterval: (meeting as any)?.recurrence_interval,
+      recurrenceEndDate: (meeting as any)?.recurrence_end_date,
+      parentMeetingId: (meeting as any)?.parent_meeting_id,
+      agendaFinalized: (meeting as any)?.agenda_finalized,
+      invitationsSent: (meeting as any)?.invitations_sent,
+      documentsLocked: (meeting as any)?.documents_locked,
+      estimatedDurationMinutes: (meeting as any)?.estimated_duration_minutes,
+      actualStart: (meeting as any)?.actual_start,
+      actualEnd: (meeting as any)?.actual_end,
+      settings: (meeting as any)?.settings,
+      tags: (meeting as any)?.tags,
+      category: (meeting as any)?.category,
+      createdAt: (meeting as any)?.created_at,
+      updatedAt: (meeting as any)?.updated_at,
+      cancelledAt: (meeting as any)?.cancelled_at,
+      cancelledReason: (meeting as any)?.cancelled_reason
     };
 
     return NextResponse.json({
@@ -134,7 +134,7 @@ export async function PATCH(
     const updates = await request.json();
 
     // Check if user has access to this meeting and can manage it
-    const { data: meeting, error: meetingError } = await supabase
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .select(`
         id,
@@ -149,25 +149,25 @@ export async function PATCH(
     }
 
     // Check if user is meeting organizer or has admin/superuser role
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await (supabase as any)
       .from('organization_members')
       .select('role, status')
-      .eq('organization_id', meeting.organization_id)
+      .eq('organization_id', (meeting as any)?.organization_id)
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
 
-    const canManage = meeting.created_by === user.id || 
-                     (orgMember && ['owner', 'admin', 'superuser'].includes(orgMember.role));
+    const canManage = (meeting as any)?.created_by === user.id || 
+                     ((orgMember as any) && ['owner', 'admin', 'superuser'].includes((orgMember as any)?.role));
 
     if (!canManage) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Update the meeting
-    const { data: updatedMeeting, error: updateError } = await supabase
+    const { data: updatedMeeting, error: updateError } = await (supabase as any)
       .from('meetings')
-      .update(updates)
+      .update(updates as any)
       .eq('id', meetingId)
       .select()
       .single();

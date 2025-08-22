@@ -103,7 +103,7 @@ const dateAdapter = createFieldValueTransformer<string, Date>(
     }
     return date
   },
-  (value: Date) => value.toISOString().split('T')[0]
+  (value: Date) => value.toISOString().split('T')[0] ?? ''
 )
 
 // Advanced form bridge configuration

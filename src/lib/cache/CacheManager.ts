@@ -315,7 +315,8 @@ export class CacheManager {
     
     for (let i = 0; i < this.layers.length; i++) {
       const layer = this.layers[i]
-      const value = await layer.get<T>(fullKey)
+      if (!layer) continue
+      const value = await layer!.get<T>(fullKey)
       
       if (value !== null) {
         // Promote to faster layers
@@ -423,9 +424,10 @@ export class CacheManager {
     
     for (let i = 0; i < foundAtLayer; i++) {
       const layer = this.layers[i]
+      if (!layer) continue
       // Use shorter TTL for promoted values
       const ttl = 300 // 5 minutes
-      promotionPromises.push(layer.set(key, value, ttl))
+      promotionPromises.push(layer!.set(key, value, ttl))
     }
     
     if (promotionPromises.length > 0) {

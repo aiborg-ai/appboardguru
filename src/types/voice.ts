@@ -1006,6 +1006,18 @@ export interface ChatSession {
   updated_at: string;
 }
 
+export interface DocumentContext {
+  id: string;
+  title: string;
+  type: string;
+  analysisStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  keyInsights: string[];
+  relevanceScore: number;
+  lastAccessed: string;
+  aiSummary?: string;
+  voiceNarration?: string;
+}
+
 export interface EnhancedChatContext {
   combinedHistory: SessionHistory[];
   contextContinuity: boolean;

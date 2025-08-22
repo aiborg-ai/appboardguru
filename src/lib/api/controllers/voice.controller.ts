@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BaseController } from '../base-controller';
-import { Result } from '../../result/result';
+import { Result, Ok, Err, ResultUtils } from '../../result';
 
 /**
  * Consolidated Voice API Controller
@@ -16,13 +16,13 @@ export class VoiceController extends BaseController {
       const audioFile = formData.get('audio') as File;
       
       if (!audioFile) {
-        return Result.err(new Error('Audio file is required'));
+        return Err(new Error('Audio file is required'));
       }
 
       // TODO: Implement transcription logic
       const transcript = "Transcribed text placeholder";
       
-      return Result.ok({
+      return Ok({
         transcript,
         confidence: 0.95,
         duration: 30,
@@ -41,14 +41,14 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { text, targetLanguage, sourceLanguage } = bodyResult.unwrap();
+      const { text, targetLanguage, sourceLanguage } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Implement translation logic
       const translatedText = `Translated: ${text}`;
       
-      return Result.ok({
+      return Ok({
         originalText: text,
         translatedText,
         sourceLanguage: sourceLanguage || 'auto-detected',
@@ -62,17 +62,17 @@ export class VoiceController extends BaseController {
   async processCommand(request: NextRequest): Promise<NextResponse> {
     const schema = z.object({
       command: z.string().min(1),
-      context: z.record(z.any()).optional()
+      context: z.record(z.string(), z.any()).optional()
     });
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { command, context } = bodyResult.unwrap();
+      const { command, context } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Implement command processing
-      return Result.ok({
+      return Ok({
         command,
         action: 'processed',
         result: `Command "${command}" executed successfully`,
@@ -89,12 +89,12 @@ export class VoiceController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
-      const { period, metric } = queryResult.unwrap();
+      const { period, metric } = ResultUtils.unwrap(queryResult);
       
       // TODO: Implement analytics logic
-      return Result.ok({
+      return Ok({
         period,
         totalSessions: 150,
         averageDuration: 45,
@@ -109,10 +109,10 @@ export class VoiceController extends BaseController {
   async getShortcuts(request: NextRequest): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       // TODO: Fetch user shortcuts from database
-      return Result.ok([
+      return Ok([
         { id: '1', name: 'Quick Meeting', command: 'schedule meeting now' },
         { id: '2', name: 'Daily Standup', command: 'create standup notes' }
       ]);
@@ -128,18 +128,18 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const shortcut = bodyResult.unwrap();
+      const shortcut = ResultUtils.unwrap(bodyResult);
       
       // TODO: Save shortcut to database
-      return Result.ok({
+      return Ok({
         id: 'new-shortcut-id',
         ...shortcut,
-        userId: userIdResult.unwrap(),
+        userId: ResultUtils.unwrap(userIdResult),
         createdAt: new Date().toISOString()
       });
     });
@@ -154,16 +154,16 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update shortcut in database
-      return Result.ok({
+      return Ok({
         id,
         ...updates,
         updatedAt: new Date().toISOString()
@@ -174,12 +174,12 @@ export class VoiceController extends BaseController {
   async deleteShortcut(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
       // TODO: Delete shortcut from database
-      return Result.ok({ deleted: true, id });
+      return Ok({ deleted: true, id });
     });
   }
 
@@ -192,12 +192,12 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { audioData, action } = bodyResult.unwrap();
+      const { audioData, action } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Implement biometric processing
-      return Result.ok({
+      return Ok({
         action,
         success: true,
         confidence: 0.98,
@@ -210,10 +210,10 @@ export class VoiceController extends BaseController {
   async getWorkflows(request: NextRequest): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       // TODO: Fetch workflows from database
-      return Result.ok([
+      return Ok([
         {
           id: 'workflow-1',
           name: 'Meeting Prep',
@@ -229,23 +229,23 @@ export class VoiceController extends BaseController {
       name: z.string().min(1),
       steps: z.array(z.string()),
       triggers: z.array(z.string()),
-      conditions: z.record(z.any()).optional()
+      conditions: z.record(z.string(), z.any()).optional()
     });
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const workflow = bodyResult.unwrap();
+      const workflow = ResultUtils.unwrap(bodyResult);
       
       // TODO: Save workflow to database
-      return Result.ok({
+      return Ok({
         id: 'new-workflow-id',
         ...workflow,
-        userId: userIdResult.unwrap(),
+        userId: ResultUtils.unwrap(userIdResult),
         createdAt: new Date().toISOString()
       });
     });
@@ -260,15 +260,15 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { type, targetWords } = bodyResult.unwrap();
+      const { type, targetWords } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Initialize training session
-      return Result.ok({
+      return Ok({
         sessionId: 'training-session-id',
         type,
         targetWords: targetWords || [],
@@ -287,12 +287,12 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { sessionId, audioData, expectedText } = bodyResult.unwrap();
+      const { sessionId, audioData, expectedText } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Process training sample
-      return Result.ok({
+      return Ok({
         sessionId,
         sampleId: 'sample-id',
         accuracy: 0.85,
@@ -309,12 +309,12 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { sessionId } = bodyResult.unwrap();
+      const { sessionId } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Finalize training session
-      return Result.ok({
+      return Ok({
         sessionId,
         completed: true,
         overallScore: 0.88,
@@ -328,18 +328,18 @@ export class VoiceController extends BaseController {
   async processAssistantRequest(request: NextRequest): Promise<NextResponse> {
     const schema = z.object({
       query: z.string().min(1),
-      context: z.record(z.any()).optional(),
+      context: z.record(z.string(), z.any()).optional(),
       mode: z.enum(['text', 'voice']).default('text')
     });
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { query, context, mode } = bodyResult.unwrap();
+      const { query, context, mode } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Process assistant request
-      return Result.ok({
+      return Ok({
         response: `Processing query: ${query}`,
         mode,
         context,
@@ -352,10 +352,10 @@ export class VoiceController extends BaseController {
   async getAssistantInsights(request: NextRequest): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       // TODO: Generate insights
-      return Result.ok({
+      return Ok({
         insights: [
           { type: 'usage', message: 'You use voice commands 20% more in the afternoon' },
           { type: 'efficiency', message: 'Voice scheduling saves you 15 minutes daily' }
@@ -378,12 +378,12 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const { command, timeExpression, participants } = bodyResult.unwrap();
+      const { command, timeExpression, participants } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Process scheduling request
-      return Result.ok({
+      return Ok({
         scheduled: true,
         eventId: 'event-id',
         parsedTime: timeExpression,
@@ -404,18 +404,18 @@ export class VoiceController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const annotation = bodyResult.unwrap();
+      const annotation = ResultUtils.unwrap(bodyResult);
       
       // TODO: Save annotation to database
-      return Result.ok({
+      return Ok({
         id: 'annotation-id',
         ...annotation,
-        userId: userIdResult.unwrap(),
+        userId: ResultUtils.unwrap(userIdResult),
         createdAt: new Date().toISOString()
       });
     });
@@ -425,10 +425,10 @@ export class VoiceController extends BaseController {
   async getCollaborationData(request: NextRequest): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       // TODO: Fetch collaboration data
-      return Result.ok({
+      return Ok({
         activeCollaborators: 3,
         sharedWorkflows: 5,
         recentActivity: [

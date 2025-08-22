@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     
     // Generate notifications for all organizations
     const result = await complianceEngine.generateScheduledNotifications()
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 export async function GET(_request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
-    const complianceEngine = new ComplianceEngine(supabase)
+    const complianceEngine = new ComplianceEngine(supabase as any)
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {

@@ -17,7 +17,7 @@ export async function GET(
     const { assetId } = params
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select('*, vaults!inner(user_id)')
       .eq('id', assetId)
@@ -27,12 +27,12 @@ export async function GET(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Get annotations for this asset
-    const { data: annotations, error: annotationsError } = await supabase
+    const { data: annotations, error: annotationsError } = await (supabase as any)
       .from('document_annotations')
       .select(`
         *,
@@ -47,7 +47,7 @@ export async function GET(
     }
 
     // Transform to match the expected format
-    const transformedAnnotations = annotations.map(annotation => ({
+    const transformedAnnotations = (annotations as any[])?.map((annotation: any) => ({
       id: annotation.id,
       type: annotation.type,
       content: annotation.content,
@@ -63,7 +63,7 @@ export async function GET(
       updatedAt: annotation.updated_at,
       isShared: annotation.is_shared,
       sharedWith: annotation.shared_with || [],
-      replies: annotation.replies?.map((reply: any) => ({
+      replies: (annotation.replies as any[])?.map((reply: any) => ({
         id: reply.id,
         type: 'comment',
         content: reply.content,
@@ -109,7 +109,7 @@ export async function POST(
     const body = await request.json()
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select('*, vaults!inner(user_id)')
       .eq('id', assetId)
@@ -119,12 +119,12 @@ export async function POST(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Get user profile for display name
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('full_name')
       .eq('id', user.id)
@@ -133,7 +133,7 @@ export async function POST(
     const userName = profile?.full_name || user.email?.split('@')[0] || 'Unknown User'
 
     // Create annotation
-    const { data: newAnnotation, error: createError } = await supabase
+    const { data: newAnnotation, error: createError } = await (supabase as any)
       .from('document_annotations')
       .insert({
         asset_id: assetId,
@@ -142,12 +142,12 @@ export async function POST(
         type: body.type,
         content: body.content,
         voice_url: body.voiceUrl,
-        page: body.sectionReference.page,
-        coordinates: body.sectionReference.coordinates,
-        reference_text: body.sectionReference.text,
+        page: body.sectionReference?.page,
+        coordinates: body.sectionReference?.coordinates,
+        reference_text: body.sectionReference?.text,
         is_shared: body.isShared || false,
         shared_with: body.sharedWith || []
-      })
+      } as any)
       .select()
       .single()
 
@@ -158,21 +158,21 @@ export async function POST(
 
     // Transform to match the expected format
     const transformedAnnotation = {
-      id: newAnnotation.id,
-      type: newAnnotation.type,
-      content: newAnnotation.content,
-      voiceUrl: newAnnotation.voice_url,
+      id: (newAnnotation as any)?.id,
+      type: (newAnnotation as any)?.type,
+      content: (newAnnotation as any)?.content,
+      voiceUrl: (newAnnotation as any)?.voice_url,
       sectionReference: {
-        page: newAnnotation.page,
-        coordinates: newAnnotation.coordinates,
-        text: newAnnotation.reference_text
+        page: (newAnnotation as any)?.page,
+        coordinates: (newAnnotation as any)?.coordinates,
+        text: (newAnnotation as any)?.reference_text
       },
-      userId: newAnnotation.user_id,
-      userName: newAnnotation.user_name,
-      createdAt: newAnnotation.created_at,
-      updatedAt: newAnnotation.updated_at,
-      isShared: newAnnotation.is_shared,
-      sharedWith: newAnnotation.shared_with || [],
+      userId: (newAnnotation as any)?.user_id,
+      userName: (newAnnotation as any)?.user_name,
+      createdAt: (newAnnotation as any)?.created_at,
+      updatedAt: (newAnnotation as any)?.updated_at,
+      isShared: (newAnnotation as any)?.is_shared,
+      sharedWith: (newAnnotation as any)?.shared_with || [],
       replies: []
     }
 

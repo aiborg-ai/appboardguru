@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         .eq('user_id', user.id)
         .eq('status', 'active');
 
-      const orgIds = userMemberships?.map(m => m.organization_id) || [];
+      const orgIds = userMemberships?.map(m => (m as any)?.organization_id) || [];
       
       if (orgIds.length === 0) {
         return NextResponse.json({ boards: [], total: 0 });

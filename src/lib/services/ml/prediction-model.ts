@@ -75,18 +75,18 @@ export interface PredictionContext {
 // Model interfaces
 export interface TimingModel {
   readonly type: 'timing_model'
-  readonly hourlyWeights: readonly Array<{
+  readonly hourlyWeights: Array<{
     readonly hour: number
     readonly weight: number
     readonly normalized: number
   }>
-  readonly dailyWeights: readonly Array<{
+  readonly dailyWeights: Array<{
     readonly day: number
     readonly weight: number
     readonly normalized: number
   }>
   readonly typeSpecificMultiplier: number
-  readonly responseTimeProfile: readonly number[]
+  readonly responseTimeProfile: number[]
   readonly confidence: number
   readonly lastUpdated: Date
 }
@@ -95,7 +95,7 @@ export interface EngagementModel {
   readonly type: 'engagement_model'
   readonly weights: Record<string, number>
   readonly bias: number
-  readonly features: readonly string[]
+  readonly features: string[]
   readonly performance: ModelPerformance
   readonly lastTrained: Date
   readonly trainingDataSize: number
@@ -231,32 +231,43 @@ export class PredictionModel {
     newData: readonly TrainingDataSample[],
     config: Partial<MLTrainingConfig> = {}
   ): Promise<TimingModel | EngagementModel> {
+    if (existingModel.type === 'timing_model') {
+      // TimingModel doesn't have weights/bias properties for online learning
+      return existingModel
+    }
+    
     // Implement exponential moving average for model updates
     const learningRate = config.learningRate ?? 0.1
     const updatedWeights = { ...existingModel.weights }
     let updatedBias = existingModel.bias
     
     for (const sample of newData) {
-      const prediction = this.makePrediction(existingModel, sample.features)
-      const error = sample.actualOutcome - prediction
-      
-      // Update model weights
-      for (const [featureName, featureValue] of Object.entries(sample.features)) {
-        const currentWeight = updatedWeights[featureName] ?? 0
-        updatedWeights[featureName] = currentWeight + learningRate * error * featureValue
+      if (existingModel.type === 'engagement_model') {
+        const prediction = this.makePrediction(existingModel, sample.features)
+        const error = sample.actualOutcome - prediction
+        
+        // Update model weights
+        for (const [featureName, featureValue] of Object.entries(sample.features)) {
+          const currentWeight = updatedWeights[featureName] ?? 0
+          updatedWeights[featureName] = currentWeight + learningRate * error * featureValue
+        }
+        
+        // Update bias
+        updatedBias += learningRate * error
       }
-      
-      // Update bias
-      updatedBias += learningRate * error
     }
 
-    return {
-      ...existingModel,
-      weights: updatedWeights,
-      bias: updatedBias,
-      lastTrained: new Date(),
-      trainingDataSize: existingModel.trainingDataSize + newData.length
+    if (existingModel.type === 'engagement_model') {
+      return {
+        ...existingModel,
+        weights: updatedWeights,
+        bias: updatedBias,
+        lastTrained: new Date(),
+        trainingDataSize: existingModel.trainingDataSize + newData.length
+      }
     }
+    
+    return existingModel
   }
 
   // Private helper methods
@@ -633,7 +644,7 @@ export class PredictionModel {
     config: MLTrainingConfig
   ): EngagementModel {
     // Simple linear regression implementation
-    const featureNames = Object.keys(trainingData[0].features)
+    const featureNames = Object.keys(trainingData[0]?.features ?? {})
     const n = trainingData.length
     const numFeatures = featureNames.length
 
@@ -699,8 +710,8 @@ export class PredictionModel {
     const actuals = testData.map(sample => sample.actualOutcome)
 
     // Calculate metrics
-    const errors = predictions.map((pred, i) => Math.abs(pred - actuals[i]))
-    const squaredErrors = predictions.map((pred, i) => Math.pow(pred - actuals[i], 2))
+    const errors = predictions.map((pred, i) => Math.abs(pred - (actuals[i] ?? 0)))
+    const squaredErrors = predictions.map((pred, i) => Math.pow(pred - (actuals[i] ?? 0), 2))
 
     const mae = errors.reduce((sum, error) => sum + error, 0) / errors.length
     const rmse = Math.sqrt(squaredErrors.reduce((sum, error) => sum + error, 0) / squaredErrors.length)
@@ -729,8 +740,8 @@ export class PredictionModel {
     const importance: Record<string, number> = {}
     
     // For linear regression, use absolute weights as importance
-    model.featureNames?.forEach((name: string, index: number) => {
-      const weight = model.weights?.[index] ?? 0
+    model.features?.forEach((name: string) => {
+      const weight = model.weights?.[name] ?? 0
       importance[name] = Math.abs(weight)
     })
 

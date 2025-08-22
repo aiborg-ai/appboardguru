@@ -72,7 +72,7 @@ async function executeCreateVaultCommand(
   
   try {
     // Create the vault (using board_packs table as vault equivalent)
-    const { data: vault, error: vaultError } = await supabase
+    const { data: vault, error: vaultError } = await (supabase as any)
       .from('board_packs')
       .insert({
         title: parameters.name,
@@ -95,7 +95,7 @@ async function executeCreateVaultCommand(
     }
 
     // Set up default permissions for the creator
-    await supabase
+    await (supabase as any)
       .from('board_pack_permissions')
       .insert({
         board_pack_id: vault.id,
@@ -167,7 +167,7 @@ async function executeScheduleMeetingCommand(
     const { startDate, endDate } = parseMeetingDateTime(parameters.date, parameters.time);
     
     // Create the meeting
-    const { data: meeting, error: meetingError } = await supabase
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .insert({
         title: parameters.title,
@@ -192,7 +192,7 @@ async function executeScheduleMeetingCommand(
     }
 
     // Create calendar event
-    await supabase
+    await (supabase as any)
       .from('calendar_events')
       .insert({
         meeting_id: meeting.id,
@@ -256,7 +256,7 @@ async function executeUploadDocumentCommand(
   
   try {
     // Find the target vault by name
-    const { data: vaults, error: vaultError } = await supabase
+    const { data: vaults, error: vaultError } = await (supabase as any)
       .from('board_packs')
       .select('*')
       .eq('organization_id', context.organizationId)
@@ -337,7 +337,7 @@ async function executeInviteMemberCommand(
     // Find the target vault
     let targetVault = null;
     if (parameters.vault) {
-      const { data: vaults, error: vaultError } = await supabase
+      const { data: vaults, error: vaultError } = await (supabase as any)
         .from('board_packs')
         .select('*')
         .eq('organization_id', context.organizationId)
@@ -350,7 +350,7 @@ async function executeInviteMemberCommand(
     }
 
     // Create organization invitation
-    const { data: invitation, error: invitationError } = await supabase
+    const { data: invitation, error: invitationError } = await (supabase as any)
       .from('organization_invitations')
       .insert({
         organization_id: context.organizationId!,
@@ -575,7 +575,7 @@ export function enhancedPatternMatching(input: string): {
   }
 
   return {
-    commandType: 'unknown',
+    commandType: 'unknown' as VoiceCommandType,
     confidence: 0,
     parameters: {}
   };

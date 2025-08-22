@@ -110,7 +110,7 @@ export function useVoiceTranslation(options: UseVoiceTranslationOptions = {}) {
       setState(prev => ({ ...prev, isProcessing: true }));
 
       const arrayBuffer = await audioBlob.arrayBuffer();
-      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(arrayBuffer))));
 
       await translateAudio(base64Audio);
     } catch (error) {
@@ -182,6 +182,8 @@ export function useVoiceTranslation(options: UseVoiceTranslationOptions = {}) {
         description: errorMessage,
         variant: "destructive"
       });
+      
+      return undefined;
     }
   };
 
@@ -417,7 +419,7 @@ export function useVoiceTranslation(options: UseVoiceTranslationOptions = {}) {
     lastTranslation: state.translations[0] || null,
     averageConfidence: state.translations.length > 0 
       ? state.translations.reduce((sum, t) => {
-          const avgConfidence = Object.values(t.translations).reduce((s, trans) => s + trans.confidence, 0) / Object.keys(t.translations).length;
+          const avgConfidence = Object.values(t.translations).reduce((s, trans: any) => s + (trans.confidence || 0), 0) / Object.keys(t.translations).length;
           return sum + avgConfidence;
         }, 0) / state.translations.length
       : 0

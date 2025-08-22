@@ -11,13 +11,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id, role')
       .eq('id', authUser.id)
       .single()
 
-    if (!user?.organization_id) {
+    if (!(user as any)?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -46,16 +46,16 @@ export async function GET(request: NextRequest) {
     }
 
     const metrics = await ActivityAnalytics.getOrganizationMetrics(
-      user.organization_id,
+      (user as any)?.organization_id,
       { start: startDate.toISOString(), end: endDate.toISOString() }
     )
 
     return NextResponse.json({
       success: true,
-      data: metrics,
+      data: metrics as any,
       meta: {
         timeRange,
-        organizationId: user.organization_id,
+        organizationId: (user as any)?.organization_id,
         generatedAt: new Date().toISOString()
       }
     })
@@ -78,13 +78,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id, role')
       .eq('id', authUser.id)
       .single()
 
-    if (!user?.organization_id || user.role !== 'admin') {
+    if (!(user as any)?.organization_id || (user as any)?.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
@@ -116,15 +116,15 @@ export async function POST(request: NextRequest) {
         }
 
         const exportData = await ActivityAnalytics.getOrganizationMetrics(
-          user.organization_id,
+          (user as any)?.organization_id,
           { start: startDate.toISOString(), end: endDate.toISOString() }
         )
 
         if (format === 'csv') {
           const csv = [
             'Activity Type,Count,Trend',
-            ...exportData.topActivities.map(activity =>
-              `${activity.type},${activity.count},${activity.trend}`
+            ...((exportData as any)?.topActivities || []).map((activity: any) =>
+              `${(activity as any)?.type},${(activity as any)?.count},${(activity as any)?.trend}`
             )
           ].join('\n')
 
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          data: exportData,
+          data: exportData as any,
           meta: {
             format,
             timeRange,

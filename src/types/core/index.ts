@@ -53,6 +53,25 @@ export interface PaginatedResponse<T> {
   readonly pagination: PaginationMeta
 }
 
+// Pagination utility function
+export const createPaginationMeta = (params: {
+  total: number
+  page: number
+  limit: number
+}): PaginationMeta => {
+  const { total, page, limit } = params
+  const total_pages = Math.ceil(total / limit)
+  
+  return {
+    page,
+    limit,
+    total,
+    total_pages,
+    has_next: page < total_pages,
+    has_prev: page > 1
+  }
+}
+
 // Sorting and Filtering
 export type SortOrder = 'asc' | 'desc'
 

@@ -18,7 +18,7 @@ export async function PATCH(
     const updates = await request.json()
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select('*, vaults!inner(user_id)')
       .eq('id', assetId)
@@ -28,12 +28,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Verify annotation exists and belongs to user
-    const { data: annotation, error: annotationError } = await supabase
+    const { data: annotation, error: annotationError } = await (supabase as any)
       .from('document_annotations')
       .select('*')
       .eq('id', id)
@@ -57,9 +57,9 @@ export async function PATCH(
     if (updates.sharedWith !== undefined) updateData.shared_with = updates.sharedWith
 
     // Update annotation
-    const { data: updatedAnnotation, error: updateError } = await supabase
+    const { data: updatedAnnotation, error: updateError } = await (supabase as any)
       .from('document_annotations')
-      .update(updateData)
+      .update(updateData as any)
       .eq('id', id)
       .select()
       .single()
@@ -71,21 +71,21 @@ export async function PATCH(
 
     // Transform to match the expected format
     const transformedAnnotation = {
-      id: updatedAnnotation.id,
-      type: updatedAnnotation.type,
-      content: updatedAnnotation.content,
-      voiceUrl: updatedAnnotation.voice_url,
+      id: (updatedAnnotation as any)?.id,
+      type: (updatedAnnotation as any)?.type,
+      content: (updatedAnnotation as any)?.content,
+      voiceUrl: (updatedAnnotation as any)?.voice_url,
       sectionReference: {
-        page: updatedAnnotation.page,
-        coordinates: updatedAnnotation.coordinates,
-        text: updatedAnnotation.reference_text
+        page: (updatedAnnotation as any)?.page,
+        coordinates: (updatedAnnotation as any)?.coordinates,
+        text: (updatedAnnotation as any)?.reference_text
       },
-      userId: updatedAnnotation.user_id,
-      userName: updatedAnnotation.user_name,
-      createdAt: updatedAnnotation.created_at,
-      updatedAt: updatedAnnotation.updated_at,
-      isShared: updatedAnnotation.is_shared,
-      sharedWith: updatedAnnotation.shared_with || []
+      userId: (updatedAnnotation as any)?.user_id,
+      userName: (updatedAnnotation as any)?.user_name,
+      createdAt: (updatedAnnotation as any)?.created_at,
+      updatedAt: (updatedAnnotation as any)?.updated_at,
+      isShared: (updatedAnnotation as any)?.is_shared,
+      sharedWith: (updatedAnnotation as any)?.shared_with || []
     }
 
     return NextResponse.json(transformedAnnotation)
@@ -115,7 +115,7 @@ export async function DELETE(
     const { assetId, id } = params
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select('*, vaults!inner(user_id)')
       .eq('id', assetId)
@@ -125,12 +125,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Verify annotation exists and belongs to user
-    const { data: annotation, error: annotationError } = await supabase
+    const { data: annotation, error: annotationError } = await (supabase as any)
       .from('document_annotations')
       .select('*')
       .eq('id', id)
@@ -143,7 +143,7 @@ export async function DELETE(
     }
 
     // Delete annotation replies first (foreign key constraint)
-    const { error: repliesDeleteError } = await supabase
+    const { error: repliesDeleteError } = await (supabase as any)
       .from('document_annotation_replies')
       .delete()
       .eq('annotation_id', id)
@@ -153,7 +153,7 @@ export async function DELETE(
     }
 
     // Delete annotation
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('document_annotations')
       .delete()
       .eq('id', id)

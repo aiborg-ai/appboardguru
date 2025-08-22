@@ -301,7 +301,8 @@ function useInvitationManagement<T extends EnhancedInvitationData>(
     value: string
   ) => {
     const newInvitations = [...invitations]
-    newInvitations[index] = { ...newInvitations[index], [field]: value }
+    const currentInvitation = newInvitations[index] || { email: '', role: 'member' as InvitationRole }
+    newInvitations[index] = { ...currentInvitation, [field]: value } as T
     
     // Apply type-safe updates
     invitationActions.clear()

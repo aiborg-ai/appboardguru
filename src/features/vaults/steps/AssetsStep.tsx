@@ -170,7 +170,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
   }, [data.selectedAssets]);
 
   const getFileIcon = (fileType: string) => {
-    const IconComponent = FILE_TYPE_ICONS[fileType.toLowerCase()] || FILE_TYPE_ICONS.default;
+    const IconComponent = FILE_TYPE_ICONS[fileType.toLowerCase()] || FILE_TYPE_ICONS.default || File;
     return IconComponent;
   };
 
@@ -336,7 +336,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
                           "w-10 h-10 rounded-lg flex items-center justify-center",
                           getFileTypeColor(asset.file_type)
                         )}>
-                          <FileIconComponent className="w-5 h-5" />
+                          {FileIconComponent && <FileIconComponent className="w-5 h-5" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-gray-900 truncate">
@@ -437,7 +437,7 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
                     "w-8 h-8 rounded flex items-center justify-center",
                     getFileTypeColor(asset.file_type)
                   )}>
-                    <FileIconComponent className="w-4 h-4" />
+                    {FileIconComponent && <FileIconComponent className="w-4 h-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">

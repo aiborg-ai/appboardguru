@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BaseController, CommonSchemas } from '../base-controller';
-import { Result } from '../../result/result';
+import { Result, Ok, Err, ResultUtils } from '../../result';
 
 /**
  * Consolidated Assets API Controller
@@ -20,12 +20,12 @@ export class AssetsController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
-      const { page, limit, q, filter, sort, type, vault_id, status } = queryResult.unwrap();
+      const { page, limit, q, filter, sort, type, vault_id, status } = ResultUtils.unwrap(queryResult);
       
       // TODO: Implement database query with filters
       const mockAssets = [
@@ -41,14 +41,14 @@ export class AssetsController extends BaseController {
         }
       ];
       
-      return Result.ok(mockAssets);
+      return Ok(mockAssets);
     });
   }
 
   async getAsset(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
@@ -69,30 +69,30 @@ export class AssetsController extends BaseController {
         status: 'active'
       };
       
-      return Result.ok(asset);
+      return Ok(asset);
     });
   }
 
   async updateAsset(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     const schema = z.object({
       name: z.string().min(1).optional(),
-      metadata: z.record(z.any()).optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
       tags: z.array(z.string()).optional(),
       status: z.enum(['active', 'archived']).optional()
     });
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update asset in database
-      return Result.ok({
+      return Ok({
         id,
         ...updates,
         updatedAt: new Date().toISOString()
@@ -103,12 +103,12 @@ export class AssetsController extends BaseController {
   async deleteAsset(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
       // TODO: Soft delete asset in database
-      return Result.ok({ 
+      return Ok({ 
         deleted: true, 
         id,
         deletedAt: new Date().toISOString()
@@ -120,7 +120,7 @@ export class AssetsController extends BaseController {
   async uploadAsset(request: NextRequest): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const formData = await request.formData();
       const file = formData.get('file') as File;
@@ -128,11 +128,11 @@ export class AssetsController extends BaseController {
       const metadata = formData.get('metadata') as string;
       
       if (!file) {
-        return Result.err(new Error('File is required'));
+        return Err(new Error('File is required'));
       }
       
       if (!vaultId) {
-        return Result.err(new Error('Vault ID is required'));
+        return Err(new Error('Vault ID is required'));
       }
       
       // TODO: Upload file to storage and save metadata to database
@@ -147,7 +147,7 @@ export class AssetsController extends BaseController {
         status: 'active'
       };
       
-      return Result.ok(asset);
+      return Ok(asset);
     });
   }
 
@@ -155,13 +155,13 @@ export class AssetsController extends BaseController {
   async downloadAsset(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
       // TODO: Get asset file path and stream file
       // For now, return download URL
-      return Result.ok({
+      return Ok({
         downloadUrl: `/api/assets/${id}/file`,
         expiresAt: new Date(Date.now() + 3600000).toISOString() // 1 hour
       });
@@ -180,12 +180,12 @@ export class AssetsController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
-      const { page, limit, q, type, vault_id, date_from, date_to } = queryResult.unwrap();
+      const { page, limit, q, type, vault_id, date_from, date_to } = ResultUtils.unwrap(queryResult);
       
       // TODO: Implement full-text search with filters
       const searchResults = [
@@ -200,7 +200,7 @@ export class AssetsController extends BaseController {
         }
       ];
       
-      return Result.ok({
+      return Ok({
         results: searchResults,
         total: 1,
         query: q,
@@ -220,27 +220,27 @@ export class AssetsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const { shareWith, permissions, expiresAt, message } = bodyResult.unwrap();
+      const { shareWith, permissions, expiresAt, message } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Create share records in database and send notifications
       const shareRecord = {
         id: 'share-id',
         assetId: id,
-        sharedBy: userIdResult.unwrap(),
-        sharedWith,
+        sharedBy: ResultUtils.unwrap(userIdResult),
+        sharedWith: shareWith,
         permissions,
         expiresAt,
         message,
         createdAt: new Date().toISOString()
       };
       
-      return Result.ok(shareRecord);
+      return Ok(shareRecord);
     });
   }
 
@@ -248,7 +248,7 @@ export class AssetsController extends BaseController {
   async getCollaborators(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
@@ -264,7 +264,7 @@ export class AssetsController extends BaseController {
         }
       ];
       
-      return Result.ok(collaborators);
+      return Ok(collaborators);
     });
   }
 
@@ -276,24 +276,24 @@ export class AssetsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const { email, permissions } = bodyResult.unwrap();
+      const { email, permissions } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Add collaborator to database
       const collaborator = {
         assetId: id,
         email,
         permissions,
-        addedBy: userIdResult.unwrap(),
+        addedBy: ResultUtils.unwrap(userIdResult),
         addedAt: new Date().toISOString()
       };
       
-      return Result.ok(collaborator);
+      return Ok(collaborator);
     });
   }
 
@@ -302,13 +302,13 @@ export class AssetsController extends BaseController {
     const queryResult = this.validateQuery(request, CommonSchemas.pagination);
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
-      const { page, limit } = queryResult.unwrap();
+      const { page, limit } = ResultUtils.unwrap(queryResult);
       
       // TODO: Fetch annotations from database
       const annotations = [
@@ -327,7 +327,7 @@ export class AssetsController extends BaseController {
         }
       ];
       
-      return Result.ok({
+      return Ok({
         annotations,
         total: 1,
         page,
@@ -351,32 +351,32 @@ export class AssetsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const annotation = bodyResult.unwrap();
+      const annotation = ResultUtils.unwrap(bodyResult);
       
       // TODO: Save annotation to database
       const newAnnotation = {
         id: 'new-annotation-id',
         assetId: id,
-        authorId: userIdResult.unwrap(),
+        authorId: ResultUtils.unwrap(userIdResult),
         ...annotation,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(newAnnotation);
+      return Ok(newAnnotation);
     });
   }
 
   async getAnnotation(request: NextRequest, context: { params: { id: string; annotationId: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id, annotationId } = this.getPathParams(context);
       
@@ -396,7 +396,7 @@ export class AssetsController extends BaseController {
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(annotation);
+      return Ok(annotation);
     });
   }
 
@@ -414,16 +414,16 @@ export class AssetsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id, annotationId } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update annotation in database
-      return Result.ok({
+      return Ok({
         id: annotationId,
         assetId: id,
         ...updates,
@@ -435,12 +435,12 @@ export class AssetsController extends BaseController {
   async deleteAnnotation(request: NextRequest, context: { params: { id: string; annotationId: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { annotationId } = this.getPathParams(context);
       
       // TODO: Delete annotation from database
-      return Result.ok({ 
+      return Ok({ 
         deleted: true, 
         id: annotationId,
         deletedAt: new Date().toISOString()
@@ -452,7 +452,7 @@ export class AssetsController extends BaseController {
   async getAnnotationReplies(request: NextRequest, context: { params: { id: string; annotationId: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { annotationId } = this.getPathParams(context);
       
@@ -471,7 +471,7 @@ export class AssetsController extends BaseController {
         }
       ];
       
-      return Result.ok(replies);
+      return Ok(replies);
     });
   }
 
@@ -482,24 +482,24 @@ export class AssetsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { annotationId } = this.getPathParams(context);
-      const { content } = bodyResult.unwrap();
+      const { content } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Save reply to database
       const reply = {
         id: 'new-reply-id',
         annotationId,
         content,
-        authorId: userIdResult.unwrap(),
+        authorId: ResultUtils.unwrap(userIdResult),
         createdAt: new Date().toISOString()
       };
       
-      return Result.ok(reply);
+      return Ok(reply);
     });
   }
 }

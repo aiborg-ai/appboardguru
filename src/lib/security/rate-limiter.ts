@@ -310,35 +310,35 @@ class RateLimitStorage {
     const now = Date.now()
     
     // Cleanup sliding windows
-    for (const [key, data] of this.slidingWindows.entries()) {
+    for (const [key, data] of Array.from(this.slidingWindows.entries())) {
       if (now - data.lastCleanup > 60 * 60 * 1000) { // 1 hour cleanup interval
         this.slidingWindows.delete(key)
       }
     }
     
     // Cleanup token buckets (keep them longer for refill calculations)
-    for (const [key, data] of this.tokenBuckets.entries()) {
+    for (const [key, data] of Array.from(this.tokenBuckets.entries())) {
       if (now - data.lastRefill > 2 * 60 * 60 * 1000) { // 2 hour cleanup
         this.tokenBuckets.delete(key)
       }
     }
     
     // Cleanup fixed windows
-    for (const [key, data] of this.fixedWindows.entries()) {
+    for (const [key, data] of Array.from(this.fixedWindows.entries())) {
       if (now > data.windowStart + 60 * 60 * 1000) { // 1 hour after window
         this.fixedWindows.delete(key)
       }
     }
     
     // Cleanup expired IP blocks
-    for (const [ip, info] of this.ipBlocks.entries()) {
+    for (const [ip, info] of Array.from(this.ipBlocks.entries())) {
       if (now >= info.blockedUntil) {
         this.ipBlocks.delete(ip)
       }
     }
     
     // Cleanup old violations
-    for (const [key, data] of this.violationCounts.entries()) {
+    for (const [key, data] of Array.from(this.violationCounts.entries())) {
       if (now - data.firstViolation > 24 * 60 * 60 * 1000) {
         this.violationCounts.delete(key)
       }

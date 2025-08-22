@@ -31,7 +31,7 @@ export async function GET(
     const { id: assetId, annotationId } = await params;
 
     // Get annotation with user information and replies
-    const { data: annotation, error: annotationError } = await supabase
+    const { data: annotation, error: annotationError } = await (supabase as any)
       .from('asset_annotations')
       .select(`
         *,
@@ -78,15 +78,15 @@ export async function GET(
 
     // Transform the response
     const transformedAnnotation = {
-      ...annotation,
-      user: annotation.users,
-      replies: annotation.annotation_replies?.map((reply: any) => ({
+      ...(annotation as any),
+      user: (annotation as any)?.users,
+      replies: (annotation as any)?.annotation_replies?.map((reply: any) => ({
         ...reply,
         user: reply.users,
         reactions: reply.annotation_reactions || [],
       })) || [],
-      reactions: annotation.annotation_reactions || [],
-      replies_count: annotation.annotation_replies?.length || 0,
+      reactions: (annotation as any)?.annotation_reactions || [],
+      replies_count: (annotation as any)?.annotation_replies?.length || 0,
     };
 
     return NextResponse.json({ annotation: transformedAnnotation });
@@ -129,7 +129,7 @@ export async function PATCH(
     const updates = validationResult.data;
 
     // Check if user owns the annotation or has permission to edit
-    const { data: annotation, error: checkError } = await supabase
+    const { data: annotation, error: checkError } = await (supabase as any)
       .from('asset_annotations')
       .select(`
         id,
@@ -158,8 +158,8 @@ export async function PATCH(
     }
 
     // Only allow owner to edit or admins
-    const isOwner = annotation.created_by === user.id;
-    const isAdmin = (annotation as any).assets?.[0]?.vaults?.[0]?.organization_members?.some(
+    const isOwner = (annotation as any)?.created_by === user.id;
+    const isAdmin = (annotation as any)?.assets?.[0]?.vaults?.[0]?.organization_members?.some(
       (member: any) => member.user_id === user.id && ['owner', 'admin'].includes(member.role)
     );
 
@@ -168,9 +168,9 @@ export async function PATCH(
     }
 
     // Update annotation
-    const { data: updatedAnnotation, error: updateError } = await supabase
+    const { data: updatedAnnotation, error: updateError } = await (supabase as any)
       .from('asset_annotations')
-      .update(updates)
+      .update(updates as any)
       .eq('id', annotationId)
       .select(`
         *,
@@ -188,10 +188,10 @@ export async function PATCH(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
-        organization_id: annotation.organization_id,
+        organization_id: (annotation as any)?.organization_id,
         user_id: user.id,
         event_type: 'user_action',
         event_category: 'annotations',
@@ -205,12 +205,12 @@ export async function PATCH(
           updated_fields: Object.keys(updates),
           is_owner: isOwner,
         },
-      });
+      } as any);
 
     return NextResponse.json({
       annotation: {
-        ...updatedAnnotation,
-        user: updatedAnnotation.users,
+        ...(updatedAnnotation as any),
+        user: (updatedAnnotation as any)?.users,
       },
     });
 
@@ -240,7 +240,7 @@ export async function DELETE(
     const { id: assetId, annotationId } = await params;
 
     // Check if user owns the annotation or has permission to delete
-    const { data: annotation, error: checkError } = await supabase
+    const { data: annotation, error: checkError } = await (supabase as any)
       .from('asset_annotations')
       .select(`
         id,
@@ -269,8 +269,8 @@ export async function DELETE(
     }
 
     // Only allow owner to delete or admins
-    const isOwner = annotation.created_by === user.id;
-    const isAdmin = (annotation as any).assets?.[0]?.vaults?.[0]?.organization_members?.some(
+    const isOwner = (annotation as any)?.created_by === user.id;
+    const isAdmin = (annotation as any)?.assets?.[0]?.vaults?.[0]?.organization_members?.some(
       (member: any) => member.user_id === user.id && ['owner', 'admin'].includes(member.role)
     );
 
@@ -279,13 +279,13 @@ export async function DELETE(
     }
 
     // Soft delete annotation
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('asset_annotations')
       .update({
         is_deleted: true,
         deleted_at: new Date().toISOString(),
         deleted_by: user.id,
-      })
+      } as any)
       .eq('id', annotationId);
 
     if (deleteError) {
@@ -294,10 +294,10 @@ export async function DELETE(
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
-        organization_id: annotation.organization_id,
+        organization_id: (annotation as any)?.organization_id,
         user_id: user.id,
         event_type: 'user_action',
         event_category: 'annotations',
@@ -310,7 +310,7 @@ export async function DELETE(
           asset_id: assetId,
           is_owner: isOwner,
         },
-      });
+      } as any);
 
     return NextResponse.json({ success: true });
 

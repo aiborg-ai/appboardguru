@@ -1,6 +1,6 @@
 import { BaseService } from './base.service'
 import { emailConfig, emailSubjects } from '@/config/email.config'
-import nodemailer from 'nodemailer'
+import * as nodemailer from 'nodemailer'
 import type { 
   NotificationType, 
   Notification,
@@ -301,7 +301,11 @@ export class NotificationService extends BaseService {
   async getUserNotifications(
     userId: string,
     options: { page?: number; limit?: number; unreadOnly?: boolean } = {}
-  ) {
+  ): Promise<{
+    notifications: any[]
+    pagination: any
+    unreadCount?: number
+  } | undefined> {
     try {
       const { page = 1, limit = 20, unreadOnly = false } = options
       const offset = (page - 1) * limit

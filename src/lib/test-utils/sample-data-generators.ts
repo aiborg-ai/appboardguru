@@ -5,13 +5,29 @@
 
 import { addDays, addHours, subDays, format } from 'date-fns'
 
+// Type definitions for sample data generators
+type SampleActivityEventType = 
+  | 'login' | 'logout' | 'document_view' | 'document_edit' | 'comment_created'
+  | 'vault_accessed' | 'meeting_joined' | 'notification_opened' | 'search_performed'
+  | 'dashboard_viewed' | 'report_generated' | 'asset_uploaded' | 'asset_downloaded'
+
+type SampleActivityEventCategory = 
+  | 'authentication' | 'content' | 'communication' | 'governance' | 'analytics'
+
+type SampleNotificationType = 
+  | 'meeting_reminder' | 'document_shared' | 'comment_mention' | 'deadline_approaching'
+  | 'approval_request' | 'board_announcement' | 'compliance_alert' | 'vault_invitation'
+
+type SampleNotificationCategory = 
+  | 'meeting' | 'content' | 'social' | 'deadline' | 'governance' | 'compliance'
+
 export interface SampleUserActivity {
   user_id: string
   organization_id: string
-  event_type: string
-  event_category: string
+  event_type: SampleActivityEventType
+  event_category: SampleActivityEventCategory
   timestamp: string
-  event_data: any
+  event_data: Record<string, any>
   session_id: string
   duration_seconds?: number
   engagement_score?: number
@@ -20,12 +36,12 @@ export interface SampleUserActivity {
 export interface SampleNotificationData {
   user_id: string
   organization_id: string
-  type: string
-  category: string
+  type: SampleNotificationType
+  category: SampleNotificationCategory
   sent_at: string
   opened_at?: string
   clicked_at?: string
-  delivery_status: string
+  delivery_status: 'pending' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'undeliverable'
   engagement_metrics: {
     open_rate: number
     click_rate: number
@@ -56,13 +72,13 @@ export function generateSampleUserActivity(
   daysBack: number = 90
 ): SampleUserActivity[] {
   const activities: SampleUserActivity[] = []
-  const eventTypes = [
+  const eventTypes: SampleActivityEventType[] = [
     'login', 'logout', 'document_view', 'document_edit', 'comment_created',
     'vault_accessed', 'meeting_joined', 'notification_opened', 'search_performed',
     'dashboard_viewed', 'report_generated', 'asset_uploaded', 'asset_downloaded'
   ]
   
-  const eventCategories = ['authentication', 'content', 'communication', 'governance', 'analytics']
+  const eventCategories: SampleActivityEventCategory[] = ['authentication', 'content', 'communication', 'governance', 'analytics']
   
   for (let userId = 1; userId <= userCount; userId++) {
     const userIdStr = `user-${userId.toString().padStart(3, '0')}`
@@ -95,8 +111,8 @@ export function generateSampleUserActivity(
         const minute = Math.floor(Math.random() * 60)
         timestamp.setHours(hour, minute, 0, 0)
         
-        const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)]
-        const eventCategory = eventCategories[Math.floor(Math.random() * eventCategories.length)]
+            const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)] || 'document_view'
+        const eventCategory = eventCategories[Math.floor(Math.random() * eventCategories.length)] || 'content'
         
         activities.push({
           user_id: userIdStr,
@@ -125,17 +141,17 @@ export function generateSampleNotificationData(
   notificationCount: number = 500
 ): SampleNotificationData[] {
   const notifications: SampleNotificationData[] = []
-  const notificationTypes = [
+  const notificationTypes: SampleNotificationType[] = [
     'meeting_reminder', 'document_shared', 'comment_mention', 'deadline_approaching',
     'approval_request', 'board_announcement', 'compliance_alert', 'vault_invitation'
   ]
-  const categories = ['meeting', 'content', 'social', 'deadline', 'governance', 'compliance']
+  const categories: SampleNotificationCategory[] = ['meeting', 'content', 'social', 'deadline', 'governance', 'compliance']
   
   for (let i = 0; i < notificationCount; i++) {
     const sentDate = subDays(new Date(), Math.floor(Math.random() * daysBack))
     const userId = `user-${Math.floor(Math.random() * 20 + 1).toString().padStart(3, '0')}`
-    const type = notificationTypes[Math.floor(Math.random() * notificationTypes.length)]
-    const category = categories[Math.floor(Math.random() * categories.length)]
+    const type = notificationTypes[Math.floor(Math.random() * notificationTypes.length)] || 'meeting_reminder'
+    const category = categories[Math.floor(Math.random() * categories.length)] || 'meeting'
     
     // Simulate realistic open and click rates based on type
     const typeEngagementRates = getTypeEngagementRates(type)
@@ -145,8 +161,8 @@ export function generateSampleNotificationData(
     const notification: SampleNotificationData = {
       user_id: userId,
       organization_id: organizationId,
-      type,
-      category,
+      type: type,
+      category: category,
       sent_at: sentDate.toISOString(),
       delivery_status: Math.random() < 0.95 ? 'delivered' : 'failed',
       engagement_metrics: {
@@ -190,7 +206,7 @@ export function generateSampleBoardMeetingData(
     
     for (let meeting = 0; meeting < meetingsThisMonth; meeting++) {
       const scheduledDate = addDays(monthDate, Math.floor(Math.random() * 30))
-      const meetingType = meetingTypes[Math.floor(Math.random() * meetingTypes.length)]
+      const meetingType = meetingTypes[Math.floor(Math.random() * meetingTypes.length)] ?? 'board_meeting'
       
       // Some meetings might be rescheduled
       const wasRescheduled = Math.random() < 0.15
@@ -224,13 +240,18 @@ export function generateSampleBoardMeetingData(
 /**
  * Generate user behavior profiles for realistic activity patterns
  */
-function generateUserBehaviorProfile(userId: number): {
+/**
+ * User behavior profile interface
+ */
+interface UserBehaviorProfile {
   minDailyActivities: number;
   maxDailyActivities: number;
   activeHours: { start: number; end: number };
   worksWeekends: boolean;
   engagementLevel: string;
-} {
+}
+
+function generateUserBehaviorProfile(userId: number): UserBehaviorProfile {
   const profiles = [
     { // Heavy user
       minDailyActivities: 15,
@@ -276,13 +297,27 @@ function generateUserBehaviorProfile(userId: number): {
     }
   ]
   
-  return profiles[userId % profiles.length]
+  const profile = profiles[userId % profiles.length];
+  if (!profile) {
+    // Return default profile if none found
+    return {
+      minDailyActivities: 5,
+      maxDailyActivities: 15,
+      activeHours: { start: 9, end: 17 },
+      worksWeekends: false,
+      engagementLevel: 'medium'
+    };
+  }
+  return profile;
 }
 
 /**
  * Generate realistic event data based on event type
  */
-function generateEventData(eventType: string, profile: any): Record<string, any> {
+function generateEventData(eventType: string, profile: {
+  engagementLevel: string;
+  [key: string]: any;
+}): Record<string, any> {
   const baseData = {
     user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
@@ -348,7 +383,8 @@ export function generateAnomalousData(
   const anomalyCount = Math.floor(normalData.length * anomalyPercentage)
   
   for (let i = 0; i < anomalyCount; i++) {
-    const baseActivity = normalData[Math.floor(Math.random() * normalData.length)]
+    const baseActivity = normalData[Math.floor(Math.random() * normalData.length)]!
+    if (!baseActivity) continue
     
     // Create different types of anomalies
     const anomalyTypes = ['volume', 'timing', 'sequence', 'velocity']
@@ -388,10 +424,10 @@ export function generateAnomalousData(
         
       case 'sequence': {
         // Unusual sequence of events
-        const unusualEvents = ['admin_panel_accessed', 'security_settings_changed', 'bulk_download']
+        const unusualEvents = ['document_edit', 'asset_uploaded', 'asset_downloaded'] as const
         anomalousActivities.push({
           ...baseActivity,
-          event_type: unusualEvents[Math.floor(Math.random() * unusualEvents.length)],
+          event_type: unusualEvents[Math.floor(Math.random() * unusualEvents.length)] || 'document_edit',
           event_data: {
             ...baseActivity.event_data,
             anomaly_type: 'unusual_sequence',
@@ -440,7 +476,7 @@ export function generateSeasonalPatterns(
       // Higher activity mid-week, lower on weekends
       const dayOfWeek = date.getDay()
       const weeklyMultipliers = [0.3, 1.0, 1.2, 1.3, 1.2, 0.8, 0.2] // Sun-Sat
-      seasonalMultiplier *= weeklyMultipliers[dayOfWeek]
+      seasonalMultiplier *= weeklyMultipliers[dayOfWeek] ?? 1.0
     }
     
     if (seasonalityConfig.monthlyPattern) {

@@ -214,7 +214,7 @@ export class StatisticalAnalysis {
       return {
         confidence: 0,
         description: 'Insufficient data for weekly pattern analysis',
-        parameters: {},
+        parameters: { type: 'distribution' as const, shape: 'normal' as const, kurtosis: 0 },
         recommendations: []
       }
     }
@@ -254,9 +254,9 @@ export class StatisticalAnalysis {
       confidence,
       description,
       parameters: {
-        workday_average: workDayAvg,
-        weekend_average: weekendAvg,
-        difference_ratio: difference / (maxAvg || 1)
+        type: 'distribution' as const,
+        shape: 'normal' as const,
+        kurtosis: difference / (maxAvg || 1)
       },
       recommendations
     }
@@ -275,7 +275,7 @@ export class StatisticalAnalysis {
       return {
         confidence: 0,
         description: 'No response time data available',
-        parameters: {},
+        parameters: { type: 'descriptive' as const, mean: 0, median: 0, stdDev: 0, outliers: 0 },
         recommendations: []
       }
     }
@@ -323,10 +323,11 @@ export class StatisticalAnalysis {
       confidence,
       description,
       parameters: {
-        average_hours: avgHours,
-        median_hours: medianHours,
-        std_dev_hours: stats.stdDev / (1000 * 60 * 60),
-        sample_size: responseTimes.length
+        type: 'descriptive' as const,
+        mean: avgHours,
+        median: medianHours,
+        stdDev: stats.stdDev / (1000 * 60 * 60),
+        outliers: responseTimes.length
       },
       recommendations
     }
@@ -344,7 +345,7 @@ export class StatisticalAnalysis {
       return {
         confidence: 0,
         description: 'Insufficient engagement data for trend analysis',
-        parameters: {},
+        parameters: { type: 'trend' as const, direction: 'stable' as const, slope: 0, r2: 0 },
         recommendations: []
       }
     }
@@ -366,7 +367,7 @@ export class StatisticalAnalysis {
     // Calculate correlation coefficient (R)
     const meanX = sumX / n
     const meanY = sumY / n
-    const numerator = x.reduce((sum, val, index) => sum + (val - meanX) * (y[index] - meanY), 0)
+    const numerator = x.reduce((sum, val, index) => sum + (val - meanX) * ((y[index] ?? 0) - meanY), 0)
     const denomX = Math.sqrt(x.reduce((sum, val) => sum + Math.pow(val - meanX, 2), 0))
     const denomY = Math.sqrt(y.reduce((sum, val) => sum + Math.pow(val - meanY, 2), 0))
     const correlation = numerator / (denomX * denomY)
@@ -404,11 +405,10 @@ export class StatisticalAnalysis {
       confidence: Math.max(confidence, 0.3), // Minimum confidence for trend analysis
       description,
       parameters: {
+        type: 'trend' as const,
+        direction: (slope > 0.01 ? 'up' : slope < -0.01 ? 'down' : 'stable') as 'up' | 'down' | 'stable',
         slope,
-        correlation,
-        average_engagement: meanY,
-        sample_size: n,
-        trend_direction: slope > 0.01 ? 'increasing' : slope < -0.01 ? 'decreasing' : 'stable'
+        r2: correlation * correlation
       },
       recommendations
     }
@@ -434,7 +434,7 @@ export class StatisticalAnalysis {
       return {
         confidence: 0,
         description: 'Insufficient content variety for engagement analysis',
-        parameters: {},
+        parameters: { type: 'descriptive' as const, mean: 0, median: 0, stdDev: 0, outliers: 0 },
         recommendations: []
       }
     }
@@ -481,11 +481,11 @@ export class StatisticalAnalysis {
       confidence: Math.max(confidence, 0.4),
       description,
       parameters: {
-        content_rankings: Object.fromEntries(sortedContent),
-        engagement_range: engagementRange,
-        sample_sizes: Object.fromEntries(
-          Object.entries(contentGroups).map(([type, scores]) => [type, scores.length])
-        )
+        type: 'descriptive' as const,
+        mean: avgEngagement,
+        median: avgEngagement,
+        stdDev: engagementRange,
+        outliers: sortedContent.length
       },
       recommendations
     }
@@ -509,8 +509,8 @@ export class StatisticalAnalysis {
         }
         
         dailyCounts[day]++
-        if (data.engagement_score !== null) {
-          dailyEngagement[day].push(data.engagement_score)
+        if (data.engagement_score !== null && data.engagement_score !== undefined) {
+          dailyEngagement[day]!.push(data.engagement_score)
         }
       }
     })
@@ -519,7 +519,7 @@ export class StatisticalAnalysis {
       return {
         confidence: 0,
         description: 'Insufficient data for frequency analysis (need at least 7 days)',
-        parameters: {},
+        parameters: { type: 'descriptive' as const, mean: 0, median: 0, stdDev: 0, outliers: 0 },
         recommendations: []
       }
     }
@@ -532,30 +532,31 @@ export class StatisticalAnalysis {
     }
 
     Object.keys(dailyCounts).forEach(day => {
-      const count = dailyCounts[day]
-      const avgEngagement = dailyEngagement[day].length > 0 
-        ? dailyEngagement[day].reduce((sum, score) => sum + score, 0) / dailyEngagement[day].length
+      const count = dailyCounts[day] ?? 0
+      const dayEngagement = dailyEngagement[day] ?? []
+      const avgEngagement = dayEngagement.length > 0 
+        ? dayEngagement.reduce((sum, score) => sum + score, 0) / dayEngagement.length
         : 0
 
       if (count <= 2) {
-        frequencyEngagement.low.push(avgEngagement)
+        frequencyEngagement.low!.push(avgEngagement)
       } else if (count <= 5) {
-        frequencyEngagement.medium.push(avgEngagement)
+        frequencyEngagement.medium!.push(avgEngagement)
       } else {
-        frequencyEngagement.high.push(avgEngagement)
+        frequencyEngagement.high!.push(avgEngagement)
       }
     })
 
     // Calculate average engagement for each frequency level
     const averages = {
-      low: frequencyEngagement.low.length > 0 
-        ? frequencyEngagement.low.reduce((sum, val) => sum + val, 0) / frequencyEngagement.low.length 
+      low: (frequencyEngagement.low?.length ?? 0) > 0 
+        ? (frequencyEngagement.low?.reduce((sum, val) => sum + val, 0) ?? 0) / (frequencyEngagement.low?.length ?? 1)
         : 0,
-      medium: frequencyEngagement.medium.length > 0 
-        ? frequencyEngagement.medium.reduce((sum, val) => sum + val, 0) / frequencyEngagement.medium.length 
+      medium: (frequencyEngagement.medium?.length ?? 0) > 0 
+        ? (frequencyEngagement.medium?.reduce((sum, val) => sum + val, 0) ?? 0) / (frequencyEngagement.medium?.length ?? 1)
         : 0,
-      high: frequencyEngagement.high.length > 0 
-        ? frequencyEngagement.high.reduce((sum, val) => sum + val, 0) / frequencyEngagement.high.length 
+      high: (frequencyEngagement.high?.length ?? 0) > 0 
+        ? (frequencyEngagement.high?.reduce((sum, val) => sum + val, 0) ?? 0) / (frequencyEngagement.high?.length ?? 1)
         : 0
     }
 
@@ -568,13 +569,13 @@ export class StatisticalAnalysis {
       return {
         confidence: 0,
         description: 'Unable to determine optimal frequency due to lack of engagement data',
-        parameters: {},
+        parameters: { type: 'descriptive' as const, mean: 0, median: 0, stdDev: 0, outliers: 0 },
         recommendations: []
       }
     }
 
-    const optimalFreq = sortedFreqs[0][0]
-    const optimalEngagement = sortedFreqs[0][1]
+    const optimalFreq = sortedFreqs[0]?.[0] ?? 'medium'
+    const optimalEngagement = sortedFreqs[0]?.[1] ?? 0.5
     
     // Calculate confidence based on difference between best and worst
     const engagementValues = sortedFreqs.map(([, avg]) => avg)
@@ -604,13 +605,11 @@ export class StatisticalAnalysis {
       confidence: Math.max(confidence, 0.5),
       description,
       parameters: {
-        frequency_averages: averages,
-        optimal_frequency: optimalFreq,
-        sample_sizes: {
-          low: frequencyEngagement.low.length,
-          medium: frequencyEngagement.medium.length,
-          high: frequencyEngagement.high.length
-        }
+        type: 'descriptive' as const,
+        mean: optimalEngagement,
+        median: optimalEngagement,
+        stdDev: maxDiff,
+        outliers: engagementValues.length
       },
       recommendations
     }
@@ -626,14 +625,14 @@ export class StatisticalAnalysis {
     if (hours.length === 0) return []
 
     const engagementScores = hours.map(hour => 
-      hourlyActivity[hour.toString().padStart(2, '0')].totalEngagement
+      hourlyActivity[hour.toString().padStart(2, '0')]?.totalEngagement ?? 0
     )
     
     const stats = this.calculateDescriptiveStats(engagementScores)
     const threshold = stats.mean + (stats.stdDev * 0.3)
     
     return hours.filter(hour => 
-      hourlyActivity[hour.toString().padStart(2, '0')].totalEngagement > threshold
+      (hourlyActivity[hour.toString().padStart(2, '0')]?.totalEngagement ?? 0) > threshold
     ).sort((a, b) => a - b)
   }
 
@@ -647,10 +646,11 @@ export class StatisticalAnalysis {
   } {
     const responseTimes = behaviorData
       .filter(data => data.response_time_ms && data.response_time_ms > 0)
-      .map(data => data.response_time_ms)
+      .map(data => data.response_time_ms!)
+      .filter((time): time is number => time !== undefined)
 
     const averageResponseTime = responseTimes.length > 0
-      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+      ? responseTimes.reduce((sum, time) => sum + (time ?? 0), 0) / responseTimes.length
       : 0
 
     // Analyze daily patterns

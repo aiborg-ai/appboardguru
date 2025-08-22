@@ -11,13 +11,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id, role')
       .eq('id', authUser.id)
       .single()
 
-    if (!user?.organization_id) {
+    if (!(user as any)?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -43,22 +43,22 @@ export async function GET(request: NextRequest) {
     }
 
     const insights = await MLInsightsEngine.generateOrganizationInsights(
-      user.organization_id,
+      (user as any)?.organization_id,
       {
         timeRange: { start: startDate.toISOString(), end: endDate.toISOString() },
-        includePredictions: insightTypes.includes('predictions'),
-        includeAnomalies: insightTypes.includes('anomalies'),
-        includeRecommendations: insightTypes.includes('recommendations')
+        includePredictions: (insightTypes as any)?.includes('predictions'),
+        includeAnomalies: (insightTypes as any)?.includes('anomalies'),
+        includeRecommendations: (insightTypes as any)?.includes('recommendations')
       }
     )
 
     return NextResponse.json({
       success: true,
-      data: insights,
+      data: insights as any,
       meta: {
         timeRange,
         insightTypes,
-        organizationId: user.organization_id,
+        organizationId: (user as any)?.organization_id,
         generatedAt: new Date().toISOString()
       }
     })
@@ -81,13 +81,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id, role')
       .eq('id', authUser.id)
       .single()
 
-    if (!user?.organization_id || user.role !== 'admin') {
+    if (!(user as any)?.organization_id || (user as any)?.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 

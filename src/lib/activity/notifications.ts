@@ -77,7 +77,7 @@ export class SmartNotificationEngine {
     try {
       const supabase = await createSupabaseServerClient()
 
-      const { data: alertRule, error } = await supabase
+      const { data: alertRule, error } = await (supabase as any)
         .from('activity_alert_rules')
         .insert({
           organization_id: organizationId,
@@ -124,7 +124,7 @@ export class SmartNotificationEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get active alert rules for this organization
-      const { data: alertRules } = await supabase
+      const { data: alertRules } = await (supabase as any)
         .from('activity_alert_rules')
         .select('*')
         .eq('organization_id', organizationId)
@@ -145,7 +145,7 @@ export class SmartNotificationEngine {
 
           // Evaluate conditions
           const shouldTrigger = await this.evaluateConditions(
-            rule.trigger_conditions.conditions,
+            (rule.trigger_conditions as any).conditions,
             activityData,
             organizationId
           )
@@ -253,13 +253,18 @@ export class SmartNotificationEngine {
     const windowMs = this.parseTimeWindow(timeWindow)
     const windowStart = new Date(Date.now() - windowMs).toISOString()
 
-    const { data: activities, count } = await supabase
+    const { data: activities, count } = await (supabase as any)
       .from('audit_logs')
       .select('id', { count: 'exact' })
       .eq('organization_id', organizationId)
       .gte('created_at', windowStart)
 
-    return this.compareValues(count || 0, condition.operator, condition.value)
+    const value = typeof condition.value === 'string' 
+      ? condition.value 
+      : Array.isArray(condition.value) 
+        ? condition.value[0] 
+        : String(condition.value)
+    return this.compareValues(count || 0, condition.operator, value || '')
   }
 
   private static evaluateActivityTypeCondition(
@@ -281,9 +286,9 @@ export class SmartNotificationEngine {
       case 'not_equals':
         return activityType !== condition.value
       case 'contains':
-        return activityType.includes(condition.value)
+        return activityType.includes(String(condition.value))
       case 'not_contains':
-        return !activityType.includes(condition.value)
+        return !activityType.includes(String(condition.value))
       default:
         return false
     }
@@ -302,7 +307,7 @@ export class SmartNotificationEngine {
     organizationId: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
-    const { data: anomalies } = await supabase.rpc('detect_activity_anomalies', {
+    const { data: anomalies } = await (supabase as any).rpc('detect_activity_anomalies', {
       input_user_id: activityData.userId,
       input_org_id: organizationId
     })
@@ -312,15 +317,15 @@ export class SmartNotificationEngine {
     // Check specific behavioral flags
     switch (condition.value) {
       case 'bulk_downloads':
-        return anomalies.bulk_downloads && this.compareValues(
-          anomalies.downloads_today,
+        return (anomalies as any).bulk_downloads && this.compareValues(
+          (anomalies as any).downloads_today,
           condition.operator,
-          condition.metadata?.threshold || 10
+          (condition.metadata as any)?.threshold || 10
         )
       case 'unusual_hours':
-        return anomalies.unusual_hours
+        return (anomalies as any).unusual_hours
       case 'high_activity':
-        return anomalies.high_activity
+        return (anomalies as any).high_activity
       default:
         return false
     }
@@ -373,7 +378,7 @@ export class SmartNotificationEngine {
       case 'equals':
         return resourceType === condition.value || resourceId === condition.value
       case 'contains':
-        return resourceType?.includes(condition.value) || resourceId?.includes(condition.value)
+        return (resourceType && typeof condition.value === 'string' && resourceType.includes(condition.value)) || (resourceId && typeof condition.value === 'string' && resourceId.includes(condition.value)) || false
       default:
         return false
     }
@@ -393,7 +398,7 @@ export class SmartNotificationEngine {
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<boolean> {
     // Get recent anomaly score for user
-    const { data: anomalies } = await supabase
+    const { data: anomalies } = await (supabase as any)
       .from('activity_insights')
       .select('confidence_score')
       .eq('organization_id', organizationId)
@@ -404,7 +409,12 @@ export class SmartNotificationEngine {
       .limit(1)
 
     const score = anomalies?.[0]?.confidence_score || 0
-    return this.compareValues(score, condition.operator, condition.value)
+    const value = typeof condition.value === 'string' 
+      ? condition.value 
+      : Array.isArray(condition.value) 
+        ? condition.value[0] 
+        : String(condition.value)
+    return this.compareValues(score, condition.operator, value || '')
   }
 
   /**
@@ -433,13 +443,13 @@ export class SmartNotificationEngine {
 
       // Update rule trigger count and timestamp  
       // Get current count first, then update
-      const { data: currentRule } = await supabase
+      const { data: currentRule } = await (supabase as any)
         .from('activity_alert_rules')
         .select('trigger_count')
         .eq('id', rule.id)
         .single()
       
-      await supabase
+      await (supabase as any)
         .from('activity_alert_rules')
         .update({
           trigger_count: (currentRule?.trigger_count || 0) + 1,
@@ -460,7 +470,7 @@ export class SmartNotificationEngine {
       broadcastSystemAlert({
         id: `alert-${rule.id}-${Date.now()}`,
         type: 'security',
-        severity: rule.severity,
+        severity: rule.severity === 'info' ? 'low' : rule.severity as 'low' | 'medium' | 'high' | 'critical',
         title: `Alert: ${rule.rule_name}`,
         message: `Alert rule "${rule.rule_name}" has been triggered`,
         organizationId,
@@ -545,7 +555,7 @@ export class SmartNotificationEngine {
     try {
       // Get organization admin emails
       const supabase = await createSupabaseServerClient()
-      const { data: admins } = await supabase
+      const { data: admins } = await (supabase as any)
         .from('organization_members')
         .select('users(email, full_name)')
         .eq('organization_id', organizationId)
@@ -555,7 +565,7 @@ export class SmartNotificationEngine {
       const recipients = action.recipients || admins?.flatMap((admin: {
         users: { email: string; full_name: string } | { email: string; full_name: string }[]
       }) => 
-        Array.isArray(admin.users) ? admin.users.map(user => user.email) : [admin.users?.email]
+        Array.isArray((admin.users as any)) ? (admin.users as any).map((user: any) => user.email) : [(admin.users as any)?.email]
       ).filter(Boolean) || []
 
       if (recipients.length === 0) {
@@ -584,7 +594,7 @@ export class SmartNotificationEngine {
     organizationId: string
   ): Promise<void> {
     try {
-      const webhookUrl = action.config.url
+      const webhookUrl = (action.config as { url?: string }).url
       if (!webhookUrl) return
 
       const payload = {
@@ -627,13 +637,13 @@ export class SmartNotificationEngine {
       const supabase = await createSupabaseServerClient()
       
       // Get current failure count first
-      const { data: currentWebhook } = await supabase
+      const { data: currentWebhook } = await (supabase as any)
         .from('activity_webhooks')
         .select('failure_count')
         .eq('endpoint_url', (action.config as any)?.url || '')
         .single()
       
-      await supabase
+      await (supabase as any)
         .from('activity_webhooks')
         .update({
           failure_count: (currentWebhook?.failure_count || 0) + 1,
@@ -775,7 +785,7 @@ export class SmartNotificationEngine {
       const supabase = await createSupabaseServerClient()
 
       // Get users who should receive push notifications
-      const { data: notificationUsers } = await supabase
+      const { data: notificationUsers } = await (supabase as any)
         .from('organization_members')
         .select('user_id, users(full_name)')
         .eq('organization_id', organizationId)
@@ -785,7 +795,7 @@ export class SmartNotificationEngine {
       if (!notificationUsers?.length) return
 
       // Create in-app notifications
-      const notifications = notificationUsers.map(user => ({
+      const notifications = notificationUsers.map((user: any) => ({
         user_id: user.user_id,
         organization_id: organizationId,
         type: 'security' as const,
@@ -800,7 +810,7 @@ export class SmartNotificationEngine {
         }
       }))
 
-      await supabase
+      await (supabase as any)
         .from('notifications')
         .insert(notifications)
 
@@ -892,7 +902,7 @@ export class SmartNotificationEngine {
       'd': 24 * 60 * 60 * 1000
     }
 
-    return parseInt(amount) * multipliers[unit as keyof typeof multipliers]
+    return parseInt(amount || '0') * multipliers[unit as keyof typeof multipliers]
   }
 
   private static compareValues(
@@ -979,7 +989,7 @@ export class SmartNotificationEngine {
 
   private static async lockUserAccount(userId: string, organizationId: string, reason: string): Promise<void> {
     const supabase = supabaseAdmin
-    await supabase
+    await (supabase as any)
       .from('organization_members')
       .update({ 
         status: 'suspended',
@@ -1003,7 +1013,7 @@ export class SmartNotificationEngine {
 
   private static async limitUserPermissions(userId: string, organizationId: string): Promise<void> {
     const supabase = supabaseAdmin
-    await supabase
+    await (supabase as any)
       .from('organization_members')
       .update({
         role: 'viewer', // Downgrade to viewer
@@ -1049,7 +1059,7 @@ export class WorkflowAutomation {
     }
   ): Promise<void> {
     try {
-      for (const [workflowId, workflow] of this.workflows.entries()) {
+      for (const [workflowId, workflow] of Array.from(this.workflows.entries())) {
         if (!workflowId.startsWith(`${organizationId}:`)) continue
 
         // Check if workflow conditions are met
@@ -1162,7 +1172,7 @@ export class NotificationDigest {
       }
 
       // Get activity summary
-      const { data: activities } = await supabase
+      const { data: activities } = await (supabase as any)
         .from('audit_logs')
         .select('event_category, action, created_at, outcome, severity')
         .eq('organization_id', organizationId)
@@ -1170,7 +1180,7 @@ export class NotificationDigest {
         .lte('created_at', timeRange.end)
 
       // Get user's unread alerts
-      const { data: alerts, count: alertCount } = await supabase
+      const { data: alerts, count: alertCount } = await (supabase as any)
         .from('notifications')
         .select('id', { count: 'exact' })
         .eq('user_id', userId)
@@ -1179,8 +1189,8 @@ export class NotificationDigest {
 
       // Generate digest content
       const activityCount = activities?.length || 0
-      const failureCount = activities?.filter(a => a.outcome === 'failure').length || 0
-      const criticalCount = activities?.filter(a => a.severity === 'critical').length || 0
+      const failureCount = activities?.filter((a: any) => a.outcome === 'failure').length || 0
+      const criticalCount = activities?.filter((a: any) => a.severity === 'critical').length || 0
 
       const summary = `${digestType.charAt(0).toUpperCase() + digestType.slice(1)} Summary: ${activityCount} activities, ${failureCount} failures, ${criticalCount} critical events`
 
@@ -1200,7 +1210,7 @@ export class NotificationDigest {
 
       return {
         summary,
-        keyActivities,
+        keyActivities: keyActivities as ActivityLog[],
         insights,
         recommendations,
         unreadAlerts: alertCount || 0

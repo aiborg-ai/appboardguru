@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodSchema, z } from 'zod';
-import { Result } from '../result/result';
+import type { Result } from '../result/types';
+import { Ok, Err, ResultUtils } from '../result';
 import { APIResponse } from '../../types/api';
 
 /**
@@ -17,10 +18,10 @@ export abstract class BaseController {
     try {
       const result = await handler();
       
-      if (result.isOk()) {
-        return this.successResponse(result.unwrap());
+      if (ResultUtils.isOk(result)) {
+        return this.successResponse(ResultUtils.unwrap(result));
       } else {
-        return this.errorResponse(result.unwrapErr());
+        return this.errorResponse(ResultUtils.getError(result)!);
       }
     } catch (error) {
       console.error('Unhandled controller error:', error);
@@ -41,12 +42,12 @@ export abstract class BaseController {
     try {
       const body = await request.json();
       const validated = schema.parse(body);
-      return Result.ok(validated);
+      return Ok(validated);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return Result.err(new Error(`Validation error: ${error.message}`));
+        return Err(new Error(`Validation error: ${error.message}`));
       }
-      return Result.err(new Error('Invalid JSON body'));
+      return Err(new Error('Invalid JSON body'));
     }
   }
 
@@ -61,12 +62,12 @@ export abstract class BaseController {
       const { searchParams } = new URL(request.url);
       const query = Object.fromEntries(searchParams.entries());
       const validated = schema.parse(query);
-      return Result.ok(validated);
+      return Ok(validated);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return Result.err(new Error(`Query validation error: ${error.message}`));
+        return Err(new Error(`Query validation error: ${error.message}`));
       }
-      return Result.err(new Error('Invalid query parameters'));
+      return Err(new Error('Invalid query parameters'));
     }
   }
 
@@ -83,17 +84,17 @@ export abstract class BaseController {
   protected async getUserId(request: NextRequest): Promise<Result<string, Error>> {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
-      return Result.err(new Error('No authorization header'));
+      return Err(new Error('No authorization header'));
     }
 
     // TODO: Implement proper JWT/session validation
     // For now, extract from Bearer token format
     const token = authHeader.replace('Bearer ', '');
     if (!token) {
-      return Result.err(new Error('Invalid authorization format'));
+      return Err(new Error('Invalid authorization format'));
     }
 
-    return Result.ok(token); // Temporary - should decode/validate JWT
+    return Ok(token); // Temporary - should decode/validate JWT
   }
 
   /**
@@ -102,8 +103,7 @@ export abstract class BaseController {
   protected successResponse<T>(data: T, status: number = 200): NextResponse {
     const response: APIResponse<T> = {
       success: true,
-      data,
-      timestamp: new Date().toISOString()
+      data
     };
     return NextResponse.json(response, { status });
   }
@@ -114,8 +114,12 @@ export abstract class BaseController {
   protected errorResponse(error: Error, status: number = 400): NextResponse {
     const response: APIResponse<null> = {
       success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
+      error: {
+        code: 'API_ERROR',
+        message: error.message,
+        details: null,
+        timestamp: new Date().toISOString()
+      }
     };
     return NextResponse.json(response, { status });
   }
@@ -129,7 +133,7 @@ export abstract class BaseController {
     page: number,
     limit: number
   ): NextResponse {
-    const response: APIResponse<T[]> = {
+    const response = {
       success: true,
       data,
       pagination: {
@@ -164,8 +168,8 @@ export abstract class BaseController {
 export const CommonSchemas = {
   id: z.string().min(1, 'ID is required'),
   pagination: z.object({
-    page: z.string().transform(Number).default('1'),
-    limit: z.string().transform(Number).default('20'),
+    page: z.string().transform(Number).default(1),
+    limit: z.string().transform(Number).default(20),
   }),
   search: z.object({
     q: z.string().optional(),

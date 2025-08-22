@@ -166,7 +166,9 @@ export function useFieldArray<T>(
       setItems(current => {
         const newItems = [...current]
         const [movedItem] = newItems.splice(from, 1)
-        newItems.splice(to, 0, movedItem)
+        if (movedItem) {
+          newItems.splice(to, 0, movedItem)
+        }
         return newItems
       })
     }, []),

@@ -132,9 +132,9 @@ export class ActivityStreamServer {
 
       return {
         userId: user.id,
-        organizationIds: memberships.map(m => m.organization_id),
-        role: memberships.find(m => m.role === 'owner')?.role || 
-              memberships.find(m => m.role === 'admin')?.role || 'member'
+        organizationIds: memberships.map((m: any) => (m as any)?.organization_id),
+        role: (memberships.find((m: any) => (m as any)?.role === 'owner') as any)?.role || 
+              (memberships.find((m: any) => (m as any)?.role === 'admin') as any)?.role || 'member'
       }
     } catch (error) {
       console.error('User authentication error:', error)
@@ -146,7 +146,7 @@ export class ActivityStreamServer {
     try {
       const supabase = await createSupabaseServerClient()
       
-      const { data: activities } = await supabase
+      const { data: activities } = await (supabase as any)
         .from('audit_logs')
         .select(`
           id,
@@ -232,24 +232,24 @@ export class ActivityStreamServer {
       
       // Get analytics data based on request type
       if (metricsRequest.type === 'engagement_scores') {
-        const { data } = await supabase.rpc('calculate_user_engagement_score', {
+        const { data } = await (supabase as any).rpc('calculate_user_engagement_score', {
           input_user_id: metricsRequest.userId,
           input_org_id: organizationIds[0], // Primary org
           days_back: metricsRequest.daysBack || 30
-        })
+        } as any)
         return { engagementScore: data }
       }
 
       if (metricsRequest.type === 'anomaly_detection') {
-        const { data } = await supabase.rpc('detect_activity_anomalies', {
+        const { data } = await (supabase as any).rpc('detect_activity_anomalies', {
           input_user_id: metricsRequest.userId,
           input_org_id: organizationIds[0]
-        })
+        } as any)
         return { anomalies: data }
       }
 
       // Default: return activity summary
-      const { data: summary } = await supabase
+      const { data: summary } = await (supabase as any)
         .from('daily_activity_summary')
         .select('*')
         .in('organization_id', organizationIds)

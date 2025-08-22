@@ -104,7 +104,7 @@ class InvitationErrorBoundary extends React.Component<
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Invitation form error:', error, errorInfo)
     this.props.onError?.(error, errorInfo)
   }
@@ -113,7 +113,7 @@ class InvitationErrorBoundary extends React.Component<
     this.setState({ hasError: false, error: null })
   }
 
-  render() {
+  override render() {
     if (this.state.hasError && this.state.error) {
       const Fallback = this.props.fallback
       return <Fallback error={this.state.error} retry={this.retry} />
@@ -331,8 +331,23 @@ function InvitationForm({
     }
   }, [formData.invitations.length, dispatchFormData])
 
-  const updateInvitation = React.useCallback((index: number, field: keyof InvitationData, value: string) => {
-    dispatchFormData({ type: 'update', index, field, value })
+  const updateInvitation = React.useCallback((
+    index: number, 
+    field: keyof InvitationData, 
+    value: string
+  ) => {
+    if (field === 'email') {
+      dispatchFormData({ type: 'update', index, field, value })
+    } else if (field === 'role') {
+      dispatchFormData({ type: 'update', index, field, value: value as InvitationRole })
+    }
+  }, [dispatchFormData])
+
+  const updateInvitationRole = React.useCallback((
+    index: number, 
+    role: 'admin' | 'member' | 'viewer'
+  ) => {
+    dispatchFormData({ type: 'update', index, field: 'role', value: role })
   }, [dispatchFormData])
 
   const handleClose = React.useCallback(() => {
@@ -420,7 +435,7 @@ function InvitationForm({
         {formData.invitations[0] && (
           <div className="bg-gray-50 rounded-lg p-4">
             {(() => {
-              const selectedRoleInfo = roles.find(r => r.value === formData.invitations[0].role)
+              const selectedRoleInfo = roles.find(r => r.value === formData.invitations[0]?.role)
               return selectedRoleInfo ? (
                 <>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center space-x-2">

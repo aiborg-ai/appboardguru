@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
-        const { data: organization, error: orgError } = await supabase
+        const { data: organization, error: orgError } = await (supabase as any)
           .from('organizations')
           .insert({
             name: data.createNewOrganization.name,
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
               require_2fa: false,
               allowed_file_types: ['pdf', 'docx', 'pptx', 'xlsx'],
             },
-          })
+          } as any)
           .select()
           .single();
 
@@ -111,11 +111,11 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to create organization: ${orgError.message}`);
         }
 
-        organizationId = organization.id;
+        organizationId = (organization as any)?.id;
         createdOrganization = organization;
 
         // Add creator as organization owner
-        await supabase
+        await (supabase as any)
           .from('organization_members')
           .insert({
             organization_id: organizationId,
@@ -123,13 +123,13 @@ export async function POST(request: NextRequest) {
             role: 'owner',
             status: 'active',
             is_primary: true,
-          });
+          } as any);
 
       } else if (data.selectedOrganization) {
         organizationId = data.selectedOrganization.id;
         
         // Verify user has access to this organization
-        const { data: membership, error: membershipError } = await supabase
+        const { data: membership, error: membershipError } = await (supabase as any)
           .from('organization_members')
           .select('role, status')
           .eq('organization_id', organizationId)
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Step 2: Create the vault
-      const { data: vault, error: vaultError } = await supabase
+      const { data: vault, error: vaultError } = await (supabase as any)
         .from('vaults')
         .insert({
           organization_id: organizationId,
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
             annotation_enabled: true,
             collaboration_enabled: true,
           },
-        })
+        } as any)
         .select()
         .single();
 
@@ -180,12 +180,12 @@ export async function POST(request: NextRequest) {
       if (data.selectedAssets.length > 0) {
         for (const asset of data.selectedAssets) {
           assetUpdates.push(
-            supabase
+            (supabase as any)
               .from('assets')
               .update({ 
-                vault_id: vault.id,
+                vault_id: (vault as any)?.id,
                 organization_id: organizationId,
-              })
+              } as any)
               .eq('id', asset.id)
               .eq('owner_id', user.id) // Security: only update user's own assets
           );
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       // Add existing board mates to organization if needed
       for (const mate of data.selectedBoardMates) {
         // Check if user is already in the organization
-        const { data: existingMembership } = await supabase
+        const { data: existingMembership } = await (supabase as any)
           .from('organization_members')
           .select('id')
           .eq('organization_id', organizationId)
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
 
         if (!existingMembership) {
           // Add to organization
-          const { error: memberError } = await supabase
+          const { error: memberError } = await (supabase as any)
             .from('organization_members')
             .insert({
               organization_id: organizationId,
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
               role: 'member', // Default role for added members
               status: 'active',
               is_primary: false,
-            });
+            } as any);
 
           if (memberError) {
             boardMateErrors.push(`Failed to add ${mate.full_name} to organization`);
@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
       for (const newMate of data.newBoardMates) {
         try {
           // Create user invitation
-          const { data: invitation, error: inviteError } = await supabase
+          const { data: invitation, error: inviteError } = await (supabase as any)
             .from('organization_invitations')
             .insert({
               organization_id: organizationId,
@@ -247,11 +247,11 @@ export async function POST(request: NextRequest) {
               status: 'pending',
               expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours
               invitation_data: {
-                vault_id: vault.id,
-                vault_name: vault.name,
-                organization_name: createdOrganization?.name || data.selectedOrganization?.name,
+                vault_id: (vault as any)?.id,
+                vault_name: (vault as any)?.name,
+                organization_name: (createdOrganization as any)?.name || data.selectedOrganization?.name,
               },
-            })
+            } as any)
             .select()
             .single();
 
@@ -281,12 +281,12 @@ export async function POST(request: NextRequest) {
         user.id,
         organizationId,
         'created',
-        vault.id,
-        vault.name,
+        (vault as any)?.id,
+        (vault as any)?.name,
         {
           ...requestContext,
-          vault_type: vault.vault_type,
-          access_level: vault.access_level,
+          vault_type: (vault as any)?.vault_type,
+          access_level: (vault as any)?.access_level,
           assets_count: data.selectedAssets.length,
           boardmates_count: data.selectedBoardMates.length,
           invitations_count: data.newBoardMates.length
@@ -299,12 +299,12 @@ export async function POST(request: NextRequest) {
           user.id,
           organizationId,
           'created',
-          createdOrganization.name,
+          (createdOrganization as any)?.name,
           {
             ...requestContext,
-            slug: createdOrganization.slug,
-            industry: createdOrganization.industry,
-            website: createdOrganization.website
+            slug: (createdOrganization as any)?.slug,
+            industry: (createdOrganization as any)?.industry,
+            website: (createdOrganization as any)?.website
           }
         )
       }
@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
       
       // Log failure audit event
       if (organizationId) {
-        await supabase
+        await (supabase as any)
           .from('audit_logs')
           .insert({
             organization_id: organizationId,
@@ -340,7 +340,7 @@ export async function POST(request: NextRequest) {
               error: error instanceof Error ? error.message : 'Unknown error',
               vault_name: data.vaultName,
             },
-          });
+          } as any);
       }
 
       return NextResponse.json(

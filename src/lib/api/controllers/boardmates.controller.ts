@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BaseController, CommonSchemas } from '../base-controller';
-import { Result } from '../../result/result';
+import { Result, Ok, Err, ResultUtils } from '../../result';
 
 /**
  * Consolidated Boardmates API Controller
@@ -19,55 +19,57 @@ export class BoardmatesController extends BaseController {
       organization_id: z.string().optional()
     }));
 
-    return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
-      
-      const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
-      
-      const { page, limit, q, filter, sort, status, role, organization_id } = queryResult.unwrap();
-      
-      // TODO: Implement database query with user permissions
-      const mockBoardmates = [
-        {
-          id: 'boardmate-1',
-          userId: 'user-1',
-          email: 'john@example.com',
-          name: 'John Doe',
-          role: 'Board Member',
-          department: 'Strategy',
-          organizationId: 'org-1',
-          status: 'active',
-          profile: {
-            title: 'Senior VP of Strategy',
-            bio: 'Experienced leader in strategic planning',
-            avatar: '/avatars/john.jpg',
-            expertise: ['Strategy', 'Finance', 'Operations']
-          },
-          permissions: {
-            canViewDocuments: true,
-            canEditDocuments: false,
-            canInviteMembers: false,
-            canManageVaults: false
-          },
-          activity: {
-            lastLogin: new Date().toISOString(),
-            documentsAccessed: 15,
-            meetingsAttended: 8
-          },
-          joinedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-      
-      return this.paginatedResponse(mockBoardmates, 1, page, limit);
-    });
+    if (ResultUtils.isErr(queryResult)) {
+      return this.errorResponse(ResultUtils.getError(queryResult)!);
+    }
+    
+    const userIdResult = await this.getUserId(request);
+    if (ResultUtils.isErr(userIdResult)) {
+      return this.errorResponse(ResultUtils.getError(userIdResult)!);
+    }
+    
+    const { page, limit, q, filter, sort, status, role, organization_id } = ResultUtils.unwrap(queryResult);
+    
+    // TODO: Implement database query with user permissions
+    const mockBoardmates = [
+      {
+        id: 'boardmate-1',
+        userId: 'user-1',
+        email: 'john@example.com',
+        name: 'John Doe',
+        role: 'Board Member',
+        department: 'Strategy',
+        organizationId: 'org-1',
+        status: 'active',
+        profile: {
+          title: 'Senior VP of Strategy',
+          bio: 'Experienced leader in strategic planning',
+          avatar: '/avatars/john.jpg',
+          expertise: ['Strategy', 'Finance', 'Operations']
+        },
+        permissions: {
+          canViewDocuments: true,
+          canEditDocuments: false,
+          canInviteMembers: false,
+          canManageVaults: false
+        },
+        activity: {
+          lastLogin: new Date().toISOString(),
+          documentsAccessed: 15,
+          meetingsAttended: 8
+        },
+        joinedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    return this.paginatedResponse(mockBoardmates, 1, page, limit);
   }
 
   async getBoardmate(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
@@ -126,7 +128,7 @@ export class BoardmatesController extends BaseController {
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(boardmate);
+      return Ok(boardmate);
     });
   }
 
@@ -155,12 +157,12 @@ export class BoardmatesController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const boardmateData = bodyResult.unwrap();
+      const boardmateData = ResultUtils.unwrap(bodyResult);
       
       // TODO: Create boardmate in database and send invitation
       const newBoardmate = {
@@ -185,13 +187,13 @@ export class BoardmatesController extends BaseController {
             activityVisible: false
           }
         },
-        invitedBy: userIdResult.unwrap(),
+        invitedBy: ResultUtils.unwrap(userIdResult),
         invitedAt: new Date().toISOString(),
         joinedAt: null,
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(newBoardmate);
+      return Ok(newBoardmate);
     });
   }
 
@@ -230,16 +232,16 @@ export class BoardmatesController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update boardmate in database with permission check
-      return Result.ok({
+      return Ok({
         id,
         ...updates,
         updatedAt: new Date().toISOString()
@@ -250,12 +252,12 @@ export class BoardmatesController extends BaseController {
   async deleteBoardmate(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
       // TODO: Soft delete boardmate and handle cleanup
-      return Result.ok({ 
+      return Ok({ 
         deleted: true, 
         id,
         deletedAt: new Date().toISOString()
@@ -283,25 +285,25 @@ export class BoardmatesController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const invitationData = bodyResult.unwrap();
+      const invitationData = ResultUtils.unwrap(bodyResult);
       
       // TODO: Create invitation and send email
       const invitation = {
         id: 'invitation-id',
         ...invitationData,
-        invitedBy: userIdResult.unwrap(),
+        invitedBy: ResultUtils.unwrap(userIdResult),
         status: 'pending',
         token: 'secure-invitation-token',
         expiresAt: new Date(Date.now() + invitationData.expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString()
       };
       
-      return Result.ok(invitation);
+      return Ok(invitation);
     });
   }
 
@@ -312,36 +314,38 @@ export class BoardmatesController extends BaseController {
       organization_id: z.string().optional()
     }));
 
-    return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
-      
-      const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
-      
-      const { page, limit, status, organization_id } = queryResult.unwrap();
-      
-      // TODO: Fetch invitations with filters
-      const invitations = [
-        {
-          id: 'invitation-1',
-          email: 'newmember@example.com',
-          name: 'Jane Smith',
-          role: 'Board Member',
-          organizationId: 'org-1',
-          invitedBy: userIdResult.unwrap(),
-          status: 'pending',
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString()
-        }
-      ];
-      
-      return this.paginatedResponse(
-        invitations.filter(inv => !status || inv.status === status),
-        1,
-        page,
-        limit
-      );
-    });
+    if (ResultUtils.isErr(queryResult)) {
+      return this.errorResponse(ResultUtils.getError(queryResult)!);
+    }
+    
+    const userIdResult = await this.getUserId(request);
+    if (ResultUtils.isErr(userIdResult)) {
+      return this.errorResponse(ResultUtils.getError(userIdResult)!);
+    }
+    
+    const { page, limit, status, organization_id } = ResultUtils.unwrap(queryResult);
+    
+    // TODO: Fetch invitations with filters
+    const invitations = [
+      {
+        id: 'invitation-1',
+        email: 'newmember@example.com',
+        name: 'Jane Smith',
+        role: 'Board Member',
+        organizationId: 'org-1',
+        invitedBy: ResultUtils.unwrap(userIdResult),
+        status: 'pending',
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    return this.paginatedResponse(
+      invitations.filter(inv => !status || inv.status === status),
+      1,
+      page,
+      limit
+    );
   }
 
   // ============ BOARDMATE ASSOCIATIONS ============
@@ -351,13 +355,13 @@ export class BoardmatesController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
-      const { type } = queryResult.unwrap();
+      const { type } = ResultUtils.unwrap(queryResult);
       
       // TODO: Fetch associations from database
       const associations = [
@@ -385,7 +389,7 @@ export class BoardmatesController extends BaseController {
         }
       ];
       
-      return Result.ok(associations.filter(assoc => !type || assoc.type === type));
+      return Ok(associations.filter(assoc => !type || assoc.type === type));
     });
   }
 
@@ -400,13 +404,13 @@ export class BoardmatesController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const associationData = bodyResult.unwrap();
+      const associationData = ResultUtils.unwrap(bodyResult);
       
       // TODO: Create association in database
       const association = {
@@ -415,10 +419,10 @@ export class BoardmatesController extends BaseController {
         ...associationData,
         joinedAt: new Date().toISOString(),
         status: 'active',
-        createdBy: userIdResult.unwrap()
+        createdBy: ResultUtils.unwrap(userIdResult)
       };
       
-      return Result.ok(association);
+      return Ok(association);
     });
   }
 
@@ -431,20 +435,20 @@ export class BoardmatesController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update association in database
-      return Result.ok({
+      return Ok({
         boardmateId: id,
         ...updates,
         updatedAt: new Date().toISOString(),
-        updatedBy: userIdResult.unwrap()
+        updatedBy: ResultUtils.unwrap(userIdResult)
       });
     });
   }
@@ -456,16 +460,16 @@ export class BoardmatesController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
-      const { entityId, type } = queryResult.unwrap();
+      const { entityId, type } = ResultUtils.unwrap(queryResult);
       
       // TODO: Delete association from database
-      return Result.ok({ 
+      return Ok({ 
         deleted: true, 
         boardmateId: id,
         entityId,

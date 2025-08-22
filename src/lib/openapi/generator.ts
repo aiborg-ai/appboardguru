@@ -395,7 +395,8 @@ export class OpenAPIGenerator {
    */
   private extractTagFromPath(path: string): string[] {
     const parts = path.split('/').filter(Boolean)
-    return parts.length > 0 ? [this.capitalize(parts[0])] : ['API']
+    const firstPart = parts[0]
+    return firstPart ? [this.capitalize(firstPart)] : ['API']
   }
   
   /**

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id, role')
       .eq('id', authUser.id)
@@ -37,18 +37,18 @@ export async function POST(request: NextRequest) {
     let searchResults
     if (naturalLanguage) {
       const nlResults = await ActivitySearchEngine.searchWithNaturalLanguage(
-        user.organization_id,
+        (user as any)?.organization_id,
         query.trim(),
-        { limit, offset, ...filters }
+        { limit, offset, ...(filters as any) }
       )
       searchResults = {
-        results: nlResults.results,
-        totalCount: nlResults.results.length,
-        parsedQuery: nlResults.parsedQuery,
-        confidence: nlResults.confidence
+        results: (nlResults as any)?.results,
+        totalCount: (nlResults as any)?.results?.length || 0,
+        parsedQuery: (nlResults as any)?.parsedQuery,
+        confidence: (nlResults as any)?.confidence
       }
     } else {
-      const supabaseQuery = supabase
+      const supabaseQuery = (supabase as any)
         .from('audit_logs')
         .select(`
           id,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
           correlation_id,
           users!inner(id, name, email)
         `)
-        .eq('organization_id', user.organization_id)
+        .eq('organization_id', (user as any)?.organization_id)
         .or(`event_type.ilike.%${query.trim()}%,entity_type.ilike.%${query.trim()}%,metadata->>'title'.ilike.%${query.trim()}%`)
         .order('timestamp', { ascending: false })
         .limit(limit)
@@ -69,32 +69,32 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
-      const results = activities?.map(activity => ({
-        id: activity.id,
-        eventType: activity.event_type,
-        entityType: activity.entity_type,
-        entityId: activity.entity_id,
-        timestamp: activity.timestamp,
-        userId: (activity.users as any)?.id || 'unknown',
-        userName: (activity.users as any)?.name || 'Unknown User',
-        userEmail: (activity.users as any)?.email || 'unknown',
-        metadata: activity.metadata,
+      const results = (activities as any)?.map((activity: any) => ({
+        id: (activity as any)?.id,
+        eventType: (activity as any)?.event_type,
+        entityType: (activity as any)?.entity_type,
+        entityId: (activity as any)?.entity_id,
+        timestamp: (activity as any)?.timestamp,
+        userId: (activity as any)?.users?.id || 'unknown',
+        userName: (activity as any)?.users?.name || 'Unknown User',
+        userEmail: (activity as any)?.users?.email || 'unknown',
+        metadata: (activity as any)?.metadata,
         relevanceScore: 0.8,
-        context: `${activity.event_type} on ${activity.entity_type}`,
-        correlationId: activity.correlation_id
+        context: `${(activity as any)?.event_type} on ${(activity as any)?.entity_type}`,
+        correlationId: (activity as any)?.correlation_id
       })) || []
 
       searchResults = {
         results,
-        totalCount: results.length
+        totalCount: (results as any)?.length || 0
       }
     }
 
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: authUser.id,
-        organization_id: user.organization_id,
+        organization_id: (user as any)?.organization_id,
         event_type: 'activity_search',
         entity_type: 'search_query',
         entity_id: `search-${Date.now()}`,
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
           query: query.trim(),
           naturalLanguage,
           filters,
-          resultCount: searchResults.results.length,
-          confidence: naturalLanguage ? searchResults.confidence : undefined
+          resultCount: (searchResults as any)?.results?.length || 0,
+          confidence: naturalLanguage ? (searchResults as any)?.confidence : undefined
         },
         timestamp: new Date().toISOString(),
         correlation_id: `search-${Date.now()}-${Math.random().toString(36).substring(2)}`,
@@ -111,16 +111,16 @@ export async function POST(request: NextRequest) {
         ip_address: request.headers.get('x-forwarded-for') || 'unknown',
         user_agent: request.headers.get('user-agent') || 'unknown',
         source: 'activity_search'
-      })
+      } as any)
 
     return NextResponse.json({
       success: true,
-      ...searchResults,
+      ...(searchResults as any),
       meta: {
         query: query.trim(),
         naturalLanguage,
         filters,
-        organizationId: user.organization_id,
+        organizationId: (user as any)?.organization_id,
         searchedAt: new Date().toISOString()
       }
     })
@@ -143,13 +143,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await (supabase as any)
       .from('users')
       .select('organization_id')
       .eq('id', authUser.id)
       .single()
 
-    if (!user?.organization_id) {
+    if (!(user as any)?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -158,10 +158,10 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'templates': {
-        const { data: customTemplates } = await supabase
+        const { data: customTemplates } = await (supabase as any)
           .from('activity_search_templates')
           .select('*')
-          .eq('organization_id', user.organization_id)
+          .eq('organization_id', (user as any)?.organization_id)
           .eq('is_active', true)
           .order('usage_count', { ascending: false })
 
@@ -200,20 +200,20 @@ export async function GET(request: NextRequest) {
           success: true,
           templates: [
             ...builtInTemplates,
-            ...(customTemplates || [])
+            ...((customTemplates as any) || [])
           ]
         })
       }
 
       case 'suggestions': {
         const suggestions = await ActivitySearchEngine.getSearchSuggestions(
-          user.organization_id,
+          (user as any)?.organization_id,
           url.searchParams.get('query') || ''
         )
         
         return NextResponse.json({
           success: true,
-          suggestions
+          suggestions: suggestions as any
         })
       }
 

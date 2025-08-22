@@ -43,15 +43,15 @@ export class ComplianceEngine {
    */
   static async generateComplianceReport(
     organizationId: string,
-    reportType: ComplianceReport['reportType'],
-    periodStart: string,
-    periodEnd: string
+    report_type: ComplianceReport['report_type'],
+    period_start: string,
+    period_end: string
   ): Promise<ComplianceReport> {
     try {
       const supabase = await createSupabaseServerClient()
 
       // Get compliance requirements for the report type
-      const requirements = this.getComplianceRequirements(reportType)
+      const requirements = this.getComplianceRequirements(report_type)
       
       // Collect evidence for each requirement
       const findings: ComplianceFinding[] = []
@@ -61,8 +61,8 @@ export class ComplianceEngine {
         const finding = await this.assessRequirement(
           requirement,
           organizationId,
-          periodStart,
-          periodEnd
+          period_start,
+          period_end
         )
         findings.push(finding)
 
@@ -70,8 +70,8 @@ export class ComplianceEngine {
         const reqEvidence = await this.collectEvidence(
           requirement,
           organizationId,
-          periodStart,
-          periodEnd
+          period_start,
+          period_end
         )
         evidence.push(...reqEvidence)
       }
@@ -81,10 +81,10 @@ export class ComplianceEngine {
 
       // Create immutable snapshot
       const reportData = {
-        reportType,
+        report_type,
         organizationId,
-        periodStart,
-        periodEnd,
+        period_start,
+        period_end,
         findings,
         summary,
         evidence
@@ -98,31 +98,33 @@ export class ComplianceEngine {
         .insert({
           organization_id: organizationId,
           snapshot_type: 'compliance_report',
-          period_start: periodStart,
-          period_end: periodEnd,
+          period_start: period_start,
+          period_end: period_end,
           activity_summary: reportData,
           signature_hash: signatureHash,
-          retention_until: this.calculateRetentionDate(reportType)
+          retention_until: this.calculateRetentionDate(report_type)
         })
         .select()
         .single()
 
       const report: ComplianceReport = {
         id: snapshot.id,
-        reportType,
-        organizationId,
-        periodStart,
-        periodEnd,
-        generatedAt: new Date().toISOString(),
+        report_type,
+        organization_id: organizationId,
+        period_start,
+        period_end,
+        generated_at: new Date().toISOString(),
         status: 'draft',
         findings,
         summary,
         evidence,
-        signatureHash,
-        retentionUntil: this.calculateRetentionDate(reportType)
+        signature_hash: signatureHash,
+        retention_until: this.calculateRetentionDate(report_type),
+        generated_by: '', // TODO: get from auth context
+        regulatory_framework: '' // TODO: get from report type
       }
 
-      console.log(`📋 Compliance report generated: ${reportType} for ${organizationId}`)
+      console.log(`📋 Compliance report generated: ${report_type} for ${organizationId}`)
       return report
     } catch (error) {
       console.error('Error generating compliance report:', error)
@@ -171,13 +173,14 @@ export class ComplianceEngine {
 
       const immutableEntry: ImmutableAuditEntry = {
         id: `block-${blockNumber}-${organizationId}`,
-        previousHash,
-        currentHash,
-        blockNumber,
+        previous_hash: previousHash,
+        current_hash: currentHash,
+        block_number: blockNumber,
         timestamp: blockData.timestamp,
-        eventData,
+        event_data: eventData,
         signature,
-        merkleRoot
+        merkle_root: merkleRoot,
+        verification_status: 'pending'
       }
 
       // Store the immutable entry
@@ -244,6 +247,8 @@ export class ComplianceEngine {
       // Verify each entry's hash chain
       for (let i = 0; i < auditEntries.length; i++) {
         const entry = auditEntries[i]
+        if (!entry) continue
+        
         const immutableData = entry.metadata?.immutable_entry
 
         if (!immutableData) {
@@ -253,7 +258,7 @@ export class ComplianceEngine {
 
         // Verify hash chain
         const expectedPreviousHash = i > 0 ? 
-          auditEntries[i - 1].signature_hash : 
+          auditEntries[i - 1]?.signature_hash || '0000000000000000000000000000000000000000000000000000000000000000' : 
           '0000000000000000000000000000000000000000000000000000000000000000'
 
         if (immutableData.previousHash !== expectedPreviousHash) {
@@ -281,13 +286,11 @@ export class ComplianceEngine {
       const integrityScore = (verifiedCount / auditEntries.length) * 100
 
       return {
-        is_valid: corruptedEntries.length === 0,
-        total_entries: auditEntries.length,
-        verified_entries: verifiedCount,
-        corrupted_entries: corruptedEntries,
-        integrity_score: integrityScore,
-        last_verified_at: new Date().toISOString(),
-        verification_method: 'blockchain_verification'
+        isValid: corruptedEntries.length === 0,
+        totalEntries: auditEntries.length,
+        verifiedEntries: verifiedCount,
+        corruptedEntries: corruptedEntries,
+        integrityScore: integrityScore
       }
     } catch (error) {
       console.error('Error verifying audit trail integrity:', error)
@@ -302,12 +305,7 @@ export class ComplianceEngine {
     organizationId: string,
     query: string,
     timeRange: { start: string; end: string }
-  ): Promise<{
-    proof: string
-    publicInputs: any
-    verificationKey: string
-    description: string
-  }> {
+  ): Promise<ZeroKnowledgeProof> {
     try {
       // This is a simplified implementation
       // In production, use libraries like circomlib or snarkjs
@@ -332,7 +330,7 @@ export class ComplianceEngine {
         successfulEvents: auditData.filter(e => e.outcome === 'success').length,
         failedEvents: auditData.filter(e => e.outcome === 'failure').length,
         criticalEvents: auditData.filter(e => e.severity === 'critical').length,
-        eventCategories: [...new Set(auditData.map(e => e.event_category))],
+        eventCategories: Array.from(new Set(auditData.map(e => e.event_category))),
         timeRange,
         organizationId: organizationId.substring(0, 8) + '...' // Partial ID for privacy
       }
@@ -446,7 +444,7 @@ export class ComplianceEngine {
 
       console.log(`🗑️ Data retention enforced: ${deletedEntries} deleted, ${archivedEntries} archived`)
 
-      return { deletedEntries, archivedEntries, errors }
+      return { deletedEntries, archivedEntries, errors: errors as readonly string[] }
     } catch (error) {
       console.error('Error enforcing data retention:', error)
       throw error
@@ -626,7 +624,7 @@ export class ComplianceEngine {
    */
   private static async calculateMerkleRoot(hashes: readonly string[]): Promise<string> {
     if (hashes.length === 0) return ''
-    if (hashes.length === 1) return hashes[0]
+    if (hashes.length === 1) return hashes[0] || ''
 
     // Simple implementation - use actual Merkle tree library in production
     const combined = hashes.join('')
@@ -647,7 +645,7 @@ export class ComplianceEngine {
   /**
    * Get compliance requirements for specific standards
    */
-  private static getComplianceRequirements(reportType: ComplianceReportType): Array<{
+  private static getComplianceRequirements(report_type: ComplianceReportType): Array<{
     id: string
     name: string
     description: string
@@ -753,7 +751,7 @@ export class ComplianceEngine {
       custom: []
     }
 
-    return requirements[reportType] || []
+    return requirements[report_type] || []
   }
 
   /**
@@ -767,26 +765,26 @@ export class ComplianceEngine {
       category: string
     },
     organizationId: string,
-    periodStart: string,
-    periodEnd: string
+    period_start: string,
+    period_end: string
   ): Promise<ComplianceFinding> {
     try {
       const supabase = await createSupabaseServerClient()
 
       // Assessment logic based on requirement category
       let status: ComplianceFinding['status'] = 'compliant'
-      let riskLevel: ComplianceFinding['riskLevel'] = 'low'
+      let risk_level: ComplianceFinding['risk_level'] = 'low'
       const evidence: string[] = []
       const remediation: string[] = []
 
       switch (requirement.category) {
         case 'access_control': {
           const accessViolations = await this.checkAccessControlCompliance(
-            organizationId, periodStart, periodEnd, supabase
+            organizationId, period_start, period_end, supabase
           )
           if (accessViolations > 0) {
             status = 'non_compliant'
-            riskLevel = 'high'
+            risk_level = 'high'
             evidence.push(`${accessViolations} access control violations detected`)
             remediation.push('Review and strengthen access control policies')
           } else {
@@ -797,11 +795,11 @@ export class ComplianceEngine {
 
         case 'authentication': {
           const authFailures = await this.checkAuthenticationCompliance(
-            organizationId, periodStart, periodEnd, supabase
+            organizationId, period_start, period_end, supabase
           )
           if (authFailures > 10) {
             status = 'partially_compliant'
-            riskLevel = 'medium'
+            risk_level = 'medium'
             evidence.push(`${authFailures} authentication failures recorded`)
             remediation.push('Implement stronger authentication controls')
           } else {
@@ -812,11 +810,11 @@ export class ComplianceEngine {
 
         case 'monitoring': {
           const monitoringGaps = await this.checkMonitoringCompliance(
-            organizationId, periodStart, periodEnd, supabase
+            organizationId, period_start, period_end, supabase
           )
           if (monitoringGaps.length > 0) {
             status = 'partially_compliant'
-            riskLevel = 'medium'
+            risk_level = 'medium'
             evidence.push(`Monitoring gaps: ${monitoringGaps.join(', ')}`)
             remediation.push('Implement comprehensive monitoring coverage')
           } else {
@@ -832,11 +830,14 @@ export class ComplianceEngine {
 
       return {
         id: `finding-${requirement.id}-${Date.now()}`,
-        requirement: `${requirement.id}: ${requirement.name}`,
+        requirement_id: requirement.id,
+        requirement_title: requirement.name,
         status,
-        evidence,
-        riskLevel,
-        remediation: remediation.length > 0 ? remediation : undefined
+        evidence_references: evidence,
+        risk_level,
+        remediation_actions: remediation.length > 0 ? remediation : undefined,
+        verification_method: 'automated_assessment',
+        last_assessment_date: new Date().toISOString()
       }
     } catch (error) {
       console.error('Error assessing requirement:', error)
@@ -855,8 +856,8 @@ export class ComplianceEngine {
       category: string
     },
     organizationId: string,
-    periodStart: string,
-    periodEnd: string
+    period_start: string,
+    period_end: string
   ): Promise<readonly ComplianceEvidence[]> {
     try {
       const supabase = await createSupabaseServerClient()
@@ -867,8 +868,8 @@ export class ComplianceEngine {
         .from('audit_logs')
         .select('*')
         .eq('organization_id', organizationId)
-        .gte('created_at', periodStart)
-        .lte('created_at', periodEnd)
+        .gte('created_at', period_start)
+        .lte('created_at', period_end)
         .eq('event_category', requirement.category)
         .limit(100)
 
@@ -876,14 +877,17 @@ export class ComplianceEngine {
         evidence.push({
           id: `evidence-audit-${requirement.id}-${Date.now()}`,
           type: 'audit_log',
+          title: `Audit Evidence: ${requirement.name}`,
           description: `Audit logs for ${requirement.name}`,
-          evidenceData: {
+          evidence_data: {
             entryCount: auditLogs.length,
             sampleEntries: auditLogs.slice(0, 5),
-            timeRange: { periodStart, periodEnd }
+            timeRange: { period_start, period_end }
           },
-          collectedAt: new Date().toISOString(),
-          verificationHash: await this.generateHash(JSON.stringify(auditLogs))
+          collected_at: new Date().toISOString(),
+          collected_by: '', // TODO: get from auth context
+          verification_hash: await this.generateHash(JSON.stringify(auditLogs)),
+          retention_period: '7 years'
         })
       }
 
@@ -912,17 +916,20 @@ export class ComplianceEngine {
     // Calculate risk score based on severity
     const riskScore = findings.reduce((score, finding) => {
       const riskWeights = { low: 1, medium: 3, high: 7, critical: 15 }
-      return score + (riskWeights[finding.riskLevel] || 0)
+      return score + (riskWeights[finding.risk_level] || 0)
     }, 0)
 
     return {
-      totalRequirements,
-      compliantCount,
-      nonCompliantCount,
-      partiallyCompliantCount,
-      overallScore,
-      riskScore,
-      trend: 'stable' // TODO: Calculate trend by comparing with previous reports
+      total_requirements: totalRequirements,
+      compliant_count: compliantCount,
+      non_compliant_count: nonCompliantCount,
+      partially_compliant_count: partiallyCompliantCount,
+      not_applicable_count: 0, // TODO: Calculate from findings
+      overall_score: overallScore,
+      risk_score: riskScore,
+      trend: 'stable', // TODO: Calculate trend by comparing with previous reports
+      key_risks: [], // TODO: Extract from findings
+      recommendations: [] // TODO: Generate recommendations
     }
   }
 
@@ -943,13 +950,13 @@ export class ComplianceEngine {
       years: 365 * 24 * 60 * 60 * 1000
     }
 
-    const unitMultiplier = multipliers[unit.toLowerCase() as keyof typeof multipliers] || multipliers.years
-    const cutoffTime = Date.now() - (parseInt(amount) * unitMultiplier)
+    const unitMultiplier = multipliers[unit?.toLowerCase() as keyof typeof multipliers] || multipliers.years
+    const cutoffTime = Date.now() - (parseInt(amount || '0') * unitMultiplier)
     
     return new Date(cutoffTime).toISOString()
   }
 
-  private static calculateRetentionDate(reportType: ComplianceReportType): string {
+  private static calculateRetentionDate(report_type: ComplianceReportType): string {
     const retentionPeriods = {
       SOC2: 7, // 7 years
       GDPR: 3, // 3 years
@@ -957,17 +964,19 @@ export class ComplianceEngine {
       SOX: 7, // 7 years
       ISO27001: 5, // 5 years
       CCPA: 2, // 2 years
+      PCI_DSS: 3, // 3 years
+      NIST: 5, // 5 years
       custom: 5 // 5 years default
     }
 
-    const years = retentionPeriods[reportType] || 5
+    const years = retentionPeriods[report_type] || 5
     return new Date(Date.now() + years * 365 * 24 * 60 * 60 * 1000).toISOString()
   }
 
   private static async checkAccessControlCompliance(
     organizationId: string,
-    periodStart: string,
-    periodEnd: string,
+    period_start: string,
+    period_end: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<number> {
     const { count } = await supabase
@@ -976,16 +985,16 @@ export class ComplianceEngine {
       .eq('organization_id', organizationId)
       .eq('event_type', 'authorization')
       .eq('outcome', 'failure')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('created_at', period_start)
+      .lte('created_at', period_end)
 
     return count || 0
   }
 
   private static async checkAuthenticationCompliance(
     organizationId: string,
-    periodStart: string,
-    periodEnd: string,
+    period_start: string,
+    period_end: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<number> {
     const { count } = await supabase
@@ -994,16 +1003,16 @@ export class ComplianceEngine {
       .eq('organization_id', organizationId)
       .eq('event_type', 'authentication')
       .eq('outcome', 'failure')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('created_at', period_start)
+      .lte('created_at', period_end)
 
     return count || 0
   }
 
   private static async checkMonitoringCompliance(
     organizationId: string,
-    periodStart: string,
-    periodEnd: string,
+    period_start: string,
+    period_end: string,
     supabase: ReturnType<typeof createSupabaseServerClient> extends Promise<infer T> ? T : never
   ): Promise<readonly string[]> {
     const gaps: string[] = []
@@ -1017,8 +1026,8 @@ export class ComplianceEngine {
         .select('id', { count: 'exact' })
         .eq('organization_id', organizationId)
         .eq('event_type', eventType)
-        .gte('created_at', periodStart)
-        .lte('created_at', periodEnd)
+        .gte('created_at', period_start)
+        .lte('created_at', period_end)
 
       if (!count || count === 0) {
         gaps.push(`No ${eventType} events logged`)
@@ -1090,7 +1099,7 @@ export class ComplianceEngine {
 
   private static async notifyComplianceViolation(violation: ComplianceViolation, organizationId: string): Promise<void> {
     // Send compliance violation notifications
-    console.log(`⚠️ Compliance violation detected: ${violation.type}`)
+    console.log(`⚠️ Compliance violation detected: ${violation.violation_type}`)
   }
 
   private static async updateComplianceMetrics(organizationId: string): Promise<void> {
@@ -1141,7 +1150,7 @@ export class ComplianceEngine {
 
     return {
       totalEvents: count || 0,
-      eventTypes: data ? [...new Set(data.map(d => d.event_type))] : [],
+      eventTypes: data ? Array.from(new Set(data.map(d => d.event_type))) : [],
       successRate: data ? (data.filter(d => d.outcome === 'success').length / data.length) * 100 : 100
     }
   }
@@ -1251,7 +1260,7 @@ export class PrivacyEngine {
       const breachIncidents = await this.checkSecurityIncidents(organizationId, reportPeriod)
 
       return {
-        dataProcessingActivities: dataProcessing || [],
+        dataProcessingActivities: (dataProcessing || []) as unknown as ActivityLog[],
         privacyControls,
         dataRetentionStatus,
         consentManagement,
@@ -1266,19 +1275,25 @@ export class PrivacyEngine {
   private static async assessPrivacyControls(organizationId: string): Promise<PrivacySettings> {
     // Assess privacy control implementation
     return {
-      encryption: 'implemented',
-      accessControls: 'implemented',
-      dataMinimization: 'partial',
-      anonymization: 'available'
+      anonymization_level: 'standard' as const,
+      data_minimization_enabled: false,
+      consent_tracking_enabled: true,
+      right_to_erasure_enabled: true,
+      data_portability_enabled: true,
+      purpose_limitation_rules: ['analytics', 'compliance']
     }
   }
 
   private static async checkDataRetentionStatus(organizationId: string): Promise<DataRetentionPolicy> {
     // Check data retention policy compliance
     return {
-      policiesInPlace: true,
-      automatedEnforcement: true,
-      retentionSchedule: 'compliant'
+      policy_name: 'Standard Retention Policy',
+      applies_to: ['user_data', 'audit_logs', 'activity_logs'],
+      retention_period: '7 years',
+      deletion_method: 'hard_delete' as const,
+      legal_hold_override: false,
+      geographic_restrictions: ['EU', 'US'],
+      compliance_requirements: ['GDPR', 'CCPA']
     }
   }
 

@@ -10,24 +10,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
-      .from('users')
+    const { data: orgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
       .single()
 
-    if (!user?.organization_id) {
+    if (!(orgMember as any)?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
     const url = new URL(request.url)
     const organizationId = url.searchParams.get('organizationId')
 
-    if (organizationId !== user.organization_id && user.role !== 'admin') {
+    if (organizationId !== (orgMember as any)?.organization_id && (orgMember as any)?.role !== 'admin') {
       return NextResponse.json({ error: 'Insufficient privileges' }, { status: 403 })
     }
 
-    const { data: alerts, error } = await supabase
+    const { data: alerts, error } = await (supabase as any)
       .from('activity_alert_instances')
       .select(`
         id,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         acknowledged_at,
         metadata
       `)
-      .eq('organization_id', user.organization_id)
+      .eq('organization_id', (orgMember as any)?.organization_id)
       .order('triggered_at', { ascending: false })
       .limit(100)
 
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      alerts: alerts || []
+      alerts: (alerts as any) || []
     })
 
   } catch (error) {
@@ -70,13 +70,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
-      .from('users')
+    const { data: orgMember } = await (supabase as any)
+      .from('organization_members')
       .select('organization_id, role')
-      .eq('id', authUser.id)
+      .eq('user_id', authUser.id)
       .single()
 
-    if (!user?.organization_id) {
+    if (!(orgMember as any)?.organization_id) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
@@ -85,23 +85,23 @@ export async function PATCH(request: NextRequest) {
 
     switch (action) {
       case 'acknowledge': {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('activity_alert_instances')
           .update({
             acknowledged: true,
             acknowledged_by: authUser.id,
             acknowledged_at: new Date().toISOString()
-          })
+          } as any)
           .eq('id', alertId)
-          .eq('organization_id', user.organization_id)
+          .eq('organization_id', (orgMember as any)?.organization_id)
 
         if (updateError) throw updateError
 
-        await supabase
+        await (supabase as any)
           .from('audit_logs')
           .insert({
             user_id: authUser.id,
-            organization_id: user.organization_id,
+            organization_id: (orgMember as any)?.organization_id,
             event_type: 'alert_acknowledged',
             entity_type: 'alert',
             entity_id: alertId,
@@ -112,7 +112,7 @@ export async function PATCH(request: NextRequest) {
             ip_address: request.headers.get('x-forwarded-for') || 'unknown',
             user_agent: request.headers.get('user-agent') || 'unknown',
             source: 'activity_alerts'
-          })
+          } as any)
 
         return NextResponse.json({ success: true })
       }

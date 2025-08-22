@@ -33,7 +33,7 @@ export async function GET(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any).vaults.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -52,7 +52,7 @@ export async function GET(
     }
 
     if (cachedResults && cachedResults.length > 0) {
-      return NextResponse.json(cachedResults[0].results)
+      return NextResponse.json(cachedResults[0]?.results || [])
     }
 
     // Perform document search

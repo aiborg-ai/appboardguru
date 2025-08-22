@@ -131,10 +131,10 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
                     <FileText className="h-12 w-12 text-green-500 mx-auto" />
                     <div>
                       <p className="text-lg font-medium text-gray-900">
-                        {acceptedFiles[0].name}
+                        {acceptedFiles[0]?.name}
                       </p>
                       <p className="text-gray-600">
-                        {formatFileSize(acceptedFiles[0].size)}
+                        {acceptedFiles[0]?.size ? formatFileSize(acceptedFiles[0].size) : ''}
                       </p>
                     </div>
                   </div>
@@ -183,7 +183,7 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
                       type="text"
                       className="input w-full"
                       placeholder="e.g., Q4 2024 Board Pack"
-                      defaultValue={acceptedFiles[0].name.replace(/\.[^/.]+$/, "")}
+                      defaultValue={acceptedFiles[0]?.name.replace(/\.[^/.]+$/, "") || ""}
                     />
                   </div>
                   

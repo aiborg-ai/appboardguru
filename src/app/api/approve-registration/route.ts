@@ -41,25 +41,25 @@ async function handleApprovalRequest(request: NextRequest) {
     }
 
     // Verify the security token from database
-    if (!registrationRequest.approval_token || registrationRequest.approval_token !== token) {
+    if (!(registrationRequest as any).approval_token || (registrationRequest as any).approval_token !== token) {
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Security Error&message=Invalid security token&details=This link appears to be invalid or tampered with. Please contact support if you believe this is an error.`
       return NextResponse.redirect(errorUrl, 302)
     }
 
     // Check if token has expired
-    if (registrationRequest.token_expires_at && new Date(registrationRequest.token_expires_at) < new Date()) {
+    if ((registrationRequest as any).token_expires_at && new Date((registrationRequest as any).token_expires_at) < new Date()) {
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Link Expired&message=This approval link has expired&details=For security reasons, approval links expire after 24 hours. Please contact support to request a new approval link.`
       return NextResponse.redirect(errorUrl, 302)
     }
 
     // Check if already processed
-    if (registrationRequest.status !== 'pending') {
-      const warningUrl = `${getAppUrl()}/approval-result?type=warning&title=Already Processed&message=This registration request has already been ${registrationRequest.status}&details=No further action is needed&name=${encodeURIComponent(registrationRequest.full_name)}&email=${encodeURIComponent(registrationRequest.email)}`
+    if ((registrationRequest as any).status !== 'pending') {
+      const warningUrl = `${getAppUrl()}/approval-result?type=warning&title=Already Processed&message=This registration request has already been ${(registrationRequest as any).status}&details=No further action is needed&name=${encodeURIComponent((registrationRequest as any).full_name)}&email=${encodeURIComponent((registrationRequest as any).email)}`
       return NextResponse.redirect(warningUrl, 302)
     }
 
     // Approve the registration request and clear the token (one-time use)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('registration_requests')
       .update({
         status: 'approved',
@@ -84,18 +84,18 @@ async function handleApprovalRequest(request: NextRequest) {
       // Import debug logger
       const { debugLogger } = await import('@/lib/debug-logger')
       
-      debugLogger.approvalStart(registrationRequest.email, registrationRequest.id)
+      debugLogger.approvalStart((registrationRequest as any).email, (registrationRequest as any).id)
       
       // Create auth user without password - THIS IS MANDATORY
       const { success: userCreateSuccess, error: userCreateError, userRecord: createdUserRecord } = await createUserForApprovedRegistration(
-        registrationRequest.email,
-        registrationRequest.full_name
+        (registrationRequest as any).email,
+        (registrationRequest as any).full_name
       )
 
       if (!userCreateSuccess) {
-        debugLogger.error('USER_CREATION_MANDATORY_FAILED', registrationRequest.email, { 
+        debugLogger.error('USER_CREATION_MANDATORY_FAILED', (registrationRequest as any).email, { 
           error: userCreateError,
-          registrationId: registrationRequest.id 
+          registrationId: (registrationRequest as any).id 
         })
         
         // User creation is MANDATORY for approval to succeed
@@ -104,44 +104,44 @@ async function handleApprovalRequest(request: NextRequest) {
       }
       
       userRecord = createdUserRecord
-      debugLogger.info('USER_CREATION_SUCCESS', registrationRequest.email, {
+      debugLogger.info('USER_CREATION_SUCCESS', (registrationRequest as any).email, {
         userId: userRecord?.id,
         passwordSet: userRecord?.password_set
       })
 
       // Generate OTP code for first-time login (24-hour expiry)
       const { success: otpSuccess, otpCode: generatedOtpCode, error: otpError } = await createOtpCode(
-        registrationRequest.email,
+        (registrationRequest as any).email,
         'first_login',
         24 // 24 hours
       )
 
       if (otpSuccess && generatedOtpCode) {
         otpCode = generatedOtpCode
-        debugLogger.info('OTP_GENERATION_SUCCESS', registrationRequest.email, { hasOtp: true })
-        console.log(`✅ OTP code generated for first-time login: ${registrationRequest.email}`)
+        debugLogger.info('OTP_GENERATION_SUCCESS', (registrationRequest as any).email, { hasOtp: true })
+        console.log(`✅ OTP code generated for first-time login: ${(registrationRequest as any).email}`)
       } else {
-        debugLogger.error('OTP_GENERATION_FAILED', registrationRequest.email, { error: otpError })
+        debugLogger.error('OTP_GENERATION_FAILED', (registrationRequest as any).email, { error: otpError })
         console.error('Failed to generate OTP code:', otpError)
         // OTP generation failure should not stop the approval, but user will need magic link
       }
 
       // Generate magic link for password setup (fallback option)
-      console.log(`🔗 Attempting magic link generation for ${registrationRequest.email}`)
+      console.log(`🔗 Attempting magic link generation for ${(registrationRequest as any).email}`)
       const { magicLink: generatedMagicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(
-        registrationRequest.email
+        (registrationRequest as any).email
       )
 
       if (linkSuccess && generatedMagicLink) {
         magicLink = generatedMagicLink
-        debugLogger.magicLinkGenerate(registrationRequest.email, true, { 
+        debugLogger.magicLinkGenerate((registrationRequest as any).email, true, { 
           hasLink: true,
           linkLength: generatedMagicLink.length,
           linkPreview: generatedMagicLink.substring(0, 100) + '...'
         })
-        console.log(`✅ Magic link successfully generated for ${registrationRequest.email}`)
+        console.log(`✅ Magic link successfully generated for ${(registrationRequest as any).email}`)
       } else {
-        debugLogger.magicLinkGenerate(registrationRequest.email, false, { 
+        debugLogger.magicLinkGenerate((registrationRequest as any).email, false, { 
           error: linkError,
           hasOtp: !!otpCode
         })
@@ -154,9 +154,9 @@ async function handleApprovalRequest(request: NextRequest) {
       // Import debug logger in catch block too
       const { debugLogger } = await import('@/lib/debug-logger')
       
-      debugLogger.error('AUTH_USER_CREATION_EXCEPTION', registrationRequest.email, {
+      debugLogger.error('AUTH_USER_CREATION_EXCEPTION', (registrationRequest as any).email, {
         error: authError instanceof Error ? authError.message : authError,
-        registrationId: registrationRequest.id
+        registrationId: (registrationRequest as any).id
       })
       
       console.error('Auth user creation error:', authError)
@@ -181,7 +181,7 @@ async function handleApprovalRequest(request: NextRequest) {
             <h2 style="color: #1f2937; margin-bottom: 24px; font-size: 24px;">Welcome to BoardGuru!</h2>
             
             <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
-              Dear ${registrationRequest.full_name},
+              Dear ${(registrationRequest as any).full_name},
             </p>
             
             <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
@@ -202,7 +202,7 @@ async function handleApprovalRequest(request: NextRequest) {
                   <h4 style="color: #065f46; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Easy Sign-In Steps:</h4>
                   <ol style="color: #065f46; margin: 0; padding-left: 20px; line-height: 1.6; font-size: 14px; text-align: left;">
                     <li>Visit: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">BoardGuru Sign In</a></li>
-                    <li>Enter your email: <strong>${registrationRequest.email}</strong></li>
+                    <li>Enter your email: <strong>${(registrationRequest as any).email}</strong></li>
                     <li>Enter your 6-digit code above</li>
                     <li>Set up your permanent password</li>
                     <li>Start using BoardGuru!</li>
@@ -220,7 +220,7 @@ async function handleApprovalRequest(request: NextRequest) {
                     <li>Complete your profile setup</li>
                   ` : `
                     <li>Visit the BoardGuru platform: <a href="${getAppUrl()}/auth/signin" style="color: #059669; text-decoration: none; font-weight: 600;">Sign In Here</a></li>
-                    <li>Use your registered email: <strong>${registrationRequest.email}</strong></li>
+                    <li>Use your registered email: <strong>${(registrationRequest as any).email}</strong></li>
                     <li>Request a password setup link during first login</li>
                     <li>Complete your profile setup</li>
                   `}
@@ -279,22 +279,22 @@ async function handleApprovalRequest(request: NextRequest) {
 
       await transporter.sendMail({
         from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
-        to: registrationRequest.email,
+        to: (registrationRequest as any).email,
         subject: '🎉 BoardGuru Registration Approved - Welcome!',
         html: approvalEmailHTML,
       })
 
-      console.log(`✅ Approval email sent to ${registrationRequest.email}`)
+      console.log(`✅ Approval email sent to ${(registrationRequest as any).email}`)
     } catch (emailError) {
       console.error('Failed to send approval email:', emailError)
       // Don't fail the approval process if email fails
     }
 
     // Redirect to beautiful success page
-    console.log(`✅ Approval process completed for ${registrationRequest.email}`)
+    console.log(`✅ Approval process completed for ${(registrationRequest as any).email}`)
     console.log(`📧 Approval email sent: ${!!magicLink || !!otpCode}`)
     
-    const successUrl = `${getAppUrl()}/approval-result?type=success&title=Registration Approved&message=${encodeURIComponent(`${registrationRequest.full_name} has been successfully approved for access to BoardGuru`)}&details=An approval email with login instructions has been sent&name=${encodeURIComponent(registrationRequest.full_name)}&email=${encodeURIComponent(registrationRequest.email)}&company=${encodeURIComponent(registrationRequest.company)}&position=${encodeURIComponent(registrationRequest.position)}`
+    const successUrl = `${getAppUrl()}/approval-result?type=success&title=Registration Approved&message=${encodeURIComponent(`${(registrationRequest as any).full_name} has been successfully approved for access to BoardGuru`)}&details=An approval email with login instructions has been sent&name=${encodeURIComponent((registrationRequest as any).full_name)}&email=${encodeURIComponent((registrationRequest as any).email)}&company=${encodeURIComponent((registrationRequest as any).company)}&position=${encodeURIComponent((registrationRequest as any).position)}`
     
     const response = NextResponse.redirect(successUrl, 302)
     return addSecurityHeaders(response)

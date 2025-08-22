@@ -203,7 +203,8 @@ export class AssetRepository extends BaseRepository {
         .insert({
           asset_id: assetId,
           vault_id: vaultId,
-          added_by: addedBy,
+          added_by_user_id: addedBy,
+          organization_id: '', // This should be passed as a parameter
           added_at: new Date().toISOString()
         })
 

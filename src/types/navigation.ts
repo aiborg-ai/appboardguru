@@ -39,14 +39,16 @@ export interface BaseButtonProps {
   children: ReactNode
 }
 
-export interface ButtonProps extends BaseButtonProps, ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<BaseButtonProps, 'children'>, Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   asChild?: boolean
+  children?: ReactNode
 }
 
-export interface LinkButtonProps extends BaseButtonProps, Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
+export interface LinkButtonProps extends Omit<BaseButtonProps, 'children'>, Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'children'> {
   href: string
   external?: boolean
   prefetch?: boolean
+  children?: ReactNode
 }
 
 // Icon Button Types

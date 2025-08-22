@@ -5,7 +5,7 @@
 
 // Core types and constructors
 export * from './types'
-export { Ok, Err, Result, AppErrorFactory, match, matchAsync } from './result'
+export { Ok, Err, Result, ResultUtils, AppErrorFactory, match, matchAsync } from './result'
 export { Some, None, Option, matchOption, matchOptionAsync } from './option'
 export { ResultHandlers, createResultAPIHandler } from './apiHandler'
 

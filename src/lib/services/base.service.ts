@@ -1,6 +1,6 @@
 import { RepositoryFactory } from '@/lib/repositories'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types'
+import type { Database } from '@/types/database'
 
 export abstract class BaseService {
   protected repositories: RepositoryFactory

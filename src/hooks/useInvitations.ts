@@ -12,7 +12,25 @@ type Invitation = Database['public']['Tables']['organization_invitations']['Row'
 type InvitationRole = 'owner' | 'admin' | 'member' | 'viewer'
 type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'revoked'
 
-interface InvitationWithDetails extends Invitation {
+interface InvitationWithDetails {
+  id: string
+  organization_id: string
+  email: string
+  role: 'owner' | 'admin' | 'member' | 'viewer'
+  invitation_token: string
+  email_verification_code: string
+  created_at: string
+  token_expires_at: string
+  accepted_at: string | null
+  invited_by: string
+  accepted_by: string | null
+  personal_message: string | null
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'revoked'
+  attempt_count: number
+  max_attempts: number
+  created_ip: string | null
+  accepted_ip: string | null
+  device_fingerprint: string | null
   inviter?: {
     email: string
     fullName: string | null

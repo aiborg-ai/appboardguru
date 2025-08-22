@@ -28,7 +28,7 @@ export async function GET(
     const { id: assetId, annotationId } = await params;
 
     // Verify user has access to the annotation
-    const { data: annotation, error: annotationError } = await supabase
+    const { data: annotation, error: annotationError } = await (supabase as any)
       .from('asset_annotations')
       .select(`
         id,
@@ -55,7 +55,7 @@ export async function GET(
     }
 
     // Get replies with user information and reactions
-    const { data: replies, error: repliesError } = await supabase
+    const { data: replies, error: repliesError } = await (supabase as any)
       .from('annotation_replies')
       .select(`
         *,
@@ -90,13 +90,13 @@ export async function GET(
     }
 
     // Transform replies to include user info and reactions
-    const transformedReplies = replies.map(reply => ({
+    const transformedReplies = ((replies as any[]) || []).map((reply: any) => ({
       ...reply,
-      user: reply.users,
-      reactions: reply.annotation_reactions || [],
-      parent_reply: reply.parent_reply ? {
+      user: reply?.users,
+      reactions: reply?.annotation_reactions || [],
+      parent_reply: reply?.parent_reply ? {
         ...reply.parent_reply,
-        user: reply.parent_reply.users,
+        user: reply.parent_reply?.users,
       } : null,
     }));
 
@@ -143,7 +143,7 @@ export async function POST(
     const { reply_text, parent_reply_id } = validationResult.data;
 
     // Verify user has access to the annotation
-    const { data: annotation, error: annotationError } = await supabase
+    const { data: annotation, error: annotationError } = await (supabase as any)
       .from('asset_annotations')
       .select(`
         id,
@@ -172,7 +172,7 @@ export async function POST(
 
     // If replying to a specific reply, verify it exists
     if (parent_reply_id) {
-      const { data: parentReply, error: parentError } = await supabase
+      const { data: parentReply, error: parentError } = await (supabase as any)
         .from('annotation_replies')
         .select('id, annotation_id')
         .eq('id', parent_reply_id)
@@ -186,14 +186,14 @@ export async function POST(
     }
 
     // Create reply
-    const { data: reply, error: createError } = await supabase
+    const { data: reply, error: createError } = await (supabase as any)
       .from('annotation_replies')
       .insert({
         annotation_id: annotationId,
         parent_reply_id,
         reply_text,
         created_by: user.id,
-      })
+      } as any)
       .select(`
         *,
         users!created_by (
@@ -217,36 +217,36 @@ export async function POST(
       // Find mentioned users by username/name
       const mentionedNames = mentions.map(match => match[1]);
       
-      const { data: mentionedUsers } = await supabase
+      const { data: mentionedUsers } = await (supabase as any)
         .from('users')
         .select('id, full_name, email')
         .ilike('full_name', `%${mentionedNames.join('%')}%`);
 
       // Create mention records
       if (mentionedUsers && mentionedUsers.length > 0) {
-        const mentionRecords = mentionedUsers.map(mentionedUser => ({
-          reply_id: reply.id,
-          mentioned_user_id: mentionedUser.id,
+        const mentionRecords = (mentionedUsers as any[]).map((mentionedUser: any) => ({
+          reply_id: (reply as any)?.id,
+          mentioned_user_id: (mentionedUser as any)?.id,
           mentioned_by: user.id,
         }));
 
-        await supabase
+        await (supabase as any)
           .from('annotation_mentions')
-          .insert(mentionRecords);
+          .insert(mentionRecords as any);
       }
     }
 
     // Log activity
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
-        organization_id: annotation.organization_id,
+        organization_id: (annotation as any)?.organization_id,
         user_id: user.id,
         event_type: 'user_action',
         event_category: 'annotations',
         action: 'create_reply',
         resource_type: 'annotation_reply',
-        resource_id: reply.id,
+        resource_id: (reply as any)?.id,
         event_description: `Created reply to annotation ${annotationId}`,
         outcome: 'success',
         details: {
@@ -255,12 +255,12 @@ export async function POST(
           parent_reply_id,
           has_mentions: mentions.length > 0,
         },
-      });
+      } as any);
 
     return NextResponse.json({
       reply: {
-        ...reply,
-        user: reply.users,
+        ...(reply as any),
+        user: (reply as any)?.users,
         reactions: [],
         parent_reply: null,
       },

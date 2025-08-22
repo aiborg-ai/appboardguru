@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     const response = {
       recommendations,
       user_id: user.id,
-      organization_id: userOrg?.organization_id,
+      organization_id: (userOrg as any)?.organization_id,
       total_count: filteredRecommendations.length,
       fetched_at: new Date().toISOString()
     }

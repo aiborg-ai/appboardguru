@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // Type-safe annotation content based on annotation type
@@ -158,7 +158,7 @@ export function useAnnotationSync({
               filter: `asset_id=eq.${assetId}`,
             },
             async (payload: AnnotationPayload) => {
-              if (payload.new && payload.new.created_by !== currentUserId) {
+              if (payload.new && 'created_by' in payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the annotation
                 const { data: userInfo } = await supabase
                   .from('users')
@@ -200,7 +200,7 @@ export function useAnnotationSync({
               filter: `annotation_id=in.(${assetId})`, // This would need to be adjusted to filter by asset's annotations
             },
             async (payload: ReplyPayload) => {
-              if (payload.new && payload.new.created_by !== currentUserId) {
+              if (payload.new && 'created_by' in payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the reply
                 const { data: userInfo } = await supabase
                   .from('users')
@@ -235,7 +235,9 @@ export function useAnnotationSync({
           .channel(`presence_${assetId}`)
           .on('presence', { event: 'sync' }, () => {
             const state = presenceChannel?.presenceState();
-            const users = Object.values(state || {}).flat() as UserPresenceData[];
+            const users = Object.values(state || {}).flat().filter(u => 
+              u && typeof u === 'object' && 'user_id' in u && 'user_name' in u && 'last_seen' in u
+            ) as unknown as UserPresenceData[];
             setActiveUsers(users);
             onUserPresence?.(users);
           })
@@ -252,7 +254,7 @@ export function useAnnotationSync({
           .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') {
               // Track presence
-              await presenceChannel.track({
+              await presenceChannel?.track({
                 user_id: currentUserId,
                 user_name: 'Current User', // This should come from user data
                 last_seen: new Date().toISOString(),
@@ -273,7 +275,9 @@ export function useAnnotationSync({
       } catch (error) {
         console.error('Error setting up subscriptions:', error);
         setIsConnected(false);
+        return () => {}; // Return empty cleanup function
       }
+      return () => {}; // Default return for successful setup
     };
 
     setupSubscriptions();

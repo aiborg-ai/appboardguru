@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       // Check for conflicts for each user
       const availabilityResults = await Promise.all(
         queryData.user_ids.map(async (userId) => {
-          const { data: conflicts } = await supabase
+          const { data: conflicts } = await (supabase as any)
             .rpc('check_calendar_conflicts', {
               p_user_id: userId,
               p_start_datetime: queryData.start_datetime,
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { data: availability, error: insertError } = await supabase
+    const { data: availability, error: insertError } = await (supabase as any)
       .from('calendar_availability')
       .upsert({
         user_id: user.id,

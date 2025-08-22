@@ -127,13 +127,32 @@ export class TimeSeriesAnalysis {
     }
   ): Promise<TrendAnalysis> {
     if (data.length < 7) {
+      const defaultStats: StatisticalSummary = {
+        mean: 0, median: 0, stdDev: 0, variance: 0,
+        min: 0, max: 0, q25: 0, q75: 0,
+        skewness: 0, kurtosis: 0, coefficientOfVariation: 0
+      }
+      
       return {
         trend: 'stable',
         changeRate: 0,
         seasonalityDetected: false,
         forecast: [],
         confidence: 0,
-        insights: ['Insufficient data for trend analysis (minimum 7 data points required)']
+        insights: ['Insufficient data for trend analysis (minimum 7 data points required)'],
+        statistics: defaultStats,
+        trendLine: {
+          slope: 0,
+          intercept: 0,
+          rSquared: 0,
+          pValue: 0
+        },
+        residualAnalysis: {
+          mean: 0,
+          stdDev: 0,
+          autocorrelation: 0,
+          normalityTest: 0
+        }
       }
     }
 
@@ -354,7 +373,14 @@ export class TimeSeriesAnalysis {
         isPresent: false,
         period: 0,
         strength: 0,
-        peaks: []
+        peaks: [],
+        confidence: 0,
+        components: {
+          trend: [],
+          seasonal: [],
+          residual: []
+        },
+        cyclicalPatterns: []
       }
     }
 
@@ -385,7 +411,14 @@ export class TimeSeriesAnalysis {
       isPresent,
       period,
       strength: Math.max(0, Math.min(1, strength)),
-      peaks
+      peaks,
+      confidence: Math.max(0, Math.min(1, strength)),
+      components: {
+        trend: [],
+        seasonal: [],
+        residual: []
+      },
+      cyclicalPatterns: []
     }
   }
 
@@ -989,7 +1022,7 @@ export class TimeSeriesAnalysis {
     data: readonly TimeSeriesData[], 
     sensitivity: 'low' | 'medium' | 'high' = 'medium'
   ): {
-    readonly anomalies: readonly Array<{
+    readonly anomalies: Array<{
       readonly index: number
       readonly timestamp: Date
       readonly value: number

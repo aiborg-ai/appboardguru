@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchService } from '@/lib/services/search.service'
-import { EnhancedChatResponse, AssetReference, WebReference, VaultReference, MeetingReference, ReportReference } from '@/types/search'
+import { EnhancedChatResponse, AssetReference, VaultReference, MeetingReference } from '@/types/search'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 

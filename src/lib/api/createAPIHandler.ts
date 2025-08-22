@@ -483,9 +483,11 @@ function parseTimeWindow(window: string): number {
   if (!match) throw new Error(`Invalid time window format: ${window}`)
   
   const [, amount, unit] = match
+  if (!amount || !unit) throw new Error(`Invalid time window format: ${window}`)
+  
   const multipliers = { s: 1000, m: 60000, h: 3600000, d: 86400000 }
   
-  return parseInt(amount) * multipliers[unit as keyof typeof multipliers]
+  return parseInt(amount, 10) * multipliers[unit as keyof typeof multipliers]
 }
 
 /**

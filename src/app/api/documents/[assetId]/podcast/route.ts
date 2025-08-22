@@ -17,7 +17,7 @@ export async function POST(
     const { assetId } = params
 
     // Verify user has access to this asset
-    const { data: asset, error: assetError } = await supabase
+    const { data: asset, error: assetError } = await (supabase as any)
       .from('vault_assets')
       .select('*, vaults!inner(user_id)')
       .eq('id', assetId)
@@ -27,12 +27,12 @@ export async function POST(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    if (asset.vaults.user_id !== user.id) {
+    if ((asset as any)?.vaults?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Check if podcast already exists and is recent
-    const { data: existingPodcast, error: podcastError } = await supabase
+    const { data: existingPodcast, error: podcastError } = await (supabase as any)
       .from('document_podcasts')
       .select('*')
       .eq('asset_id', assetId)
@@ -45,19 +45,19 @@ export async function POST(
 
     // If podcast exists and is recent (less than 24 hours), return it
     if (existingPodcast && existingPodcast.length > 0) {
-      const podcast = existingPodcast[0]
-      const createdAt = new Date(podcast.created_at)
+      const podcast = (existingPodcast as any[])[0]
+      const createdAt = new Date((podcast as any)?.created_at)
       const now = new Date()
       const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
 
       if (hoursDiff < 24) {
         return NextResponse.json({
-          id: podcast.id,
-          title: podcast.title,
-          duration: podcast.duration,
-          audioUrl: podcast.audio_url,
-          transcript: podcast.transcript,
-          generatedAt: podcast.created_at
+          id: (podcast as any)?.id,
+          title: (podcast as any)?.title,
+          duration: (podcast as any)?.duration,
+          audioUrl: (podcast as any)?.audio_url,
+          transcript: (podcast as any)?.transcript,
+          generatedAt: (podcast as any)?.created_at
         })
       }
     }
@@ -66,16 +66,16 @@ export async function POST(
     const generatedPodcast = await generateDocumentPodcast(asset)
 
     // Save generated podcast to database
-    const { data: savedPodcast, error: saveError } = await supabase
+    const { data: savedPodcast, error: saveError } = await (supabase as any)
       .from('document_podcasts')
       .insert({
         asset_id: assetId,
-        title: generatedPodcast.title,
-        duration: generatedPodcast.duration,
-        audio_url: generatedPodcast.audioUrl,
-        transcript: generatedPodcast.transcript,
+        title: (generatedPodcast as any)?.title,
+        duration: (generatedPodcast as any)?.duration,
+        audio_url: (generatedPodcast as any)?.audioUrl,
+        transcript: (generatedPodcast as any)?.transcript,
         user_id: user.id
-      })
+      } as any)
       .select()
       .single()
 
@@ -86,12 +86,12 @@ export async function POST(
     }
 
     return NextResponse.json({
-      id: savedPodcast.id,
-      title: savedPodcast.title,
-      duration: savedPodcast.duration,
-      audioUrl: savedPodcast.audio_url,
-      transcript: savedPodcast.transcript,
-      generatedAt: savedPodcast.created_at
+      id: (savedPodcast as any)?.id,
+      title: (savedPodcast as any)?.title,
+      duration: (savedPodcast as any)?.duration,
+      audioUrl: (savedPodcast as any)?.audio_url,
+      transcript: (savedPodcast as any)?.transcript,
+      generatedAt: (savedPodcast as any)?.created_at
     })
 
   } catch (error) {
@@ -111,7 +111,7 @@ async function generateDocumentPodcast(asset: any) {
   // 3. Use text-to-speech AI to generate the audio
   // 4. Upload the audio file to storage and return the URL
 
-  const documentType = asset.name.toLowerCase()
+  const documentType = (asset as any)?.name?.toLowerCase() || ''
   let title = "Document Podcast"
   let transcript = ""
 
@@ -152,7 +152,7 @@ Expected outcomes are clearly defined with measurable success criteria. This ena
 
 Thank you for your attention. This proposal represents a strategic opportunity to achieve significant value and drive meaningful results.`
   } else {
-    title = `${asset.name} - Audio Summary`
+    title = `${(asset as any)?.name || 'Document'} - Audio Summary`
     transcript = `Welcome to this audio summary of the document.
 
 This comprehensive document covers important topics and provides valuable insights for readers. Let me highlight the key points and main takeaways.

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    const organizationId = userOrg?.organization_id
+    const organizationId = (userOrg as any)?.organization_id
 
     // Generate sample activity data (in real implementation, this would come from audit_logs)
     const sampleActivities = [
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       .from('user_activity_feed')
       .insert({
         user_id: user.id,
-        organization_id: userOrg?.organization_id,
+        organization_id: (userOrg as any)?.organization_id,
         activity_type: type,
         activity_title: title,
         activity_description: description,
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
     const activity = {
       id: Math.random().toString(36).substr(2, 9),
       user_id: user.id,
-      organization_id: userOrg?.organization_id,
+      organization_id: (userOrg as any)?.organization_id,
       activity_type: type,
       activity_title: title,
       activity_description: description,

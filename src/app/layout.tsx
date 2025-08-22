@@ -1,12 +1,12 @@
 // import './globals.css' // Temporarily disabled due to PostCSS configuration issue
 // import './disable-overlays.css' // Temporarily disabled due to CSS parsing errors
-import { Inter } from 'next/font/google'
+// import { Inter } from 'next/font/google' // Temporarily disabled due to build issue
 import { Metadata } from 'next'
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
+// const inter = Inter({ 
+//   subsets: ['latin'],
+//   variable: '--font-inter',
+// })
 
 export const metadata: Metadata = {
   title: 'BoardGuru - Enterprise Board Management Platform',
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en">
       <head>
         <script
           dangerouslySetInnerHTML={{

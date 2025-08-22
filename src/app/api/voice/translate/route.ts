@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's organization for custom terminology
-    const { data: userOrg } = await supabase
+    const { data: userOrg } = await (supabase as any)
       .from('organization_memberships')
       .select('organization_id')
       .eq('user_id', user.id)
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     // Get custom terminology for better translations
     let customTerminology = {};
     if (organizationId) {
-      const { data: terminology } = await supabase
+      const { data: terminology } = await (supabase as any)
         .from('custom_terminology')
         .select('term, translations, context_category')
         .eq('organization_id', organizationId)
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     // Create or update translation session
     let sessionId = body.sessionId;
     if (!sessionId && organizationId) {
-      const { data: session } = await supabase
+      const { data: session } = await (supabase as any)
         .from('voice_translation_sessions')
         .insert({
           user_id: user.id,
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
 
     // Store translation entry
     if (sessionId && organizationId) {
-      await supabase
+      await (supabase as any)
         .from('voice_translations')
         .insert({
           session_id: sessionId,
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
     // Log translation metrics
     if (organizationId) {
       for (const [targetLang, result] of Object.entries(translations)) {
-        await supabase
+        await (supabase as any)
           .from('translation_metrics')
           .insert({
             user_id: user.id,
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log audit entry
-    await supabase
+    await (supabase as any)
       .from('audit_logs')
       .insert({
         user_id: user.id,
@@ -294,7 +294,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (action === 'sessions') {
-      const { data: sessions } = await supabase
+      const { data: sessions } = await (supabase as any)
         .from('voice_translation_sessions')
         .select('*')
         .eq('user_id', user.id)
@@ -448,7 +448,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (action === 'end') {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('voice_translation_sessions')
         .update({
           is_active: false,
@@ -473,7 +473,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('voice_translation_sessions')
         .update({
           ...filteredData,

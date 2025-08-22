@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BaseController, CommonSchemas } from '../base-controller';
-import { Result } from '../../result/result';
+import { Result, Ok, Err, ResultUtils } from '../../result';
 
 /**
  * Consolidated Vaults API Controller
@@ -18,46 +18,48 @@ export class VaultsController extends BaseController {
       organization_id: z.string().optional()
     }));
 
-    return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
-      
-      const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
-      
-      const { page, limit, q, filter, sort, status, organization_id } = queryResult.unwrap();
-      
-      // TODO: Implement database query with user permissions
-      const mockVaults = [
-        {
-          id: 'vault-1',
-          name: 'Board Documents',
-          description: 'Official board meeting documents and records',
-          organizationId: 'org-1',
-          ownerId: userIdResult.unwrap(),
-          status: 'active',
-          permissions: {
-            canView: true,
-            canEdit: true,
-            canAdmin: true
-          },
-          stats: {
-            assetCount: 25,
-            totalSize: 50000000,
-            lastActivity: new Date().toISOString()
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-      
-      return this.paginatedResponse(mockVaults, 1, page, limit);
-    });
+    if (ResultUtils.isErr(queryResult)) {
+      return this.errorResponse(ResultUtils.getError(queryResult)!);
+    }
+    
+    const userIdResult = await this.getUserId(request);
+    if (ResultUtils.isErr(userIdResult)) {
+      return this.errorResponse(ResultUtils.getError(userIdResult)!);
+    }
+    
+    const { page, limit, q, filter, sort, status, organization_id } = ResultUtils.unwrap(queryResult);
+    
+    // TODO: Implement database query with user permissions
+    const mockVaults = [
+      {
+        id: 'vault-1',
+        name: 'Board Documents',
+        description: 'Official board meeting documents and records',
+        organizationId: 'org-1',
+        ownerId: ResultUtils.unwrap(userIdResult),
+        status: 'active',
+        permissions: {
+          canView: true,
+          canEdit: true,
+          canAdmin: true
+        },
+        stats: {
+          assetCount: 25,
+          totalSize: 50000000,
+          lastActivity: new Date().toISOString()
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    return this.paginatedResponse(mockVaults, 1, page, limit);
   }
 
   async getVault(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
@@ -98,7 +100,7 @@ export class VaultsController extends BaseController {
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(vault);
+      return Ok(vault);
     });
   }
 
@@ -115,18 +117,18 @@ export class VaultsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
-      const vaultData = bodyResult.unwrap();
+      const vaultData = ResultUtils.unwrap(bodyResult);
       
       // TODO: Create vault in database
       const newVault = {
         id: 'new-vault-id',
         ...vaultData,
-        ownerId: userIdResult.unwrap(),
+        ownerId: ResultUtils.unwrap(userIdResult),
         status: 'active',
         stats: {
           assetCount: 0,
@@ -138,7 +140,7 @@ export class VaultsController extends BaseController {
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(newVault);
+      return Ok(newVault);
     });
   }
 
@@ -155,16 +157,16 @@ export class VaultsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update vault in database with permission check
-      return Result.ok({
+      return Ok({
         id,
         ...updates,
         updatedAt: new Date().toISOString()
@@ -175,12 +177,12 @@ export class VaultsController extends BaseController {
   async deleteVault(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id } = this.getPathParams(context);
       
       // TODO: Soft delete vault and handle asset cleanup
-      return Result.ok({ 
+      return Ok({ 
         deleted: true, 
         id,
         deletedAt: new Date().toISOString()
@@ -199,38 +201,40 @@ export class VaultsController extends BaseController {
       date_to: z.string().optional()
     }));
 
-    return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
-      
-      const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
-      
-      const { id } = this.getPathParams(context);
-      const { page, limit, q, filter, sort, type, tag, date_from, date_to } = queryResult.unwrap();
-      
-      // TODO: Fetch assets for vault with permission check
-      const assets = [
-        {
-          id: 'asset-1',
-          name: 'Meeting Minutes - Q3.pdf',
-          type: 'document',
-          size: 1024000,
-          vaultId: id,
-          tags: ['meeting', 'q3', 'minutes'],
-          uploadedBy: 'user-1',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-      
-      return this.paginatedResponse(assets, 1, page, limit);
-    });
+    if (ResultUtils.isErr(queryResult)) {
+      return this.errorResponse(ResultUtils.getError(queryResult)!);
+    }
+    
+    const userIdResult = await this.getUserId(request);
+    if (ResultUtils.isErr(userIdResult)) {
+      return this.errorResponse(ResultUtils.getError(userIdResult)!);
+    }
+    
+    const { id } = this.getPathParams(context);
+    const { page, limit, q, filter, sort, type, tag, date_from, date_to } = ResultUtils.unwrap(queryResult);
+    
+    // TODO: Fetch assets for vault with permission check
+    const assets = [
+      {
+        id: 'asset-1',
+        name: 'Meeting Minutes - Q3.pdf',
+        type: 'document',
+        size: 1024000,
+        vaultId: id,
+        tags: ['meeting', 'q3', 'minutes'],
+        uploadedBy: 'user-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    return this.paginatedResponse(assets, 1, page, limit);
   }
 
   async addAssetToVault(request: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const formData = await request.formData();
       const file = formData.get('file') as File;
@@ -238,7 +242,7 @@ export class VaultsController extends BaseController {
       const metadata = formData.get('metadata') as string;
       
       if (!file) {
-        return Result.err(new Error('File is required'));
+        return Err(new Error('File is required'));
       }
       
       const { id: vaultId } = this.getPathParams(context);
@@ -252,18 +256,18 @@ export class VaultsController extends BaseController {
         vaultId,
         tags: tags ? tags.split(',').map(t => t.trim()) : [],
         metadata: metadata ? JSON.parse(metadata) : {},
-        uploadedBy: userIdResult.unwrap(),
+        uploadedBy: ResultUtils.unwrap(userIdResult),
         uploadedAt: new Date().toISOString()
       };
       
-      return Result.ok(asset);
+      return Ok(asset);
     });
   }
 
   async getVaultAsset(request: NextRequest, context: { params: { id: string; assetId: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id: vaultId, assetId } = this.getPathParams(context);
       
@@ -290,7 +294,7 @@ export class VaultsController extends BaseController {
         updatedAt: new Date().toISOString()
       };
       
-      return Result.ok(asset);
+      return Ok(asset);
     });
   }
 
@@ -298,21 +302,21 @@ export class VaultsController extends BaseController {
     const schema = z.object({
       name: z.string().min(1).optional(),
       tags: z.array(z.string()).optional(),
-      metadata: z.record(z.any()).optional()
+      metadata: z.record(z.string(), z.any()).optional()
     });
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id: vaultId, assetId } = this.getPathParams(context);
-      const updates = bodyResult.unwrap();
+      const updates = ResultUtils.unwrap(bodyResult);
       
       // TODO: Update asset in vault with permission check
-      return Result.ok({
+      return Ok({
         id: assetId,
         vaultId,
         ...updates,
@@ -324,12 +328,12 @@ export class VaultsController extends BaseController {
   async removeAssetFromVault(request: NextRequest, context: { params: { id: string; assetId: string } }): Promise<NextResponse> {
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id: vaultId, assetId } = this.getPathParams(context);
       
       // TODO: Remove asset from vault (or delete if only in this vault)
-      return Result.ok({ 
+      return Ok({ 
         removed: true, 
         assetId,
         vaultId,
@@ -349,13 +353,13 @@ export class VaultsController extends BaseController {
 
     return this.handleRequest(request, async () => {
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const bodyResult = await this.validateBody(request, schema);
-      if (bodyResult.isErr()) return bodyResult;
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
       
       const { id: vaultId } = this.getPathParams(context);
-      const { email, role, message, expiresInDays } = bodyResult.unwrap();
+      const { email, role, message, expiresInDays } = ResultUtils.unwrap(bodyResult);
       
       // TODO: Create invitation and send email
       const invitation = {
@@ -364,13 +368,13 @@ export class VaultsController extends BaseController {
         email,
         role,
         message,
-        invitedBy: userIdResult.unwrap(),
+        invitedBy: ResultUtils.unwrap(userIdResult),
         expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
         status: 'pending',
         createdAt: new Date().toISOString()
       };
       
-      return Result.ok(invitation);
+      return Ok(invitation);
     });
   }
 
@@ -380,13 +384,13 @@ export class VaultsController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id: vaultId } = this.getPathParams(context);
-      const { status } = queryResult.unwrap();
+      const { status } = ResultUtils.unwrap(queryResult);
       
       // TODO: Fetch invitations for vault
       const invitations = [
@@ -395,14 +399,14 @@ export class VaultsController extends BaseController {
           vaultId,
           email: 'newuser@example.com',
           role: 'editor',
-          invitedBy: userIdResult.unwrap(),
+          invitedBy: ResultUtils.unwrap(userIdResult),
           status: 'pending',
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           createdAt: new Date().toISOString()
         }
       ];
       
-      return Result.ok(invitations.filter(inv => !status || inv.status === status));
+      return Ok(invitations.filter(inv => !status || inv.status === status));
     });
   }
 
@@ -414,13 +418,13 @@ export class VaultsController extends BaseController {
     }));
 
     return this.handleRequest(request, async () => {
-      if (queryResult.isErr()) return queryResult;
+      if (ResultUtils.isErr(queryResult)) return queryResult;
       
       const userIdResult = await this.getUserId(request);
-      if (userIdResult.isErr()) return userIdResult;
+      if (ResultUtils.isErr(userIdResult)) return userIdResult;
       
       const { id: vaultId } = this.getPathParams(context);
-      const { period, metric } = queryResult.unwrap();
+      const { period, metric } = ResultUtils.unwrap(queryResult);
       
       // TODO: Generate analytics for vault
       const analytics = {
@@ -448,7 +452,7 @@ export class VaultsController extends BaseController {
         ]
       };
       
-      return Result.ok(analytics);
+      return Ok(analytics);
     });
   }
 }

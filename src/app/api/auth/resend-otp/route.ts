@@ -79,7 +79,7 @@ async function handleResendOtp(request: NextRequest) {
         .eq('email', email)
         .single()
 
-      if (userData?.password_set) {
+      if ((userData as any)?.password_set) {
         return createErrorResponse('Password has already been set for this account. Please use the regular sign-in process.', 400)
       }
 
@@ -110,7 +110,7 @@ async function handleResendOtp(request: NextRequest) {
               <h2 style="color: #1f2937; margin-bottom: 24px; font-size: 24px;">Your New Access Code</h2>
               
               <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
-                Hello ${registrationData.full_name},
+                Hello ${(registrationData as any).full_name},
               </p>
               
               <p style="color: #6b7280; line-height: 1.6; margin-bottom: 30px; font-size: 16px;">

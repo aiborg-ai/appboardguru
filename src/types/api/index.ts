@@ -367,3 +367,6 @@ export namespace WebSocketAPI {
     readonly timestamp: ISODateString
   }
 }
+
+// Re-export core types that are used in this module
+export type { APIResponse, PaginatedResponse, PaginationParams, SortParams, FilterParams, ISODateString } from '../core'

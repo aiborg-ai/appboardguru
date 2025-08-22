@@ -285,7 +285,7 @@ export async function DELETE(request: NextRequest) {
       .eq('status', 'active')
       .single()
 
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
+    if (!membership || !['owner', 'admin'].includes((membership as any)?.role)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
