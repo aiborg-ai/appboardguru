@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { Input, type InputProps } from "../../atoms/Input"
 import { Button } from "../../atoms/Button"
 import { Icon } from "../../atoms/Icon"
-import { VoiceInputButton } from "../../../ui/VoiceInputButton"
+import { VoiceInputButton } from "@/components/ui/VoiceInputButton"
 
 export interface SearchInputProps extends Omit<InputProps, 'type' | 'leftIcon' | 'rightIcon'> {
   onSearch?: (query: string) => void
