@@ -88,7 +88,7 @@ export function generateZonePositions(zone: string, participantCount: number): S
       }
       break;
 
-    case 'presentation':
+    case 'presentation': {
       // Audience arrangement facing presenter
       const presenter: SpatialPosition = { x: 0, y: 0.8, z: 0.1, orientation: 180, zone: 'presentation' };
       positions.push(presenter);
@@ -106,8 +106,9 @@ export function generateZonePositions(zone: string, participantCount: number): S
         });
       }
       break;
+    }
 
-    case 'breakout':
+    case 'breakout': {
       // Small group clusters
       const clustersPerGroup = Math.ceil(participantCount / 4);
       for (let i = 0; i < participantCount; i++) {
@@ -128,6 +129,7 @@ export function generateZonePositions(zone: string, participantCount: number): S
         });
       }
       break;
+    }
 
     default:
       // Default center arrangement

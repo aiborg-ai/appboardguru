@@ -107,7 +107,7 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
 
   try {
     switch (body.action) {
-      case 'updateRole':
+      case 'updateRole': {
         if (!body.newRole || !['owner', 'admin', 'member', 'viewer'].includes(body.newRole)) {
           return createValidationErrorResponse(['Valid role is required'])
         }
@@ -129,8 +129,9 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
         )
 
         return addSecurityHeaders(response)
+      }
 
-      case 'removeMember':
+      case 'removeMember': {
         const removeResult = await removeMember(
           organizationId,
           body.targetUserId,
@@ -147,8 +148,9 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
         )
 
         return addSecurityHeaders(removeResponse)
+      }
 
-      case 'transferOwnership':
+      case 'transferOwnership': {
         const transferResult = await transferOwnership(
           organizationId,
           body.targetUserId,
@@ -168,6 +170,7 @@ async function handleUpdateMember(request: NextRequest, { params }: { params: Pr
         )
 
         return addSecurityHeaders(transferResponse)
+      }
 
       default:
         return createErrorResponse('Invalid action', 400)

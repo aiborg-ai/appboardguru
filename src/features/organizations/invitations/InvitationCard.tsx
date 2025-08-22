@@ -211,7 +211,7 @@ export function InvitationCard({
             <div className="flex items-start space-x-4">
               <Avatar className="h-12 w-12">
                 <AvatarImage 
-                  src={organization?.logo_url || undefined} 
+                  src={('logo_url' in (organization || {}) ? (organization as any).logo_url : undefined) || undefined} 
                   alt={organization?.name || 'Organization'}
                 />
                 <AvatarFallback>
@@ -314,7 +314,7 @@ export function InvitationCard({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={organization.logo_url || undefined} />
+                      <AvatarImage src={('logo_url' in organization ? (organization as any).logo_url : undefined) || undefined} />
                       <AvatarFallback>
                         {getInitials(organization.name)}
                       </AvatarFallback>

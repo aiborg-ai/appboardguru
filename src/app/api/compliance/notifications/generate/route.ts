@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 /**
  * Manual trigger for generating notifications (admin only)
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
     const complianceEngine = new ComplianceEngine(supabase)

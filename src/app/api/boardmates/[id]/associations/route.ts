@@ -142,20 +142,23 @@ export async function PUT(
     for (const update of updates) {
       try {
         switch (update.type) {
-          case 'board':
+          case 'board': {
             const boardResult = await handleBoardAssociation(boardmateId, organization_id, update, user.id);
             results.push({ type: 'board', id: update.id, ...boardResult });
             break;
+          }
 
-          case 'committee':
+          case 'committee': {
             const committeeResult = await handleCommitteeAssociation(boardmateId, organization_id, update, user.id);
             results.push({ type: 'committee', id: update.id, ...committeeResult });
             break;
+          }
 
-          case 'vault':
+          case 'vault': {
             const vaultResult = await handleVaultAssociation(boardmateId, organization_id, update, user.id);
             results.push({ type: 'vault', id: update.id, ...vaultResult });
             break;
+          }
 
           default:
             errors.push({ update, error: 'Invalid association type' });
@@ -189,7 +192,7 @@ async function handleBoardAssociation(
   createdBy: string
 ) {
   switch (update.action) {
-    case 'add':
+    case 'add': {
       const { error: addError } = await supabaseAdmin
         .from('board_members')
         .insert({
@@ -206,8 +209,9 @@ async function handleBoardAssociation(
 
       if (addError) throw addError;
       return { action: 'added', role: update.role };
+    }
 
-    case 'remove':
+    case 'remove': {
       const { error: removeError } = await supabaseAdmin
         .from('board_members')
         .update({
@@ -221,8 +225,9 @@ async function handleBoardAssociation(
 
       if (removeError) throw removeError;
       return { action: 'removed' };
+    }
 
-    case 'update_role':
+    case 'update_role': {
       const { error: updateError } = await supabaseAdmin
         .from('board_members')
         .update({
@@ -235,6 +240,7 @@ async function handleBoardAssociation(
 
       if (updateError) throw updateError;
       return { action: 'role_updated', from_role: update.current_role, to_role: update.role };
+    }
 
     default:
       throw new Error('Invalid board action');
@@ -259,7 +265,7 @@ async function handleCommitteeAssociation(
   }
 
   switch (update.action) {
-    case 'add':
+    case 'add': {
       const { error: addError } = await supabaseAdmin
         .from('committee_members')
         .insert({
@@ -277,8 +283,9 @@ async function handleCommitteeAssociation(
 
       if (addError) throw addError;
       return { action: 'added', role: update.role };
+    }
 
-    case 'remove':
+    case 'remove': {
       const { error: removeError } = await supabaseAdmin
         .from('committee_members')
         .update({
@@ -292,8 +299,9 @@ async function handleCommitteeAssociation(
 
       if (removeError) throw removeError;
       return { action: 'removed' };
+    }
 
-    case 'update_role':
+    case 'update_role': {
       const { error: updateError } = await supabaseAdmin
         .from('committee_members')
         .update({
@@ -306,6 +314,7 @@ async function handleCommitteeAssociation(
 
       if (updateError) throw updateError;
       return { action: 'role_updated', from_role: update.current_role, to_role: update.role };
+    }
 
     default:
       throw new Error('Invalid committee action');
@@ -319,7 +328,7 @@ async function handleVaultAssociation(
   createdBy: string
 ) {
   switch (update.action) {
-    case 'add':
+    case 'add': {
       const { error: addError } = await supabaseAdmin
         .from('vault_members')
         .insert({
@@ -335,8 +344,9 @@ async function handleVaultAssociation(
 
       if (addError) throw addError;
       return { action: 'added', role: update.role };
+    }
 
-    case 'remove':
+    case 'remove': {
       const { error: removeError } = await supabaseAdmin
         .from('vault_members')
         .update({
@@ -350,8 +360,9 @@ async function handleVaultAssociation(
 
       if (removeError) throw removeError;
       return { action: 'removed' };
+    }
 
-    case 'update_role':
+    case 'update_role': {
       const { error: updateError } = await supabaseAdmin
         .from('vault_members')
         .update({
@@ -364,6 +375,7 @@ async function handleVaultAssociation(
 
       if (updateError) throw updateError;
       return { action: 'role_updated', from_role: update.current_role, to_role: update.role };
+    }
 
     default:
       throw new Error('Invalid vault action');

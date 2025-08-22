@@ -268,7 +268,8 @@ export class StatisticalAnalysis {
   analyzeResponseTimes(behaviorData: readonly UserBehaviorData[]): StatisticalResult {
     const responseTimes = behaviorData
       .filter(data => data.response_time_ms && data.response_time_ms > 0)
-      .map(data => data.response_time_ms)
+      .map(data => data.response_time_ms!)
+      .filter((time): time is number => time !== undefined)
 
     if (responseTimes.length === 0) {
       return {
@@ -349,13 +350,14 @@ export class StatisticalAnalysis {
     }
 
     // Calculate linear regression to detect trend
-    const n = engagementData.length
-    const x = engagementData.map((_, index) => index) // Time as index
-    const y = engagementData.map(data => data.engagement_score)
+    const validData = engagementData.filter(data => typeof data.engagement_score === 'number')
+    const n = validData.length
+    const x = validData.map((_, index) => index) // Time as index
+    const y = validData.map(data => data.engagement_score!)
 
     const sumX = x.reduce((sum, val) => sum + val, 0)
     const sumY = y.reduce((sum, val) => sum + val, 0)
-    const sumXY = x.reduce((sum, val, index) => sum + val * y[index], 0)
+    const sumXY = x.reduce((sum, val, index) => sum + val * y[index]!, 0)
     const sumXX = x.reduce((sum, val) => sum + val * val, 0)
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)

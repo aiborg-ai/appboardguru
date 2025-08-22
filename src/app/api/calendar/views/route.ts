@@ -15,7 +15,7 @@ const calendarViewSchema = z.object({
   work_days: z.array(z.number().min(1).max(7)).default([1, 2, 3, 4, 5]) // 1=Monday, 7=Sunday
 })
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()

@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     }
 
     switch (queryData.format) {
-      case 'ical':
+      case 'ical': {
         const icalHeader = [
           'BEGIN:VCALENDAR',
           'VERSION:2.0',
@@ -180,8 +180,9 @@ export async function GET(request: NextRequest) {
             'Content-Disposition': `attachment; filename="boardguru-calendar-${new Date().toISOString().split('T')[0]}.ics"`
           }
         })
+      }
 
-      case 'json':
+      case 'json': {
         return NextResponse.json({
           calendar: {
             name: 'BoardGuru Calendar',
@@ -190,8 +191,9 @@ export async function GET(request: NextRequest) {
             total_events: events?.length || 0
           }
         })
+      }
 
-      case 'csv':
+      case 'csv': {
         const csvHeaders = [
           'Title', 'Description', 'Start Date', 'End Date', 'Location', 
           'Type', 'Status', 'Category', 'Attendees'
@@ -217,6 +219,7 @@ export async function GET(request: NextRequest) {
             'Content-Disposition': `attachment; filename="boardguru-calendar-${new Date().toISOString().split('T')[0]}.csv"`
           }
         })
+      }
 
       default:
         return NextResponse.json({ error: 'Unsupported export format' }, { status: 400 })

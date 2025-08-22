@@ -370,7 +370,7 @@ export function generateAnomalousData(
         }
         break
         
-      case 'timing':
+      case 'timing': {
         // Activity at unusual hours (3 AM)
         const unusualTime = new Date(baseActivity.timestamp)
         unusualTime.setHours(3, Math.floor(Math.random() * 60), 0, 0)
@@ -384,8 +384,9 @@ export function generateAnomalousData(
           }
         })
         break
+      }
         
-      case 'sequence':
+      case 'sequence': {
         // Unusual sequence of events
         const unusualEvents = ['admin_panel_accessed', 'security_settings_changed', 'bulk_download']
         anomalousActivities.push({
@@ -397,6 +398,7 @@ export function generateAnomalousData(
             is_anomaly: true
           }
         })
+      }
         break
         
       case 'velocity':

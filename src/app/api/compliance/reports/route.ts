@@ -3,9 +3,8 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ComplianceEngine } from '@/lib/services/compliance-engine'
 import type { 
   AuditReportRequest, 
-  AuditReportFilters,
-  ComplianceApiResponse
-} from '@/types/entities/compliance.types'
+  AuditReportFilters
+} from '@/types'
 import type {
   ActivityApiResponse,
   ComplianceReport

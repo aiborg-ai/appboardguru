@@ -249,7 +249,7 @@ export class OrganizationRepository extends BaseRepository {
         updated_at: new Date().toISOString()
       }
 
-      const { data: organization, error } = await this.supabase
+      const { data: organization, error } = await (this.supabase as any)
         .from(this.tableName)
         .insert(insertData)
         .select()
@@ -275,7 +275,7 @@ export class OrganizationRepository extends BaseRepository {
         updated_at: new Date().toISOString()
       }
 
-      const { data: organization, error } = await this.supabase
+      const { data: organization, error } = await (this.supabase as any)
         .from(this.tableName)
         .update(updateData)
         .eq('id', id)
@@ -301,7 +301,7 @@ export class OrganizationRepository extends BaseRepository {
       const deletionScheduledFor = new Date()
       deletionScheduledFor.setDate(deletionScheduledFor.getDate() + 30) // 30 day grace period
 
-      const { error } = await this.supabase
+      const { error } = await (this.supabase as any)
         .from(this.tableName)
         .update({ 
           is_active: false,

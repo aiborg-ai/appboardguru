@@ -780,7 +780,7 @@ export class ComplianceEngine {
       const remediation: string[] = []
 
       switch (requirement.category) {
-        case 'access_control':
+        case 'access_control': {
           const accessViolations = await this.checkAccessControlCompliance(
             organizationId, periodStart, periodEnd, supabase
           )
@@ -793,8 +793,9 @@ export class ComplianceEngine {
             evidence.push('No access control violations detected')
           }
           break
+        }
 
-        case 'authentication':
+        case 'authentication': {
           const authFailures = await this.checkAuthenticationCompliance(
             organizationId, periodStart, periodEnd, supabase
           )
@@ -807,8 +808,9 @@ export class ComplianceEngine {
             evidence.push('Authentication controls functioning properly')
           }
           break
+        }
 
-        case 'monitoring':
+        case 'monitoring': {
           const monitoringGaps = await this.checkMonitoringCompliance(
             organizationId, periodStart, periodEnd, supabase
           )
@@ -821,6 +823,7 @@ export class ComplianceEngine {
             evidence.push('Comprehensive monitoring in place')
           }
           break
+        }
 
         default:
           evidence.push('Manual assessment required')

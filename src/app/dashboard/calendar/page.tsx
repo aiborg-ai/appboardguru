@@ -83,11 +83,12 @@ export default function CalendarPage() {
     switch (viewMode) {
       case 'month':
         return new Date(date.getFullYear(), date.getMonth(), 1)
-      case 'week':
+      case 'week': {
         const dayOfWeek = date.getDay()
         const startOfWeek = new Date(date)
         startOfWeek.setDate(date.getDate() - dayOfWeek)
         return startOfWeek
+      }
       case 'day':
         return new Date(date.getFullYear(), date.getMonth(), date.getDate())
     }
@@ -98,11 +99,12 @@ export default function CalendarPage() {
     switch (viewMode) {
       case 'month':
         return new Date(date.getFullYear(), date.getMonth() + 1, 0)
-      case 'week':
+      case 'week': {
         const dayOfWeek = date.getDay()
         const endOfWeek = new Date(date)
         endOfWeek.setDate(date.getDate() + (6 - dayOfWeek))
         return endOfWeek
+      }
       case 'day':
         return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
     }

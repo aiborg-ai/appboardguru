@@ -7,6 +7,19 @@
 // VOICE BIOMETRIC TYPE DEFINITIONS
 // ============================================================================
 
+// Geolocation information for security context
+export interface GeolocationInfo {
+  readonly latitude?: number;
+  readonly longitude?: number;
+  readonly accuracy?: number;
+  readonly country?: string;
+  readonly region?: string;
+  readonly city?: string;
+  readonly timezone?: string;
+  readonly isVpn?: boolean;
+  readonly ipAddress?: string;
+}
+
 export interface BiometricSecuritySettings {
   readonly encryptionLevel?: 'standard' | 'enhanced' | 'maximum';
   readonly storageLocation?: 'local' | 'cloud' | 'hybrid';
@@ -785,25 +798,6 @@ export interface VoiceBiometricDatabase {
 // ============================================================================
 // CONVENIENCE EXPORTS FOR VOICE BIOMETRIC TYPES
 // ============================================================================
-
-// Re-export all voice biometric interfaces for easy import
-export type {
-  BiometricSecuritySettings,
-  VoicePersonalizationProfile,
-  DeviceInfo,
-  ContextualInfo,
-  SecurityFlag,
-  BiometricQualityMetrics,
-  FraudIndicator,
-  SecurityAssessment,
-  EmotionAnalysisResult,
-  CommunicationStyle,
-  AdaptiveSettings,
-  VoiceShortcut,
-  LearningHistory,
-  PersonalizationPreferences,
-  VoiceCharacteristics,
-};
 
 // Voice biometric database table types
 export type VoiceBiometricProfile = VoiceBiometricDatabase['public']['Tables']['voice_biometric_profiles']['Row'];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ComplianceEngine } from '@/lib/services/compliance-engine'
-import type { CreateCalendarEntryRequest, ComplianceStatus } from '@/types/entities/compliance.types'
+import type { CreateCalendarEntryRequest, ComplianceStatus } from '@/types'
 
 export async function GET(request: NextRequest) {
   try {

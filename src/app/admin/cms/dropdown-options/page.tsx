@@ -119,7 +119,7 @@ export default function DropdownOptionsManagement() {
 
   // Delete option
   const handleDeleteOption = async (optionId: string) => {
-    if (!confirm('Are you sure you want to delete this option?')) return
+    if (!window.confirm('Are you sure you want to delete this option?')) return
 
     try {
       const response = await fetch(`/api/cms/dropdown-options/${optionId}`, {

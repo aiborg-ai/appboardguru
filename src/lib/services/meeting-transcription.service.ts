@@ -696,11 +696,12 @@ class MeetingTranscriptionService {
       case 'json':
         return new Blob([JSON.stringify(transcription, null, 2)], { type: 'application/json' });
       
-      case 'txt':
+      case 'txt': {
         const textContent = segments
           .map(s => `[${new Date(s.startTime).toLocaleTimeString()}] ${s.speaker?.name || 'Unknown'}: ${s.text}`)
           .join('\n');
         return new Blob([textContent], { type: 'text/plain' });
+      }
       
       default:
         throw new Error(`Export format ${format} not yet implemented`);

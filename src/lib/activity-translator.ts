@@ -197,7 +197,7 @@ function translateDataAccessActivity(log: ActivityLog): ActivityTranslation {
         category: 'File Operations'
       }
 
-    case 'search':
+    case 'search': {
       const searchTerm = log.metadata?.searchTerm || 'items'
       return {
         title: 'Searched Content',
@@ -206,6 +206,7 @@ function translateDataAccessActivity(log: ActivityLog): ActivityTranslation {
         color: 'text-indigo-600',
         category: 'Search'
       }
+    }
 
     case 'export':
       return {
@@ -280,7 +281,7 @@ function translateDataModificationActivity(log: ActivityLog): ActivityTranslatio
         category: 'Data Import'
       }
 
-    case 'bulk_operation':
+    case 'bulk_operation': {
       const count = log.metadata?.affectedItems || 'multiple'
       return {
         title: 'Bulk Operation',
@@ -289,6 +290,7 @@ function translateDataModificationActivity(log: ActivityLog): ActivityTranslatio
         color: 'text-purple-600',
         category: 'Bulk Operations'
       }
+    }
 
     default:
       return {
@@ -432,7 +434,7 @@ export function translateActivityLog(log: ActivityLog): ActivityTranslation {
       case 'user_action':
         return translateUserActionActivity(log)
       
-      default:
+      default: {
         const timeText = formatTimestamp(log.timestamp)
         return {
           title: 'Activity',
@@ -441,6 +443,7 @@ export function translateActivityLog(log: ActivityLog): ActivityTranslation {
           color: 'text-gray-600',
           category: 'General'
         }
+      }
     }
   } catch (error) {
     console.error('Error translating activity log:', error)
