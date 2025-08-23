@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   
   // Right panel state - ensure panel is closed by default
   const [isPanelOpen, setIsPanelOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'ai-chat' | 'logs'>('ai-chat')
+  const [activeTab, setActiveTab] = useState<'ai-chat' | 'logs' | 'fyi'>('ai-chat')
 
   useEffect(() => {
     checkUser()
@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }
 
-  const handleOpenPanel = (tab: 'ai-chat' | 'logs') => {
+  const handleOpenPanel = (tab: 'ai-chat' | 'logs' | 'fyi') => {
     setActiveTab(tab)
     setIsPanelOpen(true)
   }
@@ -59,6 +59,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       ...KEYBOARD_SHORTCUTS.OPEN_AI_CHAT,
       callback: () => handleOpenPanel('ai-chat')
+    },
+    {
+      ...KEYBOARD_SHORTCUTS.OPEN_FYI,
+      callback: () => handleOpenPanel('fyi')
     },
     {
       ...KEYBOARD_SHORTCUTS.OPEN_LOGS,

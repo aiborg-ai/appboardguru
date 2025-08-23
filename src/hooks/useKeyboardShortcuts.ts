@@ -36,6 +36,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
 // Predefined shortcuts
 export const KEYBOARD_SHORTCUTS = {
   OPEN_AI_CHAT: { key: 'k', ctrlKey: true, description: 'Open AI Assistant' },
+  OPEN_FYI: { key: 'i', ctrlKey: true, shiftKey: true, description: 'Open FYI Insights' },
   OPEN_LOGS: { key: 'l', ctrlKey: true, shiftKey: true, description: 'Open System Logs' },
   CLOSE_PANEL: { key: 'Escape', description: 'Close Panel' },
   TOGGLE_PANEL: { key: '/', ctrlKey: true, description: 'Toggle Panel' },

@@ -32,7 +32,11 @@ import {
   FileText as DocumentIcon,
   Calendar,
   BarChart3,
-  Eye
+  Eye,
+  Info,
+  MinusCircle,
+  Circle,
+  PlusCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -46,6 +50,9 @@ import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat, type ContextScopeOption } from '@/features/ai-chat/ai/ScopeSelectorTypes';
 import { EnhancedChatResponse, AssetReference, WebReference, VaultReference, MeetingReference, ReportReference } from '@/types/search';
+import { FYITab } from '@/features/dashboard/settings/FYITab';
+import { useContextDetection } from '@/hooks/useContextDetection';
+import { useFYIService } from '@/hooks/useFYIService';
 
 interface RightPanelProps {
   className?: string;
@@ -57,7 +64,8 @@ interface RightPanelProps {
   };
 }
 
-type PanelTab = 'ai-chat' | 'logs';
+type PanelTab = 'ai-chat' | 'logs' | 'fyi';
+type PanelWidth = 'narrow' | 'wide' | 'full';
 
 type ContextScope = 'general' | 'boardguru' | 'organization' | 'vault' | 'asset';
 
@@ -182,6 +190,13 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   const setActiveTab = externalControl?.onTabChange ?? setInternalActiveTab;
   const [isMinimized, setIsMinimized] = useState(false);
   
+  // Panel width controls
+  const [panelWidth, setPanelWidth] = useState<PanelWidth>('wide');
+  
+  // FYI integration
+  const { currentContext, contextEntities } = useContextDetection();
+  const { fetchInsights, isLoading: fyiLoading } = useFYIService();
+  
   // AI Chat state
   const [contextScope, setContextScope] = useState<ContextScope>('boardguru');
   const [selectedContext, setSelectedContext] = useState<SelectedContext>({});
@@ -201,10 +216,25 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     console.log('Context scope changed to:', contextScope, 'Selected context:', selectedContext);
   }, [contextScope, selectedContext]);
   
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Close panel on Escape key
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault();
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, setIsOpen]);
+  
   // Load state from localStorage on mount
   useEffect(() => {
     const savedScope = localStorage.getItem('ai-chat-context-scope');
     const savedContext = localStorage.getItem('ai-chat-selected-context');
+    const savedWidth = localStorage.getItem('right-panel-width');
     
     if (savedScope && ['general', 'boardguru', 'organization', 'vault', 'asset'].includes(savedScope)) {
       setContextScope(savedScope as ContextScope);
@@ -218,6 +248,10 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
         console.error('Failed to parse saved context:', e);
       }
     }
+    
+    if (savedWidth && ['narrow', 'wide', 'full'].includes(savedWidth)) {
+      setPanelWidth(savedWidth as PanelWidth);
+    }
   }, []);
   
   // Save state to localStorage when it changes
@@ -225,6 +259,11 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     localStorage.setItem('ai-chat-context-scope', contextScope);
     localStorage.setItem('ai-chat-selected-context', JSON.stringify(selectedContext));
   }, [contextScope, selectedContext]);
+  
+  // Save panel width to localStorage
+  useEffect(() => {
+    localStorage.setItem('right-panel-width', panelWidth);
+  }, [panelWidth]);
   
   // Logs state
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOG_ENTRIES);
@@ -493,7 +532,18 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     logFilter === 'all' || log.level === logFilter
   );
 
-  const panelWidth = isMinimized ? 'w-12' : 'w-80';
+  // Panel width calculation
+  const getPanelWidth = () => {
+    if (isMinimized) return 'w-12';
+    switch (panelWidth) {
+      case 'narrow': return 'w-80';  // 320px
+      case 'wide': return 'w-120';   // 480px - default
+      case 'full': return 'w-160';   // 640px
+      default: return 'w-120';
+    }
+  };
+  
+  const panelWidthClass = getPanelWidth();
 
   return (
     <>
@@ -514,7 +564,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
       <div className={cn(
         "fixed right-0 top-0 h-full bg-white border-l border-gray-200 shadow-xl z-50 transform transition-all duration-300 ease-in-out flex flex-col",
         isOpen ? "translate-x-0" : "translate-x-full",
-        panelWidth,
+        panelWidthClass,
         className
       )}>
         {/* Header */}
@@ -533,6 +583,15 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                     AI Chat
                   </Button>
                   <Button
+                    variant={activeTab === 'fyi' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveTab('fyi')}
+                    className="text-xs px-2 py-1"
+                  >
+                    <Info className="h-3 w-3 mr-1" />
+                    FYI
+                  </Button>
+                  <Button
                     variant={activeTab === 'logs' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setActiveTab('logs')}
@@ -547,19 +606,56 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                 </div>
               </div>
               <div className="flex items-center space-x-1">
+                {/* Width Controls */}
+                <div className="flex items-center border rounded bg-white">
+                  <Button
+                    variant={panelWidth === 'narrow' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setPanelWidth('narrow')}
+                    className="h-6 w-6 p-0 rounded-r-none"
+                    title="Narrow width"
+                  >
+                    <MinusCircle className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant={panelWidth === 'wide' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setPanelWidth('wide')}
+                    className="h-6 w-6 p-0 rounded-none border-x"
+                    title="Default width"
+                  >
+                    <Circle className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant={panelWidth === 'full' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setPanelWidth('full')}
+                    className="h-6 w-6 p-0 rounded-l-none"
+                    title="Full width"
+                  >
+                    <PlusCircle className="h-3 w-3" />
+                  </Button>
+                </div>
+                
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsMinimized(true)}
                   className="h-6 w-6 p-0"
+                  title="Minimize panel"
                 >
                   <Minimize2 className="h-3 w-3" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsOpen(false);
+                  }}
                   className="h-6 w-6 p-0"
+                  title="Close panel"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -585,8 +681,21 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                   "h-8 w-8 p-0",
                   activeTab === 'ai-chat' && "bg-blue-100 text-blue-600"
                 )}
+                title="AI Chat"
               >
                 <MessageSquare className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab('fyi')}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  activeTab === 'fyi' && "bg-orange-100 text-orange-600"
+                )}
+                title="FYI - Context Insights"
+              >
+                <Info className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -596,6 +705,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                   "h-8 w-8 p-0 relative",
                   activeTab === 'logs' && "bg-blue-100 text-blue-600"
                 )}
+                title="System Logs"
               >
                 <FileText className="h-4 w-4" />
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
@@ -605,8 +715,13 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsOpen(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
                 className="h-8 w-8 p-0 mt-auto"
+                title="Close panel"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -1183,6 +1298,46 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                       </Button>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* FYI Tab */}
+            {activeTab === 'fyi' && (
+              <div className="flex flex-col h-full">
+                {/* FYI Header */}
+                <div className="p-3 border-b border-gray-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                        <Info className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium">FYI - Context Insights</h3>
+                        <p className="text-xs text-gray-500">Relevant external insights</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  {/* Context Display */}
+                  {currentContext && (
+                    <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                      Context: {currentContext}
+                      {contextEntities.length > 0 && (
+                        <span> • {contextEntities.slice(0, 3).join(', ')}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* FYI Content */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-3">
+                    <FYITab />
+                  </div>
                 </div>
               </div>
             )}

@@ -529,17 +529,31 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
 
             {/* Modal Content */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <FileUploadDropzone 
-                onUploadComplete={handleUploadComplete}
-                organizationId="vault-creation" // Placeholder for vault creation context
-                currentUser={{
-                  id: 'vault-creator',
-                  name: 'Vault Creator',
-                  email: 'creator@example.com'
-                }}
-                showCollaborationHub={false}
-                className="min-h-[300px]"
-              />
+              {data.selectedOrganization?.id ? (
+                <FileUploadDropzone 
+                  onUploadComplete={handleUploadComplete}
+                  organizationId={data.selectedOrganization.id}
+                  currentUser={{
+                    id: 'current-user-id', // TODO: Get from auth context
+                    name: 'Current User',
+                    email: 'user@example.com'
+                  }}
+                  showCollaborationHub={false}
+                  className="min-h-[300px]"
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-orange-600 mb-4">
+                    <Upload className="w-12 h-12 mx-auto mb-2" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">
+                    Organization Required
+                  </h4>
+                  <p className="text-gray-600">
+                    Please select an organization first before uploading assets.
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

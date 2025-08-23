@@ -4816,38 +4816,106 @@ export type Database = {
       feedback_submissions: {
         Row: {
           id: string
+          reference_id: string
           user_id: string | null
-          feedback_type: string
-          content: string
-          rating: number | null
-          metadata: Json | null
-          status: string
+          user_email: string
+          organization_id: string | null
+          type: string
+          title: string
+          description: string
+          screenshot_included: boolean | null
+          user_agent: string | null
+          page_url: string | null
+          admin_email_sent: boolean | null
+          user_email_sent: boolean | null
+          status: string | null
+          priority: string | null
+          admin_notes: string | null
+          resolution_notes: string | null
+          assigned_to: string | null
+          updated_by: string | null
           created_at: string | null
           updated_at: string | null
+          resolved_at: string | null
         }
         Insert: {
           id?: string
+          reference_id: string
           user_id?: string | null
-          feedback_type: string
-          content: string
-          rating?: number | null
-          metadata?: Json | null
-          status: string
+          user_email: string
+          organization_id?: string | null
+          type: string
+          title: string
+          description: string
+          screenshot_included?: boolean | null
+          user_agent?: string | null
+          page_url?: string | null
+          admin_email_sent?: boolean | null
+          user_email_sent?: boolean | null
+          status?: string | null
+          priority?: string | null
+          admin_notes?: string | null
+          resolution_notes?: string | null
+          assigned_to?: string | null
+          updated_by?: string | null
           created_at?: string | null
           updated_at?: string | null
+          resolved_at?: string | null
         }
         Update: {
           id?: string
+          reference_id?: string
           user_id?: string | null
-          feedback_type?: string
-          content?: string
-          rating?: number | null
-          metadata?: Json | null
-          status?: string
+          user_email?: string
+          organization_id?: string | null
+          type?: string
+          title?: string
+          description?: string
+          screenshot_included?: boolean | null
+          user_agent?: string | null
+          page_url?: string | null
+          admin_email_sent?: boolean | null
+          user_email_sent?: boolean | null
+          status?: string | null
+          priority?: string | null
+          admin_notes?: string | null
+          resolution_notes?: string | null
+          assigned_to?: string | null
+          updated_by?: string | null
           created_at?: string | null
           updated_at?: string | null
+          resolved_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feedback_submissions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_submissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_submissions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       feature_flags: {
         Row: {

@@ -228,7 +228,7 @@ export class VaultService extends BaseService {
         name: organization.name,
         slug: organization.slug,
       } : null,
-      members: members ? (members as any[]).map((member: any) => ({
+      members: members ? members.map((member) => ({
         ...member,
         user: {
           id: member.granted_to_user_id || '',
@@ -237,7 +237,7 @@ export class VaultService extends BaseService {
           avatar_url: '',
         },
       })) : [],
-      assets: assets ? (assets as any[]).map((asset: any) => ({
+      assets: assets ? assets.map((asset) => ({
         id: asset.id,
         asset: {
           id: asset.id,
@@ -517,7 +517,7 @@ export class VaultService extends BaseService {
                 status: 'pending',
                 invitation_token: crypto.randomUUID(),
                 expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              } as any)
+              })
               
               if (error) {
                 throw RepositoryError.database('Failed to create invitation', error)
@@ -603,7 +603,7 @@ export class VaultService extends BaseService {
         expires_at: data.deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       }))
 
-      await this.supabase.from('vault_invitations').insert(invitations as any)
+      await this.supabase.from('vault_invitations').insert(invitations)
 
       // Send notification emails
       const users = await Promise.all(
@@ -671,7 +671,7 @@ export class VaultService extends BaseService {
     if (!invitationResult.success) {
       return failure(invitationResult.error)
     }
-    const invitation = invitationResult.data as any
+    const invitation = invitationResult.data
 
     // Check if invitation is still valid
     if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {

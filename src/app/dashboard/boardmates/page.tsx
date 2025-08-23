@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/features/shared/ui/select';
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
 
 // Remove interface definition as it's now imported from types
 
@@ -205,7 +206,32 @@ export default function BoardMatesPage() {
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Users className="h-6 w-6 text-blue-600" />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">BoardMates</h1>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                  BoardMates
+                  <InfoTooltip
+                    content={
+                      <InfoSection
+                        title="BoardMates Management"
+                        description="Comprehensive board member and stakeholder management system for governance and collaboration."
+                        features={[
+                          "Board member profiles with roles and permissions",
+                          "Contact information and communication preferences", 
+                          "Meeting attendance tracking and history",
+                          "Document access and sharing permissions",
+                          "Association management between organizations",
+                          "Status tracking and lifecycle management"
+                        ]}
+                        tips={[
+                          "Keep contact information up to date for effective communication",
+                          "Set appropriate roles to control document access",
+                          "Use status tracking to manage board member lifecycle",
+                          "Review associations regularly for compliance"
+                        ]}
+                      />
+                    }
+                    side="right"
+                  />
+                </h1>
               </div>
               <p className="text-gray-600">
                 Manage your board members, directors, and key stakeholders
@@ -240,12 +266,18 @@ export default function BoardMatesPage() {
                 </Button>
               </div>
               
-              <Link href="/dashboard/boardmates/create">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add BoardMate
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard/boardmates/create">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add BoardMate
+                  </Button>
+                </Link>
+                <InfoTooltip
+                  content="Add new board members to your organization. You can invite existing members or create new profiles with appropriate roles and permissions."
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
 

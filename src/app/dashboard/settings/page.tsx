@@ -124,10 +124,22 @@ export default function SettingsPage() {
         return <AISettingsPanel />
       
       case 'account':
-        return <AccountSettingsTab />
+        return (
+          <AccountSettingsTab 
+            accountType={accountType}
+            userId={userId!}
+            organizationId={organizationId}
+          />
+        )
       
       case 'security':
-        return <SecurityActivityTab />
+        return (
+          <SecurityActivityTab 
+            accountType={accountType}
+            userId={userId!}
+            organizationId={organizationId}
+          />
+        )
       
       case 'notifications':
         return (

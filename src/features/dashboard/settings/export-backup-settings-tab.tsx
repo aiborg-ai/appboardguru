@@ -34,7 +34,7 @@ type ExportBackupTab =
   | 'compliance_exports'
   | 'analytics'
 
-export function ExportBackupSettingsTab({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
+export const ExportBackupSettingsTab = React.memo(function ExportBackupSettingsTab({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
   const [activeTab, setActiveTab] = useState<ExportBackupTab>('data_export')
 
   const tabs = [
@@ -155,10 +155,10 @@ export function ExportBackupSettingsTab({ accountType, userId, organizationId }:
       </div>
     </div>
   )
-}
+})
 
 // Component for data export
-function DataExport({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
+export function DataExport({ accountType, userId, organizationId }: ExportBackupSettingsPropsOptional) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['board_governance'])
   const [exportFormat, setExportFormat] = useState('json')
   const [includeFiles, setIncludeFiles] = useState(true)

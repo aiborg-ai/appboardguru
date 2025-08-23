@@ -189,12 +189,22 @@ export async function POST(request: NextRequest) {
     const assetService = new AssetService(assetRepository)
 
     // Upload asset using service layer
+    console.log('Starting upload with data:', {
+      fileName: uploadData.fileName,
+      fileSize: uploadData.fileSize,
+      mimeType: uploadData.mimeType,
+      organizationId: uploadData.organizationId,
+      vaultId: uploadData.vaultId
+    })
+    
     const uploadResult = await assetService.uploadAsset(uploadData)
 
     if (!uploadResult.success) {
+      console.error('Upload failed:', uploadResult.error)
       return NextResponse.json({ 
         error: uploadResult.error.message,
-        code: 'UPLOAD_FAILED'
+        code: 'UPLOAD_FAILED',
+        details: uploadResult.error
       }, { status: 500 })
     }
 

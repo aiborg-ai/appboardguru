@@ -101,18 +101,18 @@ async function handleValidateInvitation(request: NextRequest) {
           accessLevel: invitation.access_level,
           createdAt: invitation.created_at
         },
-        boardMate: {
-          id: (invitation.board_members as any).id,
-          fullName: (invitation.board_members as any).full_name,
-          email: (invitation.board_members as any).email,
-          role: (invitation.board_members as any).board_role,
-          organizationName: (invitation.board_members as any).organization_name
-        },
-        organization: {
-          id: (invitation.organizations as any).id,
-          name: (invitation.organizations as any).name,
-          slug: (invitation.organizations as any).slug
-        }
+        boardMate: invitation.board_members ? {
+          id: invitation.board_members.id,
+          fullName: invitation.board_members.full_name,
+          email: invitation.board_members.email,
+          role: invitation.board_members.board_role,
+          organizationName: invitation.board_members.organization_name
+        } : null,
+        organization: invitation.organizations ? {
+          id: invitation.organizations.id,
+          name: invitation.organizations.name,
+          slug: invitation.organizations.slug
+        } : null
       },
       'Invitation details retrieved successfully'
     )

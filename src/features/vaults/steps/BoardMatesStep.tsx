@@ -26,9 +26,12 @@ import {
   AlertCircle,
   Plus,
   BarChart3,
-  Brain
+  Brain,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { ExecutiveAnalyticsDashboard } from '@/components/boardmates/ExecutiveAnalyticsDashboard';
+import { VoiceCommandPanel } from '@/components/boardmates/VoiceCommandPanel';
 import { EnhancedBoardMate } from '@/types/boardmates';
 import { cn } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
@@ -96,6 +99,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('members');
+  const [showVoicePanel, setShowVoicePanel] = useState(false);
   const [newMateForm, setNewMateForm] = useState<NewBoardMate>({
     email: '',
     full_name: '',
@@ -256,6 +260,35 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
     }))
   }, [boardMates]);
 
+  // Handle voice command callbacks
+  const handleVoiceAddMember = useCallback((memberData: { memberName: string; email?: string; role: string }) => {
+    const newMember: NewBoardMate = {
+      full_name: memberData.memberName,
+      email: memberData.email || '',
+      role: memberData.role as 'viewer' | 'member' | 'admin'
+    }
+    
+    // Add to new board mates list
+    const newBoardMates = [...data.newBoardMates, newMember]
+    onUpdate({ newBoardMates })
+    
+    // Show success feedback
+    console.log('Voice command: Added member', memberData)
+  }, [data.newBoardMates, onUpdate])
+
+  const handleVoiceSearch = useCallback((searchTerm: string) => {
+    setSearchTerm(searchTerm)
+    console.log('Voice command: Search', searchTerm)
+  }, [])
+
+  const handleVoiceAnalytics = useCallback((query: string) => {
+    // Switch to analytics tab if analytics query
+    if (query.toLowerCase().includes('analytics') || query.toLowerCase().includes('performance')) {
+      setActiveTab('analytics')
+    }
+    console.log('Voice command: Analytics query', query)
+  }, [])
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -271,21 +304,61 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
         </p>
       </div>
 
-      {/* Main Tabs */}
+      {/* Main Tabs with Voice Control */}
+      <div className="flex items-center justify-between mb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="members" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Board Members
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Executive Analytics
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        {/* Voice Command Toggle */}
+        <div className="ml-4">
+          <Button
+            variant={showVoicePanel ? "default" : "outline"}
+            onClick={() => setShowVoicePanel(!showVoicePanel)}
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+          >
+            {showVoicePanel ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            <span className="hidden sm:inline">
+              {showVoicePanel ? "Close Voice" : "Voice Commands"}
+            </span>
+          </Button>
+        </div>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="members" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Board Members
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Executive Analytics
-          </TabsTrigger>
-        </TabsList>
 
         {/* Board Members Tab */}
         <TabsContent value="members" className="space-y-6">
+          {/* Voice Command Panel */}
+          <AnimatePresence>
+            {showVoicePanel && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: -20 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <VoiceCommandPanel
+                  userId="current-user" // In real app, get from auth context
+                  onMemberAdd={handleVoiceAddMember}
+                  onSearch={handleVoiceSearch}
+                  onAnalyticsQuery={handleVoiceAnalytics}
+                  className="mb-6"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative flex-1">

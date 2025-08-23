@@ -34,7 +34,7 @@ type NotificationSettingsPropsOptional = {
   organizationId?: OrganizationId | null
 }
 
-export function NotificationSettingsTab({ accountType, userId, organizationId }: NotificationSettingsPropsOptional) {
+export const NotificationSettingsTab = React.memo(function NotificationSettingsTab({ accountType, userId, organizationId }: NotificationSettingsPropsOptional) {
   const [activeTab, setActiveTab] = useState<NotificationTab>('preferences')
 
   const tabs = [
@@ -141,10 +141,10 @@ export function NotificationSettingsTab({ accountType, userId, organizationId }:
       </div>
     </div>
   )
-}
+})
 
 // Component for notification preferences
-function NotificationPreferences({ accountType, userId, organizationId }: NotificationSettingsProps) {
+export function NotificationPreferences({ accountType, userId, organizationId }: NotificationSettingsProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>('board_governance')
 
   const notificationCategories = [

@@ -64,6 +64,9 @@ export { MeetingResolutionRepository } from './meeting-resolution.repository'
 export { MeetingActionableRepository } from './meeting-actionable.repository'
 export { FeedbackRepository } from './feedback.repository'
 export { AuthRepository } from './auth.repository'
+export { VoiceRepository } from './voice.repository'
+export { AuditRepository } from './audit.repository'
+export { SmartSharingRepository } from './smart-sharing.repository'
 
 // Document-specific exports
 export * from './document-errors'
@@ -91,6 +94,9 @@ import { MeetingResolutionRepository } from './meeting-resolution.repository'
 import { MeetingActionableRepository } from './meeting-actionable.repository'
 import { FeedbackRepository } from './feedback.repository'
 import { AuthRepository } from './auth.repository'
+import { VoiceRepository } from './voice.repository'
+import { AuditRepository } from './audit.repository'
+import { SmartSharingRepository } from './smart-sharing.repository'
 import { createMonitoredClient } from './database'
 
 export class RepositoryFactory {
@@ -166,6 +172,18 @@ export class RepositoryFactory {
 
   get auth() {
     return new AuthRepository(this.monitoredClient)
+  }
+
+  get voice() {
+    return new VoiceRepository(this.monitoredClient)
+  }
+
+  get audit() {
+    return new AuditRepository(this.monitoredClient)
+  }
+
+  get smartSharing() {
+    return new SmartSharingRepository(this.monitoredClient)
   }
 }
 

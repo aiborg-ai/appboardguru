@@ -82,6 +82,10 @@ module.exports = {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
       },
+      width: {
+        '120': '30rem', // 480px
+        '160': '40rem', // 640px
+      },
     },
   },
   plugins: [],

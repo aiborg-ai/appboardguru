@@ -668,6 +668,7 @@ export class AssetRepository extends BaseRepository {
         const filePath = `${uploadData.uploadedBy}/${uploadData.organizationId}/${sanitizedFolderPath}/${uniqueFileName}`.replace(/\/+/g, '/')
 
         // Upload to Supabase Storage
+        console.log('Uploading to Supabase storage:', { filePath, mimeType: uploadData.mimeType })
         const { data: uploadResult, error: uploadError } = await this.supabase.storage
           .from('assets')
           .upload(filePath, uploadData.file, {
@@ -681,12 +682,15 @@ export class AssetRepository extends BaseRepository {
           })
 
         if (uploadError) {
+          console.error('Supabase storage upload failed:', uploadError)
           return failure(new RepositoryError(
             'Failed to upload file to storage',
             'STORAGE_UPLOAD_FAILED',
             { error: uploadError.message, filePath }
           ))
         }
+        
+        console.log('Supabase storage upload successful:', uploadResult)
 
         // Get public URL if needed
         const { data: { publicUrl } } = this.supabase.storage

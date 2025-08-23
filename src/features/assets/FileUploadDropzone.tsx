@@ -250,9 +250,15 @@ export function FileUploadDropzone({
         const endTime = Date.now()
         const duration = endTime - startTime
         
+        console.log('Upload completed:', {
+          status: xhr.status,
+          responseText: xhr.responseText.substring(0, 200) + '...'
+        })
+        
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const data = JSON.parse(xhr.responseText)
+            console.log('Upload response data:', data)
             if (data.success) {
               updateFileProperty(fileItem.id, 'status', 'success')
               updateFileProperty(fileItem.id, 'progress', 100)
@@ -262,9 +268,11 @@ export function FileUploadDropzone({
               
               resolve(data.asset)
             } else {
+              console.error('Upload failed with error:', data.error)
               throw new Error(data.error || 'Upload failed')
             }
           } catch (error) {
+            console.error('Error parsing response:', error)
             updateFileProperty(fileItem.id, 'status', 'error')
             updateFileProperty(fileItem.id, 'error', 'Invalid server response')
             
@@ -274,6 +282,7 @@ export function FileUploadDropzone({
             reject(error)
           }
         } else {
+          console.error('Upload failed with status:', xhr.status, xhr.responseText)
           try {
             const errorData = JSON.parse(xhr.responseText)
             const errorMessage = errorData.error || `HTTP ${xhr.status}`
@@ -337,6 +346,15 @@ export function FileUploadDropzone({
       // Configure and send request
       xhr.timeout = 300000 // 5 minutes timeout
       xhr.open('POST', '/api/assets/upload')
+      
+      // Add debug logging
+      console.log('Starting upload:', {
+        fileName: fileItem.file.name,
+        fileSize: fileItem.file.size,
+        organizationId,
+        vaultId
+      })
+      
       xhr.send(formData)
     })
   }

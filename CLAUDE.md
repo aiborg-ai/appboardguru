@@ -500,20 +500,78 @@ export class NewFeatureController {
 
 ### Core Tables
 - `users` - User profiles and authentication
-- `organizations` - Board organizations  
-- `organization_members` - Membership relationships
-- `vaults` - Secure document containers
+- `organizations` - Board organizations with slug-based routing
+- `organization_members` - Membership relationships with roles
+- `organization_features` - Feature flags and subscription tiers  
+- `organization_invitations` - Pending invitations with tokens
+- `vaults` - Secure document containers linked to organizations
 - `assets` - File metadata and versions
 - `notifications` - System and user notifications
 - `calendar_events` - Board meetings and events
 - `compliance_workflows` - Governance processes
 - `activity_logs` - Audit trail for all operations
 
+### Organization System Tables
+**organizations**:
+- `id`, `name`, `slug` (unique), `description`, `website`, `industry`
+- `organization_size` (startup|small|medium|large|enterprise)
+- `logo_url`, `settings` (JSONB), `compliance_settings`, `billing_settings`
+- `created_by`, `is_active`, `created_at`, `updated_at`
+- Soft deletion: `deleted_at`, `deletion_scheduled_for`
+
+**organization_members**:
+- `id`, `organization_id`, `user_id`, `role` (owner|admin|member|viewer)
+- `status` (active|inactive|pending|suspended), `invited_by`, `approved_by`
+- `joined_at`, `last_accessed`, `is_primary`, `receive_notifications`
+- `custom_permissions` (JSONB), `access_count`, security tracking fields
+
+**organization_features**:
+- `organization_id` (primary key), `plan_type` (basic|professional|enterprise)
+- Storage limits: `max_storage_gb`, `current_storage_gb`, `max_file_size_mb`
+- Board pack limits: `max_board_packs`, `current_board_packs`
+- Feature flags: `ai_summarization`, `advanced_permissions`, `sso_enabled`
+- `api_access`, `audit_logs`, `white_label`, `subscription_ends_at`
+
+**organization_invitations**:
+- `id`, `organization_id`, `email`, `role`, `invited_by`
+- Token system: `invitation_token` (unique), `email_verification_code`
+- `status` (pending|accepted|rejected|expired|revoked)
+- `token_expires_at`, `personal_message`, security tracking fields
+
+### Settings System Tables (New)
+- `user_settings` - User interface and application preferences
+- `notification_preferences` - Detailed notification control with category-specific settings
+- `fyi_preferences` - FYI insights and news preferences with AI personalization
+
+#### Settings Tables Schema
+**user_settings**:
+- Theme, language, timezone, date/time format preferences
+- UI preferences (sidebar, density, avatars)
+- Advanced preferences stored as flexible JSONB
+- Optimistic locking with versioning
+
+**notification_preferences**:
+- Global notification toggles (email, push, SMS, in-app)
+- Delivery frequency and quiet hours configuration
+- Category-specific preferences with granular control:
+  - Document Management, Task Management, Meeting Management
+  - Board Management, System, Compliance
+- Export/backup preferences for notifications
+- Complex delivery method settings
+
+**fyi_preferences**:
+- News categories and source preferences
+- Update frequency and digest settings
+- Insight types (market, news, weather, calendar, industry, etc.)
+- AI personalization settings for content relevance
+- Auto-refresh and display preferences
+
 ### Security Features
-- **Row-Level Security (RLS)** on all tables
+- **Row-Level Security (RLS)** on all tables including settings tables
 - **Encrypted sensitive fields** 
 - **Audit logging** for compliance
 - **Data retention policies** for GDPR compliance
+- **Version control** with optimistic locking for settings
 
 ## Environment Configuration
 
@@ -582,6 +640,19 @@ npm run db:reset        # Reset local database
 npm run db:migrate      # Run database migrations
 npm run db:migrate:dry  # Dry run migrations
 
+# Organization System Database Setup
+# Run these SQL scripts in Supabase SQL Editor:
+# 1. Verify organization tables exist with schema verification script
+# 2. Create/update organization tables if needed with comprehensive schema
+# 3. Set up test.director user with 10 synthetic organizations
+# 4. Create additional members and realistic vault data
+# See DATABASE_ORGANIZATION_SETUP.md for complete setup instructions
+
+# Settings System Database Setup  
+# Run these SQL scripts in Supabase SQL Editor:
+# 1. supabase/migrations/20250823120000_create_settings_tables.sql
+# 2. supabase/migrations/20250823120001_seed_test_settings_data.sql
+
 # Performance Testing
 npm run test:performance # Performance benchmarks
 npm run test:load       # Load testing
@@ -590,7 +661,153 @@ npm run test:load       # Load testing
 npm run generate:types  # Generate type definitions
 npm run generate:component # Generate new component
 npm run generate:api    # Generate new API endpoint
+
+# Upload Functionality Database Setup
+# Run these SQL scripts in Supabase SQL Editor in order:
+npm run db:setup:upload   # Shortcut to run all upload setup scripts
+# Or run individually:
+# 1. database/setup-scripts/01-core-tables-email-assets.sql
+# 2. database/setup-scripts/02-test-user-setup.sql  
+# 3. database/setup-scripts/03-create-assets-and-vaults-tables.sql
+# 4. database/setup-scripts/04-synthetic-test-data.sql
+# See DATABASE_SETUP_INSTRUCTIONS.md for detailed setup guide
 ```
+
+## Upload Functionality Database Schema
+
+### Upload System Architecture
+
+The upload functionality implements a comprehensive asset management system with:
+
+- **Asset Management**: File upload, processing, and metadata management
+- **Vault System**: Secure document collections with access control
+- **Sharing System**: Asset sharing with permission levels
+- **Annotation System**: Comments and collaborative features
+- **Organization Integration**: Multi-tenant asset management
+
+### Database Tables for Upload Functionality
+
+#### Core Asset Tables
+- `assets` - File metadata and processing status
+- `vaults` - Document collections and containers  
+- `vault_members` - Access control for vaults
+- `asset_shares` - Direct file sharing permissions
+- `asset_annotations` - Comments and collaborative annotations
+
+#### Upload System Schema Details
+
+**assets table** (Enhanced):
+- Core file metadata: `file_name`, `original_file_name`, `file_size`, `mime_type`
+- Organization context: `organization_id`, `owner_id`, `uploaded_by`
+- Vault integration: `vault_id` for collections
+- Processing: `processing_status`, `processing_error`, `version`
+- Security: `visibility`, `public_url`, Row Level Security
+- Analytics: `view_count`, `download_count`, `last_accessed_at`
+- Storage: Supabase storage integration with `file_path`
+
+**vaults table**:
+- Organization-scoped document collections
+- Access control with `is_public` flag
+- Metadata and settings stored as JSONB
+- Soft deletion and archival support
+
+**vault_members table**:
+- Granular access control (owner, admin, editor, viewer, member)
+- JSONB permissions for fine-grained control
+- Activity tracking and last access times
+
+**asset_shares table**:
+- Direct file sharing between users
+- Permission levels (view, download, edit, admin)
+- Expiration dates and access tracking
+- Share messages and activity logs
+
+**asset_annotations table**:
+- Collaborative comments and notes
+- Position data for PDF annotations
+- Threaded conversations with parent/child relationships
+- Resolution tracking for review workflows
+
+### API Endpoints for Upload Functionality
+
+#### Primary Upload Endpoint
+- `POST /api/assets/upload` - Multi-part file upload with metadata
+  - File validation (type, size, security)
+  - Organization membership verification
+  - Vault assignment and permission checking
+  - Automatic processing and thumbnail generation
+
+#### Supporting Endpoints
+- `GET /api/assets/[id]` - Asset metadata retrieval
+- `GET /api/assets/[id]/download` - Secure file download
+- `POST /api/assets/[id]/share` - Share asset with users
+- `GET /api/vaults` - User's accessible vaults
+- `POST /api/vaults` - Create new vault
+
+### Test Data Setup
+
+The database setup creates comprehensive test data:
+
+**Test Users**:
+- `test.director@appboardguru.com` (Director, Organization Owner)
+- `admin.user@appboardguru.com` (Admin role)  
+- `board.member@appboardguru.com` (Member role)
+
+**Test Organization**: "Test Board Organization" (`test-board-org`)
+
+**3 Test Vaults**:
+1. "Board Documents" - Meeting agendas, minutes, strategic plans
+2. "Financial Reports" - Financial statements, budgets, audits  
+3. "Legal & Compliance" - Policies, contracts, training materials
+
+**15 Synthetic Assets**:
+- Various file types: PDF, Word, Excel, PowerPoint
+- Realistic file sizes (1KB to 60MB)
+- Complete metadata with tags, categories, descriptions
+- View/download statistics and access patterns
+- Asset sharing relationships between users
+- Comments and annotations on documents
+
+### Security Features
+
+**File Security**:
+- File type validation (whitelist approach)
+- File size limits (50MB default)
+- Virus scanning integration points
+- Path traversal protection
+- MIME type verification
+
+**Access Control**:
+- Row Level Security (RLS) on all tables
+- Organization-based isolation
+- Vault-based permissions
+- Direct sharing controls
+- API authentication required
+
+**Audit & Compliance**:
+- Complete activity logging
+- File access tracking
+- User permission audits
+- Data retention policies
+- GDPR compliance features
+
+### Setup Instructions
+
+Complete setup instructions are provided in `DATABASE_SETUP_INSTRUCTIONS.md`:
+
+1. **Core Tables Setup**: Users, organizations, basic assets
+2. **Test User Creation**: Three test users with realistic profiles  
+3. **Assets & Vaults Tables**: Complete upload system schema
+4. **Synthetic Test Data**: 15 realistic assets for testing
+
+### Integration Points
+
+The upload system integrates with:
+- **Supabase Storage**: Secure file storage with buckets
+- **Authentication System**: User verification and organization context
+- **Repository Layer**: Type-safe database operations
+- **Service Layer**: Business logic and file processing
+- **Component System**: FileUploadDropzone and related UI
 
 ## Deployment
 

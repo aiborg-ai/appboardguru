@@ -22,7 +22,14 @@ export type {
   AnnotationId,
   TocId,
   SummaryId,
-  PodcastId
+  PodcastId,
+  MeetingVoteId,
+  MeetingProxyId,
+  MeetingWorkflowId,
+  MeetingRoleId,
+  VotingSessionId,
+  WorkflowTransitionId,
+  VotingSessionItemId
 } from '../../types/branded'
 
 // Re-export unsafe constructors for backward compatibility (internal use only)
@@ -44,7 +51,14 @@ export {
   unsafeAnnotationId as createAnnotationId,
   unsafeTocId as createTocId,
   unsafeSummaryId as createSummaryId,
-  unsafePodcastId as createPodcastId
+  unsafePodcastId as createPodcastId,
+  unsafeMeetingVoteId as createMeetingVoteId,
+  unsafeMeetingProxyId as createMeetingProxyId,
+  unsafeMeetingWorkflowId as createMeetingWorkflowId,
+  unsafeMeetingRoleId as createMeetingRoleId,
+  unsafeVotingSessionId as createVotingSessionId,
+  unsafeWorkflowTransitionId as createWorkflowTransitionId,
+  unsafeVotingSessionItemId as createVotingSessionItemId
 } from '../../types/branded'
 
 // Common query options

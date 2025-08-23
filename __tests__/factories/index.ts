@@ -13,6 +13,7 @@ export * from './invitation.factory'
 export * from './notification.factory'
 export * from './activity.factory'
 export * from './compliance.factory'
+export * from './feedback.factory'
 
 // Re-export commonly used types
 export type {

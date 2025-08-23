@@ -26,6 +26,7 @@ import {
 import { Card } from '@/features/shared/ui/card'
 import { Button } from '@/features/shared/ui/button'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
 const defaultScope: ChatScope = {
   id: 'global',
@@ -173,7 +174,32 @@ export default function AIChatPage() {
           <div className="flex items-center space-x-3">
             <MessageSquare className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">AI Assistant</h1>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                AI Assistant
+                <InfoTooltip
+                  content={
+                    <InfoSection
+                      title="BoardGuru AI Assistant"
+                      description="Intelligent AI assistant designed specifically for board governance, document analysis, and strategic decision support."
+                      features={[
+                        "Context-aware responses based on your organization",
+                        "Document analysis and summarization",
+                        "Meeting preparation and agenda insights",
+                        "Compliance and regulatory guidance",
+                        "Strategic planning and decision support",
+                        "Real-time web search and research capabilities"
+                      ]}
+                      tips={[
+                        "Select an organization for context-specific assistance",
+                        "Upload documents for detailed analysis",
+                        "Use full-screen mode for intensive work sessions",
+                        "Ask specific questions about governance procedures"
+                      ]}
+                    />
+                  }
+                  side="right"
+                />
+              </h1>
               <div className="flex items-center space-x-2">
                 {currentOrganization ? (
                   <div className="flex items-center space-x-2 text-gray-600">
@@ -187,13 +213,19 @@ export default function AIChatPage() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Button
-              onClick={() => setShowFullPageChat(true)}
-              variant="outline"
-              disabled={!currentOrganization}
-            >
-              Full Screen
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowFullPageChat(true)}
+                variant="outline"
+                disabled={!currentOrganization}
+              >
+                Full Screen
+              </Button>
+              <InfoTooltip
+                content="Expand the AI chat to full screen for focused work sessions. Requires an organization to be selected for context-aware responses."
+                size="sm"
+              />
+            </div>
           </div>
         </div>
 

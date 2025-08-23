@@ -1,0 +1,1110 @@
+/**
+ * Comment Service - Real-time commenting with @mentions and threading
+ * Following CLAUDE.md patterns with DDD and Result handling
+ */
+
+import { BaseService } from './base.service'
+import { Result } from '../repositories/result'
+import type { AssetId, UserId, OrganizationId } from '../../types/database'
+import type { WebSocketService } from './websocket.service'
+import type { RoomId } from '../../types/websocket'
+import { createRoomId } from '../../types/websocket'
+import { nanoid } from 'nanoid'
+
+export interface CommentId {
+  readonly __brand: unique symbol
+}
+
+export interface Comment {
+  id: string & CommentId
+  assetId: AssetId
+  organizationId: OrganizationId
+  userId: UserId
+  
+  // Threading
+  parentCommentId?: string & CommentId
+  threadId: string & CommentId
+  threadDepth: number
+  threadOrder: number
+  
+  // Content
+  content: string
+  contentType: 'text' | 'markdown' | 'rich_text'
+  contentHtml?: string
+  
+  // Position and context
+  pageNumber?: number
+  positionX?: number
+  positionY?: number
+  selectionText?: string
+  selectionStart?: number
+  selectionEnd?: number
+  contextBefore?: string
+  contextAfter?: string
+  
+  // Properties
+  isPrivate: boolean
+  isResolved: boolean
+  resolvedAt?: Date
+  resolvedBy?: UserId
+  resolutionNote?: string
+  
+  // Categorization
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  category: 'general' | 'question' | 'suggestion' | 'issue' | 'approval_required' | 'action_item'
+  tags: string[]
+  
+  // Real-time collaboration
+  isEditing: boolean
+  editingStartedAt?: Date
+  lastEditActivity?: Date
+  concurrentEditors: UserId[]
+  
+  // Versioning
+  version: number
+  previousVersionId?: string & CommentId
+  editSummary?: string
+  
+  // Engagement
+  reactionCounts: Record<string, number>
+  viewCount: number
+  lastViewedBy: Record<string, Date>
+  
+  // AI features
+  aiSummary?: string
+  aiSentiment?: 'positive' | 'negative' | 'neutral' | 'mixed'
+  aiTopics?: string[]
+  aiActionItems?: string[]
+  
+  // Lifecycle
+  createdAt: Date
+  updatedAt: Date
+  deletedAt?: Date
+  
+  // Related data
+  mentions?: CommentMention[]
+  reactions?: CommentReaction[]
+  replies?: Comment[]
+}
+
+export interface CommentMention {
+  id: string
+  commentId: string & CommentId
+  mentionedUserId: UserId
+  mentionText: string
+  mentionDisplayName: string
+  positionStart: number
+  positionEnd: number
+  surroundingText?: string
+  mentionType: 'user' | 'role' | 'team' | 'everyone'
+  
+  // Notification status
+  notificationSent: boolean
+  notificationSentAt?: Date
+  notificationRead: boolean
+  notificationReadAt?: Date
+  notificationMethods: string[]
+  
+  // Response tracking
+  hasResponded: boolean
+  responseCommentId?: string & CommentId
+  acknowledgedAt?: Date
+  
+  createdAt: Date
+}
+
+export interface CommentReaction {
+  id: string
+  commentId: string & CommentId
+  userId: UserId
+  reactionType: string
+  reactionCategory: 'emoji' | 'custom' | 'vote'
+  createdAt: Date
+}
+
+export interface CommentDraft {
+  id: string
+  userId: UserId
+  assetId: AssetId
+  parentCommentId?: string & CommentId
+  content: string
+  contentType: 'text' | 'markdown' | 'rich_text'
+  pageNumber?: number
+  positionX?: number
+  positionY?: number
+  selectionText?: string
+  draftMentions: CommentMention[]
+  autoSavedAt: Date
+  expiresAt: Date
+}
+
+export interface CreateCommentRequest {
+  assetId: AssetId
+  content: string
+  contentType?: 'text' | 'markdown' | 'rich_text'
+  parentCommentId?: string & CommentId
+  pageNumber?: number
+  positionX?: number
+  positionY?: number
+  selectionText?: string
+  selectionStart?: number
+  selectionEnd?: number
+  contextBefore?: string
+  contextAfter?: string
+  isPrivate?: boolean
+  priority?: 'low' | 'normal' | 'high' | 'urgent'
+  category?: 'general' | 'question' | 'suggestion' | 'issue' | 'approval_required' | 'action_item'
+  tags?: string[]
+}
+
+export interface UpdateCommentRequest {
+  content?: string
+  contentType?: 'text' | 'markdown' | 'rich_text'
+  isPrivate?: boolean
+  priority?: 'low' | 'normal' | 'high' | 'urgent'
+  category?: 'general' | 'question' | 'suggestion' | 'issue' | 'approval_required' | 'action_item'
+  tags?: string[]
+  editSummary?: string
+}
+
+export interface CommentThread {
+  rootComment: Comment
+  replies: Comment[]
+  totalReplies: number
+  unreadReplies: number
+  lastActivity: Date
+  participants: Array<{
+    userId: UserId
+    userName: string
+    userAvatar?: string
+    lastActive: Date
+    commentCount: number
+  }>
+}
+
+export interface CommentActivity {
+  id: string
+  commentId: string & CommentId
+  userId: UserId
+  activityType: 'created' | 'updated' | 'deleted' | 'resolved' | 'reopened' | 
+                'mentioned' | 'reacted' | 'viewed' | 'started_editing' | 'stopped_editing'
+  details: Record<string, any>
+  previousValue?: string
+  newValue?: string
+  websocketEventId?: string
+  broadcastToUsers: UserId[]
+  createdAt: Date
+}
+
+export class CommentService extends BaseService {
+  private websocketService?: WebSocketService
+
+  constructor(
+    repositoryFactory: any,
+    websocketService?: WebSocketService
+  ) {
+    super(repositoryFactory)
+    this.websocketService = websocketService
+  }
+
+  /**
+   * Create a new comment
+   */
+  async createComment(
+    userId: UserId,
+    organizationId: OrganizationId,
+    request: CreateCommentRequest
+  ): Promise<Result<Comment>> {
+    try {
+      // Validate asset access
+      const assetRepository = this.repositoryFactory.createAssetRepository()
+      const assetResult = await assetRepository.findById(request.assetId)
+      
+      if (!assetResult.success) {
+        return Result.failure('ASSET_NOT_FOUND', 'Asset not found')
+      }
+
+      if (assetResult.data.organizationId !== organizationId) {
+        return Result.failure('ACCESS_DENIED', 'Access denied to asset')
+      }
+
+      // Validate parent comment if specified
+      if (request.parentCommentId) {
+        const parentResult = await this.getComment(request.parentCommentId, userId, organizationId)
+        if (!parentResult.success) {
+          return Result.failure('PARENT_COMMENT_NOT_FOUND', 'Parent comment not found')
+        }
+      }
+
+      // Process mentions
+      const mentions = this.extractMentions(request.content)
+      const processedMentions = await this.processMentions(mentions, organizationId)
+
+      // Create comment ID
+      const commentId = nanoid() as string & CommentId
+
+      // Generate AI insights if content is substantial
+      const aiInsights = request.content.length > 50 ? 
+        await this.generateAIInsights(request.content) : null
+
+      // Build comment object
+      const comment: Comment = {
+        id: commentId,
+        assetId: request.assetId,
+        organizationId,
+        userId,
+        
+        // Threading will be set by database trigger
+        parentCommentId: request.parentCommentId,
+        threadId: request.parentCommentId || commentId, // Will be corrected by DB
+        threadDepth: 0, // Will be calculated by DB
+        threadOrder: 0,
+        
+        // Content
+        content: request.content,
+        contentType: request.contentType || 'text',
+        contentHtml: request.contentType === 'markdown' ? 
+          this.renderMarkdown(request.content) : undefined,
+        
+        // Position
+        pageNumber: request.pageNumber,
+        positionX: request.positionX,
+        positionY: request.positionY,
+        selectionText: request.selectionText,
+        selectionStart: request.selectionStart,
+        selectionEnd: request.selectionEnd,
+        contextBefore: request.contextBefore,
+        contextAfter: request.contextAfter,
+        
+        // Properties
+        isPrivate: request.isPrivate || false,
+        isResolved: false,
+        priority: request.priority || 'normal',
+        category: request.category || 'general',
+        tags: request.tags || [],
+        
+        // Real-time
+        isEditing: false,
+        concurrentEditors: [],
+        
+        // Versioning
+        version: 1,
+        
+        // Engagement
+        reactionCounts: {},
+        viewCount: 0,
+        lastViewedBy: {},
+        
+        // AI
+        aiSummary: aiInsights?.summary,
+        aiSentiment: aiInsights?.sentiment,
+        aiTopics: aiInsights?.topics,
+        aiActionItems: aiInsights?.actionItems,
+        
+        // Timestamps
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        
+        // Relations
+        mentions: processedMentions
+      }
+
+      // Store in database
+      const repository = this.repositoryFactory.createCommentRepository()
+      const createResult = await repository.create(comment)
+      
+      if (!createResult.success) {
+        return Result.failure(createResult.error.code, createResult.error.message)
+      }
+
+      // Store mentions
+      if (processedMentions.length > 0) {
+        await repository.createMentions(commentId, processedMentions)
+      }
+
+      // Send real-time notifications
+      await this.broadcastCommentEvent(comment, 'created', userId)
+
+      // Send mention notifications
+      await this.sendMentionNotifications(comment, processedMentions)
+
+      // Update subscriptions
+      await this.notifySubscribers(comment, 'created')
+
+      await this.logActivity('comment_created', {
+        commentId,
+        assetId: request.assetId,
+        contentLength: request.content.length,
+        hasMentions: processedMentions.length > 0,
+        category: request.category,
+        priority: request.priority
+      })
+
+      return Result.success(createResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'COMMENT_CREATE_ERROR',
+        `Failed to create comment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Get comment by ID
+   */
+  async getComment(
+    commentId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId
+  ): Promise<Result<Comment>> {
+    try {
+      const repository = this.repositoryFactory.createCommentRepository()
+      const result = await repository.findById(commentId)
+      
+      if (!result.success) {
+        return Result.failure(result.error.code, result.error.message)
+      }
+
+      const comment = result.data
+
+      // Verify access
+      if (comment.organizationId !== organizationId) {
+        return Result.failure('ACCESS_DENIED', 'Access denied to comment')
+      }
+
+      // Check privacy settings
+      if (comment.isPrivate && comment.userId !== userId) {
+        // Check if user is mentioned
+        const isMentioned = comment.mentions?.some(m => m.mentionedUserId === userId)
+        if (!isMentioned) {
+          return Result.failure('ACCESS_DENIED', 'Private comment access denied')
+        }
+      }
+
+      // Track view
+      await this.trackCommentView(commentId, userId)
+
+      return Result.success(comment)
+
+    } catch (error) {
+      return Result.failure(
+        'COMMENT_GET_ERROR',
+        `Failed to get comment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Update comment
+   */
+  async updateComment(
+    commentId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId,
+    request: UpdateCommentRequest
+  ): Promise<Result<Comment>> {
+    try {
+      // Get existing comment
+      const existingResult = await this.getComment(commentId, userId, organizationId)
+      if (!existingResult.success) {
+        return existingResult
+      }
+
+      const existingComment = existingResult.data
+
+      // Verify ownership (only author can edit)
+      if (existingComment.userId !== userId) {
+        return Result.failure('ACCESS_DENIED', 'Only comment author can edit')
+      }
+
+      // Check if currently being edited by others
+      if (existingComment.concurrentEditors.length > 0 && 
+          !existingComment.concurrentEditors.includes(userId)) {
+        return Result.failure(
+          'CONCURRENT_EDIT_CONFLICT', 
+          'Comment is currently being edited by another user'
+        )
+      }
+
+      // Process new mentions if content changed
+      let newMentions: CommentMention[] = []
+      if (request.content && request.content !== existingComment.content) {
+        const mentions = this.extractMentions(request.content)
+        newMentions = await this.processMentions(mentions, organizationId)
+      }
+
+      // Generate AI insights for significant content changes
+      let aiInsights = null
+      if (request.content && request.content.length > 50 && 
+          request.content !== existingComment.content) {
+        aiInsights = await this.generateAIInsights(request.content)
+      }
+
+      // Build update object
+      const updates = {
+        ...request,
+        contentHtml: request.contentType === 'markdown' && request.content ? 
+          this.renderMarkdown(request.content) : undefined,
+        version: existingComment.version + 1,
+        previousVersionId: existingComment.id,
+        updatedAt: new Date(),
+        aiSummary: aiInsights?.summary || existingComment.aiSummary,
+        aiSentiment: aiInsights?.sentiment || existingComment.aiSentiment,
+        aiTopics: aiInsights?.topics || existingComment.aiTopics,
+        aiActionItems: aiInsights?.actionItems || existingComment.aiActionItems
+      }
+
+      // Update in database
+      const repository = this.repositoryFactory.createCommentRepository()
+      const updateResult = await repository.update(commentId, updates)
+      
+      if (!updateResult.success) {
+        return Result.failure(updateResult.error.code, updateResult.error.message)
+      }
+
+      // Update mentions if changed
+      if (newMentions.length > 0) {
+        await repository.replaceMentions(commentId, newMentions)
+        await this.sendMentionNotifications(updateResult.data, newMentions)
+      }
+
+      // Broadcast update
+      await this.broadcastCommentEvent(updateResult.data, 'updated', userId)
+
+      // Notify subscribers
+      await this.notifySubscribers(updateResult.data, 'updated')
+
+      await this.logActivity('comment_updated', {
+        commentId,
+        fieldsChanged: Object.keys(request),
+        newMentions: newMentions.length,
+        editSummary: request.editSummary
+      })
+
+      return Result.success(updateResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'COMMENT_UPDATE_ERROR',
+        `Failed to update comment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Delete comment (soft delete)
+   */
+  async deleteComment(
+    commentId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId
+  ): Promise<Result<void>> {
+    try {
+      // Get existing comment
+      const existingResult = await this.getComment(commentId, userId, organizationId)
+      if (!existingResult.success) {
+        return Result.failure(existingResult.error.code, existingResult.error.message)
+      }
+
+      const existingComment = existingResult.data
+
+      // Verify permissions (author or org admin)
+      const canDelete = existingComment.userId === userId || 
+                       await this.isOrganizationAdmin(userId, organizationId)
+
+      if (!canDelete) {
+        return Result.failure('ACCESS_DENIED', 'Insufficient permissions to delete comment')
+      }
+
+      // Soft delete
+      const repository = this.repositoryFactory.createCommentRepository()
+      const deleteResult = await repository.softDelete(commentId)
+      
+      if (!deleteResult.success) {
+        return Result.failure(deleteResult.error.code, deleteResult.error.message)
+      }
+
+      // Broadcast deletion
+      await this.broadcastCommentEvent(existingComment, 'deleted', userId)
+
+      // Notify subscribers
+      await this.notifySubscribers(existingComment, 'deleted')
+
+      await this.logActivity('comment_deleted', {
+        commentId,
+        hasReplies: existingComment.replies?.length || 0 > 0,
+        deletedByAuthor: existingComment.userId === userId
+      })
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      return Result.failure(
+        'COMMENT_DELETE_ERROR',
+        `Failed to delete comment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Get comment thread
+   */
+  async getCommentThread(
+    threadId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId
+  ): Promise<Result<CommentThread>> {
+    try {
+      const repository = this.repositoryFactory.createCommentRepository()
+      const threadResult = await repository.getThread(threadId, userId, organizationId)
+      
+      if (!threadResult.success) {
+        return Result.failure(threadResult.error.code, threadResult.error.message)
+      }
+
+      // Track views for all comments in thread
+      const commentIds = threadResult.data.replies.map(c => c.id)
+      commentIds.push(threadResult.data.rootComment.id)
+      
+      await Promise.all(
+        commentIds.map(id => this.trackCommentView(id, userId))
+      )
+
+      return Result.success(threadResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'THREAD_GET_ERROR',
+        `Failed to get comment thread: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Get comments for asset
+   */
+  async getAssetComments(
+    assetId: AssetId,
+    userId: UserId,
+    organizationId: OrganizationId,
+    options: {
+      page?: number
+      limit?: number
+      sortBy?: 'created_at' | 'updated_at' | 'priority'
+      sortOrder?: 'asc' | 'desc'
+      includeResolved?: boolean
+      categoryFilter?: string[]
+      priorityFilter?: string[]
+    } = {}
+  ): Promise<Result<{
+    comments: Comment[]
+    total: number
+    hasMore: boolean
+    page: number
+    limit: number
+  }>> {
+    try {
+      // Verify asset access
+      const assetRepository = this.repositoryFactory.createAssetRepository()
+      const assetResult = await assetRepository.findById(assetId)
+      
+      if (!assetResult.success) {
+        return Result.failure('ASSET_NOT_FOUND', 'Asset not found')
+      }
+
+      if (assetResult.data.organizationId !== organizationId) {
+        return Result.failure('ACCESS_DENIED', 'Access denied to asset')
+      }
+
+      const repository = this.repositoryFactory.createCommentRepository()
+      const commentsResult = await repository.findByAsset(assetId, userId, options)
+      
+      if (!commentsResult.success) {
+        return Result.failure(commentsResult.error.code, commentsResult.error.message)
+      }
+
+      return Result.success(commentsResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'ASSET_COMMENTS_ERROR',
+        `Failed to get asset comments: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Start editing comment (for real-time collaboration)
+   */
+  async startEditingComment(
+    commentId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId
+  ): Promise<Result<void>> {
+    try {
+      const repository = this.repositoryFactory.createCommentRepository()
+      const result = await repository.startEditing(commentId, userId)
+      
+      if (!result.success) {
+        return Result.failure(result.error.code, result.error.message)
+      }
+
+      // Broadcast editing status
+      await this.broadcastEditingStatus(commentId, userId, 'started_editing')
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      return Result.failure(
+        'START_EDITING_ERROR',
+        `Failed to start editing: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Stop editing comment
+   */
+  async stopEditingComment(
+    commentId: string & CommentId,
+    userId: UserId
+  ): Promise<Result<void>> {
+    try {
+      const repository = this.repositoryFactory.createCommentRepository()
+      const result = await repository.stopEditing(commentId, userId)
+      
+      if (!result.success) {
+        return Result.failure(result.error.code, result.error.message)
+      }
+
+      // Broadcast editing status
+      await this.broadcastEditingStatus(commentId, userId, 'stopped_editing')
+
+      return Result.success(undefined)
+
+    } catch (error) {
+      return Result.failure(
+        'STOP_EDITING_ERROR',
+        `Failed to stop editing: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Add reaction to comment
+   */
+  async addReaction(
+    commentId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId,
+    reactionType: string,
+    reactionCategory: 'emoji' | 'custom' | 'vote' = 'emoji'
+  ): Promise<Result<CommentReaction>> {
+    try {
+      // Verify comment access
+      const commentResult = await this.getComment(commentId, userId, organizationId)
+      if (!commentResult.success) {
+        return commentResult as any
+      }
+
+      const repository = this.repositoryFactory.createCommentRepository()
+      const reactionResult = await repository.addReaction({
+        id: nanoid(),
+        commentId,
+        userId,
+        reactionType,
+        reactionCategory,
+        createdAt: new Date()
+      })
+
+      if (!reactionResult.success) {
+        return Result.failure(reactionResult.error.code, reactionResult.error.message)
+      }
+
+      // Update reaction counts
+      await repository.updateReactionCounts(commentId)
+
+      // Broadcast reaction
+      await this.broadcastCommentEvent(commentResult.data, 'reacted', userId, {
+        reactionType,
+        reactionCategory
+      })
+
+      await this.logActivity('comment_reacted', {
+        commentId,
+        reactionType,
+        reactionCategory
+      })
+
+      return Result.success(reactionResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'ADD_REACTION_ERROR',
+        `Failed to add reaction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Resolve/unresolve comment
+   */
+  async resolveComment(
+    commentId: string & CommentId,
+    userId: UserId,
+    organizationId: OrganizationId,
+    resolve: boolean,
+    resolutionNote?: string
+  ): Promise<Result<Comment>> {
+    try {
+      // Get existing comment
+      const existingResult = await this.getComment(commentId, userId, organizationId)
+      if (!existingResult.success) {
+        return existingResult
+      }
+
+      const repository = this.repositoryFactory.createCommentRepository()
+      const resolveResult = await repository.resolve(commentId, userId, resolve, resolutionNote)
+      
+      if (!resolveResult.success) {
+        return Result.failure(resolveResult.error.code, resolveResult.error.message)
+      }
+
+      // Broadcast resolution
+      await this.broadcastCommentEvent(
+        resolveResult.data, 
+        resolve ? 'resolved' : 'reopened', 
+        userId,
+        { resolutionNote }
+      )
+
+      // Notify subscribers
+      await this.notifySubscribers(resolveResult.data, resolve ? 'resolved' : 'reopened')
+
+      await this.logActivity(resolve ? 'comment_resolved' : 'comment_reopened', {
+        commentId,
+        resolutionNote: resolutionNote || null
+      })
+
+      return Result.success(resolveResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'RESOLVE_COMMENT_ERROR',
+        `Failed to resolve comment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Save draft comment
+   */
+  async saveDraft(
+    userId: UserId,
+    assetId: AssetId,
+    content: string,
+    parentCommentId?: string & CommentId,
+    metadata?: Partial<CommentDraft>
+  ): Promise<Result<CommentDraft>> {
+    try {
+      const mentions = this.extractMentions(content)
+      const processedMentions = await this.processMentions(mentions, metadata?.assetId as OrganizationId || assetId as any)
+
+      const draft: CommentDraft = {
+        id: nanoid(),
+        userId,
+        assetId,
+        parentCommentId,
+        content,
+        contentType: metadata?.contentType || 'text',
+        pageNumber: metadata?.pageNumber,
+        positionX: metadata?.positionX,
+        positionY: metadata?.positionY,
+        selectionText: metadata?.selectionText,
+        draftMentions: processedMentions,
+        autoSavedAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      }
+
+      const repository = this.repositoryFactory.createCommentRepository()
+      const draftResult = await repository.saveDraft(draft)
+      
+      if (!draftResult.success) {
+        return Result.failure(draftResult.error.code, draftResult.error.message)
+      }
+
+      return Result.success(draftResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'SAVE_DRAFT_ERROR',
+        `Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Get user's unread mentions
+   */
+  async getUnreadMentions(
+    userId: UserId,
+    organizationId: OrganizationId,
+    limit: number = 50
+  ): Promise<Result<Array<{
+    mentionId: string
+    commentId: string & CommentId
+    commentContent: string
+    assetTitle: string
+    mentionerName: string
+    createdAt: Date
+  }>>> {
+    try {
+      const repository = this.repositoryFactory.createCommentRepository()
+      const mentionsResult = await repository.getUnreadMentions(userId, limit)
+      
+      if (!mentionsResult.success) {
+        return Result.failure(mentionsResult.error.code, mentionsResult.error.message)
+      }
+
+      return Result.success(mentionsResult.data)
+
+    } catch (error) {
+      return Result.failure(
+        'GET_MENTIONS_ERROR',
+        `Failed to get unread mentions: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Extract @mentions from content
+   */
+  private extractMentions(content: string): Array<{
+    text: string
+    username: string
+    start: number
+    end: number
+  }> {
+    const mentionRegex = /@([a-zA-Z0-9._-]+)/g
+    const mentions = []
+    let match
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      mentions.push({
+        text: match[0],
+        username: match[1],
+        start: match.index,
+        end: match.index + match[0].length
+      })
+    }
+
+    return mentions
+  }
+
+  /**
+   * Process mentions and resolve users
+   */
+  private async processMentions(
+    mentions: Array<{
+      text: string
+      username: string
+      start: number
+      end: number
+    }>,
+    organizationId: OrganizationId
+  ): Promise<CommentMention[]> {
+    const processedMentions: CommentMention[] = []
+
+    for (const mention of mentions) {
+      try {
+        // Find user by username in organization
+        const userRepository = this.repositoryFactory.createUserRepository()
+        const userResult = await userRepository.findByUsernameInOrganization(
+          mention.username,
+          organizationId
+        )
+
+        if (userResult.success) {
+          processedMentions.push({
+            id: nanoid(),
+            commentId: '' as string & CommentId, // Will be set when saving
+            mentionedUserId: userResult.data.id as UserId,
+            mentionText: mention.text,
+            mentionDisplayName: userResult.data.full_name || mention.username,
+            positionStart: mention.start,
+            positionEnd: mention.end,
+            mentionType: 'user',
+            notificationSent: false,
+            notificationRead: false,
+            notificationMethods: ['in_app', 'email'],
+            hasResponded: false,
+            createdAt: new Date()
+          })
+        }
+      } catch (error) {
+        console.error('Error processing mention:', mention.username, error)
+      }
+    }
+
+    return processedMentions
+  }
+
+  /**
+   * Generate AI insights for comment
+   */
+  private async generateAIInsights(content: string): Promise<{
+    summary?: string
+    sentiment?: 'positive' | 'negative' | 'neutral' | 'mixed'
+    topics?: string[]
+    actionItems?: string[]
+  } | null> {
+    try {
+      // This would integrate with OpenRouter API
+      // Simplified implementation for now
+      return {
+        sentiment: content.includes('!') ? 'mixed' : 'neutral',
+        topics: [],
+        actionItems: []
+      }
+    } catch (error) {
+      console.error('Error generating AI insights:', error)
+      return null
+    }
+  }
+
+  /**
+   * Render markdown to HTML
+   */
+  private renderMarkdown(content: string): string {
+    // Simplified markdown rendering - would use proper markdown parser
+    return content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+  }
+
+  /**
+   * Broadcast comment event via WebSocket
+   */
+  private async broadcastCommentEvent(
+    comment: Comment,
+    eventType: string,
+    userId: UserId,
+    additionalData?: Record<string, any>
+  ): Promise<void> {
+    if (!this.websocketService) return
+
+    const roomId = createRoomId(`comments_${comment.assetId}`)
+    
+    await this.websocketService.broadcastToRoom(roomId, {
+      id: nanoid(),
+      type: 'comment_event',
+      roomId,
+      userId,
+      timestamp: new Date().toISOString(),
+      data: {
+        eventType,
+        comment,
+        ...additionalData
+      }
+    })
+  }
+
+  /**
+   * Broadcast editing status
+   */
+  private async broadcastEditingStatus(
+    commentId: string & CommentId,
+    userId: UserId,
+    status: 'started_editing' | 'stopped_editing'
+  ): Promise<void> {
+    if (!this.websocketService) return
+
+    // Get comment to find asset ID
+    const repository = this.repositoryFactory.createCommentRepository()
+    const commentResult = await repository.findById(commentId)
+    
+    if (commentResult.success) {
+      const roomId = createRoomId(`comments_${commentResult.data.assetId}`)
+      
+      await this.websocketService.broadcastToRoom(roomId, {
+        id: nanoid(),
+        type: 'comment_editing',
+        roomId,
+        userId,
+        timestamp: new Date().toISOString(),
+        data: {
+          commentId,
+          status
+        }
+      })
+    }
+  }
+
+  /**
+   * Send mention notifications
+   */
+  private async sendMentionNotifications(
+    comment: Comment,
+    mentions: CommentMention[]
+  ): Promise<void> {
+    // Would integrate with notification system
+    for (const mention of mentions) {
+      await this.logActivity('user_mentioned', {
+        mentionId: mention.id,
+        commentId: comment.id,
+        mentionedUserId: mention.mentionedUserId,
+        mentionText: mention.mentionText
+      })
+    }
+  }
+
+  /**
+   * Notify subscribers
+   */
+  private async notifySubscribers(
+    comment: Comment,
+    eventType: string
+  ): Promise<void> {
+    // Would integrate with subscription system
+    await this.logActivity('subscribers_notified', {
+      commentId: comment.id,
+      eventType,
+      assetId: comment.assetId
+    })
+  }
+
+  /**
+   * Track comment view
+   */
+  private async trackCommentView(
+    commentId: string & CommentId,
+    userId: UserId
+  ): Promise<void> {
+    try {
+      const repository = this.repositoryFactory.createCommentRepository()
+      await repository.trackView(commentId, userId)
+    } catch (error) {
+      console.error('Error tracking comment view:', error)
+    }
+  }
+
+  /**
+   * Check if user is organization admin
+   */
+  private async isOrganizationAdmin(
+    userId: UserId,
+    organizationId: OrganizationId
+  ): Promise<boolean> {
+    try {
+      const orgRepository = this.repositoryFactory.createOrganizationRepository()
+      const memberResult = await orgRepository.getMember(organizationId, userId)
+      
+      return memberResult.success && 
+             ['owner', 'admin'].includes(memberResult.data.role)
+    } catch (error) {
+      return false
+    }
+  }
+}

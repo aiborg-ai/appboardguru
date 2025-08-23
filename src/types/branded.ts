@@ -70,9 +70,32 @@ export type RuleId = Brand<string, 'RuleId'>
 export type ComplianceWorkflowId = Brand<string, 'ComplianceWorkflowId'>
 export type ActivityLogId = Brand<string, 'ActivityLogId'>
 
+// Advanced Voting System IDs
+export type MeetingVoteId = Brand<string, 'MeetingVoteId'>
+export type MeetingProxyId = Brand<string, 'MeetingProxyId'>
+export type MeetingWorkflowId = Brand<string, 'MeetingWorkflowId'>
+export type MeetingRoleId = Brand<string, 'MeetingRoleId'>
+export type VotingSessionId = Brand<string, 'VotingSessionId'>
+export type WorkflowTransitionId = Brand<string, 'WorkflowTransitionId'>
+export type VotingSessionItemId = Brand<string, 'VotingSessionItemId'>
+
 // System IDs
 export type TemplateId = Brand<string, 'TemplateId'>
 export type InvitationId = Brand<string, 'InvitationId'>
+
+// Document Collaboration IDs
+export type DocumentCollaborationId = Brand<string, 'DocumentCollaborationId'>
+export type OperationId = Brand<string, 'OperationId'>
+export type CursorId = Brand<string, 'CursorId'>
+export type CollaborationSessionId = Brand<string, 'CollaborationSessionId'>
+export type DocumentVersionId = Brand<string, 'DocumentVersionId'>
+export type DocumentLockId = Brand<string, 'DocumentLockId'>
+export type CommentThreadId = Brand<string, 'CommentThreadId'>
+export type SuggestionId = Brand<string, 'SuggestionId'>
+export type RevisionId = Brand<string, 'RevisionId'>
+export type BranchId = Brand<string, 'BranchId'>
+export type MergeRequestId = Brand<string, 'MergeRequestId'>
+export type ConflictId = Brand<string, 'ConflictId'>
 
 // Additional branded utility types for comprehensive coverage
 export type Email = Brand<string, 'Email'>
@@ -132,8 +155,29 @@ export const WorkflowIdSchema = IdSchema
 export const RuleIdSchema = IdSchema
 export const ComplianceWorkflowIdSchema = IdSchema
 export const ActivityLogIdSchema = IdSchema
+export const MeetingVoteIdSchema = IdSchema
+export const MeetingProxyIdSchema = IdSchema
+export const MeetingWorkflowIdSchema = IdSchema
+export const MeetingRoleIdSchema = IdSchema
+export const VotingSessionIdSchema = IdSchema
+export const WorkflowTransitionIdSchema = IdSchema
+export const VotingSessionItemIdSchema = IdSchema
 export const TemplateIdSchema = IdSchema
 export const InvitationIdSchema = IdSchema
+
+// Document Collaboration schemas
+export const DocumentCollaborationIdSchema = IdSchema
+export const OperationIdSchema = IdSchema
+export const CursorIdSchema = IdSchema
+export const CollaborationSessionIdSchema = IdSchema
+export const DocumentVersionIdSchema = IdSchema
+export const DocumentLockIdSchema = IdSchema
+export const CommentThreadIdSchema = IdSchema
+export const SuggestionIdSchema = IdSchema
+export const RevisionIdSchema = IdSchema
+export const BranchIdSchema = IdSchema
+export const MergeRequestIdSchema = IdSchema
+export const ConflictIdSchema = IdSchema
 
 // Additional validation schemas
 export const EmailSchema = z.string().email('Invalid email format')
@@ -307,6 +351,83 @@ export function createTemplateId(id: string): ValidationResult<TemplateId> {
 
 export function createInvitationId(id: string): ValidationResult<InvitationId> {
   return createValidatedId<InvitationId>(id, InvitationIdSchema, 'InvitationId')
+}
+
+// Document Collaboration constructors
+export function createDocumentCollaborationId(id: string): ValidationResult<DocumentCollaborationId> {
+  return createValidatedId<DocumentCollaborationId>(id, DocumentCollaborationIdSchema, 'DocumentCollaborationId')
+}
+
+export function createOperationId(id: string): ValidationResult<OperationId> {
+  return createValidatedId<OperationId>(id, OperationIdSchema, 'OperationId')
+}
+
+export function createCursorId(id: string): ValidationResult<CursorId> {
+  return createValidatedId<CursorId>(id, CursorIdSchema, 'CursorId')
+}
+
+export function createCollaborationSessionId(id: string): ValidationResult<CollaborationSessionId> {
+  return createValidatedId<CollaborationSessionId>(id, CollaborationSessionIdSchema, 'CollaborationSessionId')
+}
+
+export function createDocumentVersionId(id: string): ValidationResult<DocumentVersionId> {
+  return createValidatedId<DocumentVersionId>(id, DocumentVersionIdSchema, 'DocumentVersionId')
+}
+
+export function createDocumentLockId(id: string): ValidationResult<DocumentLockId> {
+  return createValidatedId<DocumentLockId>(id, DocumentLockIdSchema, 'DocumentLockId')
+}
+
+export function createCommentThreadId(id: string): ValidationResult<CommentThreadId> {
+  return createValidatedId<CommentThreadId>(id, CommentThreadIdSchema, 'CommentThreadId')
+}
+
+export function createSuggestionId(id: string): ValidationResult<SuggestionId> {
+  return createValidatedId<SuggestionId>(id, SuggestionIdSchema, 'SuggestionId')
+}
+
+export function createRevisionId(id: string): ValidationResult<RevisionId> {
+  return createValidatedId<RevisionId>(id, RevisionIdSchema, 'RevisionId')
+}
+
+export function createBranchId(id: string): ValidationResult<BranchId> {
+  return createValidatedId<BranchId>(id, BranchIdSchema, 'BranchId')
+}
+
+export function createMergeRequestId(id: string): ValidationResult<MergeRequestId> {
+  return createValidatedId<MergeRequestId>(id, MergeRequestIdSchema, 'MergeRequestId')
+}
+
+export function createConflictId(id: string): ValidationResult<ConflictId> {
+  return createValidatedId<ConflictId>(id, ConflictIdSchema, 'ConflictId')
+}
+
+export function createMeetingVoteId(id: string): ValidationResult<MeetingVoteId> {
+  return createValidatedId<MeetingVoteId>(id, MeetingVoteIdSchema, 'MeetingVoteId')
+}
+
+export function createMeetingProxyId(id: string): ValidationResult<MeetingProxyId> {
+  return createValidatedId<MeetingProxyId>(id, MeetingProxyIdSchema, 'MeetingProxyId')
+}
+
+export function createMeetingWorkflowId(id: string): ValidationResult<MeetingWorkflowId> {
+  return createValidatedId<MeetingWorkflowId>(id, MeetingWorkflowIdSchema, 'MeetingWorkflowId')
+}
+
+export function createMeetingRoleId(id: string): ValidationResult<MeetingRoleId> {
+  return createValidatedId<MeetingRoleId>(id, MeetingRoleIdSchema, 'MeetingRoleId')
+}
+
+export function createVotingSessionId(id: string): ValidationResult<VotingSessionId> {
+  return createValidatedId<VotingSessionId>(id, VotingSessionIdSchema, 'VotingSessionId')
+}
+
+export function createWorkflowTransitionId(id: string): ValidationResult<WorkflowTransitionId> {
+  return createValidatedId<WorkflowTransitionId>(id, WorkflowTransitionIdSchema, 'WorkflowTransitionId')
+}
+
+export function createVotingSessionItemId(id: string): ValidationResult<VotingSessionItemId> {
+  return createValidatedId<VotingSessionItemId>(id, VotingSessionItemIdSchema, 'VotingSessionItemId')
 }
 
 // ==== Additional Type Constructors ====
@@ -507,6 +628,34 @@ export function unsafeInvitationId(id: string): InvitationId {
   return id as InvitationId
 }
 
+export function unsafeMeetingVoteId(id: string): MeetingVoteId {
+  return id as MeetingVoteId
+}
+
+export function unsafeMeetingProxyId(id: string): MeetingProxyId {
+  return id as MeetingProxyId
+}
+
+export function unsafeMeetingWorkflowId(id: string): MeetingWorkflowId {
+  return id as MeetingWorkflowId
+}
+
+export function unsafeMeetingRoleId(id: string): MeetingRoleId {
+  return id as MeetingRoleId
+}
+
+export function unsafeVotingSessionId(id: string): VotingSessionId {
+  return id as VotingSessionId
+}
+
+export function unsafeWorkflowTransitionId(id: string): WorkflowTransitionId {
+  return id as WorkflowTransitionId
+}
+
+export function unsafeVotingSessionItemId(id: string): VotingSessionItemId {
+  return id as VotingSessionItemId
+}
+
 // ==== Type Guards ====
 
 export function isUserId(value: unknown): value is UserId {
@@ -621,6 +770,34 @@ export function isInvitationId(value: unknown): value is InvitationId {
   return typeof value === 'string' && InvitationIdSchema.safeParse(value).success
 }
 
+export function isMeetingVoteId(value: unknown): value is MeetingVoteId {
+  return typeof value === 'string' && MeetingVoteIdSchema.safeParse(value).success
+}
+
+export function isMeetingProxyId(value: unknown): value is MeetingProxyId {
+  return typeof value === 'string' && MeetingProxyIdSchema.safeParse(value).success
+}
+
+export function isMeetingWorkflowId(value: unknown): value is MeetingWorkflowId {
+  return typeof value === 'string' && MeetingWorkflowIdSchema.safeParse(value).success
+}
+
+export function isMeetingRoleId(value: unknown): value is MeetingRoleId {
+  return typeof value === 'string' && MeetingRoleIdSchema.safeParse(value).success
+}
+
+export function isVotingSessionId(value: unknown): value is VotingSessionId {
+  return typeof value === 'string' && VotingSessionIdSchema.safeParse(value).success
+}
+
+export function isWorkflowTransitionId(value: unknown): value is WorkflowTransitionId {
+  return typeof value === 'string' && WorkflowTransitionIdSchema.safeParse(value).success
+}
+
+export function isVotingSessionItemId(value: unknown): value is VotingSessionItemId {
+  return typeof value === 'string' && VotingSessionItemIdSchema.safeParse(value).success
+}
+
 // ==== Union Type for All Branded IDs ====
 
 export type AnyBrandedId = 
@@ -652,6 +829,13 @@ export type AnyBrandedId =
   | ActivityLogId
   | TemplateId
   | InvitationId
+  | MeetingVoteId
+  | MeetingProxyId
+  | MeetingWorkflowId
+  | MeetingRoleId
+  | VotingSessionId
+  | WorkflowTransitionId
+  | VotingSessionItemId
 
 // ==== Generic Utilities ====
 
@@ -693,7 +877,14 @@ export function isAnyBrandedId(value: unknown): value is AnyBrandedId {
     isComplianceWorkflowId(value) ||
     isActivityLogId(value) ||
     isTemplateId(value) ||
-    isInvitationId(value)
+    isInvitationId(value) ||
+    isMeetingVoteId(value) ||
+    isMeetingProxyId(value) ||
+    isMeetingWorkflowId(value) ||
+    isMeetingRoleId(value) ||
+    isVotingSessionId(value) ||
+    isWorkflowTransitionId(value) ||
+    isVotingSessionItemId(value)
 }
 
 // ==== Advanced Branded Type Patterns ====
@@ -818,7 +1009,14 @@ export const BrandedTypeConstructors = {
   ComplianceWorkflowId: createComplianceWorkflowId,
   ActivityLogId: createActivityLogId,
   TemplateId: createTemplateId,
-  InvitationId: createInvitationId
+  InvitationId: createInvitationId,
+  MeetingVoteId: createMeetingVoteId,
+  MeetingProxyId: createMeetingProxyId,
+  MeetingWorkflowId: createMeetingWorkflowId,
+  MeetingRoleId: createMeetingRoleId,
+  VotingSessionId: createVotingSessionId,
+  WorkflowTransitionId: createWorkflowTransitionId,
+  VotingSessionItemId: createVotingSessionItemId
 } as const
 
 export const BrandedTypeGuards = {
@@ -849,7 +1047,14 @@ export const BrandedTypeGuards = {
   ComplianceWorkflowId: isComplianceWorkflowId,
   ActivityLogId: isActivityLogId,
   TemplateId: isTemplateId,
-  InvitationId: isInvitationId
+  InvitationId: isInvitationId,
+  MeetingVoteId: isMeetingVoteId,
+  MeetingProxyId: isMeetingProxyId,
+  MeetingWorkflowId: isMeetingWorkflowId,
+  MeetingRoleId: isMeetingRoleId,
+  VotingSessionId: isVotingSessionId,
+  WorkflowTransitionId: isWorkflowTransitionId,
+  VotingSessionItemId: isVotingSessionItemId
 } as const
 
 export type BrandedTypeName = keyof typeof BrandedTypeConstructors

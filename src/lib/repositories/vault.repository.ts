@@ -221,4 +221,92 @@ export class VaultRepository extends BaseRepository {
       return false
     }
   }
+
+  async createInvitation(invitationData: {
+    vault_id: string
+    invited_email: string
+    invited_by: string
+    role: string
+    expires_at?: string
+  }): Promise<any> {
+    try {
+      const { data, error } = await this.supabase
+        .from('vault_invitations')
+        .insert({
+          id: `vi_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          vault_id: invitationData.vault_id,
+          invited_email: invitationData.invited_email,
+          invited_by: invitationData.invited_by,
+          role: invitationData.role,
+          status: 'pending',
+          expires_at: invitationData.expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        this.handleError(error, 'createInvitation')
+      }
+
+      return data
+    } catch (error: unknown) {
+      this.handleError(error, 'createInvitation')
+      return null
+    }
+  }
+
+  async bulkCreateInvitations(invitations: Array<{
+    vault_id: string
+    invited_email: string
+    invited_by: string
+    role: string
+    expires_at?: string
+  }>): Promise<any[]> {
+    try {
+      const invitationRecords = invitations.map(invitation => ({
+        id: `vi_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+        vault_id: invitation.vault_id,
+        invited_email: invitation.invited_email,
+        invited_by: invitation.invited_by,
+        role: invitation.role,
+        status: 'pending',
+        expires_at: invitation.expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString()
+      }))
+
+      const { data, error } = await this.supabase
+        .from('vault_invitations')
+        .insert(invitationRecords)
+        .select()
+
+      if (error) {
+        this.handleError(error, 'bulkCreateInvitations')
+      }
+
+      return data || []
+    } catch (error: unknown) {
+      this.handleError(error, 'bulkCreateInvitations')
+      return []
+    }
+  }
+
+  async findInvitationsByVault(vaultId: string): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('vault_invitations')
+        .select('*')
+        .eq('vault_id', vaultId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        this.handleError(error, 'findInvitationsByVault')
+      }
+
+      return data || []
+    } catch (error: unknown) {
+      this.handleError(error, 'findInvitationsByVault')
+      return []
+    }
+  }
 }

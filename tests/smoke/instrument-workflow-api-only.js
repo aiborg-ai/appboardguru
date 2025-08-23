@@ -10,7 +10,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const CONFIG = {
-  baseUrl: 'http://localhost:3005',
+  baseUrl: 'http://localhost:3004',
   timeout: 10000,
   instruments: [
     'board-pack-ai',
