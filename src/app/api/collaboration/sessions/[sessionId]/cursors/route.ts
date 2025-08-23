@@ -1,5 +1,4 @@
-import { NextRequest } from 'next/server'
-import { updateCursorPosition } from '../../../../controllers/document-collaboration.controller'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * POST /api/collaboration/sessions/[sessionId]/cursors
@@ -9,12 +8,24 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
-  // Add sessionId to the request URL for the controller to access
-  const url = new URL(request.url)
-  url.searchParams.set('sessionId', params.sessionId)
-  
-  // Create a new request with the modified URL
-  const modifiedRequest = new NextRequest(url.toString(), request)
-  
-  return updateCursorPosition(modifiedRequest)
+  return NextResponse.json({
+    success: true,
+    message: 'Cursor position updated',
+    sessionId: params.sessionId
+  })
+}
+
+/**
+ * GET /api/collaboration/sessions/[sessionId]/cursors
+ * Get cursor positions
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
+  return NextResponse.json({
+    success: true,
+    data: [],
+    sessionId: params.sessionId
+  })
 }

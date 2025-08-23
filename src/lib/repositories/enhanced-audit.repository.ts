@@ -229,7 +229,7 @@ const CreateEnhancedAuditLogSchema = z.object({
   old_values: z.record(z.any()).optional(),
   new_values: z.record(z.any()).optional(),
   metadata: z.record(z.any()).optional(),
-  ip_address: z.string().ip().optional(),
+  ip_address: z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/).optional(),
   user_agent: z.string().max(500).optional(),
   severity: z.enum(['low', 'medium', 'high', 'critical']).default('low'),
   category: z.enum(['auth', 'data', 'system', 'security', 'compliance']).default('data'),

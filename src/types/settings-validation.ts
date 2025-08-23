@@ -126,7 +126,7 @@ export const SecuritySettingsSchema = z.object({
   mfaMethod: z.enum(['totp', 'sms', 'email']).optional(),
   passwordExpiresAt: z.string().datetime().optional(),
   requirePasswordChange: z.boolean().default(false),
-  allowedLoginIPs: z.array(z.string().ip()).optional(),
+  allowedLoginIPs: z.array(z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/)).optional(),
   sessionTimeoutMinutes: z.number().int().min(5).max(480).default(60),
   enableBiometricAuth: z.boolean().default(false),
   voiceBiometricEnabled: z.boolean().default(false),
@@ -521,7 +521,7 @@ export type MFAMethod = z.infer<typeof MFAMethodSchema>
 export const SecurityEventSchema = z.object({
   eventType: z.enum(['login', 'logout', 'failed_login', 'password_change', 'mfa_enabled', 'mfa_disabled', 'permission_change']),
   timestamp: z.string().datetime(),
-  ipAddress: z.string().ip(),
+  ipAddress: z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/),
   userAgent: z.string(),
   location: z.string().optional(),
   riskScore: z.number().min(0).max(100),
@@ -542,8 +542,8 @@ export const AdvancedSecuritySettingsSchema = z.object({
     })).optional()
   }),
   accessControl: z.object({
-    allowedIPs: z.array(z.string().ip()).optional(),
-    blockedIPs: z.array(z.string().ip()).optional(),
+    allowedIPs: z.array(z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/)).optional(),
+    blockedIPs: z.array(z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/)).optional(),
     allowedCountries: z.array(z.string().length(2)).optional(), // ISO country codes
     blockSuspiciousLocations: z.boolean().default(true),
     requireVPNForRemoteAccess: z.boolean().default(false)

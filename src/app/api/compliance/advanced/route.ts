@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createEnhancedAPIHandler } from '../../../../lib/api/createAPIHandler'
+import { createEnhancedAPIHandler } from '../../../../lib/middleware/apiHandler'
 import { AdvancedComplianceEngineService } from '../../../../lib/services/advanced-compliance-engine.service'
 import { createClient } from '@supabase/supabase-js'
 import { 

@@ -176,7 +176,7 @@ const organizationSchema = z.object({
       mfaRequired: z.boolean(),
       passwordPolicy: z.string(),
       sessionTimeout: z.number().min(15).max(480), // 15 minutes to 8 hours
-      ipWhitelist: z.array(z.string().ip()).optional(),
+      ipWhitelist: z.array(z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/)).optional(),
       auditLogging: z.boolean()
     })
   }),
