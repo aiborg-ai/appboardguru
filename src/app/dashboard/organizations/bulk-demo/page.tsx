@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, Suspense } from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { useOrganization } from '@/contexts/OrganizationContext'
 
@@ -43,7 +43,7 @@ import { Checkbox } from '@/components/atoms/form/checkbox'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
-export default function BulkDemoPage() {
+function BulkDemoContent() {
   const [showFilterPanel, setShowFilterPanel] = useState(false)
 
   const { 
@@ -601,5 +601,22 @@ export default function BulkDemoPage() {
         />
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function BulkDemoPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading bulk demo...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    }>
+      <BulkDemoContent />
+    </Suspense>
   )
 }

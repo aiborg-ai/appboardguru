@@ -21,7 +21,6 @@ import {
   MessageSquare,
   UserCheck,
   UserX,
-  UserClock,
   Crown,
   Shield,
   Eye,
@@ -123,7 +122,7 @@ const PRESENCE_CONFIG = {
     label: 'Late',
     color: 'bg-yellow-500',
     textColor: 'text-yellow-700',
-    icon: UserClock
+    icon: Clock
   },
   absent: {
     label: 'Absent',

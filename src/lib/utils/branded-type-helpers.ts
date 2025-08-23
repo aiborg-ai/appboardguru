@@ -346,6 +346,14 @@ export function stringToVaultId(id: string): VaultId {
 }
 
 /**
+ * Legacy aliases for backwards compatibility
+ */
+export const createUserId = stringToUserId
+export const createOrganizationId = stringToOrganizationId
+export const createAssetId = stringToAssetId
+export const createVaultId = stringToVaultId
+
+/**
  * Safe conversion that returns null on failure instead of throwing
  */
 export function safeStringToUserId(id: string): UserId | null {

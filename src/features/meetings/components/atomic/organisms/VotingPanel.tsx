@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { VotingPanelProps } from '../types'
-import { VotingControls, QuorumMeter } from '../molecules'
-import { VoteIndicator, StatusBadge } from '../atoms'
+import { VotingControls } from '../molecules'
+import { VoteIndicator, StatusBadge, QuorumMeter } from '../atoms'
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
 import { Badge } from '@/features/shared/ui/badge'
 import { 

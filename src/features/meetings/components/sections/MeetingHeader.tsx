@@ -24,7 +24,7 @@ import {
   Shield,
   Eye,
   EyeOff,
-  Record,
+  Circle,
   Mic,
   MicOff
 } from 'lucide-react';
@@ -275,7 +275,7 @@ export const MeetingHeader = React.memo(function MeetingHeader({
 
                     {meeting.isRecorded && (
                       <Badge className="bg-red-100 text-red-800 text-sm font-medium">
-                        <Record className="h-4 w-4 mr-1" />
+                        <Circle className="h-4 w-4 mr-1" />
                         Recording
                       </Badge>
                     )}
