@@ -20,12 +20,12 @@ import {
   Tag,
   Users
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/atoms/Button'
+import { Card } from '@/components/molecules/cards/card'
+import { Badge } from '@/components/atoms/display/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/atoms/form/textarea'
+import { Input } from '@/components/atoms/form/input'
 import {
   DropdownMenu,
   DropdownMenuContent,

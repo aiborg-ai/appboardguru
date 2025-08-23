@@ -6,7 +6,7 @@ interface RenderMetrics {
   lastRenderTime: number
   averageRenderTime: number
   totalRenderTime: number
-  props: Record<string, any>
+  props: Record<string, unknown>
 }
 
 interface PerformanceAlert {
@@ -28,7 +28,7 @@ class PerformanceTracker {
   private readonly RENDER_TIME_THRESHOLD = 16 // ms (60 FPS target)
   private readonly MAX_ALERTS = 100
 
-  recordRender(componentName: string, renderTime: number, props: Record<string, any>) {
+  recordRender(componentName: string, renderTime: number, props: Record<string, unknown>) {
     const existing = this.metrics.get(componentName)
     
     if (existing) {
@@ -179,7 +179,7 @@ const performanceTracker = new PerformanceTracker()
  */
 export function useRenderPerformance(
   componentName: string, 
-  props: Record<string, any> = {},
+  props: Record<string, unknown> = {},
   options: {
     enabled?: boolean
     logToConsole?: boolean
@@ -280,10 +280,10 @@ export function withRenderPerformance<P extends object>(
   }
 ) {
   return function<T extends React.ComponentType<P>>(Component: T): T {
-    const WrappedComponent = React.forwardRef<any, P>((props, ref) => {
+    const WrappedComponent = React.forwardRef<Element, P>((props, ref) => {
       useRenderPerformance(componentName, props, options)
       return React.createElement(Component, { ...props, ref })
-    }) as any
+    }) as React.ComponentType<P>
 
     WrappedComponent.displayName = `withRenderPerformance(${componentName})`
     

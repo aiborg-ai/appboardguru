@@ -3,9 +3,9 @@
 import React from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import BoardChatButton from '@/components/boardchat/BoardChatButton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
 import { MessageCircle, Users, Hash, Lock } from 'lucide-react'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 export default function BoardChatPage() {
   return (

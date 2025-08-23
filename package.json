@@ -42,7 +42,7 @@
     "type-safety:count": "node scripts/count-type-issues.js",
     "test": "jest",
     "test:ml": "jest __tests__/ml-models/",
-    "test:api": "jest __tests__/api/",
+    "test:api": "vitest run src/__tests__/api/ --config=vitest.new-features.config.ts",
     "test:coverage": "jest --coverage",
     "test:ml-demo": "npx tsx scripts/test-ml-predictions.ts",
     "vitest": "vitest",
@@ -54,8 +54,7 @@
     "test:new-features:coverage": "vitest run --coverage --config=vitest.new-features.config.ts",
     "test:new-features:comprehensive": "node src/__tests__/run-comprehensive-tests.js",
     "test:repositories": "vitest run src/__tests__/repositories/ --config=vitest.new-features.config.ts",
-    "test:services": "vitest run src/__tests__/services/ --config=vitest.new-features.config.ts", 
-    "test:api": "vitest run src/__tests__/api/ --config=vitest.new-features.config.ts",
+    "test:services": "vitest run src/__tests__/services/ --config=vitest.new-features.config.ts",
     "test:performance": "vitest run src/__tests__/performance/ --config=vitest.new-features.config.ts",
     "test:e2e:workflows": "vitest run src/__tests__/e2e/ --config=vitest.new-features.config.ts",
     "test:new-features:watch": "vitest --config=vitest.new-features.config.ts --watch",
@@ -190,7 +189,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-junit": "^16.0.0",
     "node-mocks-http": "^1.16.2",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.1",
     "tsx": "^4.20.0",
     "vitest": "^3.2.4"
   }

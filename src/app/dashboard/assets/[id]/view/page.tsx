@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { DocumentContextProvider } from '@/components/document-viewer/DocumentContextProvider'
 import DocumentViewerLayout from '@/components/document-viewer/DocumentViewerLayout'
-import { PDFViewerWithAnnotations } from '@/components/assets/PDFViewerWithAnnotations'
+import { PDFViewerWithAnnotations } from '@/components/features/assets/PDFViewerWithAnnotations'
 
 export default function EnhancedDocumentViewer() {
   const params = useParams()

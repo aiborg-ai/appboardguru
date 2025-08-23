@@ -23,8 +23,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import BoardMateCard from '@/components/boardmates/BoardMateCard';
-import AssociationManager from '@/components/boardmates/AssociationManager';
+import BoardMateCard from '@/components/molecules/cards/BoardMateCard';
+import AssociationManager from '@/components/features/boardmates/AssociationManager';
 import type { 
   BoardMateProfile, 
   AssociationUpdate,
@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/features/shared/ui/select';
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
 
 // Remove interface definition as it's now imported from types
 

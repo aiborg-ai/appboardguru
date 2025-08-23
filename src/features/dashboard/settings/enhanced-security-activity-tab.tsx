@@ -40,8 +40,8 @@ import {
   SettingsReset
 } from '@/components/ui/settings'
 import { useOptimizedCallback, useOptimizedMemo, usePerformanceMonitor } from '@/components/hooks'
-import { Badge } from '@/components/ui/badge'
-import { Avatar } from '@/components/ui/avatar'
+import { Badge } from '@/components/atoms/display/badge'
+import { Avatar } from '@/components/atoms/display/avatar'
 
 type SecuritySection = 
   | 'dashboard'

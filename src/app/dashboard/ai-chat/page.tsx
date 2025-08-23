@@ -26,7 +26,7 @@ import {
 import { Card } from '@/features/shared/ui/card'
 import { Button } from '@/features/shared/ui/button'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 const defaultScope: ChatScope = {
   id: 'global',

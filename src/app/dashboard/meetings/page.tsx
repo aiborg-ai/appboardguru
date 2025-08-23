@@ -25,7 +25,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRouter } from 'next/navigation';
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle';

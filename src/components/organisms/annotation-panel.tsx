@@ -7,10 +7,10 @@
 
 import React, { useEffect, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Card } from '@/components/molecules/cards/card'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
+import { Separator } from '@/components/atoms/display/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   MessageSquare, 

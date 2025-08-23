@@ -1,5 +1,12 @@
 // Molecules - Combinations of atoms
-export * from './FormField'
-export * from './NavItem'
-export * from './SearchInput'
 export * from './UserCard'
+
+// Organized molecule categories
+export * from './cards'
+export * from './forms'
+export * from './navigation'
+
+// Annotation molecules (keeping existing structure)
+export * from './annotation-card'
+export * from './annotation-filters'
+export * from './annotation-form'

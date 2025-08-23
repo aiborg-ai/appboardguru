@@ -12,10 +12,10 @@ import {
   Loader2
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Card } from '@/components/ui/card'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
+import { Separator } from '@/components/atoms/display/separator'
+import { Card } from '@/components/molecules/cards/card'
 import { useDocumentContext, useDocumentState, useDocumentActions } from './DocumentContextProvider'
 
 // Lazy load tab content components for better performance

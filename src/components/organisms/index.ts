@@ -1,4 +1,6 @@
-// Organisms - Complex UI components
-export * from './DataTable'
-export * from './Modal'
-export * from './VoiceInputButton'
+// Organisms - Complex UI components organized by purpose
+export * from './layout'
+export * from './features'
+
+// Annotation organisms (keeping existing structure)
+export * from './annotation-panel'

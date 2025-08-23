@@ -18,11 +18,11 @@ import {
   Sparkles,
   X
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Slider } from '@/components/ui/slider'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/atoms/Button'
+import { Card } from '@/components/molecules/cards/card'
+import { Separator } from '@/components/atoms/display/separator'
+import { Slider } from '@/components/atoms/form/slider'
+import { Badge } from '@/components/atoms/display/badge'
 import { useDocumentContext, useDocumentState, useDocumentActions } from './DocumentContextProvider'
 import { LiveCursorOverlay } from '../collaboration/LiveCursorOverlay'
 import { useLiveCursors } from '../../hooks/useLiveCursors'

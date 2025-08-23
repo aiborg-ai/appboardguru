@@ -7,9 +7,9 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/molecules/cards/card'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
 import { 
   User, 
   Calendar, 

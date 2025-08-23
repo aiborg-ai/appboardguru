@@ -116,7 +116,7 @@ export function useAnnotationSync({
 }: UseAnnotationSyncProps): {
   isConnected: boolean;
   activeUsers: UserPresenceData[];
-  syncAnnotations: () => Promise<any[] | null>;
+  syncAnnotations: () => Promise<Annotation[] | null>;
 } {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);

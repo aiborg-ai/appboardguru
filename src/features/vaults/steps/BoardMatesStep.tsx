@@ -30,8 +30,8 @@ import {
   Mic,
   MicOff
 } from 'lucide-react';
-import { ExecutiveAnalyticsDashboard } from '@/components/boardmates/ExecutiveAnalyticsDashboard';
-import { VoiceCommandPanel } from '@/components/boardmates/VoiceCommandPanel';
+import { ExecutiveAnalyticsDashboard } from '@/components/features/boardmates/ExecutiveAnalyticsDashboard';
+import { VoiceCommandPanel } from '@/components/features/boardmates/VoiceCommandPanel';
 import { EnhancedBoardMate } from '@/types/boardmates';
 import { cn } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';

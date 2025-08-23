@@ -13,7 +13,7 @@ import {
   CheckCircle,
   Building2
 } from 'lucide-react';
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip';
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
 
 export default function CreateVaultPage() {
   const router = useRouter();

@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useMemo, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
+import { Separator } from '@/components/atoms/display/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Activity, 

@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
+import { Badge } from '@/components/atoms/display/badge'
+import { Button } from '@/components/atoms/Button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/components/atoms/display/progress'
 import { 
   Brain, 
   TrendingUp, 

@@ -16,13 +16,13 @@ import {
   Copy,
   ExternalLink
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/atoms/Button'
+import { Card } from '@/components/molecules/cards/card'
+import { Badge } from '@/components/atoms/display/badge'
+import { Input } from '@/components/atoms/form/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Separator } from '@/components/atoms/display/separator'
+import { Checkbox } from '@/components/atoms/form/checkbox'
 import { SearchInput } from '@/components/molecules/SearchInput/SearchInput'
 import {
   Collapsible,

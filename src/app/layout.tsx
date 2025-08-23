@@ -1,7 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import { TooltipProvider } from '@/components/atoms/feedback/tooltip'
 
 const inter = Inter({ 
   subsets: ['latin'],

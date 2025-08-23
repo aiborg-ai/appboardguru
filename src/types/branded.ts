@@ -68,6 +68,16 @@ export type PodcastId = Brand<string, 'PodcastId'>
 export type WorkflowId = Brand<string, 'WorkflowId'>
 export type RuleId = Brand<string, 'RuleId'>
 export type ComplianceWorkflowId = Brand<string, 'ComplianceWorkflowId'>
+export type ComplianceFrameworkId = Brand<string, 'ComplianceFrameworkId'>
+export type ComplianceRequirementId = Brand<string, 'ComplianceRequirementId'>
+export type CompliancePolicyId = Brand<string, 'CompliancePolicyId'>
+export type ComplianceAssessmentId = Brand<string, 'ComplianceAssessmentId'>
+export type ComplianceFindingId = Brand<string, 'ComplianceFindingId'>
+export type ComplianceViolationId = Brand<string, 'ComplianceViolationId'>
+export type ComplianceTrainingId = Brand<string, 'ComplianceTrainingId'>
+export type AuditLogId = Brand<string, 'AuditLogId'>
+export type AuditEvidenceId = Brand<string, 'AuditEvidenceId'>
+export type AuditReportId = Brand<string, 'AuditReportId'>
 export type ActivityLogId = Brand<string, 'ActivityLogId'>
 
 // Advanced Voting System IDs
@@ -96,6 +106,28 @@ export type RevisionId = Brand<string, 'RevisionId'>
 export type BranchId = Brand<string, 'BranchId'>
 export type MergeRequestId = Brand<string, 'MergeRequestId'>
 export type ConflictId = Brand<string, 'ConflictId'>
+
+// AI Meeting Analysis IDs
+export type MeetingTranscriptionId = Brand<string, 'MeetingTranscriptionId'>
+export type TranscriptionSegmentId = Brand<string, 'TranscriptionSegmentId'>
+export type SpeakerIdentificationId = Brand<string, 'SpeakerIdentificationId'>
+export type MeetingSummaryId = Brand<string, 'MeetingSummaryId'>
+export type ActionItemExtractionId = Brand<string, 'ActionItemExtractionId'>
+export type DecisionTrackingId = Brand<string, 'DecisionTrackingId'>
+export type SentimentAnalysisId = Brand<string, 'SentimentAnalysisId'>
+export type MeetingInsightId = Brand<string, 'MeetingInsightId'>
+export type EngagementMetricId = Brand<string, 'EngagementMetricId'>
+export type TopicAnalysisId = Brand<string, 'TopicAnalysisId'>
+export type ComplianceRiskId = Brand<string, 'ComplianceRiskId'>
+export type MeetingPatternId = Brand<string, 'MeetingPatternId'>
+export type PredictiveOutcomeId = Brand<string, 'PredictiveOutcomeId'>
+export type SmartAgendaId = Brand<string, 'SmartAgendaId'>
+export type FollowUpRecommendationId = Brand<string, 'FollowUpRecommendationId'>
+export type ConflictPredictionId = Brand<string, 'ConflictPredictionId'>
+export type GovernanceInsightId = Brand<string, 'GovernanceInsightId'>
+export type AIModelConfigId = Brand<string, 'AIModelConfigId'>
+export type MLPipelineId = Brand<string, 'MLPipelineId'>
+export type SpeakerAnalyticsId = Brand<string, 'SpeakerAnalyticsId'>
 
 // Additional branded utility types for comprehensive coverage
 export type Email = Brand<string, 'Email'>
@@ -154,6 +186,16 @@ export const PodcastIdSchema = IdSchema
 export const WorkflowIdSchema = IdSchema
 export const RuleIdSchema = IdSchema
 export const ComplianceWorkflowIdSchema = IdSchema
+export const ComplianceFrameworkIdSchema = IdSchema
+export const ComplianceRequirementIdSchema = IdSchema
+export const CompliancePolicyIdSchema = IdSchema
+export const ComplianceAssessmentIdSchema = IdSchema
+export const ComplianceFindingIdSchema = IdSchema
+export const ComplianceViolationIdSchema = IdSchema
+export const ComplianceTrainingIdSchema = IdSchema
+export const AuditLogIdSchema = IdSchema
+export const AuditEvidenceIdSchema = IdSchema
+export const AuditReportIdSchema = IdSchema
 export const ActivityLogIdSchema = IdSchema
 export const MeetingVoteIdSchema = IdSchema
 export const MeetingProxyIdSchema = IdSchema
@@ -339,6 +381,46 @@ export function createRuleId(id: string): ValidationResult<RuleId> {
 
 export function createComplianceWorkflowId(id: string): ValidationResult<ComplianceWorkflowId> {
   return createValidatedId<ComplianceWorkflowId>(id, ComplianceWorkflowIdSchema, 'ComplianceWorkflowId')
+}
+
+export function createComplianceFrameworkId(id: string): ValidationResult<ComplianceFrameworkId> {
+  return createValidatedId<ComplianceFrameworkId>(id, ComplianceFrameworkIdSchema, 'ComplianceFrameworkId')
+}
+
+export function createComplianceRequirementId(id: string): ValidationResult<ComplianceRequirementId> {
+  return createValidatedId<ComplianceRequirementId>(id, ComplianceRequirementIdSchema, 'ComplianceRequirementId')
+}
+
+export function createCompliancePolicyId(id: string): ValidationResult<CompliancePolicyId> {
+  return createValidatedId<CompliancePolicyId>(id, CompliancePolicyIdSchema, 'CompliancePolicyId')
+}
+
+export function createComplianceAssessmentId(id: string): ValidationResult<ComplianceAssessmentId> {
+  return createValidatedId<ComplianceAssessmentId>(id, ComplianceAssessmentIdSchema, 'ComplianceAssessmentId')
+}
+
+export function createComplianceFindingId(id: string): ValidationResult<ComplianceFindingId> {
+  return createValidatedId<ComplianceFindingId>(id, ComplianceFindingIdSchema, 'ComplianceFindingId')
+}
+
+export function createComplianceViolationId(id: string): ValidationResult<ComplianceViolationId> {
+  return createValidatedId<ComplianceViolationId>(id, ComplianceViolationIdSchema, 'ComplianceViolationId')
+}
+
+export function createComplianceTrainingId(id: string): ValidationResult<ComplianceTrainingId> {
+  return createValidatedId<ComplianceTrainingId>(id, ComplianceTrainingIdSchema, 'ComplianceTrainingId')
+}
+
+export function createAuditLogId(id: string): ValidationResult<AuditLogId> {
+  return createValidatedId<AuditLogId>(id, AuditLogIdSchema, 'AuditLogId')
+}
+
+export function createAuditEvidenceId(id: string): ValidationResult<AuditEvidenceId> {
+  return createValidatedId<AuditEvidenceId>(id, AuditEvidenceIdSchema, 'AuditEvidenceId')
+}
+
+export function createAuditReportId(id: string): ValidationResult<AuditReportId> {
+  return createValidatedId<AuditReportId>(id, AuditReportIdSchema, 'AuditReportId')
 }
 
 export function createActivityLogId(id: string): ValidationResult<ActivityLogId> {
@@ -616,6 +698,46 @@ export function unsafeComplianceWorkflowId(id: string): ComplianceWorkflowId {
   return id as ComplianceWorkflowId
 }
 
+export function unsafeComplianceFrameworkId(id: string): ComplianceFrameworkId {
+  return id as ComplianceFrameworkId
+}
+
+export function unsafeComplianceRequirementId(id: string): ComplianceRequirementId {
+  return id as ComplianceRequirementId
+}
+
+export function unsafeCompliancePolicyId(id: string): CompliancePolicyId {
+  return id as CompliancePolicyId
+}
+
+export function unsafeComplianceAssessmentId(id: string): ComplianceAssessmentId {
+  return id as ComplianceAssessmentId
+}
+
+export function unsafeComplianceFindingId(id: string): ComplianceFindingId {
+  return id as ComplianceFindingId
+}
+
+export function unsafeComplianceViolationId(id: string): ComplianceViolationId {
+  return id as ComplianceViolationId
+}
+
+export function unsafeComplianceTrainingId(id: string): ComplianceTrainingId {
+  return id as ComplianceTrainingId
+}
+
+export function unsafeAuditLogId(id: string): AuditLogId {
+  return id as AuditLogId
+}
+
+export function unsafeAuditEvidenceId(id: string): AuditEvidenceId {
+  return id as AuditEvidenceId
+}
+
+export function unsafeAuditReportId(id: string): AuditReportId {
+  return id as AuditReportId
+}
+
 export function unsafeActivityLogId(id: string): ActivityLogId {
   return id as ActivityLogId
 }
@@ -826,6 +948,16 @@ export type AnyBrandedId =
   | WorkflowId
   | RuleId
   | ComplianceWorkflowId
+  | ComplianceFrameworkId
+  | ComplianceRequirementId
+  | CompliancePolicyId
+  | ComplianceAssessmentId
+  | ComplianceFindingId
+  | ComplianceViolationId
+  | ComplianceTrainingId
+  | AuditLogId
+  | AuditEvidenceId
+  | AuditReportId
   | ActivityLogId
   | TemplateId
   | InvitationId
@@ -1007,6 +1139,16 @@ export const BrandedTypeConstructors = {
   WorkflowId: createWorkflowId,
   RuleId: createRuleId,
   ComplianceWorkflowId: createComplianceWorkflowId,
+  ComplianceFrameworkId: createComplianceFrameworkId,
+  ComplianceRequirementId: createComplianceRequirementId,
+  CompliancePolicyId: createCompliancePolicyId,
+  ComplianceAssessmentId: createComplianceAssessmentId,
+  ComplianceFindingId: createComplianceFindingId,
+  ComplianceViolationId: createComplianceViolationId,
+  ComplianceTrainingId: createComplianceTrainingId,
+  AuditLogId: createAuditLogId,
+  AuditEvidenceId: createAuditEvidenceId,
+  AuditReportId: createAuditReportId,
   ActivityLogId: createActivityLogId,
   TemplateId: createTemplateId,
   InvitationId: createInvitationId,

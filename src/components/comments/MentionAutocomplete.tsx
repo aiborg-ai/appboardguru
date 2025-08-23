@@ -10,9 +10,9 @@ import React, { useEffect, useRef, useCallback } from 'react'
 import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Clock, Star, CheckCircle, Circle } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/molecules/cards/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
+import { Badge } from '@/components/atoms/display/badge'
 import type { MentionSuggestion, MentionAutocompleteState } from '../../hooks/useMentions'
 
 interface MentionAutocompleteProps {

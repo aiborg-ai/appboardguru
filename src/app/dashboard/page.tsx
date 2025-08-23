@@ -26,7 +26,7 @@ import {
   Eye,
   Folder as FolderIcon
 } from 'lucide-react'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 export default function DashboardPage() {
   const router = useRouter()

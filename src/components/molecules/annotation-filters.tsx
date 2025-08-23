@@ -6,8 +6,8 @@
 'use client'
 
 import React from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
 import { 
   Filter, 
   Eye,

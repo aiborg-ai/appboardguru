@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
+import { Button } from '@/components/atoms/Button'
+import { Input } from '@/components/atoms/form/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/atoms/form/textarea'
+import { Badge } from '@/components/atoms/display/badge'
 import { 
   Plus, 
   Edit, 

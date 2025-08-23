@@ -20,13 +20,13 @@ import {
   Mic,
   BookOpen
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/atoms/Button'
+import { Card } from '@/components/molecules/cards/card'
+import { Badge } from '@/components/atoms/display/badge'
+import { Textarea } from '@/components/atoms/form/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback } from '@/components/atoms/display/avatar'
+import { Separator } from '@/components/atoms/display/separator'
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -25,13 +25,13 @@ import {
   SkipForward,
   Calendar
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/atoms/Button'
+import { Card } from '@/components/molecules/cards/card'
+import { Badge } from '@/components/atoms/display/badge'
+import { Progress } from '@/components/atoms/display/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Slider } from '@/components/ui/slider'
-import { Separator } from '@/components/ui/separator'
+import { Slider } from '@/components/atoms/form/slider'
+import { Separator } from '@/components/atoms/display/separator'
 import {
   DropdownMenu,
   DropdownMenuContent,

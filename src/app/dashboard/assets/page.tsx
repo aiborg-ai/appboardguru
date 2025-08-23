@@ -41,7 +41,7 @@ import {
 import { Button } from '@/features/shared/ui/button'
 import { Input } from '@/features/shared/ui/input'
 import { Card } from '@/features/shared/ui/card'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 import { EmailToAssetInstructions } from '@/components/email-integration/EmailToAssetInstructions'
 import { SearchInput } from '@/components/molecules/SearchInput/SearchInput'
 

@@ -67,6 +67,8 @@ export { AuthRepository } from './auth.repository'
 export { VoiceRepository } from './voice.repository'
 export { AuditRepository } from './audit.repository'
 export { SmartSharingRepository } from './smart-sharing.repository'
+export { BoardMateRepository } from './boardmate.repository'
+export { DocumentCollaborationRepository } from './document-collaboration.repository'
 
 // Document-specific exports
 export * from './document-errors'
@@ -97,6 +99,8 @@ import { AuthRepository } from './auth.repository'
 import { VoiceRepository } from './voice.repository'
 import { AuditRepository } from './audit.repository'
 import { SmartSharingRepository } from './smart-sharing.repository'
+import { BoardMateRepository } from './boardmate.repository'
+import { DocumentCollaborationRepository } from './document-collaboration.repository'
 import { createMonitoredClient } from './database'
 
 export class RepositoryFactory {
@@ -184,6 +188,14 @@ export class RepositoryFactory {
 
   get smartSharing() {
     return new SmartSharingRepository(this.monitoredClient)
+  }
+
+  get boardmates() {
+    return new BoardMateRepository(this.monitoredClient)
+  }
+
+  get documentCollaboration() {
+    return new DocumentCollaborationRepository(this.monitoredClient)
   }
 }
 

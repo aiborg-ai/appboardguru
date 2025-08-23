@@ -38,7 +38,7 @@ import ItemDetails from '@/features/shared/components/views/ItemDetails'
 import EmptyState from '@/features/shared/components/views/EmptyState'
 import FilterBar from '@/features/shared/components/views/FilterBar'
 import { cn } from '@/lib/utils'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 type ViewMode = 'card' | 'list' | 'details'
 

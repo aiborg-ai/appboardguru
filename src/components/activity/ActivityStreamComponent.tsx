@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/atoms/display/badge'
+import { Button } from '@/components/atoms/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Activity, Clock, Filter, Play, Pause, Download } from 'lucide-react'
 import { io, Socket } from 'socket.io-client'

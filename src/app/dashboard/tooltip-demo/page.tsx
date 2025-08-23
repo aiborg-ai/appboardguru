@@ -2,8 +2,8 @@
 
 import React from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
-import { InfoTooltipEnhanced, InfoBadge } from '@/components/ui/info-tooltip-enhanced'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
+import { InfoTooltipEnhanced, InfoBadge } from '@/components/atoms/feedback/info-tooltip-enhanced'
 import { Button } from '@/features/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
 import { 

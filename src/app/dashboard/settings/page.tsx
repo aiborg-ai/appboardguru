@@ -23,7 +23,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 type SettingsTab = 'ai' | 'account' | 'security' | 'notifications' | 'export'
 

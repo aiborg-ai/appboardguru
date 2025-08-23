@@ -16,7 +16,7 @@ import {
   Download,
   Filter
 } from 'lucide-react'
-import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 interface CalendarEvent {
   id: string

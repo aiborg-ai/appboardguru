@@ -22,8 +22,8 @@ import type {
 } from '@/features/shared/components/views'
 
 // Enhanced components
-import EnhancedSearchBar from '@/components/organizations/EnhancedSearchBar'
-import FilterPanel, { FilterPreset } from '@/components/organizations/FilterPanel'
+import EnhancedSearchBar from '@/components/features/organizations/EnhancedSearchBar'
+import FilterPanel, { FilterPreset } from '@/components/features/organizations/FilterPanel'
 import { useOrganizationFilters } from '@/hooks/useOrganizationFilters'
 
 import { 

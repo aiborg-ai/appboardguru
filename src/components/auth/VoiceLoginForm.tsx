@@ -7,12 +7,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/atoms/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/molecules/cards/card';
+import { Alert, AlertDescription } from '@/components/atoms/feedback/alert';
+import { Badge } from '@/components/atoms/display/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/atoms/form/input';
 import { Label } from '@/components/ui/label';
 import { 
   Shield, 
@@ -27,7 +27,7 @@ import {
   Users,
   Lock
 } from 'lucide-react';
-import VoiceBiometricAuth from '@/components/voice/VoiceBiometricAuth';
+import VoiceBiometricAuth from '@/components/organisms/features/VoiceBiometricAuth';
 import { createBrowserClient } from '@supabase/ssr';
 import { 
   VoiceAuthenticationResponse, 

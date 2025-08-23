@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
 import { MessageCircle } from 'lucide-react'
 import { useChatNotifications } from '@/hooks/useBoardChat'
 import BoardChatPanel from './BoardChatPanel'

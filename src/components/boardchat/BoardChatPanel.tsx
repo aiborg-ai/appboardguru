@@ -3,13 +3,12 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useRenderPerformance } from '@/hooks/useRenderPerformance'
 import type { NotificationPayload } from '@/types/entities/activity.types'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/atoms/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
+import { Input } from '@/components/atoms/form/input'
+import { Separator } from '@/components/atoms/display/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
 import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import {
   Dialog,
@@ -57,6 +56,11 @@ import {
 import { useBoardChat, ChatConversation, ChatMessage } from '@/hooks/useBoardChat'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
+
+// Atomic Design Components
+import { ChatBadge, ConversationAvatar } from './atoms'
+import { MessageInput } from './molecules'
+import { ConversationList, ChatTabNavigation } from './organisms'
 
 interface BoardChatPanelProps {
   isOpen: boolean
@@ -150,9 +154,9 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
         <MessageCircle className="h-4 w-4 mr-2" />
         BoardChat
         {totalUnread > 0 && (
-          <Badge variant="destructive" className="ml-2 px-1 py-0 text-xs min-w-[20px] h-5">
-            {totalUnread > 99 ? '99+' : totalUnread}
-          </Badge>
+          <div className="ml-2">
+            <ChatBadge count={totalUnread} className="min-w-[20px] h-5" />
+          </div>
         )}
       </Button>
     )
@@ -166,11 +170,7 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
           <CardTitle className="text-lg flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-blue-600" />
             Board Hub
-            {(totalUnread > 0 || notificationCounts.unread > 0) && (
-              <Badge variant="destructive" className="px-1 py-0 text-xs">
-                {totalUnread + notificationCounts.unread}
-              </Badge>
-            )}
+            <ChatBadge count={totalUnread + notificationCounts.unread} />
           </CardTitle>
           <div className="flex items-center gap-1">
             <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
@@ -224,45 +224,12 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-1 mb-3">
-          <Button
-            variant={activeTab === 'chat' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('chat')}
-            className="flex-1"
-          >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            Chat
-            {totalUnread > 0 && (
-              <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[16px] h-4">
-                {totalUnread > 9 ? '9+' : totalUnread}
-              </Badge>
-            )}
-          </Button>
-          <Button
-            variant={activeTab === 'notifications' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('notifications')}
-            className="flex-1"
-          >
-            <Bell className="h-4 w-4 mr-1" />
-            Alerts
-            {notificationCounts.unread > 0 && (
-              <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[16px] h-4">
-                {notificationCounts.unread > 9 ? '9+' : notificationCounts.unread}
-              </Badge>
-            )}
-          </Button>
-          <Button
-            variant={activeTab === 'logs' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('logs')}
-            className="flex-1"
-          >
-            <Activity className="h-4 w-4 mr-1" />
-            Logs
-          </Button>
-        </div>
+        <ChatTabNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          chatUnreadCount={totalUnread}
+          notificationUnreadCount={notificationCounts.unread}
+        />
         
         {/* Search - Only show for chat and notifications */}
         {(activeTab === 'chat' || activeTab === 'notifications') && (
@@ -291,62 +258,12 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
         <>
         {/* Conversations List */}
         <div className="w-32 border-r flex-shrink-0">
-          <ScrollArea className="h-full">
-            <div className="p-2 space-y-1">
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : filteredConversations.length > 0 ? (
-                filteredConversations.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => selectConversation(conv.id)}
-                    className={`w-full p-2 rounded-lg text-left transition-colors relative ${
-                      activeConversationId === conv.id
-                        ? 'bg-blue-100 border-blue-200'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {conv.conversation_type === 'direct' ? (
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={conv.other_participant_avatar} />
-                          <AvatarFallback className="text-xs">
-                            {conv.other_participant_name?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
-                          {getConversationIcon(conv)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-1">
-                      <div className="text-xs font-medium truncate">
-                        {getConversationDisplayName(conv)}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {conv.last_message_content?.substring(0, 20) || 'No messages'}
-                      </div>
-                      {conv.unread_count > 0 && (
-                        <Badge variant="destructive" className="absolute -top-1 -right-1 px-1 py-0 text-xs min-w-[18px] h-4">
-                          {conv.unread_count > 9 ? '9+' : conv.unread_count}
-                        </Badge>
-                      )}
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">No conversations</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+          <ConversationList
+            conversations={filteredConversations}
+            activeConversationId={activeConversationId}
+            onSelectConversation={selectConversation}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Chat Interface */}
@@ -356,18 +273,11 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
               {/* Chat Header */}
               <div className="p-3 border-b flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-2 min-w-0">
-                  {activeConversation.conversation_type === 'direct' ? (
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={activeConversation.other_participant_avatar} />
-                      <AvatarFallback className="text-xs">
-                        {activeConversation.other_participant_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      {getConversationIcon(activeConversation)}
-                    </div>
-                  )}
+                  <ConversationAvatar
+                    type={activeConversation.conversation_type}
+                    avatarUrl={activeConversation.other_participant_avatar}
+                    name={activeConversation.other_participant_name}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium truncate">
                       {getConversationDisplayName(activeConversation)}
@@ -418,45 +328,14 @@ const BoardChatPanel = React.memo<BoardChatPanelProps>(({ isOpen, onToggle }) =>
               </ScrollArea>
 
               {/* Message Input */}
-              <div className="p-3 border-t bg-white">
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <div className="flex-1 relative">
-                    <Input
-                      placeholder="Type a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      className="pr-28"
-                      disabled={isSendingMessage}
-                    />
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                      <VoiceInputButton
-                        onTranscription={(text) => setNewMessage(prev => prev + (prev ? ' ' : '') + text)}
-                        disabled={isSendingMessage}
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0"
-                      />
-                      <Button variant="ghost" size="sm">
-                        <Smile className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || isSendingMessage}
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Press Enter to send, Shift+Enter for new line
-                </div>
-              </div>
+              <MessageInput
+                message={newMessage}
+                onMessageChange={setNewMessage}
+                onSend={handleSendMessage}
+                onKeyPress={handleKeyPress}
+                onVoiceTranscription={(text) => setNewMessage(prev => prev + (prev ? ' ' : '') + text)}
+                isDisabled={isSendingMessage}
+              />
             </>
           ) : (
             /* No Conversation Selected */

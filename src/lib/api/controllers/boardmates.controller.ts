@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BaseController, CommonSchemas } from '../base-controller';
 import { Result, Ok, Err, ResultUtils } from '../../result';
+import { createServerRepositoryFactory } from '../../repositories';
+import { isFailure } from '../../repositories/result';
+import { createUserId } from '../../../types/branded';
 
 /**
  * Consolidated Boardmates API Controller
@@ -475,6 +478,254 @@ export class BoardmatesController extends BaseController {
         entityId,
         type,
         deletedAt: new Date().toISOString()
+      });
+    });
+  }
+
+  // ============ INVITATION VALIDATION AND ACCEPTANCE ============
+  
+  /**
+   * Validate invitation token (GET /api/boardmates/invite)
+   */
+  async validateInvitation(request: NextRequest): Promise<NextResponse> {
+    const queryResult = this.validateQuery(request, z.object({
+      token: z.string().min(10, 'Invalid token format')
+    }));
+
+    if (ResultUtils.isErr(queryResult)) {
+      return this.errorResponse(ResultUtils.getError(queryResult)!);
+    }
+
+    const { token } = ResultUtils.unwrap(queryResult);
+
+    return this.handleRequest(request, async () => {
+      const repositories = await createServerRepositoryFactory();
+      
+      // Find invitation by token
+      const invitationResult = await repositories.boardmates.findInvitationByToken(token);
+      if (isFailure(invitationResult)) {
+        return Err({
+          code: 'INVITATION_ERROR',
+          message: 'Failed to validate invitation',
+          details: invitationResult.error
+        });
+      }
+
+      const invitation = invitationResult.data;
+      if (!invitation || invitation.status !== 'pending') {
+        return Err({
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired invitation token'
+        });
+      }
+
+      // Check if invitation has expired
+      const now = new Date();
+      const expiresAt = new Date(invitation.expires_at);
+      
+      if (now > expiresAt) {
+        // Mark invitation as expired
+        await repositories.boardmates.updateInvitationStatus(
+          invitation.id,
+          'expired'
+        );
+
+        return Err({
+          code: 'INVITATION_EXPIRED',
+          message: 'Invitation has expired'
+        });
+      }
+
+      return Ok({
+        invitation: {
+          id: invitation.id,
+          token: invitation.invitation_token,
+          expiresAt: invitation.expires_at,
+          customMessage: invitation.custom_message,
+          accessLevel: invitation.access_level,
+          createdAt: invitation.created_at
+        },
+        boardMate: invitation.board_members ? {
+          id: invitation.board_members.id,
+          fullName: invitation.board_members.full_name,
+          email: invitation.board_members.email,
+          role: invitation.board_members.board_role,
+          organizationName: invitation.board_members.organization_name
+        } : null,
+        organization: invitation.organizations ? {
+          id: invitation.organizations.id,
+          name: invitation.organizations.name,
+          slug: invitation.organizations.slug
+        } : null
+      });
+    });
+  }
+
+  /**
+   * Accept invitation and create user account (POST /api/boardmates/invite)
+   */
+  async acceptInvitation(request: NextRequest): Promise<NextResponse> {
+    const schema = z.object({
+      token: z.string().min(10, 'Invalid token format'),
+      password: z.string().min(8, 'Password must be at least 8 characters'),
+      firstName: z.string().min(1, 'First name is required').max(50),
+      lastName: z.string().min(1, 'Last name is required').max(50)
+    });
+
+    return this.handleRequest(request, async () => {
+      const bodyResult = await this.validateBody(request, schema);
+      if (ResultUtils.isErr(bodyResult)) return bodyResult;
+
+      const { token, password, firstName, lastName } = ResultUtils.unwrap(bodyResult);
+      
+      const repositories = await createServerRepositoryFactory();
+      
+      // Find and validate invitation
+      const invitationResult = await repositories.boardmates.findInvitationByToken(token);
+      if (isFailure(invitationResult)) {
+        return Err({
+          code: 'INVITATION_ERROR',
+          message: 'Failed to validate invitation',
+          details: invitationResult.error
+        });
+      }
+
+      const invitation = invitationResult.data;
+      if (!invitation || invitation.status !== 'pending') {
+        return Err({
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired invitation token'
+        });
+      }
+
+      // Check if invitation has expired
+      const now = new Date();
+      const expiresAt = new Date(invitation.expires_at);
+      
+      if (now > expiresAt) {
+        await repositories.boardmates.updateInvitationStatus(
+          invitation.id,
+          'expired'
+        );
+
+        return Err({
+          code: 'INVITATION_EXPIRED',
+          message: 'Invitation has expired'
+        });
+      }
+
+      // Check if user already exists
+      const existingUserResult = await repositories.boardmates.checkExistingUserByEmail(
+        invitation.board_members?.email || ''
+      );
+      if (isFailure(existingUserResult)) {
+        return Err({
+          code: 'VALIDATION_ERROR',
+          message: 'Failed to validate user',
+          details: existingUserResult.error
+        });
+      }
+
+      if (existingUserResult.data) {
+        return Err({
+          code: 'USER_EXISTS',
+          message: 'User already exists with this email address'
+        });
+      }
+
+      // Create user account with Supabase Auth
+      const authResult = await repositories.auth.createUserWithEmailAndPassword({
+        email: invitation.board_members?.email || '',
+        password: password,
+        emailConfirm: true,
+        userMetadata: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          full_name: `${firstName.trim()} ${lastName.trim()}`,
+          invited_via_board_mate: true,
+          board_member_id: invitation.board_member_id,
+          organization_id: invitation.organization_id
+        }
+      });
+
+      if (isFailure(authResult)) {
+        return Err({
+          code: 'USER_CREATION_ERROR',
+          message: 'Failed to create user account',
+          details: authResult.error
+        });
+      }
+
+      const authUser = authResult.data;
+
+      // Create user profile
+      const profileResult = await repositories.boardmates.createUserFromInvitation(
+        invitation,
+        {
+          authUserId: authUser.user.id,
+          email: authUser.user.email || '',
+          firstName: firstName.trim(),
+          lastName: lastName.trim()
+        }
+      );
+
+      if (isFailure(profileResult)) {
+        // Cleanup auth user if profile creation fails
+        await repositories.auth.deleteUser(authUser.user.id);
+        return Err({
+          code: 'PROFILE_CREATION_ERROR',
+          message: 'Failed to create user profile',
+          details: profileResult.error
+        });
+      }
+
+      // Link user to board member record and add to organization
+      const userIdResult = createUserId(authUser.user.id);
+      if (userIdResult.success) {
+        // Link user to board member record
+        const linkResult = await repositories.boardmates.linkUserToBoardMember(
+          userIdResult.data,
+          invitation.board_member_id
+        );
+        
+        if (isFailure(linkResult)) {
+          console.error('Error linking user to board member:', linkResult.error);
+          // Don't fail here - user is created, just not linked properly
+        }
+
+        // Add user to organization
+        const orgResult = await repositories.boardmates.addUserToOrganization(
+          userIdResult.data,
+          invitation.organization_id,
+          invitation.board_member_id,
+          'member'
+        );
+        
+        if (isFailure(orgResult)) {
+          console.error('Error adding user to organization:', orgResult.error);
+          // Don't fail here - user is created, just not added to org properly
+        }
+
+        // Mark invitation as accepted
+        await repositories.boardmates.updateInvitationStatus(
+          invitation.id,
+          'accepted',
+          userIdResult.data
+        );
+      }
+
+      return Ok({
+        user: {
+          id: authUser.user.id,
+          email: authUser.user.email,
+          fullName: `${firstName.trim()} ${lastName.trim()}`
+        },
+        boardMember: {
+          id: invitation.board_member_id
+        },
+        organization: {
+          id: invitation.organization_id
+        }
       });
     });
   }

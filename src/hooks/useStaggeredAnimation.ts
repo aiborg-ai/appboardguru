@@ -393,7 +393,7 @@ export function useSpringAnimation({
   const controls = useAnimation()
   const [isAnimating, setIsAnimating] = useState(false)
 
-  const animate = useCallback(async (to: any) => {
+  const animate = useCallback(async (to: Record<string, number | string>) => {
     setIsAnimating(true)
     
     await controls.start({

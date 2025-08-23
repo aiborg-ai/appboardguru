@@ -6,12 +6,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/molecules/cards/card'
+import { Button } from '@/components/atoms/Button'
+import { Textarea } from '@/components/atoms/form/textarea'
+import { Badge } from '@/components/atoms/display/badge'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Checkbox } from '@/components/atoms/form/checkbox'
 import { 
   MessageSquare, 
   Edit3, 

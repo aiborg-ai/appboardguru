@@ -7,7 +7,7 @@
 
 import { Suspense } from 'react'
 import { PerformanceDashboard } from '@/components/performance/PerformanceDashboard'
-import { Card } from '@/components/ui/card'
+import { Card } from '@/components/molecules/cards/card'
 
 export default function PerformanceDashboardPage() {
   return (

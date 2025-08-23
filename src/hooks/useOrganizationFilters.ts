@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Organization } from '@/types/entities/organization.types'
-import { FilterState, FilterPreset } from '@/components/organizations/FilterPanel'
+import { FilterState, FilterPreset } from '@/components/features/organizations/FilterPanel'
 
 export interface SortConfig {
   field: 'name' | 'created_at' | 'member_count' | 'last_activity' | 'industry'

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card';
+import { Button } from '@/components/atoms/Button';
+import { Badge } from '@/components/atoms/display/badge';
+import { Switch } from '@/components/atoms/form/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '@/components/atoms/display/progress';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Mic,
@@ -28,7 +28,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-import { VoiceTranslator } from '@/components/voice/VoiceTranslator';
+import { VoiceTranslator } from '@/components/organisms/features/VoiceTranslator';
 import { meetingTranscriptionService, type MeetingTranscription, type ActionItem } from '@/lib/services/meeting-transcription.service';
 import type { 
   VoiceTranslationSession, 

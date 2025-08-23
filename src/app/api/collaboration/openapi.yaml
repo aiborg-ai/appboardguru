@@ -1,0 +1,1442 @@
+openapi: 3.0.0
+info:
+  title: BoardGuru Document Collaboration API
+  description: |
+    Enterprise-grade collaborative document editing API with real-time operational transforms,
+    version control, and advanced permission management.
+    
+    ## Features
+    - Real-time collaborative editing with operational transforms
+    - Conflict-free simultaneous editing by multiple users
+    - Git-style version control with branching and merging
+    - Rich commenting system with threading and mentions
+    - AI-powered suggestions and improvements
+    - Fine-grained permission controls
+    - Comprehensive audit trails and analytics
+    
+    ## Authentication
+    All endpoints require Bearer token authentication via the Authorization header.
+    
+    ## Rate Limiting
+    API requests are rate-limited per endpoint. Limits are documented for each endpoint.
+    
+    ## WebSocket Events
+    Real-time events are delivered via WebSocket connections established through the collaboration sessions.
+  version: 1.0.0
+  contact:
+    name: BoardGuru API Support
+    email: api-support@boardguru.ai
+    url: https://docs.boardguru.ai
+  license:
+    name: Proprietary
+    url: https://boardguru.ai/license
+
+servers:
+  - url: https://api.boardguru.ai/v1
+    description: Production server
+  - url: https://staging-api.boardguru.ai/v1
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /collaboration/sessions:
+    post:
+      summary: Create collaboration session
+      description: |
+        Creates a new real-time collaborative editing session for a document.
+        Returns session details and WebSocket connection information.
+      tags:
+        - Collaboration Sessions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+            examples:
+              basic:
+                summary: Basic session creation
+                value:
+                  documentId: "550e8400-e29b-41d4-a716-446655440000"
+                  organizationId: "123e4567-e89b-12d3-a456-426614174000"
+                  title: "Board Meeting Minutes Draft"
+                  content: "# Meeting Agenda\n\n1. Opening remarks"
+                  permissions:
+                    canEdit: true
+                    canComment: true
+                    canSuggest: true
+                  settings:
+                    maxParticipants: 25
+                    sessionTimeout: 3600
+                    enableAutoSave: true
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSessionResponse'
+              examples:
+                success:
+                  summary: Successful session creation
+                  value:
+                    session:
+                      id: "sess_abc123"
+                      documentId: "550e8400-e29b-41d4-a716-446655440000"
+                      organizationId: "123e4567-e89b-12d3-a456-426614174000"
+                      title: "Board Meeting Minutes Draft"
+                      status: "active"
+                      createdAt: "2024-01-15T10:30:00Z"
+                      participants: []
+                    websocketUrl: "wss://api.boardguru.ai/v1/collaboration/sessions/sess_abc123/ws"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 10
+        window: "1m"
+
+    get:
+      summary: List collaboration sessions
+      description: |
+        Retrieves a paginated list of collaboration sessions that the authenticated user has access to.
+        Supports filtering by document, organization, and session status.
+      tags:
+        - Collaboration Sessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: query
+          description: Filter by document ID
+          schema:
+            type: string
+            format: uuid
+        - name: organizationId
+          in: query
+          description: Filter by organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by session status
+          schema:
+            type: string
+            enum: [active, inactive, ended]
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of sessions per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sortBy
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            enum: [created_at, updated_at, participant_count]
+            default: updated_at
+        - name: sortOrder
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSessionsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 50
+        window: "1m"
+
+  /collaboration/sessions/{sessionId}:
+    get:
+      summary: Get session details
+      description: |
+        Retrieves detailed information about a specific collaboration session,
+        including participants, recent operations, active cursors, and comments.
+      tags:
+        - Collaboration Sessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetailsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 100
+        window: "1m"
+
+  /collaboration/sessions/{sessionId}/operations:
+    post:
+      summary: Apply document operation
+      description: |
+        Applies a document operation (insert, delete, format, etc.) with operational transform
+        to maintain consistency across concurrent edits. Operations are automatically transformed
+        and synchronized with all active participants.
+      tags:
+        - Document Operations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyOperationRequest'
+            examples:
+              insert:
+                summary: Insert text operation
+                value:
+                  operation:
+                    id: "op_123456"
+                    type: "insert"
+                    position: 45
+                    content: "Hello World"
+                    timestamp: 1642248600000
+                    userId: "user_789"
+                    vectorClock:
+                      user_789: 15
+                      user_456: 8
+                  context:
+                    documentVersion: 23
+                    localOperationCount: 15
+              delete:
+                summary: Delete text operation
+                value:
+                  operation:
+                    id: "op_789012"
+                    type: "delete"
+                    position: 20
+                    length: 5
+                    timestamp: 1642248700000
+                    userId: "user_456"
+                    vectorClock:
+                      user_456: 9
+                      user_789: 15
+                  context:
+                    documentVersion: 24
+                    localOperationCount: 9
+      responses:
+        '200':
+          description: Operation applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplyOperationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 200
+        window: "1m"
+
+    get:
+      summary: Get operation history
+      description: |
+        Retrieves the operation history for a collaboration session with pagination.
+        Useful for auditing, debugging, and reconstructing document states.
+      tags:
+        - Document Operations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of operations per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Operation history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationHistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 50
+        window: "1m"
+
+  /collaboration/sessions/{sessionId}/cursors:
+    post:
+      summary: Update cursor position
+      description: |
+        Updates the user's cursor position and selection in the document.
+        This enables real-time cursor visibility for all session participants.
+      tags:
+        - Cursors & Presence
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCursorRequest'
+      responses:
+        '200':
+          description: Cursor updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCursorResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 500
+        window: "1m"
+
+  /collaboration/sessions/{sessionId}/comments:
+    post:
+      summary: Add comment
+      description: |
+        Adds a comment to a specific position in the document.
+        Supports threaded replies, mentions, and rich metadata.
+      tags:
+        - Comments & Suggestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCommentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 30
+        window: "1m"
+
+  /collaboration/sessions/{sessionId}/suggestions:
+    post:
+      summary: Create suggestion
+      description: |
+        Creates a suggestion for text improvement, including grammar, style,
+        clarity, and AI-generated recommendations.
+      tags:
+        - Comments & Suggestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSuggestionRequest'
+      responses:
+        '201':
+          description: Suggestion created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSuggestionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 20
+        window: "1m"
+
+  /collaboration/documents/{documentId}/branches:
+    post:
+      summary: Create document branch
+      description: |
+        Creates a new branch from the main document or from a specific version.
+        Enables parallel development workflows and experimental changes.
+      tags:
+        - Version Control
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          description: Document ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBranchRequest'
+      responses:
+        '201':
+          description: Branch created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBranchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 10
+        window: "1m"
+
+  /collaboration/documents/{documentId}/merge-requests:
+    post:
+      summary: Create merge request
+      description: |
+        Creates a merge request to merge changes from one branch into another.
+        Supports review workflows, conflict detection, and automated merging.
+      tags:
+        - Version Control
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          description: Document ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMergeRequestRequest'
+      responses:
+        '201':
+          description: Merge request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMergeRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Merge conflicts detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MergeConflictResponse'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      x-rateLimit:
+        requests: 5
+        window: "1m"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication
+
+  schemas:
+    CreateSessionRequest:
+      type: object
+      required:
+        - documentId
+        - organizationId
+        - title
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          description: Document ID to collaborate on
+        organizationId:
+          type: string
+          format: uuid
+          description: Organization ID
+        title:
+          type: string
+          maxLength: 200
+          description: Session title
+        content:
+          type: string
+          description: Initial document content
+          default: ""
+        permissions:
+          type: object
+          properties:
+            canEdit:
+              type: boolean
+              default: true
+            canComment:
+              type: boolean
+              default: true
+            canSuggest:
+              type: boolean
+              default: true
+            canViewHistory:
+              type: boolean
+              default: true
+        settings:
+          type: object
+          properties:
+            maxParticipants:
+              type: integer
+              minimum: 1
+              maximum: 100
+              default: 50
+            sessionTimeout:
+              type: integer
+              minimum: 300
+              maximum: 86400
+              default: 3600
+            enableAutoSave:
+              type: boolean
+              default: true
+            autoSaveInterval:
+              type: integer
+              minimum: 5
+              maximum: 300
+              default: 30
+
+    CreateSessionResponse:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/CollaborationSession'
+        websocketUrl:
+          type: string
+          format: uri
+          description: WebSocket URL for real-time events
+
+    CollaborationSession:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Session ID
+        documentId:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, ended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+          format: uuid
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionParticipant'
+        settings:
+          type: object
+          additionalProperties: true
+
+    SessionParticipant:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatarUrl:
+          type: string
+          format: uri
+        permissionLevel:
+          type: string
+          enum: [viewer, commenter, editor, admin]
+        isActive:
+          type: boolean
+        joinedAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+
+    ApplyOperationRequest:
+      type: object
+      required:
+        - operation
+        - context
+      properties:
+        operation:
+          $ref: '#/components/schemas/DocumentOperation'
+        context:
+          type: object
+          properties:
+            documentVersion:
+              type: integer
+              minimum: 0
+            localOperationCount:
+              type: integer
+              minimum: 0
+            expectedState:
+              type: string
+
+    DocumentOperation:
+      type: object
+      required:
+        - id
+        - type
+        - position
+        - timestamp
+        - userId
+        - vectorClock
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [insert, delete, retain, format, attribute]
+        position:
+          type: integer
+          minimum: 0
+        content:
+          type: string
+        length:
+          type: integer
+          minimum: 0
+        attributes:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: integer
+          description: Unix timestamp in milliseconds
+        userId:
+          type: string
+          format: uuid
+        vectorClock:
+          type: object
+          additionalProperties:
+            type: integer
+
+    ApplyOperationResponse:
+      type: object
+      properties:
+        operation:
+          $ref: '#/components/schemas/DocumentOperation'
+        newState:
+          type: string
+          description: Updated document content
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationConflict'
+        version:
+          type: integer
+
+    OperationConflict:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [position_conflict, content_conflict, format_conflict]
+        description:
+          type: string
+        resolution:
+          type: string
+          enum: [auto_resolved, manual_required]
+        conflictingOperations:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    UpdateCursorRequest:
+      type: object
+      required:
+        - position
+      properties:
+        position:
+          type: object
+          properties:
+            start:
+              type: integer
+              minimum: 0
+            end:
+              type: integer
+              minimum: 0
+            line:
+              type: integer
+              minimum: 1
+            column:
+              type: integer
+              minimum: 1
+        selection:
+          type: object
+          properties:
+            anchor:
+              type: integer
+              minimum: 0
+            focus:
+              type: integer
+              minimum: 0
+        metadata:
+          type: object
+          properties:
+            color:
+              type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+            label:
+              type: string
+              maxLength: 50
+
+    UpdateCursorResponse:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/CursorPosition'
+        activeCursors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CursorPosition'
+
+    CursorPosition:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        userName:
+          type: string
+        position:
+          type: object
+        selection:
+          type: object
+        metadata:
+          type: object
+        lastUpdated:
+          type: string
+          format: date-time
+
+    CreateCommentRequest:
+      type: object
+      required:
+        - content
+        - position
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        position:
+          type: object
+          properties:
+            start:
+              type: integer
+              minimum: 0
+            end:
+              type: integer
+              minimum: 0
+            line:
+              type: integer
+              minimum: 1
+            column:
+              type: integer
+              minimum: 1
+        parentId:
+          type: string
+          format: uuid
+          description: Parent comment ID for threading
+        mentions:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isResolved:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+          properties:
+            priority:
+              type: string
+              enum: [low, medium, high]
+              default: medium
+            category:
+              type: string
+              maxLength: 50
+            tags:
+              type: array
+              items:
+                type: string
+
+    CreateCommentResponse:
+      type: object
+      properties:
+        comment:
+          $ref: '#/components/schemas/DocumentComment'
+        mentions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMention'
+
+    DocumentComment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        position:
+          type: object
+        userId:
+          type: string
+          format: uuid
+        userName:
+          type: string
+        userAvatar:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isResolved:
+          type: boolean
+        parentId:
+          type: string
+          format: uuid
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentComment'
+        mentions:
+          type: array
+          items:
+            type: string
+            format: uuid
+        metadata:
+          type: object
+
+    CreateSuggestionRequest:
+      type: object
+      required:
+        - type
+        - position
+        - originalText
+        - suggestedText
+      properties:
+        type:
+          type: string
+          enum: [text-change, format-change, structure-change, ai-generated]
+        position:
+          type: object
+          properties:
+            start:
+              type: integer
+              minimum: 0
+            end:
+              type: integer
+              minimum: 0
+        originalText:
+          type: string
+        suggestedText:
+          type: string
+        reason:
+          type: string
+          maxLength: 500
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.8
+        category:
+          type: string
+          enum: [grammar, style, clarity, factual, other]
+          default: other
+        isAiGenerated:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CreateSuggestionResponse:
+      type: object
+      properties:
+        suggestion:
+          $ref: '#/components/schemas/DocumentSuggestion'
+
+    DocumentSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        position:
+          type: object
+        originalText:
+          type: string
+        suggestedText:
+          type: string
+        reason:
+          type: string
+        confidence:
+          type: number
+        category:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        isAiGenerated:
+          type: boolean
+        metadata:
+          type: object
+
+    CreateBranchRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        fromVersion:
+          type: integer
+          minimum: 0
+        permissions:
+          type: object
+          properties:
+            isProtected:
+              type: boolean
+              default: false
+            allowedUsers:
+              type: array
+              items:
+                type: string
+                format: uuid
+            requireReview:
+              type: boolean
+              default: false
+
+    CreateBranchResponse:
+      type: object
+      properties:
+        branch:
+          $ref: '#/components/schemas/DocumentBranch'
+
+    DocumentBranch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        fromVersion:
+          type: integer
+        currentVersion:
+          type: integer
+        status:
+          type: string
+          enum: [active, merged, abandoned]
+        permissions:
+          type: object
+        isProtected:
+          type: boolean
+
+    CreateMergeRequestRequest:
+      type: object
+      required:
+        - sourceBranch
+        - targetBranch
+        - title
+      properties:
+        sourceBranch:
+          type: string
+        targetBranch:
+          type: string
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        reviewers:
+          type: array
+          items:
+            type: string
+            format: uuid
+        assignees:
+          type: array
+          items:
+            type: string
+            format: uuid
+        labels:
+          type: array
+          items:
+            type: string
+        autoMerge:
+          type: boolean
+          default: false
+        deleteSourceBranch:
+          type: boolean
+          default: false
+
+    CreateMergeRequestResponse:
+      type: object
+      properties:
+        mergeRequest:
+          $ref: '#/components/schemas/DocumentMergeRequest'
+
+    DocumentMergeRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        sourceBranch:
+          type: string
+        targetBranch:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, merged, closed, conflict]
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        mergedAt:
+          type: string
+          format: date-time
+        reviewers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MergeRequestReviewer'
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MergeConflict'
+        autoMerge:
+          type: boolean
+        deleteSourceBranch:
+          type: boolean
+
+    MergeRequestReviewer:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, approved, rejected, commented]
+        reviewedAt:
+          type: string
+          format: date-time
+        comments:
+          type: string
+
+    MergeConflict:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [content, structure, format]
+        position:
+          type: object
+        description:
+          type: string
+        sourcePath:
+          type: string
+        targetPath:
+          type: string
+        resolution:
+          type: string
+          enum: [manual_required, auto_resolvable]
+
+    ListSessionsResponse:
+      type: object
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollaborationSession'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    SessionDetailsResponse:
+      type: object
+      properties:
+        session:
+          allOf:
+            - $ref: '#/components/schemas/CollaborationSession'
+            - type: object
+              properties:
+                activeParticipants:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SessionParticipant'
+                recentOperations:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DocumentOperation'
+                activeCursors:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CursorPosition'
+                comments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DocumentComment'
+
+    OperationHistoryResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/DocumentOperation'
+              - type: object
+                properties:
+                  userName:
+                    type: string
+                  userAvatar:
+                    type: string
+                    format: uri
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    UserMention:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        notified:
+          type: boolean
+
+    MergeConflictResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          default: "Merge conflicts detected"
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MergeConflict'
+        resolutionStrategies:
+          type: array
+          items:
+            type: string
+            enum: [accept_source, accept_target, manual_edit, three_way_merge]
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validation_error:
+              summary: Validation error
+              value:
+                error: "Validation failed"
+                message: "Invalid document ID format"
+                code: "VALIDATION_ERROR"
+                details:
+                  field: "documentId"
+                  expected: "uuid"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_token:
+              summary: Missing authentication token
+              value:
+                error: "Unauthorized"
+                message: "Bearer token required"
+                code: "AUTH_REQUIRED"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            insufficient_permissions:
+              summary: Insufficient permissions
+              value:
+                error: "Forbidden"
+                message: "Editor permissions required"
+                code: "INSUFFICIENT_PERMISSIONS"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            session_not_found:
+              summary: Session not found
+              value:
+                error: "Not Found"
+                message: "Collaboration session not found or access denied"
+                code: "RESOURCE_NOT_FOUND"
+                timestamp: "2024-01-15T10:30:00Z"
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            rate_limit_exceeded:
+              summary: Rate limit exceeded
+              value:
+                error: "Rate Limit Exceeded"
+                message: "Too many requests. Please try again later."
+                code: "RATE_LIMIT_EXCEEDED"
+                details:
+                  limit: 100
+                  window: "1m"
+                  retryAfter: 30
+                timestamp: "2024-01-15T10:30:00Z"
+
+tags:
+  - name: Collaboration Sessions
+    description: |
+      Manage collaborative editing sessions for documents.
+      Sessions provide real-time collaboration capabilities with operational transforms.
+  
+  - name: Document Operations
+    description: |
+      Apply and track document operations (insert, delete, format) with automatic conflict resolution
+      using operational transform algorithms.
+  
+  - name: Cursors & Presence
+    description: |
+      Real-time cursor tracking and user presence indicators for collaborative awareness.
+  
+  - name: Comments & Suggestions
+    description: |
+      Rich commenting system with threading, mentions, and AI-powered suggestions for document improvement.
+  
+  - name: Version Control
+    description: |
+      Git-style version control with branching, merging, and conflict resolution for document management.

@@ -89,7 +89,7 @@ interface WebSocketActions {
   // Event handler actions
   addEventListener: (event: WebSocketEventType, handler: (data: unknown) => void) => () => void
   removeEventListener: (event: WebSocketEventType, handler: (data: unknown) => void) => void
-  triggerEvent: (event: WebSocketEventType, data: any) => void
+  triggerEvent: (event: WebSocketEventType, data: unknown) => void
 
   // Utility actions
   reset: () => void
