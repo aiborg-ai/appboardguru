@@ -21,9 +21,9 @@ import {
   X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/ui/tooltip'
+import { Button } from '@/components/atoms/Button'
+import { Badge } from '@/components/atoms/display/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export interface RefreshIndicatorProps {
   isRefreshing: boolean

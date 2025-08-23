@@ -43,7 +43,7 @@ import { Input } from '@/features/shared/ui/input'
 import { Card } from '@/features/shared/ui/card'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 import { EmailToAssetInstructions } from '@/components/email-integration/EmailToAssetInstructions'
-import { SearchInput } from '@/components/molecules/SearchInput/SearchInput'
+import { SearchInput } from '@/components/molecules/forms/SearchInput/SearchInput'
 
 type ViewMode = 'grid' | 'list' | 'details'
 type SortOption = 'name' | 'date' | 'size' | 'type'

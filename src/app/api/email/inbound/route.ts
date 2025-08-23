@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { EmailProcessingService } from '../../../../lib/services/email-processing.service'
-import { createSupabaseClient } from '../../../../lib/supabase/client'
-import { SendGridWebhookPayload, ProcessEmailRequest } from '../../../../types/email-processing'
+import { EmailProcessingService } from '@/lib/services/email-processing.service'
+import { createSupabaseClient } from '@/lib/supabase-client'
+import { SendGridWebhookPayload, ProcessEmailRequest } from '@/types/email-processing'
 
 // Rate limiting store (in production, use Redis)
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>()

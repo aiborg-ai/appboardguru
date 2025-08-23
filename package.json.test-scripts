@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:services": "jest src/__tests__/services --testEnvironment=node --coverage",
+    "test:components": "jest src/__tests__/components --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
+  }
+}

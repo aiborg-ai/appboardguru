@@ -1,0 +1,124 @@
+{
+  "name": "@boardguru/governance-intelligence-mcp",
+  "version": "1.0.0",
+  "description": "Enterprise-grade MCP server providing AI-powered governance insights, compliance automation, and board management intelligence",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "governance",
+    "compliance",
+    "board-management",
+    "ai-powered",
+    "enterprise",
+    "risk-management"
+  ],
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsx server.ts",
+    "test": "jest",
+    "lint": "eslint *.ts",
+    "package": "npm run build && npm pack",
+    "publish:npm": "npm publish --access public",
+    "validate": "npm run lint && npm run test && npm run build"
+  },
+  "bin": {
+    "boardguru-governance-mcp": "./dist/server.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appboardguru/governance-intelligence-mcp"
+  },
+  "author": {
+    "name": "AppBoardGuru",
+    "email": "enterprise@appboardguru.com",
+    "url": "https://appboardguru.com"
+  },
+  "license": "Commercial",
+  "pricing": {
+    "model": "subscription",
+    "tiers": [
+      {
+        "name": "Starter",
+        "price": "£2,500/month",
+        "features": ["Up to 5 boards", "Basic AI insights", "Email support"]
+      },
+      {
+        "name": "Enterprise", 
+        "price": "£8,333/month",
+        "features": ["Up to 50 boards", "Advanced AI & predictions", "24/7 support", "Custom integrations"]
+      },
+      {
+        "name": "Government",
+        "price": "£12,500/month", 
+        "features": ["Unlimited boards", "Security clearance", "On-premise deployment", "Regulatory specialization"]
+      }
+    ],
+    "paymentTerms": "Annual subscription required",
+    "trialAvailable": "30-day enterprise trial",
+    "customPricing": "Available for Fortune 500 and government clients"
+  },
+  "support": {
+    "email": "mcp-support@appboardguru.com",
+    "docs": "https://docs.appboardguru.com/mcp/governance-intelligence",
+    "community": "https://community.appboardguru.com",
+    "enterprise": "https://appboardguru.com/enterprise/contact"
+  },
+  "certification": {
+    "iso27001": true,
+    "soc2": true,
+    "gdpr": true,
+    "ccpa": true,
+    "frameworks": [
+      "UK Corporate Governance Code",
+      "Sarbanes-Oxley Act",
+      "NYSE Listing Standards",
+      "FTSE 350 Corporate Governance Requirements",
+      "EU Corporate Sustainability Reporting Directive"
+    ]
+  },
+  "integrations": {
+    "compatible": [
+      "Claude",
+      "GPT-4",
+      "Azure OpenAI",
+      "Anthropic API",
+      "Custom LLMs"
+    ],
+    "connectors": [
+      "Microsoft 365",
+      "Google Workspace",
+      "Slack",
+      "Zoom",
+      "Teams",
+      "Board portals",
+      "Document management systems"
+    ]
+  }
+}

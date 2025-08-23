@@ -1,0 +1,212 @@
+{
+  "mcpServers": {
+    "boardguru-governance": {
+      "command": "node",
+      "args": ["dist/server.js"],
+      "cwd": ".",
+      "env": {
+        "BOARDGURU_LICENSE_KEY": "your-license-key-here",
+        "BOARDGURU_ORG_ID": "your-organization-id",
+        "NODE_ENV": "production"
+      },
+      "metadata": {
+        "name": "BoardGuru Governance Intelligence",
+        "description": "Enterprise AI-powered governance insights, compliance automation, and board management intelligence",
+        "version": "1.0.0",
+        "category": "enterprise",
+        "pricing": "commercial",
+        "vendor": "AppBoardGuru Ltd",
+        "website": "https://appboardguru.com",
+        "support": "mcp-support@appboardguru.com",
+        "documentation": "https://docs.appboardguru.com/mcp/governance-intelligence"
+      },
+      "capabilities": {
+        "resources": {
+          "board-analysis": {
+            "uri": "governance://board-analysis",
+            "description": "Board composition and performance analysis",
+            "pricing": "included"
+          },
+          "compliance-dashboard": {
+            "uri": "governance://compliance-dashboard", 
+            "description": "Real-time compliance monitoring",
+            "pricing": "included"
+          },
+          "meeting-intelligence": {
+            "uri": "governance://meeting-intelligence",
+            "description": "AI-powered meeting analysis",
+            "pricing": "included"
+          },
+          "risk-assessment": {
+            "uri": "governance://risk-assessment",
+            "description": "Governance risk analysis",
+            "pricing": "included"
+          },
+          "member-recommendations": {
+            "uri": "governance://member-recommendations",
+            "description": "Board member recommendations",
+            "pricing": "included"
+          },
+          "audit-trail": {
+            "uri": "governance://audit-trail",
+            "description": "Governance audit trail",
+            "pricing": "included"
+          },
+          "decision-tracking": {
+            "uri": "governance://decision-tracking",
+            "description": "Decision tracking and outcomes",
+            "pricing": "included"
+          },
+          "benchmarking": {
+            "uri": "governance://benchmarking",
+            "description": "Industry benchmarking",
+            "pricing": "included"
+          }
+        },
+        "tools": {
+          "analyze_board_composition": {
+            "description": "Analyze board composition with AI recommendations",
+            "pricing": "£0.50 per analysis",
+            "rateLimit": "100 per hour"
+          },
+          "run_compliance_check": {
+            "description": "Execute comprehensive compliance assessment",
+            "pricing": "£2.00 per check",
+            "rateLimit": "50 per hour"
+          },
+          "analyze_meeting_intelligence": {
+            "description": "Generate meeting insights and analytics",
+            "pricing": "£1.00 per meeting",
+            "rateLimit": "200 per hour"
+          },
+          "generate_governance_insights": {
+            "description": "Generate strategic governance insights",
+            "pricing": "£5.00 per insight report", 
+            "rateLimit": "20 per hour"
+          }
+        }
+      },
+      "security": {
+        "authentication": "api-key",
+        "encryption": "AES-256",
+        "dataRetention": "per customer policy",
+        "auditLogging": true,
+        "compliance": ["ISO27001", "SOC2", "GDPR"]
+      },
+      "performance": {
+        "averageResponseTime": "200ms",
+        "uptime": "99.99%",
+        "throughput": "1000 requests/minute",
+        "regions": ["uk", "eu", "us"]
+      },
+      "integration": {
+        "webhooks": true,
+        "customConnectors": true,
+        "apiAccess": true,
+        "sso": ["SAML", "OAuth", "LDAP"],
+        "platforms": ["Claude", "GPT-4", "Custom LLMs"]
+      }
+    }
+  },
+  "pricing": {
+    "model": "subscription",
+    "currency": "GBP",
+    "billingCycle": "monthly",
+    "tiers": [
+      {
+        "name": "Starter",
+        "pricePerMonth": 2500,
+        "features": {
+          "boards": 5,
+          "users": 25,
+          "analysesPerMonth": 100,
+          "support": "email"
+        },
+        "targetMarket": "Mid-market companies"
+      },
+      {
+        "name": "Enterprise",
+        "pricePerMonth": 8333,
+        "features": {
+          "boards": 50,
+          "users": 500,
+          "analysesPerMonth": 1000,
+          "support": "24/7",
+          "customIntegrations": true,
+          "apiAccess": true
+        },
+        "targetMarket": "Fortune 500 companies"
+      },
+      {
+        "name": "Government",
+        "pricePerMonth": 12500,
+        "features": {
+          "boards": "unlimited",
+          "users": "unlimited", 
+          "analysesPerMonth": "unlimited",
+          "support": "dedicated",
+          "onPremise": true,
+          "securityClearance": true,
+          "customDevelopment": true
+        },
+        "targetMarket": "Government and public sector"
+      }
+    ],
+    "enterprise": {
+      "volumeDiscounts": true,
+      "customPricing": true,
+      "minimumCommitment": "£100,000 annually",
+      "paymentTerms": "Net 30"
+    }
+  },
+  "businessMetrics": {
+    "targetRevenue": {
+      "year1": "£1,200,000",
+      "year2": "£3,000,000",
+      "year3": "£5,000,000"
+    },
+    "customerTargets": {
+      "year1": {
+        "starter": 20,
+        "enterprise": 12,
+        "government": 4
+      },
+      "year2": {
+        "starter": 50,
+        "enterprise": 30,
+        "government": 8
+      }
+    },
+    "roi": {
+      "customerSavings": "40% compliance cost reduction",
+      "timeToValue": "30 days",
+      "paybackPeriod": "6 months",
+      "typicalROI": "400-600%"
+    }
+  },
+  "compliance": {
+    "dataGovernance": {
+      "dataClassification": "confidential",
+      "dataResidency": "customer choice",
+      "encryption": "AES-256",
+      "backupRetention": "7 years"
+    },
+    "regulatoryFrameworks": [
+      "UK Corporate Governance Code",
+      "Sarbanes-Oxley Act",
+      "NYSE/NASDAQ Listing Standards", 
+      "FTSE 350 Corporate Governance Requirements",
+      "EU Corporate Sustainability Reporting Directive",
+      "Securities Exchange Act",
+      "Investment Company Act",
+      "GDPR",
+      "CCPA"
+    ],
+    "certifications": [
+      "ISO 27001:2013",
+      "SOC 2 Type II", 
+      "GDPR Compliance",
+      "CCPA Compliance"
+    ]
+  }
+}

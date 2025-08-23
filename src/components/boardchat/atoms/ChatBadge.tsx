@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/atoms/display/badge'
 
 interface ChatBadgeProps {
   count: number

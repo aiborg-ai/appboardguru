@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { EmailProcessingRepository } from '../../../../lib/repositories/email-processing.repository'
-import { createSupabaseClient } from '../../../../lib/supabase/client'
-import { createUserId } from '../../../../lib/utils/branded-type-helpers'
+import { EmailProcessingRepository } from '@/lib/repositories/email-processing.repository'
+import { createSupabaseClient } from '@/lib/supabase-client'
+import { createUserId } from '@/lib/utils/branded-type-helpers'
 
 /**
  * GET /api/email/processing-logs

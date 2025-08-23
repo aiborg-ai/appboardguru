@@ -15,11 +15,10 @@ import {
   Plus,
   Folder
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
-import { Input } from '@/features/shared/ui/input'
-import { Textarea } from '@/features/shared/ui/textarea'
-import { Select } from '@/features/shared/ui/select'
+import { Button } from '@/components/atoms/Button'
+import { Card } from '@/components/molecules/cards/card'
+import { Input } from '@/components/atoms/form/input'
+import { Textarea } from '@/components/atoms/form/textarea'
 import { 
   FileUploadItem, 
   BulkUploadSettings, 
@@ -33,7 +32,7 @@ import {
   isValidFileType
 } from '@/types/upload'
 import { useUploadCollaborationStore } from '@/lib/stores/upload-collaboration.store'
-import { CollaborativeUploadHub } from '@/components/collaboration'
+import { CollaborativeUploadHub } from '@/components/organisms/features/CollaborativeUploadHub'
 import { createUserId } from '@/lib/utils/branded-type-helpers'
 
 interface FileUploadDropzoneProps {

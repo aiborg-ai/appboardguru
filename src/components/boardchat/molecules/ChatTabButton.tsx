@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/atoms/Button'
 import { ChatBadge } from '../atoms/ChatBadge'
 import type { LucideIcon } from 'lucide-react'
 

@@ -38,8 +38,7 @@ import { ComplianceService } from './compliance.service'
 import { BoardService } from './board.service'
 import { VoiceService } from './voice.service'
 
-// Import existing organization service
-export { OrganizationService } from '../../../domains/organizations/services/organization.service'
+// TODO: Re-add OrganizationService when domains structure is properly implemented
 
 export class ServiceFactory {
   private _eventBus: EventBus

@@ -23,7 +23,7 @@ import { Input } from '@/components/atoms/form/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/atoms/display/separator'
 import { Checkbox } from '@/components/atoms/form/checkbox'
-import { SearchInput } from '@/components/molecules/SearchInput/SearchInput'
+import { SearchInput } from '@/components/molecules/forms/SearchInput/SearchInput'
 import {
   Collapsible,
   CollapsibleContent,
