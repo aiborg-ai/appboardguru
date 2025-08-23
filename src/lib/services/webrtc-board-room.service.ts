@@ -3,10 +3,10 @@
  * Enterprise-grade encrypted video conferencing for virtual board rooms
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface WebRTCConfiguration {
   iceServers: RTCIceServer[];
@@ -80,7 +80,7 @@ export class WebRTCBoardRoomService {
   private encryptionKeys: Map<string, CryptoKey> = new Map();
 
   constructor() {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
     
     // Enterprise-grade WebRTC configuration
     this.rtcConfiguration = {

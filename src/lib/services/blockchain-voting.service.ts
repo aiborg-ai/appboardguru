@@ -3,11 +3,11 @@
  * Immutable and auditable voting system for board room decisions
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import crypto from 'crypto';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface BlockchainVote {
   voteId: string;
@@ -78,7 +78,7 @@ export class BlockchainVotingService {
   private merkleTree: Map<string, string[]> = new Map();
 
   constructor() {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
     this.blockchainNetwork = process.env.BLOCKCHAIN_NETWORK || 'ethereum';
     this.contractAddress = process.env.VOTING_CONTRACT_ADDRESS || '';
     this.privateKey = process.env.BLOCKCHAIN_PRIVATE_KEY || '';

@@ -3,11 +3,11 @@
  * Advanced security features including MFA, device attestation, and monitoring
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import crypto from 'crypto';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface SecurityEvent {
   id: string;
@@ -183,7 +183,7 @@ export class BoardRoomSecurityService {
   private trustedDevices: Map<string, DeviceAttestation[]> = new Map();
   
   constructor() {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
     this.loadSecurityPolicies();
   }
 

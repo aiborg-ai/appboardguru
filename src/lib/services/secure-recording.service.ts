@@ -3,13 +3,13 @@
  * End-to-end encrypted recording with secure storage and access controls
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface SecureRecording {
   id: string;
@@ -290,7 +290,7 @@ export class SecureRecordingService {
   private storageBasePath: string;
 
   constructor() {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
     this.storageBasePath = process.env.RECORDING_STORAGE_PATH || './recordings';
     this.transcriptionService = new AITranscriptionService();
     this.ensureStorageDirectories();

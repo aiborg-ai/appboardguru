@@ -3,11 +3,11 @@
  * Secure executive sessions and committee-specific breakout rooms
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import { WebRTCBoardRoomService } from './webrtc-board-room.service';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface BreakoutRoom {
   id: string;
@@ -85,7 +85,7 @@ export class BreakoutRoomsService {
   private autoReturnTimers: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(webrtcService: WebRTCBoardRoomService) {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
     this.webrtcService = webrtcService;
   }
 

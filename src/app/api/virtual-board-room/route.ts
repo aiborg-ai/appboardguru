@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { WebRTCBoardRoomService } from '@/lib/services/webrtc-board-room.service';
 import { BlockchainVotingService } from '@/lib/services/blockchain-voting.service';
 import { BreakoutRoomsService } from '@/lib/services/breakout-rooms.service';
@@ -15,7 +15,7 @@ import { SecureRecordingService } from '@/lib/services/secure-recording.service'
 import { z } from 'zod';
 
 // Initialize services
-const supabase = createSupabaseServiceClient();
+const supabase = supabaseAdmin;
 const webrtcService = new WebRTCBoardRoomService();
 const votingService = new BlockchainVotingService();
 const breakoutService = new BreakoutRoomsService(webrtcService);

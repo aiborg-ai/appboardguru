@@ -3,12 +3,12 @@
  * Real-time document collaboration with synchronized annotations
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface CollaborativeDocument {
   id: string;
@@ -148,7 +148,7 @@ export class CollaborativeDocumentsService {
   private syncIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   constructor() {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
   }
 
   /**

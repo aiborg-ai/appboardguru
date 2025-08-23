@@ -3,7 +3,7 @@
  * Automated meeting setup, scheduling, and workflow management
  */
 
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import { WebRTCBoardRoomService } from './webrtc-board-room.service';
 import { BlockchainVotingService } from './blockchain-voting.service';
@@ -11,7 +11,7 @@ import { BreakoutRoomsService } from './breakout-rooms.service';
 import { CollaborativeDocumentsService } from './collaborative-documents.service';
 import { BoardRoomSecurityService } from './board-room-security.service';
 
-type SupabaseClient = ReturnType<typeof createSupabaseServiceClient>;
+type SupabaseClient = ReturnType<typeof supabaseAdmin>;
 
 export interface MeetingOrchestration {
   id: string;
@@ -215,7 +215,7 @@ export class BoardRoomOrchestrationService {
     documentsService: CollaborativeDocumentsService,
     securityService: BoardRoomSecurityService
   ) {
-    this.supabase = createSupabaseServiceClient();
+    this.supabase = supabaseAdmin();
     this.webrtcService = webrtcService;
     this.votingService = votingService;
     this.breakoutService = breakoutService;

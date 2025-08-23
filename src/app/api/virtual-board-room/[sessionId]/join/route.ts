@@ -4,13 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { WebRTCBoardRoomService } from '@/lib/services/webrtc-board-room.service';
 import { BoardRoomSecurityService } from '@/lib/services/board-room-security.service';
 import { BoardRoomOrchestrationService } from '@/lib/services/board-room-orchestration.service';
 import { z } from 'zod';
 
-const supabase = createSupabaseServiceClient();
+const supabase = supabaseAdmin;
 const webrtcService = new WebRTCBoardRoomService();
 const securityService = new BoardRoomSecurityService();
 

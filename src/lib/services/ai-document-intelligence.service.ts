@@ -11,7 +11,7 @@
  * - Document intelligence analytics
  */
 
-import { OpenRouter } from 'openrouter-api'
+import { createOpenRouterClient } from '@/lib/openrouter'
 import { BaseService } from './base.service'
 import type {
   DocumentMetadata,

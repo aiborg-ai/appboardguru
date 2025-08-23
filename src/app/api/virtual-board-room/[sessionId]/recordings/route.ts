@@ -4,12 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '@/lib/supabase/service-client';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { SecureRecordingService } from '@/lib/services/secure-recording.service';
 import { BoardRoomSecurityService } from '@/lib/services/board-room-security.service';
 import { z } from 'zod';
 
-const supabase = createSupabaseServiceClient();
+const supabase = supabaseAdmin;
 const recordingService = new SecureRecordingService();
 const securityService = new BoardRoomSecurityService();
 
