@@ -466,7 +466,7 @@ export default function TabletDemoPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(SUPPORTED_FEATURES).map(([key, supported]) => (
+              {SUPPORTED_FEATURES && Object.entries(SUPPORTED_FEATURES).map(([key, supported]) => (
                 <div key={key} className="flex items-center space-x-2">
                   {supported ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />

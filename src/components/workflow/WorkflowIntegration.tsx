@@ -173,7 +173,7 @@ export default function WorkflowIntegration({
 }: WorkflowIntegrationProps) {
   const router = useRouter()
   const { currentOrganization } = useOrganization()
-  const { trackActivity, setSharedData } = useIntegrationActions()
+  const { trackActivity, setSharedData } = useIntegrationActions() || {}
   
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -221,23 +221,27 @@ export default function WorkflowIntegration({
 
   const handleConnectionClick = useCallback((connection: WorkflowConnection) => {
     // Track activity
-    trackActivity({
-      type: 'view',
-      entityType: connection.targetType,
-      entityId: connection.targetId,
-      entityTitle: connection.targetTitle,
-      description: `Viewed via workflow connection from ${connection.sourceTitle}`
-    })
+    if (trackActivity) {
+      trackActivity({
+        type: 'view',
+        entityType: connection.targetType,
+        entityId: connection.targetId,
+        entityTitle: connection.targetTitle,
+        description: `Viewed via workflow connection from ${connection.sourceTitle}`
+      })
+    }
 
     // Set context for cross-page navigation
-    setSharedData('workflowContext', {
-      fromConnection: connection.id,
-      sourceEntity: {
-        type: connection.sourceType,
-        id: connection.sourceId,
-        title: connection.sourceTitle
-      }
-    })
+    if (setSharedData) {
+      setSharedData('workflowContext', {
+        fromConnection: connection.id,
+        sourceEntity: {
+          type: connection.sourceType,
+          id: connection.sourceId,
+          title: connection.sourceTitle
+        }
+      })
+    }
 
     // Navigate to target
     const targetPath = connection.targetType === 'organization' 
@@ -249,13 +253,15 @@ export default function WorkflowIntegration({
 
   const handleSuggestionAction = useCallback((suggestion: WorkflowSuggestion) => {
     // Track activity
-    trackActivity({
-      type: 'create',
-      entityType: suggestion.entityType as any,
-      entityId: suggestion.entityId,
-      entityTitle: suggestion.title,
-      description: `Applied workflow suggestion: ${suggestion.suggestedAction}`
-    })
+    if (trackActivity) {
+      trackActivity({
+        type: 'create',
+        entityType: suggestion.entityType as any,
+        entityId: suggestion.entityId,
+        entityTitle: suggestion.title,
+        description: `Applied workflow suggestion: ${suggestion.suggestedAction}`
+      })
+    }
 
     router.push(suggestion.actionHref)
   }, [trackActivity, router])
