@@ -442,6 +442,265 @@ export const ANALYTICS_EVENTS = {
   NETWORK_ERROR: 'network_error',
 } as const;
 
+// Multi-Factor Authentication constants
+export const MFA = {
+  // Challenge configuration
+  CHALLENGE_TIMEOUT_MS: 300000, // 5 minutes
+  CHALLENGE_CLEANUP_INTERVAL_MS: 600000, // 10 minutes
+  
+  // TOTP configuration
+  TOTP_WINDOW_SIZE: 1, // Allow 1 window before/after for clock skew
+  TOTP_SECRET_LENGTH: 32,
+  TOTP_ISSUER: 'BoardGuru',
+  
+  // Backup codes
+  BACKUP_CODES_COUNT: 10,
+  BACKUP_CODE_LENGTH: 8,
+  
+  // Method priorities (lower = higher priority)
+  METHOD_PRIORITIES: {
+    biometric: 1,
+    hardware_key: 2,
+    totp: 3,
+    push_notification: 4,
+    voice_recognition: 5,
+    sms: 6,
+    email: 7,
+  },
+  
+  // Risk-based authentication
+  RISK_LEVELS: {
+    LOW: { required_methods: 1, allow_backup: true },
+    MEDIUM: { required_methods: 1, allow_backup: true },
+    HIGH: { required_methods: 2, allow_backup: false },
+    CRITICAL: { required_methods: 3, allow_backup: false },
+  },
+} as const;
+
+// Voice Authentication constants
+export const VOICE_AUTH = {
+  // Recording configuration
+  SAMPLE_RATE: 44100,
+  MIN_RECORDING_DURATION: 3000, // 3 seconds
+  MAX_RECORDING_DURATION: 30000, // 30 seconds
+  ENROLLMENT_RECORDING_DURATION: 10000, // 10 seconds
+  
+  // Enrollment configuration
+  ENROLLMENT_SAMPLES_REQUIRED: 3,
+  SAMPLE_INTERVAL_MS: 2000, // 2 seconds between samples
+  
+  // Authentication configuration
+  DEFAULT_CONFIDENCE_THRESHOLD: 0.85,
+  HIGH_SECURITY_THRESHOLD: 0.92,
+  ENTERPRISE_THRESHOLD: 0.95,
+  
+  // Feature extraction
+  MFCC_COEFFICIENTS: 13,
+  FRAME_SIZE: 1024,
+  HOP_LENGTH: 512,
+  
+  // Voice print configuration
+  VOICE_PRINT_LENGTH: 128,
+  FORMANT_COUNT: 4,
+  
+  // Quality thresholds
+  MIN_AUDIO_QUALITY: 0.7,
+  NOISE_THRESHOLD: -20, // dB
+} as const;
+
+// Device Attestation constants
+export const ATTESTATION = {
+  // Key configuration
+  ATTESTATION_KEY_ALIAS: 'boardguru_attestation_key',
+  KEY_SIZE: 2048,
+  SIGNATURE_ALGORITHM: 'SHA256withRSA',
+  
+  // Attestation validity
+  ATTESTATION_VALIDITY_MS: 86400000, // 24 hours
+  TRUST_ASSESSMENT_VALIDITY_MS: 43200000, // 12 hours
+  
+  // Challenge configuration
+  NONCE_LENGTH: 32,
+  CHALLENGE_LENGTH: 64,
+  
+  // Trust scoring weights
+  TRUST_WEIGHTS: {
+    HARDWARE_ATTESTATION: 0.25,
+    PLATFORM_SECURITY: 0.25,
+    DEVICE_INTEGRITY: 0.2,
+    OS_VERSION: 0.1,
+    PATCH_LEVEL: 0.1,
+    APP_SIGNATURE: 0.05,
+    RUNTIME_SECURITY: 0.05,
+  },
+  
+  // Attestation components
+  SAFETYNET_ENABLED: true,
+  HARDWARE_ATTESTATION_ENABLED: true,
+  DEVICE_CHECK_ENABLED: true,
+} as const;
+
+// Compliance and Policy constants
+export const COMPLIANCE = {
+  // Policy check intervals
+  CHECK_INTERVAL_MS: 3600000, // 1 hour
+  BACKGROUND_CHECK_INTERVAL_MS: 21600000, // 6 hours
+  
+  // Report configuration
+  REPORT_VALIDITY_MS: 86400000, // 24 hours
+  AUDIT_RETENTION_DAYS: 90,
+  
+  // Enforcement timeouts
+  WARNING_DISPLAY_DURATION_MS: 10000, // 10 seconds
+  FUNCTIONALITY_LIMIT_DURATION_MS: 3600000, // 1 hour
+  
+  // Compliance thresholds
+  MINIMUM_COMPLIANCE_SCORE: 0.8,
+  CRITICAL_VIOLATION_THRESHOLD: 1,
+  HIGH_VIOLATION_THRESHOLD: 3,
+  
+  // Policy categories
+  MANDATORY_POLICY_CATEGORIES: [
+    'device_security',
+    'authentication',
+    'data_protection',
+    'app_integrity',
+  ],
+  
+  // Regulatory frameworks
+  SUPPORTED_FRAMEWORKS: [
+    'SOX', 'GDPR', 'HIPAA', 'PCI_DSS', 'ISO27001', 'NIST',
+  ],
+} as const;
+
+// Network Security constants
+export const NETWORK_SECURITY = {
+  // Certificate pinning
+  CERTIFICATE_PINS: {
+    'api.appboardguru.com': [
+      'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', // Production cert
+      'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=', // Backup cert
+    ],
+    'cdn.appboardguru.com': [
+      'sha256/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=',
+    ],
+  },
+  
+  // TLS configuration
+  MIN_TLS_VERSION: '1.2',
+  PREFERRED_CIPHER_SUITES: [
+    'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384',
+    'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
+    'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384',
+  ],
+  
+  // Network timeouts
+  CONNECTION_TIMEOUT_MS: 10000,
+  READ_TIMEOUT_MS: 30000,
+  WRITE_TIMEOUT_MS: 30000,
+  
+  // Security headers
+  REQUIRED_HEADERS: [
+    'Strict-Transport-Security',
+    'Content-Security-Policy',
+    'X-Content-Type-Options',
+    'X-Frame-Options',
+  ],
+} as const;
+
+// Threat Detection constants
+export const THREAT_DETECTION = {
+  // Analysis intervals
+  BEHAVIOR_ANALYSIS_INTERVAL_MS: 300000, // 5 minutes
+  NETWORK_SCAN_INTERVAL_MS: 180000, // 3 minutes
+  REAL_TIME_MONITORING_INTERVAL_MS: 60000, // 1 minute
+  
+  // Detection thresholds
+  ANOMALY_THRESHOLD: 0.75,
+  THREAT_CORRELATION_THRESHOLD: 0.80,
+  BEHAVIORAL_DEVIATION_THRESHOLD: 2.0, // Standard deviations
+  
+  // Timeline management
+  MAX_TIMELINE_EVENTS: 1000,
+  EVENT_RETENTION_HOURS: 72,
+  INCIDENT_AUTO_CLOSE_HOURS: 24,
+  
+  // Intelligence feeds
+  THREAT_INTEL_UPDATE_INTERVAL_MS: 3600000, // 1 hour
+  IOC_CACHE_SIZE: 10000,
+  THREAT_ACTOR_CACHE_SIZE: 1000,
+  
+  // Response automation
+  AUTO_MITIGATION_ENABLED: true,
+  MAX_AUTO_MITIGATIONS: 5,
+  MITIGATION_COOLDOWN_MS: 900000, // 15 minutes
+  
+  // Behavioral baselines
+  BASELINE_COLLECTION_DAYS: 14,
+  MIN_BASELINE_SAMPLES: 50,
+  BASELINE_UPDATE_THRESHOLD: 0.1,
+  
+  // Network monitoring
+  NETWORK_PROBE_TIMEOUT_MS: 5000,
+  DNS_RESOLUTION_TIMEOUT_MS: 3000,
+  CERTIFICATE_VALIDATION_STRICT: true,
+  
+  // Machine learning models
+  ML_MODEL_UPDATE_INTERVAL_MS: 86400000, // 24 hours
+  PREDICTION_CONFIDENCE_THRESHOLD: 0.85,
+  MODEL_DRIFT_THRESHOLD: 0.15,
+} as const;
+
+// Security Audit constants
+export const AUDIT = {
+  // Buffer configuration
+  BUFFER_FLUSH_INTERVAL_MS: 30000, // 30 seconds
+  MAX_BUFFER_SIZE: 1000,
+  IMMEDIATE_FLUSH_EVENTS: ['critical', 'error'],
+  
+  // Data retention
+  DEFAULT_RETENTION_DAYS: 365,
+  COMPLIANCE_RETENTION_DAYS: 2555, // 7 years for regulatory compliance
+  FORENSIC_RETENTION_DAYS: 1095, // 3 years for forensic data
+  
+  // Cleanup configuration
+  CLEANUP_INTERVAL_MS: 86400000, // 24 hours
+  CLEANUP_BATCH_SIZE: 100,
+  
+  // Report generation
+  MAX_REPORT_EVENTS: 100000,
+  REPORT_GENERATION_TIMEOUT_MS: 300000, // 5 minutes
+  
+  // Security levels
+  LOG_LEVELS: {
+    DEBUG: 0,
+    INFO: 1,
+    WARN: 2,
+    ERROR: 3,
+    CRITICAL: 4,
+  },
+  
+  // Compliance frameworks
+  FRAMEWORKS: {
+    SOX: 'Sarbanes-Oxley Act',
+    GDPR: 'General Data Protection Regulation',
+    HIPAA: 'Health Insurance Portability and Accountability Act',
+    PCI_DSS: 'Payment Card Industry Data Security Standard',
+    ISO27001: 'ISO/IEC 27001',
+    NIST: 'NIST Cybersecurity Framework',
+  },
+  
+  // Evidence handling
+  EVIDENCE_HASH_ALGORITHM: 'SHA256',
+  CHAIN_OF_CUSTODY_REQUIRED: true,
+  DIGITAL_SIGNATURE_REQUIRED: true,
+  
+  // Real-time monitoring
+  REAL_TIME_ALERT_THRESHOLD: 'warn',
+  NOTIFICATION_BATCH_SIZE: 50,
+  ALERT_COOLDOWN_MS: 300000, // 5 minutes
+} as const;
+
 export default {
   SCREEN_CONSTANTS,
   COLORS,
@@ -460,4 +719,11 @@ export default {
   ERROR_HANDLING,
   ACCESSIBILITY,
   ANALYTICS_EVENTS,
+  MFA,
+  VOICE_AUTH,
+  ATTESTATION,
+  COMPLIANCE,
+  NETWORK_SECURITY,
+  THREAT_DETECTION,
+  AUDIT,
 };
