@@ -147,7 +147,7 @@ export default function ComplianceTrackerPage() {
   const router = useRouter()
   const organizations = useOrganizations()
   const { user, loading: authLoading } = useAuth()
-  const currentOrganization = organizations[0] || null
+  const currentOrganization = (organizations && organizations.length > 0) ? organizations[0] : null
   const orgLoading = false
   
   const [loading, setLoading] = useState(true)
