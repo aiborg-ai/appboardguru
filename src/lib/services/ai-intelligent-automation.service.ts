@@ -68,7 +68,7 @@ interface Milestone {
   name: string
   description: string
   dueDate: string
-  success Criteria: string[]
+  successCriteria: string[]
   dependencies: string[]
 }
 

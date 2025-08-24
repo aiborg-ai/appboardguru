@@ -55,7 +55,7 @@ interface Recommendation {
   alternatives: AlternativeOption[]
   timeline: Timeline
   stakeholders: Stakeholder[]
-  success Metrics: SuccessMetric[]
+  successMetrics: SuccessMetric[]
   dependencies: Dependency[]
   risks: Risk[]
   personalized: boolean
@@ -117,7 +117,7 @@ interface ImplementationStep {
   owner: string
   dependencies: string[]
   deliverables: string[]
-  success Criteria: string[]
+  successCriteria: string[]
 }
 
 interface RequiredResource {
