@@ -460,6 +460,25 @@ export const firstSuccess = <T, E = RepositoryError>(
   return failure(errors)
 }
 
+// Rust-style aliases for Result pattern compatibility
+export const Ok = success
+export const Err = failure
+
+// ResultUtils class for method-style usage (compatibility)
+export class ResultUtils {
+  static isOk = isSuccess
+  static isErr = isFailure
+  static unwrap = <T>(result: Result<T>): T => {
+    if (isSuccess(result)) {
+      return result.data
+    }
+    throw new Error('Attempted to unwrap error result')
+  }
+  static map = mapResult
+  static mapError = mapError
+  static flatMap = flatMapResult
+}
+
 // Enhanced async result helpers
 export const wrapAsync = async <T, E = RepositoryError>(
   operation: () => Promise<T>

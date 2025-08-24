@@ -22,5 +22,9 @@ export const createSupabaseServerClient = async () => {
 export const createServerSupabaseClient = createSupabaseServerClient
 export const createServerClient = createSupabaseServerClient
 
+// Direct supabase instance export for legacy compatibility
+// Note: This creates a Promise, so files using this need to await it
+export const supabase = createSupabaseServerClient()
+
 // Re-export the base createServerClient from @supabase/ssr for direct access
 export { createServerClient as createSupabaseServerClientBase } from '@supabase/ssr'

@@ -39,10 +39,41 @@ export class WebSocketService extends BaseService {
     uptime: Date.now()
   }
 
-  constructor(supabase: SupabaseClient<Database>, config: WebSocketConfig) {
+  // Event emitter for collaboration service
+  private eventHandlers = new Map<string, Array<(data: any) => void>>()
+
+  constructor(supabase: SupabaseClient<Database>, config?: WebSocketConfig) {
     super(supabase)
-    this.config = config
+    this.config = config || {
+      maxConnections: 10000,
+      heartbeatInterval: 30000,
+      idleTimeout: 300000,
+      enableCompression: true,
+      rateLimitWindow: 60000,
+      rateLimitRequests: 1000
+    }
     this.initializeMetricsCollection()
+  }
+
+  // Simple event emitter implementation for collaboration service compatibility
+  on(event: string, handler: (data: any) => void): void {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, [])
+    }
+    this.eventHandlers.get(event)!.push(handler)
+  }
+
+  private emit(event: string, data: any): void {
+    const handlers = this.eventHandlers.get(event)
+    if (handlers) {
+      handlers.forEach(handler => {
+        try {
+          handler(data)
+        } catch (error) {
+          console.error(`Error in WebSocket event handler for ${event}:`, error)
+        }
+      })
+    }
   }
 
   // =============================================
