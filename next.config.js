@@ -7,7 +7,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // Handle CSS imports from react-pdf-highlighter-extended
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+        include: /node_modules\/react-pdf-highlighter-extended/
+      });
+    }
+    
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,

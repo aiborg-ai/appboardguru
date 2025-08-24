@@ -7,7 +7,7 @@ import { BaseService } from './base.service'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
 import type { Result } from '@/lib/repositories/result'
-import { success, failure } from '@/lib/repositories/result'
+import { success, failure, RepositoryError } from '@/lib/repositories/result'
 
 import { z } from 'zod'
 
@@ -427,7 +427,7 @@ export class AIBoardSecretaryService extends BaseService {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({})))
+        const errorData = await response.json().catch(() => ({}))
         throw RepositoryError.externalService(
           'OpenRouter', 
           `Transcription failed: ${response.statusText}`,
@@ -445,7 +445,7 @@ export class AIBoardSecretaryService extends BaseService {
         speakers,
         confidence_score: this.calculateAverageConfidence(result.segments || [])
       }
-    })
+    })()
   }
 
   /**
@@ -686,7 +686,7 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
           temperature: 0.1, // Low temperature for accuracy
           max_tokens: 4000
         })
-      }
+      })
 
       if (!response.ok) {
         throw RepositoryError.externalService('OpenRouter', `AI processing failed: ${response.statusText}`)
@@ -714,7 +714,7 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response', parseError)
       }
-    })
+    })()
   }
 
   /**
@@ -883,7 +883,7 @@ Be specific and actionable in your titles and descriptions.
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response for action items', parseError)
       }
-    })
+    })()
   }
 
   /**
@@ -1409,7 +1409,7 @@ Include relevant pending action items in the "Old Business" section.
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response for agenda', parseError)
       }
-    })
+    })()
   }
 
   /**
