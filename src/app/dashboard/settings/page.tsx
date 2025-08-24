@@ -5,10 +5,12 @@ import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { AISettingsPanel } from '@/features/dashboard/settings/AISettingsPanel'
 import { ActivityLogsTab } from '@/features/dashboard/settings/ActivityLogsTab'
 import { FYITab } from '@/features/dashboard/settings/FYITab'
+import { ESGScorecardTab } from '@/features/dashboard/settings/ESGScorecardTab'
 import { SecurityActivityTab } from '@/features/dashboard/settings/security-activity-tab'
 import { AccountSettingsTab } from '@/features/dashboard/settings/AccountSettingsTab'
 import { ExportBackupSettingsTab } from '@/features/dashboard/settings/export-backup-settings-tab'
 import { NotificationSettingsTab } from '@/features/dashboard/settings/notification-settings-tab'
+import { SimpleSettingsTab } from '@/features/dashboard/settings/SimpleSettingsTab'
 import { useUserContext, useUserContextLoading } from '@/hooks/useUserContext'
 import type { UserId, OrganizationId } from '@/types/branded'
 import { 
@@ -21,14 +23,15 @@ import {
   Upload,
   Activity,
   AlertCircle,
-  Loader2
+  Loader2,
+  Leaf
 } from 'lucide-react'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
-type SettingsTab = 'ai' | 'account' | 'security' | 'notifications' | 'export'
+type SettingsTab = 'simple' | 'ai' | 'account' | 'security' | 'notifications' | 'export' | 'esg'
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('ai')
+  const [activeTab, setActiveTab] = useState<SettingsTab>('simple')
   
   // Get user context with proper error handling following CLAUDE.md patterns
   const userContextResult = useUserContext()
@@ -82,6 +85,13 @@ export default function SettingsPage() {
 
   const tabs = [
     { 
+      id: 'simple' as const, 
+      label: 'Overview', 
+      icon: Settings, 
+      color: 'text-gray-600',
+      description: 'Settings overview and database setup status'
+    },
+    { 
       id: 'ai' as const, 
       label: 'AI Assistant', 
       icon: Brain, 
@@ -115,11 +125,27 @@ export default function SettingsPage() {
       icon: Download, 
       color: 'text-gray-600',
       description: 'Data export, backup settings, and archive management'
+    },
+    { 
+      id: 'esg' as const, 
+      label: 'ESG Scorecard', 
+      icon: Leaf, 
+      color: 'text-green-600',
+      description: 'Environmental, Social, and Governance performance tracking and reporting'
     }
   ]
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'simple':
+        return (
+          <SimpleSettingsTab 
+            accountType={accountType}
+            userId={userId!}
+            organizationId={organizationId}
+          />
+        )
+        
       case 'ai':
         return <AISettingsPanel />
       
@@ -155,6 +181,13 @@ export default function SettingsPage() {
           <ExportBackupSettingsTab 
             accountType={accountType}
             userId={userId!}
+            organizationId={organizationId}
+          />
+        )
+      
+      case 'esg':
+        return (
+          <ESGScorecardTab 
             organizationId={organizationId}
           />
         )

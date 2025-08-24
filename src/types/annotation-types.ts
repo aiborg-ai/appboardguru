@@ -13,7 +13,7 @@ export type {
 } from './branded'
 
 // Annotation type discriminated union
-export type AnnotationType = 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp'
+export type AnnotationType = 'highlight' | 'area' | 'textbox' | 'drawing' | 'stamp' | 'voice'
 
 // Position data for PDF coordinates
 export interface AnnotationPosition {
@@ -40,6 +40,10 @@ export interface AnnotationPosition {
 export interface AnnotationContent {
   text?: string
   image?: string
+  audioUrl?: string
+  audioTranscription?: string
+  audioDuration?: number
+  audioFormat?: string
 }
 
 // User information embedded in annotation
@@ -98,6 +102,10 @@ export interface CreateAnnotationRequest {
   color?: string
   opacity?: number
   isPrivate?: boolean
+  // Voice annotation specific fields
+  audioData?: string // Base64 encoded audio data
+  audioFormat?: string
+  transcribeAudio?: boolean
 }
 
 export interface UpdateAnnotationRequest {

@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import CreateVaultWizard, { VaultWizardData } from '@/features/vaults/CreateVaultWizard';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { createTypedSupabaseClient } from '@/lib/supabase-typed';
 import { 
   Vault,
   Plus,
@@ -20,12 +21,59 @@ export default function CreateVaultPage() {
   const { refreshOrganizations } = useOrganization();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [creationResult, setCreationResult] = useState<{
     success: boolean;
     vault?: any;
     organization?: any;
     message?: string;
   } | null>(null);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = await createTypedSupabaseClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          console.error('Authentication check failed:', error);
+          setAuthError('You must be logged in to create vaults. Redirecting to login...');
+          setTimeout(() => {
+            router.push('/login?redirect=/dashboard/vaults/create');
+          }, 2000);
+          return;
+        }
+
+        // Verify user profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('id, email, full_name, role, status')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error('User profile not found:', profileError);
+          setAuthError('Your user profile is incomplete. Please contact support.');
+          return;
+        }
+
+        if (profile.status !== 'approved') {
+          setAuthError('Your account is not yet approved. Please wait for approval or contact support.');
+          return;
+        }
+
+        console.log('Authentication successful:', { user: user.email, profile: profile.full_name });
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setAuthError('Failed to verify authentication. Please try refreshing the page.');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleStartCreate = () => {
     setIsWizardOpen(true);
@@ -42,10 +90,24 @@ export default function CreateVaultPage() {
     try {
       console.log('Creating vault with data:', data);
       
+      // Get fresh auth token before making request
+      const supabase = await createTypedSupabaseClient();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('No valid session for API call:', sessionError);
+        setCreationResult({
+          success: false,
+          message: 'Session expired. Please log in again.',
+        });
+        return;
+      }
+      
       const response = await fetch('/api/vaults/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(data),
       });
@@ -74,9 +136,10 @@ export default function CreateVaultPage() {
           router.push(`/dashboard/vaults/${result.vault.id}`);
         }, 3000); // Slightly longer delay to show success message
       } else {
+        console.error('Vault creation failed:', result);
         setCreationResult({
           success: false,
-          message: result.error || 'Failed to create vault',
+          message: result.error || result.details || 'Failed to create vault',
         });
       }
     } catch (error) {
@@ -89,6 +152,46 @@ export default function CreateVaultPage() {
       setIsCreating(false);
     }
   };
+
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="p-8">
+            <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Authentication</h2>
+            <p className="text-gray-600">Verifying your access permissions...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show auth error if authentication failed
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="p-8">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Building2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+            <p className="text-gray-600 mb-6">{authError}</p>
+            <div className="space-y-3">
+              <Button onClick={() => router.push('/login')} className="w-full">
+                Go to Login
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/dashboard')} className="w-full">
+                Back to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (creationResult?.success) {
     return (

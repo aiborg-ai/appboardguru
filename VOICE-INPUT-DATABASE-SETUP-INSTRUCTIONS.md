@@ -24,34 +24,35 @@ This guide provides step-by-step instructions to set up the database tables and 
 5. Click **"Create user"**
 6. **Copy the user ID (UUID)** - you'll need this for verification
 
-### Step 2: Run Database Setup Script
+### Step 2: Run Database Setup Script (Fixed Version)
 
 1. Open **Supabase SQL Editor**
-2. Copy the entire contents of `/database/voice-input-test-setup.sql`
+2. Copy the entire contents of `/database/voice-input-missing-tables.sql`
 3. Paste into a new query
 4. Click **"Run"** to execute the script
 
 This script will:
-- Create all necessary database tables (users, organizations, meetings, vaults, assets, documents, etc.)
+- Create only missing database tables (meetings, documents) to avoid conflicts
 - Set up proper indexes for performance
-- Create the `boardmate_profiles` view for the API
-- Enable Row Level Security on all tables
+- Enable Row Level Security on new tables
+- Work with existing schema without conflicts
 
-### Step 3: Run Test Data Generation Script
+### Step 3: Run Test Data Generation Script (Fixed Version)
 
 1. In **Supabase SQL Editor**, create a new query
-2. Copy the entire contents of `/database/voice-input-test-data.sql`
+2. Copy the entire contents of `/database/voice-input-test-data-fixed.sql`
 3. Paste into the new query
 4. Click **"Run"** to execute the script
 
 This script will:
-- Insert the test.director user into the users table
-- Create "BoardTech Solutions" organization with 10 additional users
+- Insert the test.director user into the users table with conflict handling
+- Create "BoardTech Solutions" organization with unique slug to avoid conflicts
 - Generate 10 test meetings with realistic titles and descriptions
 - Create 10 test vaults with comprehensive metadata
 - Generate 150+ test assets with searchable content
 - Create corresponding documents for search functionality
-- Set up proper relationships between all entities
+- Use INSERT ... ON CONFLICT DO UPDATE for safe data insertion
+- Handle existing data gracefully without errors
 
 ### Step 4: Verify Setup
 
@@ -63,11 +64,11 @@ SELECT id, email, full_name, role, status
 FROM users 
 WHERE email = 'test.director@appboardguru.com';
 
--- 2. Check organization setup
+-- 2. Check organization setup  
 SELECT o.name, o.slug, COUNT(om.user_id) as member_count
 FROM organizations o
 LEFT JOIN organization_members om ON o.id = om.organization_id
-WHERE o.slug = 'boardtech-solutions'
+WHERE o.slug = 'boardtech-solutions-voice-test'
 GROUP BY o.id, o.name, o.slug;
 
 -- 3. Verify meetings data
@@ -93,7 +94,7 @@ SELECT full_name, org_role,
        jsonb_array_length(vault_memberships) as vaults
 FROM boardmate_profiles 
 WHERE organization_id = (
-    SELECT id FROM organizations WHERE slug = 'boardtech-solutions'
+    SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test'
 );
 ```
 
@@ -232,18 +233,18 @@ To reset the test data:
 
 ```sql
 -- Remove all test data (run in this order)
-DELETE FROM documents WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM assets WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM vault_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM vaults WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM meetings WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM committee_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM board_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM committees WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM boards WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM organization_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions');
-DELETE FROM organizations WHERE slug = 'boardtech-solutions';
-DELETE FROM users WHERE email LIKE '%@boardtech.com' OR email = 'test.director@appboardguru.com';
+DELETE FROM documents WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM assets WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM vault_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM vaults WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM meetings WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM committee_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM board_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM committees WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM boards WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM organization_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'boardtech-solutions-voice-test');
+DELETE FROM organizations WHERE slug = 'boardtech-solutions-voice-test';
+DELETE FROM users WHERE email LIKE '%.voice.test@boardtech.com' OR email = 'test.director@appboardguru.com';
 
 -- Also delete the auth user manually from Supabase Auth dashboard
 ```

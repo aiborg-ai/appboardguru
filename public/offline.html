@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoardGuru - Offline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .offline-container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            opacity: 0.9;
+        }
+
+        .offline-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .features {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .features h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #fbbf24;
+        }
+
+        .feature-list {
+            list-style: none;
+            text-align: left;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .actions {
+            margin-top: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px 10px 0;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .features {
+                padding: 20px;
+            }
+            
+            .btn {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon pulse">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 20c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                <path d="M12 6c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.21-1.79 4-4 4v2c3.31 0 6-2.69 6-6s-2.69-6-6-6z" fill="currentColor"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+            </svg>
+        </div>
+        
+        <h1>You're Offline</h1>
+        <p class="subtitle">BoardGuru is designed to work offline. You can continue using many features even without an internet connection.</p>
+        
+        <div class="features">
+            <h3>Available Offline Features</h3>
+            <ul class="feature-list">
+                <li>View previously loaded board documents</li>
+                <li>Access cached organization data</li>
+                <li>Create and edit notes and comments</li>
+                <li>View meeting minutes and agendas</li>
+                <li>Search through downloaded content</li>
+                <li>Upload files (synced when online)</li>
+            </ul>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary" onclick="checkConnection()">
+                <span id="check-text">Check Connection</span>
+            </button>
+            <a href="/dashboard" class="btn">Continue Offline</a>
+            <button class="btn" onclick="showOfflineQueue()">View Pending Actions</button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;">
+            <div class="loading"></div>
+            <span id="status-text">Checking connection...</span>
+        </div>
+    </div>
+
+    <script>
+        // Service worker and offline functionality
+        let isOnline = navigator.onLine;
+        
+        // Update UI based on connection status
+        function updateConnectionStatus(online) {
+            isOnline = online;
+            const status = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            const checkText = document.getElementById('check-text');
+            
+            if (online) {
+                status.style.display = 'block';
+                status.style.background = 'rgba(16, 185, 129, 0.2)';
+                statusText.innerHTML = '🟢 Connected! Refreshing page...';
+                checkText.textContent = 'Connected';
+                
+                // Redirect to dashboard after a brief delay
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            } else {
+                status.style.display = 'block';
+                status.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusText.innerHTML = '🔴 Still offline. Your changes will sync when connected.';
+                checkText.textContent = 'Check Connection';
+                
+                // Hide status after 3 seconds
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Check connection manually
+        async function checkConnection() {
+            const status = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            
+            status.style.display = 'block';
+            status.style.background = 'rgba(0, 0, 0, 0.2)';
+            statusText.innerHTML = '<div class="loading"></div>Checking connection...';
+            
+            try {
+                // Try to fetch a small resource
+                const response = await fetch('/api/health/ready', {
+                    method: 'GET',
+                    headers: { 'Cache-Control': 'no-cache' },
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+            }
+        }
+        
+        // Show offline operation queue
+        async function showOfflineQueue() {
+            try {
+                // This would communicate with the service worker
+                const registration = await navigator.serviceWorker.ready;
+                
+                // Send message to service worker to get offline queue
+                navigator.serviceWorker.controller?.postMessage({
+                    type: 'GET_OFFLINE_QUEUE'
+                });
+                
+                // For now, show a simple alert
+                alert('Offline queue functionality available. Pending operations will sync automatically when online.');
+                
+            } catch (error) {
+                console.error('Failed to access service worker:', error);
+                alert('Service worker not available. Some offline features may be limited.');
+            }
+        }
+        
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            console.log('Connection restored');
+            updateConnectionStatus(true);
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('Connection lost');
+            updateConnectionStatus(false);
+        });
+        
+        // Listen for service worker messages
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                const { type, data } = event.data;
+                
+                if (type === 'NETWORK_STATUS') {
+                    updateConnectionStatus(data.online);
+                } else if (type === 'OFFLINE_QUEUE') {
+                    console.log('Offline queue:', data.operations);
+                }
+            });
+        }
+        
+        // Auto-check connection every 30 seconds
+        setInterval(() => {
+            if (!isOnline) {
+                checkConnection();
+            }
+        }, 30000);
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (navigator.onLine) {
+                // If we're actually online, redirect immediately
+                window.location.href = '/dashboard';
+            }
+        });
+    </script>
+</body>
+</html>

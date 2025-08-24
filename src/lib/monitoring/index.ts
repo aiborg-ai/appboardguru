@@ -1,7 +1,42 @@
 /**
- * Performance Monitoring System
- * Tracks API calls, database queries, and component renders
+ * Comprehensive Monitoring System
+ * - Performance monitoring (API calls, database queries, component renders)
+ * - System health monitoring
+ * - Business metrics and user engagement tracking
+ * - Real-time alerts and reporting
  */
+
+export { performanceMonitor } from './performance-monitor'
+export type { 
+  PerformanceMetric, 
+  PerformanceAlert, 
+  WebVitals, 
+  ComponentPerformance,
+  ApiPerformance 
+} from './performance-monitor'
+
+export { systemMonitor } from './system-monitor'
+export type { 
+  SystemHealth, 
+  UserSession, 
+  SystemAlert, 
+  ResourceUsage 
+} from './system-monitor'
+
+export { businessMetrics } from './business-metrics'
+export type { 
+  UserEngagement, 
+  FeatureUsage, 
+  ConversionFunnel, 
+  BusinessKPI,
+  ABTestResult,
+  UserRetention 
+} from './business-metrics'
+
+import { performanceMonitor } from './performance-monitor'
+import { systemMonitor } from './system-monitor'
+import { businessMetrics } from './business-metrics'
+import { logger } from '@/lib/logging/advanced-logger'
 
 interface MetricData {
   route?: string
@@ -240,11 +275,93 @@ class PerformanceMonitor {
   }
 }
 
-// Global monitor instance
+// Legacy monitor instance (backwards compatibility)
 export const monitor = new PerformanceMonitor()
 
 /**
- * Higher-order function to wrap API handlers with monitoring
+ * Unified Monitoring Dashboard
+ */
+export class MonitoringDashboard {
+  private initialized = false
+
+  /**
+   * Initialize all monitoring systems
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return
+
+    try {
+      logger.info('Initializing monitoring dashboard...')
+
+      // Set up cross-system integrations
+      this.setupIntegrations()
+
+      // Set up alert routing
+      this.setupAlertRouting()
+
+      this.initialized = true
+      logger.info('Monitoring dashboard initialized successfully')
+
+    } catch (error) {
+      logger.error('Failed to initialize monitoring dashboard', error as Error)
+      throw error
+    }
+  }
+
+  /**
+   * Get comprehensive system status
+   */
+  async getSystemStatus(): Promise<{
+    health: ReturnType<typeof systemMonitor.getSystemHealth>
+    performance: ReturnType<typeof performanceMonitor.getPerformanceSummary>
+    business: ReturnType<typeof businessMetrics.exportMetrics>
+    timestamp: number
+  }> {
+    return {
+      health: await systemMonitor.getSystemHealth(),
+      performance: performanceMonitor.getPerformanceSummary(),
+      business: businessMetrics.exportMetrics(),
+      timestamp: Date.now()
+    }
+  }
+
+  private setupIntegrations(): void {
+    // Forward performance alerts to system monitor
+    performanceMonitor.onAlert((alert) => {
+      systemMonitor.generateAlert(
+        'performance',
+        alert.severity,
+        `Performance issue: ${alert.metric} exceeded threshold`,
+        {
+          metric: alert.metric,
+          threshold: alert.threshold,
+          actualValue: alert.actualValue,
+          component: alert.component,
+          url: alert.url
+        }
+      )
+    })
+
+    logger.info('Monitoring system integrations established')
+  }
+
+  private setupAlertRouting(): void {
+    logger.info('Alert routing configured')
+  }
+}
+
+// Export singleton dashboard instance
+export const monitoringDashboard = new MonitoringDashboard()
+
+// Auto-initialize in browser environments
+if (typeof window !== 'undefined') {
+  monitoringDashboard.initialize().catch(error => {
+    logger.error('Failed to auto-initialize monitoring dashboard', error)
+  })
+}
+
+/**
+ * Enhanced API handler monitoring with new system integration
  */
 export function withMonitoring<T extends (...args: any[]) => Promise<any>>(
   handler: T,
@@ -254,17 +371,50 @@ export function withMonitoring<T extends (...args: any[]) => Promise<any>>(
     const start = Date.now()
     try {
       const result = await handler(...args)
-      monitor.trackAPICall(routeName, Date.now() - start)
+      const duration = Date.now() - start
+      
+      // Track with legacy system
+      monitor.trackAPICall(routeName, duration)
+      
+      // Track with new performance monitor
+      performanceMonitor.recordApiPerformance(
+        routeName,
+        'unknown', // method would need to be passed
+        duration,
+        200, // success status
+        JSON.stringify(result).length
+      )
+      
       return result
     } catch (error) {
+      const duration = Date.now() - start
+      
+      // Track with legacy system
       monitor.trackError(routeName, error as Error)
+      
+      // Track with new systems
+      performanceMonitor.recordApiPerformance(
+        routeName,
+        'unknown',
+        duration,
+        500, // error status
+        0,
+        (error as Error).message
+      )
+      
+      const sessionId = (globalThis as any).__APP_SESSION_ID || 'unknown'
+      systemMonitor.trackError(sessionId, error as Error, {
+        api: routeName,
+        severity: 'medium'
+      })
+      
       throw error
     }
   }) as T
 }
 
 /**
- * React hook for component performance monitoring
+ * Enhanced React hook for component performance monitoring
  */
 export function usePerformanceMonitor(componentName: string) {
   if (typeof window === 'undefined') return
@@ -273,12 +423,18 @@ export function usePerformanceMonitor(componentName: string) {
 
   React.useEffect(() => {
     const duration = Date.now() - startTime
+    
+    // Track with legacy system
     monitor.trackComponentRender(componentName, duration)
+    
+    // Track with new performance monitor
+    performanceMonitor.recordComponentRender(componentName, duration)
+    
   }, [componentName, startTime])
 }
 
 /**
- * Decorator for monitoring database queries
+ * Enhanced decorator for monitoring database queries
  */
 export function withQueryMonitoring<T extends (...args: any[]) => Promise<any>>(
   queryFn: T,
@@ -288,13 +444,74 @@ export function withQueryMonitoring<T extends (...args: any[]) => Promise<any>>(
     const start = Date.now()
     try {
       const result = await queryFn(...args)
-      monitor.trackDatabaseQuery(queryName, Date.now() - start)
+      const duration = Date.now() - start
+      
+      // Track with legacy system
+      monitor.trackDatabaseQuery(queryName, duration)
+      
+      // Track with new performance monitor
+      performanceMonitor.recordMetric(`db_query_${queryName}`, duration, 'ms', {
+        query: queryName,
+        success: 'true'
+      })
+      
       return result
     } catch (error) {
+      const duration = Date.now() - start
+      
+      // Track with legacy system
       monitor.trackError(`query:${queryName}`, error as Error)
+      
+      // Track with new systems
+      performanceMonitor.recordMetric(`db_query_${queryName}`, duration, 'ms', {
+        query: queryName,
+        success: 'false',
+        error: (error as Error).message
+      })
+      
       throw error
     }
   }) as T
+}
+
+/**
+ * Convenience functions for common monitoring tasks
+ */
+
+// Track user actions across the app
+export const trackUserAction = (action: string, properties?: Record<string, any>) => {
+  const sessionId = (globalThis as any)?.__APP_SESSION_ID || 'unknown'
+  const userId = 'anonymous' // Would get from auth context
+  
+  systemMonitor.trackUserAction(sessionId, action, properties)
+  businessMetrics.trackEngagement(userId, sessionId, action, properties)
+}
+
+// Track feature usage
+export const trackFeature = (feature: string, sessionTime?: number) => {
+  const sessionId = (globalThis as any)?.__APP_SESSION_ID || 'unknown'
+  const userId = 'anonymous' // Would get from auth context
+  
+  businessMetrics.trackFeatureUsage(userId, sessionId, feature, sessionTime)
+}
+
+// Track conversions
+export const trackConversion = (funnel: string, step: string) => {
+  const sessionId = (globalThis as any)?.__APP_SESSION_ID || 'unknown'
+  const userId = 'anonymous' // Would get from auth context
+  
+  businessMetrics.trackConversion(userId, sessionId, funnel, step)
+}
+
+// Track errors with context
+export const trackError = (error: Error, context?: {
+  component?: string
+  api?: string
+  severity?: 'low' | 'medium' | 'high' | 'critical'
+}) => {
+  const sessionId = (globalThis as any)?.__APP_SESSION_ID || 'unknown'
+  
+  systemMonitor.trackError(sessionId, error, context)
 }
 
 // React import for the hook

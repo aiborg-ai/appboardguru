@@ -1,66 +1,153 @@
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
-import { testDb } from './utils/test-database'
+/**
+ * Test Setup for Real-Time Collaboration Tests
+ */
 
-// Global test setup
-beforeAll(async () => {
-  // Initialize test database
-  await testDb.setup()
-})
+import '@testing-library/jest-dom'
+import { vi } from 'vitest'
 
-// Global test cleanup
-afterAll(async () => {
-  // Cleanup test database
-  await testDb.cleanup()
-})
+// Mock WebSocket globally
+global.WebSocket = vi.fn().mockImplementation(() => ({
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  send: vi.fn(),
+  close: vi.fn(),
+  readyState: WebSocket.OPEN,
+}))
 
-// Per-test setup
-beforeEach(async () => {
-  // Any per-test setup can go here
-})
+// Mock WebRTC APIs
+global.RTCPeerConnection = vi.fn().mockImplementation(() => ({
+  createOffer: vi.fn().mockResolvedValue({}),
+  createAnswer: vi.fn().mockResolvedValue({}),
+  setLocalDescription: vi.fn().mockResolvedValue(undefined),
+  setRemoteDescription: vi.fn().mockResolvedValue(undefined),
+  addIceCandidate: vi.fn().mockResolvedValue(undefined),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  close: vi.fn(),
+}))
 
-// Per-test cleanup
-afterEach(async () => {
-  // Clean up test data after each test
-  // Note: Full cleanup is handled in afterAll
-})
+global.RTCSessionDescription = vi.fn()
+global.RTCIceCandidate = vi.fn()
 
-// Mock environment variables for testing
-process.env['NODE_ENV'] = 'test'
-process.env['NEXT_PUBLIC_SUPABASE_URL'] = process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'https://test.supabase.co'
-process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || 'test-anon-key'
-process.env['SUPABASE_SERVICE_ROLE_KEY'] = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'test-service-key'
-
-// Extend global expect matchers if needed
-expect.extend({
-  toBeValidUUID(received: string) {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    const pass = uuidRegex.test(received)
-    
-    return {
-      message: () => `expected ${received} ${pass ? 'not ' : ''}to be a valid UUID`,
-      pass,
-    }
+// Mock MediaStream APIs
+Object.defineProperty(navigator, 'mediaDevices', {
+  writable: true,
+  value: {
+    getUserMedia: vi.fn().mockResolvedValue({
+      getTracks: () => [{ stop: vi.fn() }],
+    }),
+    getDisplayMedia: vi.fn().mockResolvedValue({
+      getTracks: () => [{ stop: vi.fn() }],
+    }),
+    enumerateDevices: vi.fn().mockResolvedValue([]),
   },
+})
+
+// Mock Notification API
+global.Notification = vi.fn().mockImplementation(() => ({
+  close: vi.fn(),
+})) as any
+
+Object.defineProperty(Notification, 'permission', {
+  value: 'granted',
+  writable: true,
+})
+
+Object.defineProperty(Notification, 'requestPermission', {
+  value: vi.fn().mockResolvedValue('granted'),
+  writable: true,
+})
+
+// Mock localStorage
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+})
+
+// Mock sessionStorage
+Object.defineProperty(window, 'sessionStorage', {
+  value: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+})
+
+// Mock performance API
+Object.defineProperty(window, 'performance', {
+  value: {
+    now: vi.fn(() => Date.now()),
+    mark: vi.fn(),
+    measure: vi.fn(),
+    getEntriesByType: vi.fn(() => []),
+    getEntriesByName: vi.fn(() => []),
+    clearMarks: vi.fn(),
+    clearMeasures: vi.fn(),
+    memory: {
+      usedJSHeapSize: 1000000,
+      totalJSHeapSize: 2000000,
+      jsHeapSizeLimit: 4000000,
+    },
+  },
+  writable: true,
+})
+
+// Mock IntersectionObserver
+global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}))
+
+// Mock ResizeObserver
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}))
+
+// Mock TextEncoder/TextDecoder
+global.TextEncoder = vi.fn().mockImplementation(() => ({
+  encode: vi.fn((text: string) => new Uint8Array(text.length)),
+}))
+
+global.TextDecoder = vi.fn().mockImplementation(() => ({
+  decode: vi.fn((buffer: Uint8Array) => String.fromCharCode(...buffer)),
+}))
+
+// Mock crypto API
+Object.defineProperty(global, 'crypto', {
+  value: {
+    randomUUID: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000'),
+    getRandomValues: vi.fn((arr: Uint8Array) => {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = Math.floor(Math.random() * 256)
+      }
+      return arr
+    }),
+  },
+})
+
+// Mock URL.createObjectURL
+global.URL.createObjectURL = vi.fn(() => 'blob:mock-url')
+global.URL.revokeObjectURL = vi.fn()
+
+// Setup fetch mock
+global.fetch = vi.fn()
+
+// Clean up after each test
+afterEach(() => {
+  vi.clearAllMocks()
+  vi.clearAllTimers()
   
-  toBeRecentDate(received: string | Date, maxAgeMs: number = 5000) {
-    const date = new Date(received)
-    const now = new Date()
-    const age = now.getTime() - date.getTime()
-    const pass = age >= 0 && age <= maxAgeMs
-    
-    return {
-      message: () => `expected ${received} ${pass ? 'not ' : ''}to be within ${maxAgeMs}ms of now`,
-      pass,
-    }
-  },
+  // Clear localStorage/sessionStorage mocks
+  vi.mocked(localStorage.clear).mockClear()
+  vi.mocked(sessionStorage.clear).mockClear()
 })
-
-// Declare custom matchers for TypeScript
-declare global {
-  namespace Vi {
-    interface AsymmetricMatchersContaining {
-      toBeValidUUID(): any
-      toBeRecentDate(maxAgeMs?: number): any
-    }
-  }
-}

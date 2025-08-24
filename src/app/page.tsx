@@ -2,12 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Shield, FileText, Brain, Users, Lock, BarChart3, CheckCircle, ArrowRight, Menu, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Shield, FileText, Brain, Users, Lock, BarChart3, CheckCircle, ArrowRight, Menu, X, Upload, AlertCircle } from 'lucide-react'
 import { RegistrationModal } from '@/features/shared/forms/RegistrationModal'
+import { UploadModal } from '@/features/shared/forms/UploadModal'
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const router = useRouter()
 
   const features = [
     {
@@ -134,6 +138,15 @@ export default function HomePage() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <button 
+                onClick={() => {
+                  setIsUploadModalOpen(true)
+                }}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg rounded-lg font-semibold transition-all duration-200 flex items-center space-x-2 shadow-lg"
+              >
+                <Upload className="h-5 w-5" />
+                <span>Upload Board Pack</span>
+              </button>
+              <button 
                 onClick={() => setIsRegistrationOpen(true)}
                 className="btn-secondary px-8 py-3 text-lg"
               >
@@ -147,6 +160,100 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 right-0 w-72 h-72 bg-primary-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-75"></div>
+        </div>
+      </section>
+
+      {/* Board Pack AI Section */}
+      <section className="py-16 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <Brain className="h-4 w-4" />
+              <span>AI-Powered Board Pack Analysis</span>
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Transform Your Board Packs with AI
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Upload your board pack documents and get intelligent summaries, risk assessments, 
+              and actionable insights powered by advanced AI technology.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left: Upload CTA */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-900">Get Started in Minutes</h3>
+              <ul className="space-y-4">
+                <li className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 font-semibold text-sm">1</span>
+                  </div>
+                  <span className="text-gray-700">Upload your board pack (PDF, Word, PowerPoint)</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 font-semibold text-sm">2</span>
+                  </div>
+                  <span className="text-gray-700">AI processes and analyzes your documents</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 font-semibold text-sm">3</span>
+                  </div>
+                  <span className="text-gray-700">Get comprehensive insights and summaries</span>
+                </li>
+              </ul>
+              
+              <button 
+                onClick={() => setIsUploadModalOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <Upload className="h-5 w-5" />
+                <span>Upload Your Board Pack</span>
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Right: Features */}
+            <div className="grid gap-6">
+              <div className="card p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    <Brain className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">AI Summarization</h4>
+                    <p className="text-gray-600">Automatically extract key insights, decisions, and action items from your board documents.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Risk Analysis</h4>
+                    <p className="text-gray-600">Identify potential risks and compliance issues mentioned across all documents.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    <BarChart3 className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Interactive Dashboard</h4>
+                    <p className="text-gray-600">Visual dashboards with charts, metrics, and actionable insights for better decision-making.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -280,6 +387,17 @@ export default function HomePage() {
       <RegistrationModal 
         isOpen={isRegistrationOpen}
         onClose={() => setIsRegistrationOpen(false)}
+      />
+
+      {/* Upload Modal */}
+      <UploadModal 
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUploadSuccess={() => {
+          setIsUploadModalOpen(false)
+          // Navigate to Board Pack AI page
+          router.push('/dashboard/board-pack-ai')
+        }}
       />
     </div>
   )

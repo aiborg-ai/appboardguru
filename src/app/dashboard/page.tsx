@@ -223,11 +223,14 @@ export default function DashboardPage() {
                   <ChevronRight className="h-5 w-5 text-gray-400 ml-auto" />
                 </button>
 
-                <button className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                <button 
+                  onClick={() => router.push('/dashboard/executive')}
+                  className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                >
                   <BarChart3 className="h-6 w-6 text-orange-600" />
                   <div className="text-left">
-                    <div className="font-medium text-gray-900">View Reports</div>
-                    <div className="text-sm text-gray-600">Access your analytics</div>
+                    <div className="font-medium text-gray-900">Executive Dashboard</div>
+                    <div className="text-sm text-gray-600">Strategic governance oversight</div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-gray-400 ml-auto" />
                 </button>

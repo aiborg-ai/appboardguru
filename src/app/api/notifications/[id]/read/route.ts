@@ -1,19 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createNotificationController } from '@/lib/controllers/notification.controller'
+/**
+ * Notification Read API Endpoint
+ * Delegates to NotificationsController for consistent architecture
+ */
 
-// Initialize controller instance
-const controller = createNotificationController()
+import { NextRequest, NextResponse } from 'next/server';
+import { NotificationsController } from '@/lib/api/controllers/notifications.controller';
 
-interface RouteContext {
-  params: Promise<{
-    id: string
-  }>
+const notificationsController = new NotificationsController();
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: { id: string } }
+): Promise<NextResponse> {
+  return notificationsController.markAsRead(request, context);
 }
 
-/**
- * PATCH /api/notifications/[id]/read - Mark specific notification as read
- */
-export async function PATCH(request: NextRequest, context: RouteContext): Promise<NextResponse> {
-  const params = await context.params
-  return controller.markAsRead(request, { params })
+export async function OPTIONS(): Promise<NextResponse> {
+  return notificationsController.handleOptions();
 }

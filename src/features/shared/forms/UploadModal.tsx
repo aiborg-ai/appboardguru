@@ -7,13 +7,16 @@ import { X, Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react'
 interface UploadModalProps {
   isOpen: boolean
   onClose: () => void
-  onUploadSuccess?: () => void
+  onUploadSuccess?: (asset: any) => void
 }
 
 export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({
     accept: {
@@ -25,7 +28,12 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
     },
     maxSize: 50 * 1024 * 1024, // 50MB
     maxFiles: 1,
-    disabled: isUploading
+    disabled: isUploading,
+    onDrop: (files) => {
+      if (files.length > 0 && !title) {
+        setTitle(files[0].name.replace(/\.[^/.]+$/, ""))
+      }
+    }
   })
 
   const handleUpload = async () => {
@@ -33,28 +41,62 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
 
     setIsUploading(true)
     setUploadStatus('uploading')
+    setUploadProgress(0)
+    setErrorMessage('')
     
     try {
-      // Simulate upload progress
-      for (let i = 0; i <= 100; i += 10) {
-        setUploadProgress(i)
-        await new Promise(resolve => setTimeout(resolve, 100))
+      const file = acceptedFiles[0]
+      const formData = new FormData()
+      
+      formData.append('file', file)
+      formData.append('title', title || file.name.replace(/\.[^/.]+$/, ""))
+      formData.append('description', description)
+      formData.append('category', 'board-pack')
+      formData.append('organizationId', 'demo-org-123') // TODO: Get from context/user
+      
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90))
+      }, 200)
+
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      clearInterval(progressInterval)
+      setUploadProgress(100)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Upload failed')
       }
 
+      const result = await response.json()
+      
       setUploadStatus('success')
-      onUploadSuccess?.()
       
       setTimeout(() => {
-        onClose()
-        setUploadStatus('idle')
-        setUploadProgress(0)
-      }, 2000)
+        onUploadSuccess?.(result.asset)
+        resetForm()
+      }, 1500)
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Upload failed:', error)
       setUploadStatus('error')
+      setErrorMessage(error.message || 'Upload failed. Please try again.')
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const resetForm = () => {
+    setUploadStatus('idle')
+    setUploadProgress(0)
+    setTitle('')
+    setDescription('')
+    setErrorMessage('')
+    onClose()
   }
 
   const formatFileSize = (bytes: number) => {
@@ -98,12 +140,13 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
               <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Failed</h3>
               <p className="text-gray-600 mb-4">
-                There was an error uploading your file. Please try again.
+                {errorMessage || 'There was an error uploading your file. Please try again.'}
               </p>
               <button
                 onClick={() => {
                   setUploadStatus('idle')
                   setUploadProgress(0)
+                  setErrorMessage('')
                 }}
                 className="btn-primary px-6 py-2"
               >
@@ -183,7 +226,8 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
                       type="text"
                       className="input w-full"
                       placeholder="e.g., Q4 2024 Board Pack"
-                      defaultValue={acceptedFiles[0]?.name.replace(/\.[^/.]+$/, "") || ""}
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
                     />
                   </div>
                   
@@ -195,6 +239,8 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
                       rows={3}
                       className="input w-full resize-none"
                       placeholder="Brief description of the board pack contents..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
                 </div>

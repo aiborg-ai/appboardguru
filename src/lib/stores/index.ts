@@ -6,6 +6,7 @@ export { vaultStore, vaultSelectors, useVaults, useCurrentVault, useVaultInvitat
 export { notificationStore, notificationSelectors, useNotifications, useNotificationCounts, useNotificationPreferences, useNotificationLoading, useNotificationErrors, useNotificationSelection, useNotificationConnection } from './notification-store'
 export { uiStore, uiSelectors, useTheme, useColorScheme, useSidebar, useBreadcrumbs, useModals, useToasts, useUILoading, useLoadingOverlays, useCommandPalette, useScreenSize, useIsMobile } from './ui-store'
 export { documentStore, documentSelectors, useCurrentDocument, useDocumentAnnotations, useDocumentToc, useDocumentSummaries, useDocumentPodcast, useDocumentSearch, useDocumentViewSettings, useDocumentCollaborators, useDocumentChatHistory, useDocumentLoading, useDocumentErrors, useDocumentActions } from './document-store'
+export { integrationStore, integrationSelectors, useRecentItems, useBookmarks, useCurrentContext, useActivities, useSearchHistory, useIsNavigating, useIntegrationActions } from './integration-store'
 
 // Export store utilities
 export { stores, optimisticUpdates, offlineSync, cacheManager, storeLogger, resetAllStores, waitForStoreHydration, monitorStorePerformance, useStoreSelector, batchStoreUpdates, handleStoreError, initializeStores } from './store-utils'

@@ -33,6 +33,12 @@ interface FYIResponse {
   insights: FYIInsight[]
   totalCount: number
   lastUpdated: string
+  metadata?: {
+    timestamp: string
+    count: number
+    userId: string
+    organizationId: string
+  }
 }
 
 export function useFYIService() {
@@ -71,7 +77,20 @@ export function useFYIService() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        const errorMessage = errorData.error || `Failed to fetch insights (${response.status})`
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please refresh the page and try again.')
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. Check your permissions.')
+        }
+        if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const data: FYIResponse = await response.json()

@@ -1,686 +1,411 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Button } from '@/features/shared/ui/button'
+import { Input } from '@/features/shared/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
+import { Badge } from '@/features/shared/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
+import { ComplianceMetricsChart } from './ComplianceMetricsChart'
+import { ComplianceAlerts } from './ComplianceAlerts'
+import { RecentActivity } from './RecentActivity'
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Area, AreaChart,
-  Treemap, Scatter, ScatterChart, RadialBarChart, RadialBar,
-  Legend, ReferenceLine
-} from 'recharts'
-import { 
-  AlertTriangle, Shield, FileText, Users, Calendar, 
-  TrendingUp, TrendingDown, CheckCircle, XCircle,
-  Clock, Target, Activity, BarChart3, AlertCircle,
-  Zap, Eye, Download, Filter, RefreshCw
+  Shield, 
+  TrendingUp, 
+  AlertTriangle, 
+  FileText,
+  Search,
+  Filter,
+  Download,
+  Plus,
+  Activity,
+  Clock,
+  CheckCircle
 } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
-import { format } from 'date-fns'
+import { ComplianceDashboardData, ComplianceAlert, ComplianceFramework } from '@/types/compliance'
 
-// ==========================================
-// INTERFACES AND TYPES
-// ==========================================
-
-interface ComplianceMetrics {
-  overallScore: number
-  frameworksTracked: number
-  activePolicies: number
-  pendingAssessments: number
-  criticalViolations: number
-  upcomingDeadlines: number
-  trainingCompletionRate: number
-  riskScore: number
+interface ComplianceDashboardProps {
+  organizationId: string
+  initialData?: ComplianceDashboardData
 }
 
-interface FrameworkStatus {
-  id: string
-  name: string
-  acronym: string
-  complianceScore: number
-  lastAssessment: string
-  nextAssessment: string
-  status: 'compliant' | 'partially_compliant' | 'non_compliant' | 'pending'
-  criticalIssues: number
-  trends: 'improving' | 'stable' | 'declining'
-  jurisdiction: string
-}
-
-interface RiskHeatMapData {
-  category: string
-  impact: number
-  likelihood: number
-  riskLevel: 'low' | 'medium' | 'high' | 'critical'
-  count: number
-}
-
-interface ComplianceTrend {
-  date: string
-  overallScore: number
-  violations: number
-  assessments: number
-  trainingCompletion: number
-  policyUpdates: number
-}
-
-interface PolicyMetrics {
-  id: string
-  title: string
-  framework: string
-  status: 'active' | 'draft' | 'expired' | 'under_review'
-  acknowledgmentRate: number
-  lastUpdated: string
-  nextReview: string
-  violationCount: number
-  trainingRequired: boolean
-}
-
-interface ViolationData {
-  id: string
-  title: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  category: string
-  framework: string
-  detectedDate: string
-  status: 'open' | 'investigating' | 'resolved'
-  daysOpen: number
-  assignedTo: string
-}
-
-// ==========================================
-// MAIN DASHBOARD COMPONENT
-// ==========================================
-
-export default function ComplianceDashboard({ organizationId }: { organizationId: string }) {
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [selectedTimeframe, setSelectedTimeframe] = useState('30d')
+export function ComplianceDashboard({ organizationId, initialData }: ComplianceDashboardProps) {
+  const [data, setData] = useState<ComplianceDashboardData | null>(initialData || null)
+  const [loading, setLoading] = useState(!initialData)
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedFramework, setSelectedFramework] = useState<string>('all')
-  const [dashboardData, setDashboardData] = useState<any>(null)
-  const { toast } = useToast()
-
-  // Sample data - would be fetched from API
-  const sampleMetrics: ComplianceMetrics = {
-    overallScore: 85,
-    frameworksTracked: 8,
-    activePolicies: 47,
-    pendingAssessments: 3,
-    criticalViolations: 2,
-    upcomingDeadlines: 12,
-    trainingCompletionRate: 78,
-    riskScore: 15
-  }
-
-  const sampleFrameworks: FrameworkStatus[] = [
-    {
-      id: 'gdpr',
-      name: 'General Data Protection Regulation',
-      acronym: 'GDPR',
-      complianceScore: 92,
-      lastAssessment: '2024-01-15',
-      nextAssessment: '2024-07-15',
-      status: 'compliant',
-      criticalIssues: 0,
-      trends: 'stable',
-      jurisdiction: 'EU'
-    },
-    {
-      id: 'sox',
-      name: 'Sarbanes-Oxley Act',
-      acronym: 'SOX',
-      complianceScore: 88,
-      lastAssessment: '2024-02-01',
-      nextAssessment: '2024-08-01',
-      status: 'compliant',
-      criticalIssues: 1,
-      trends: 'improving',
-      jurisdiction: 'US'
-    },
-    {
-      id: 'iso27001',
-      name: 'ISO 27001',
-      acronym: 'ISO27001',
-      complianceScore: 76,
-      lastAssessment: '2023-12-10',
-      nextAssessment: '2024-06-10',
-      status: 'partially_compliant',
-      criticalIssues: 3,
-      trends: 'declining',
-      jurisdiction: 'Global'
-    }
-  ]
-
-  const sampleRiskHeatMap: RiskHeatMapData[] = [
-    { category: 'Data Privacy', impact: 4, likelihood: 3, riskLevel: 'high', count: 5 },
-    { category: 'Financial Reporting', impact: 5, likelihood: 2, riskLevel: 'medium', count: 8 },
-    { category: 'Cybersecurity', impact: 5, likelihood: 4, riskLevel: 'critical', count: 3 },
-    { category: 'Operational', impact: 3, likelihood: 3, riskLevel: 'medium', count: 12 },
-    { category: 'Third Party', impact: 4, likelihood: 2, riskLevel: 'medium', count: 7 },
-    { category: 'Regulatory Change', impact: 3, likelihood: 4, riskLevel: 'medium', count: 4 }
-  ]
-
-  const sampleTrends: ComplianceTrend[] = [
-    { date: '2024-01', overallScore: 82, violations: 15, assessments: 4, trainingCompletion: 75, policyUpdates: 3 },
-    { date: '2024-02', overallScore: 84, violations: 12, assessments: 6, trainingCompletion: 78, policyUpdates: 5 },
-    { date: '2024-03', overallScore: 85, violations: 10, assessments: 3, trainingCompletion: 78, policyUpdates: 2 },
-    { date: '2024-04', overallScore: 87, violations: 8, assessments: 5, trainingCompletion: 82, policyUpdates: 4 },
-    { date: '2024-05', overallScore: 85, violations: 11, assessments: 2, trainingCompletion: 78, policyUpdates: 1 }
-  ]
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadDashboardData()
-  }, [organizationId, selectedTimeframe, selectedFramework])
+    if (!initialData) {
+      fetchDashboardData()
+    }
+  }, [organizationId, initialData])
 
-  const loadDashboardData = async () => {
-    setLoading(true)
+  const fetchDashboardData = async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setDashboardData({
-        metrics: sampleMetrics,
-        frameworks: sampleFrameworks,
-        riskHeatMap: sampleRiskHeatMap,
-        trends: sampleTrends
-      })
-    } catch (error) {
-      toast({
-        title: 'Error Loading Dashboard',
-        description: 'Failed to load compliance dashboard data',
-        variant: 'destructive'
-      })
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch(`/api/compliance/tracker?organizationId=${organizationId}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setData(result.data)
+      } else {
+        setError(result.message || 'Failed to load compliance data')
+      }
+    } catch (err) {
+      console.error('Error fetching compliance dashboard data:', err)
+      setError('Failed to load compliance data')
     } finally {
       setLoading(false)
     }
   }
 
-  const refreshDashboard = async () => {
-    setRefreshing(true)
+  const handleAlertDismiss = async (alertId: string) => {
+    if (!data) return
+    
+    // Optimistically update UI
+    const updatedAlerts = data.alerts.filter(alert => alert.id !== alertId)
+    setData({ ...data, alerts: updatedAlerts })
+    
+    // TODO: Make API call to dismiss alert
+    console.log('Dismissing alert:', alertId)
+  }
+
+  const handleViewAlertDetails = (alert: ComplianceAlert) => {
+    // TODO: Navigate to alert details or open modal
+    console.log('Viewing alert details:', alert)
+  }
+
+  const generateReport = async (reportType: string) => {
     try {
-      await loadDashboardData()
-      toast({
-        title: 'Dashboard Refreshed',
-        description: 'Compliance dashboard data has been updated',
-        variant: 'default'
+      const response = await fetch('/api/compliance/tracker/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId,
+          reportType,
+          generatedBy: 'user'
+        })
       })
-    } finally {
-      setRefreshing(false)
+      
+      const result = await response.json()
+      if (result.success) {
+        // TODO: Handle successful report generation
+        console.log('Report generation initiated:', result.data)
+      }
+    } catch (err) {
+      console.error('Error generating report:', err)
     }
   }
 
-  const getStatusColor = (status: string) => {
-    const colors = {
-      'compliant': 'bg-green-100 text-green-800',
-      'partially_compliant': 'bg-yellow-100 text-yellow-800',
-      'non_compliant': 'bg-red-100 text-red-800',
-      'pending': 'bg-gray-100 text-gray-800'
-    }
-    return colors[status as keyof typeof colors] || colors.pending
-  }
-
-  const getTrendIcon = (trend: string) => {
-    if (trend === 'improving') return <TrendingUp className="h-4 w-4 text-green-500" />
-    if (trend === 'declining') return <TrendingDown className="h-4 w-4 text-red-500" />
-    return <div className="h-4 w-4 rounded-full bg-gray-300" />
-  }
-
-  const getRiskColor = (level: string) => {
-    const colors = {
-      'low': '#22c55e',
-      'medium': '#f59e0b',
-      'high': '#ef4444',
-      'critical': '#dc2626'
-    }
-    return colors[level as keyof typeof colors] || colors.medium
-  }
-
-  if (loading && !dashboardData) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     )
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">Failed to load compliance dashboard</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchDashboardData}>Retry</Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!data) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No compliance data available</h3>
+          <p className="text-gray-600">Get started by setting up compliance frameworks</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const { metrics, alerts, recentActivity, frameworks } = data
+
   return (
     <div className="space-y-6">
-      {/* Dashboard Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Compliance Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Comprehensive view of your organization's compliance posture
-          </p>
+          <h2 className="text-2xl font-bold">Compliance Dashboard</h2>
+          <p className="text-gray-600">Monitor and manage your compliance posture</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <select
-            value={selectedTimeframe}
-            onChange={(e) => setSelectedTimeframe(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 bg-white text-sm"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="1y">Last year</option>
-          </select>
+        <div className="flex gap-2">
           <Button
-            onClick={refreshDashboard}
-            disabled={refreshing}
             variant="outline"
             size="sm"
+            onClick={() => generateReport('executive-summary')}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            New Assessment
           </Button>
         </div>
       </div>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricsCard
-          title="Overall Compliance Score"
-          value={`${dashboardData.metrics.overallScore}%`}
-          change="+2.1%"
-          trend="up"
-          icon={<Shield className="h-5 w-5" />}
-          color="blue"
-        />
-        <MetricsCard
-          title="Critical Violations"
-          value={dashboardData.metrics.criticalViolations.toString()}
-          change="-3"
-          trend="down"
-          icon={<AlertTriangle className="h-5 w-5" />}
-          color="red"
-        />
-        <MetricsCard
-          title="Training Completion"
-          value={`${dashboardData.metrics.trainingCompletionRate}%`}
-          change="+5.2%"
-          trend="up"
-          icon={<Users className="h-5 w-5" />}
-          color="green"
-        />
-        <MetricsCard
-          title="Upcoming Deadlines"
-          value={dashboardData.metrics.upcomingDeadlines.toString()}
-          change="+2"
-          trend="up"
-          icon={<Calendar className="h-5 w-5" />}
-          color="yellow"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Overall Score</p>
+                <p className="text-2xl font-bold">
+                  {Math.round(metrics.overallComplianceScore)}%
+                </p>
+              </div>
+              <Shield className={`h-8 w-8 ${
+                metrics.overallComplianceScore >= 90 ? 'text-green-500' :
+                metrics.overallComplianceScore >= 70 ? 'text-yellow-500' :
+                'text-red-500'
+              }`} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active Alerts</p>
+                <p className="text-2xl font-bold">{alerts.length}</p>
+              </div>
+              <AlertTriangle className={`h-8 w-8 ${
+                alerts.length === 0 ? 'text-green-500' :
+                alerts.some(a => a.priority === 'critical') ? 'text-red-500' :
+                'text-yellow-500'
+              }`} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Upcoming Deadlines</p>
+                <p className="text-2xl font-bold">{metrics.upcomingDeadlines.length}</p>
+              </div>
+              <Clock className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Frameworks</p>
+                <p className="text-2xl font-bold">{Object.keys(metrics.frameworkScores).length}</p>
+              </div>
+              <FileText className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Main Dashboard Content */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search compliance items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={selectedFramework} onValueChange={setSelectedFramework}>
+          <SelectTrigger className="w-full sm:w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="All Frameworks" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Frameworks</SelectItem>
+            {frameworks.map((framework) => (
+              <SelectItem key={framework.id} value={framework.id}>
+                {framework.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Main Content */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="frameworks">Frameworks</TabsTrigger>
-          <TabsTrigger value="risks">Risk Analysis</TabsTrigger>
-          <TabsTrigger value="policies">Policies</TabsTrigger>
-          <TabsTrigger value="violations">Violations</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+          <TabsTrigger value="assessments">Assessments</TabsTrigger>
+          <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Compliance Score Trends */}
+            {/* Framework Scores Chart */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Compliance Score Trends
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Compliance Metrics
                 </CardTitle>
+                <CardDescription>
+                  Framework compliance scores and trends
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={dashboardData.trends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="overallScore" 
-                      stroke="#2563eb" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                    />
-                    <ReferenceLine y={85} stroke="#ef4444" strokeDasharray="5 5" />
-                  </LineChart>
-                </ResponsiveContainer>
+                <ComplianceMetricsChart
+                  frameworkScores={metrics.frameworkScores}
+                  trends={[]} // TODO: Add actual trend data
+                />
               </CardContent>
             </Card>
 
-            {/* Framework Status */}
+            {/* Recent Activity */}
             <Card>
               <CardHeader>
-                <CardTitle>Framework Compliance Status</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Recent Activity
+                </CardTitle>
+                <CardDescription>
+                  Latest compliance activities across your organization
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {dashboardData.frameworks.map((framework: FrameworkStatus) => (
-                    <div key={framework.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <div className="font-medium">{framework.acronym}</div>
-                          <div className="text-sm text-gray-600">{framework.jurisdiction}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge className={getStatusColor(framework.status)}>
-                          {framework.status.replace('_', ' ')}
-                        </Badge>
-                        <div className="text-right">
-                          <div className="font-medium">{framework.complianceScore}%</div>
-                          <div className="flex items-center text-sm text-gray-600">
-                            {getTrendIcon(framework.trends)}
-                            <span className="ml-1">{framework.trends}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <RecentActivity activities={recentActivity} />
               </CardContent>
             </Card>
           </div>
 
-          {/* Risk Heat Map */}
+          {/* Alerts */}
+          {alerts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Active Alerts
+                  <Badge variant="destructive" className="ml-2">
+                    {alerts.length}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Issues requiring immediate attention
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ComplianceAlerts
+                  alerts={alerts}
+                  onDismiss={handleAlertDismiss}
+                  onViewDetails={handleViewAlertDetails}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="assessments">
           <Card>
             <CardHeader>
-              <CardTitle>Risk Heat Map</CardTitle>
+              <CardTitle>Assessments</CardTitle>
               <CardDescription>
-                Risk assessment across different categories based on impact and likelihood
+                Manage compliance assessments and evaluations
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <ScatterChart data={dashboardData.riskHeatMap}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="likelihood" 
-                    domain={[0, 5]} 
-                    tickCount={6}
-                    label={{ value: 'Likelihood', position: 'insideBottom', offset: -10 }}
-                  />
-                  <YAxis 
-                    dataKey="impact" 
-                    domain={[0, 5]} 
-                    tickCount={6}
-                    label={{ value: 'Impact', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload[0]) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="bg-white p-3 border rounded-lg shadow-md">
-                            <p className="font-medium">{data.category}</p>
-                            <p>Risk Level: <span className="font-medium" style={{color: getRiskColor(data.riskLevel)}}>{data.riskLevel}</span></p>
-                            <p>Count: {data.count}</p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }}
-                  />
-                  <Scatter 
-                    dataKey="count" 
-                    fill={(entry: any) => getRiskColor(entry.riskLevel)}
-                  />
-                </ScatterChart>
-              </ResponsiveContainer>
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Assessment management coming soon</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="frameworks" className="space-y-4">
-          <FrameworksView frameworks={dashboardData.frameworks} />
+        <TabsContent value="findings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Findings & Remediation</CardTitle>
+              <CardDescription>
+                Track compliance findings and remediation efforts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Findings management coming soon</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="risks" className="space-y-4">
-          <RiskAnalysisView riskData={dashboardData.riskHeatMap} />
-        </TabsContent>
-
-        <TabsContent value="policies" className="space-y-4">
-          <PoliciesView />
-        </TabsContent>
-
-        <TabsContent value="violations" className="space-y-4">
-          <ViolationsView />
-        </TabsContent>
-
-        <TabsContent value="trends" className="space-y-4">
-          <TrendsView trends={dashboardData.trends} />
+        <TabsContent value="reports">
+          <Card>
+            <CardHeader>
+              <CardTitle>Compliance Reports</CardTitle>
+              <CardDescription>
+                Generate and download compliance reports
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col gap-2"
+                    onClick={() => generateReport('executive-summary')}
+                  >
+                    <FileText className="h-6 w-6" />
+                    Executive Summary
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col gap-2"
+                    onClick={() => generateReport('detailed-assessment')}
+                  >
+                    <Shield className="h-6 w-6" />
+                    Detailed Assessment
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col gap-2"
+                    onClick={() => generateReport('remediation-status')}
+                  >
+                    <TrendingUp className="h-6 w-6" />
+                    Remediation Status
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   )
-}
-
-// ==========================================
-// SUPPORTING COMPONENTS
-// ==========================================
-
-function MetricsCard({ 
-  title, 
-  value, 
-  change, 
-  trend, 
-  icon, 
-  color 
-}: { 
-  title: string
-  value: string
-  change: string
-  trend: 'up' | 'down'
-  icon: React.ReactNode
-  color: 'blue' | 'red' | 'green' | 'yellow'
-}) {
-  const colorClasses = {
-    blue: 'text-blue-600 bg-blue-50',
-    red: 'text-red-600 bg-red-50',
-    green: 'text-green-600 bg-green-50',
-    yellow: 'text-yellow-600 bg-yellow-50'
-  }
-
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
-            {icon}
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
-            <div className="text-sm text-gray-600">{title}</div>
-            <div className={`text-xs flex items-center mt-1 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-              {trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-              {change}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function FrameworksView({ frameworks }: { frameworks: FrameworkStatus[] }) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-      {frameworks.map((framework) => (
-        <Card key={framework.id}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{framework.acronym}</CardTitle>
-              <Badge className={`${framework.status === 'compliant' ? 'bg-green-100 text-green-800' : 
-                framework.status === 'partially_compliant' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'}`}>
-                {framework.status.replace('_', ' ')}
-              </Badge>
-            </div>
-            <CardDescription>{framework.name}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Compliance Score</span>
-                  <span>{framework.complianceScore}%</span>
-                </div>
-                <Progress value={framework.complianceScore} className="h-2" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-gray-600">Last Assessment</div>
-                  <div className="font-medium">{format(new Date(framework.lastAssessment), 'MMM dd, yyyy')}</div>
-                </div>
-                <div>
-                  <div className="text-gray-600">Next Assessment</div>
-                  <div className="font-medium">{format(new Date(framework.nextAssessment), 'MMM dd, yyyy')}</div>
-                </div>
-              </div>
-
-              {framework.criticalIssues > 0 && (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    {framework.criticalIssues} critical issue{framework.criticalIssues > 1 ? 's' : ''} require immediate attention
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center text-sm">
-                  {getTrendIcon(framework.trends)}
-                  <span className="ml-2 text-gray-600">{framework.trends}</span>
-                </div>
-                <Button variant="outline" size="sm">
-                  View Details
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
-}
-
-function RiskAnalysisView({ riskData }: { riskData: RiskHeatMapData[] }) {
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Risk Distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {['critical', 'high', 'medium', 'low'].map((level) => {
-              const count = riskData.filter(r => r.riskLevel === level).length
-              const total = riskData.reduce((sum, r) => sum + r.count, 0)
-              return (
-                <div key={level} className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold" style={{color: getRiskColor(level)}}>{count}</div>
-                  <div className="text-sm text-gray-600 capitalize">{level} Risk</div>
-                  <div className="text-xs text-gray-500 mt-1">{((count / riskData.length) * 100).toFixed(0)}%</div>
-                </div>
-              )
-            })}
-          </div>
-          
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={riskData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" angle={-45} textAnchor="end" height={100} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function PoliciesView() {
-  // Implementation for policies view
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Policy Management</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center text-gray-500 py-8">
-          Policy management view coming soon...
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ViolationsView() {
-  // Implementation for violations view
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Compliance Violations</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center text-gray-500 py-8">
-          Violations view coming soon...
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function TrendsView({ trends }: { trends: ComplianceTrend[] }) {
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Multi-Metric Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={trends}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="left" domain={[0, 100]} />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="overallScore" stroke="#2563eb" name="Compliance Score" />
-              <Line yAxisId="left" type="monotone" dataKey="trainingCompletion" stroke="#16a34a" name="Training Completion" />
-              <Line yAxisId="right" type="monotone" dataKey="violations" stroke="#dc2626" name="Violations" />
-              <Line yAxisId="right" type="monotone" dataKey="assessments" stroke="#f59e0b" name="Assessments" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function getTrendIcon(trend: string) {
-  if (trend === 'improving') return <TrendingUp className="h-4 w-4 text-green-500" />
-  if (trend === 'declining') return <TrendingDown className="h-4 w-4 text-red-500" />
-  return <div className="h-4 w-4 rounded-full bg-gray-300" />
-}
-
-function getRiskColor(level: string) {
-  const colors = {
-    'low': '#22c55e',
-    'medium': '#f59e0b',
-    'high': '#ef4444',
-    'critical': '#dc2626'
-  }
-  return colors[level as keyof typeof colors] || colors.medium
 }

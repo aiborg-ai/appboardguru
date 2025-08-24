@@ -28,10 +28,12 @@ import {
   BarChart3,
   Brain,
   Mic,
-  MicOff
+  MicOff,
+  Network
 } from 'lucide-react';
 import { ExecutiveAnalyticsDashboard } from '@/components/features/boardmates/ExecutiveAnalyticsDashboard';
 import { VoiceCommandPanel } from '@/components/features/boardmates/VoiceCommandPanel';
+import { NetworkVisualization3D } from '@/components/features/boardmates/NetworkVisualization3D';
 import { EnhancedBoardMate } from '@/types/boardmates';
 import { cn } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
@@ -307,10 +309,14 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
       {/* Main Tabs with Voice Control */}
       <div className="flex items-center justify-between mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="members" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Board Members
+            </TabsTrigger>
+            <TabsTrigger value="network" className="flex items-center gap-2">
+              <Network className="w-4 h-4" />
+              3D Network
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -732,6 +738,74 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
           </p>
         </motion.div>
       )}
+        </TabsContent>
+
+        {/* 3D Network Visualization Tab */}
+        <TabsContent value="network">
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <Network className="w-8 h-8 text-blue-600" />
+              </div>
+              <h4 className="text-xl font-semibold text-gray-900 mb-2">
+                3D Network Visualization
+              </h4>
+              <p className="text-gray-600 max-w-md mx-auto">
+                Explore board relationships and influence patterns in an interactive 3D space
+              </p>
+            </div>
+
+            <div className="h-[600px] bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+              <NetworkVisualization3D
+                boardMembers={enhancedBoardMates}
+                onMemberSelect={(member) => {
+                  // Find the corresponding BoardMate and select it
+                  const boardMate = boardMates.find(bm => bm.id === member.id)
+                  if (boardMate) {
+                    handleBoardMateSelect(boardMate, true)
+                  }
+                }}
+                onRelationshipCreate={(sourceId, targetId) => {
+                  console.log('Create relationship:', sourceId, targetId)
+                  // Future: Handle relationship creation
+                }}
+                className="h-full"
+              />
+            </div>
+
+            {/* Network Insights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                <CardContent className="p-4 text-center">
+                  <Brain className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                  <h5 className="font-semibold text-blue-900 mb-1">AI Insights</h5>
+                  <p className="text-sm text-blue-700">
+                    Discover hidden patterns in your board network
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <CardContent className="p-4 text-center">
+                  <Network className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                  <h5 className="font-semibold text-green-900 mb-1">Relationship Mapping</h5>
+                  <p className="text-sm text-green-700">
+                    Visualize connections and collaboration patterns
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+                <CardContent className="p-4 text-center">
+                  <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                  <h5 className="font-semibold text-purple-900 mb-1">Influence Analysis</h5>
+                  <p className="text-sm text-purple-700">
+                    Identify key stakeholders and decision makers
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Executive Analytics Tab */}

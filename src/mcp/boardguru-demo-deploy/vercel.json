@@ -1,0 +1,74 @@
+{
+  "version": 2,
+  "name": "boardguru-mcp-demo",
+  "builds": [
+    {
+      "src": "demo/demo-server.cjs",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "demo/public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/demo",
+      "dest": "/demo/public/demo.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/demo/demo-server.cjs"
+    },
+    {
+      "src": "/health",
+      "dest": "/demo/demo-server.cjs"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/demo/public/demo.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "DEMO_MODE": "true",
+    "DEMO_PORT": "3000"
+  },
+  "functions": {
+    "demo/demo-server.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Authorization, Content-Type"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/demo",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
+  ]
+}

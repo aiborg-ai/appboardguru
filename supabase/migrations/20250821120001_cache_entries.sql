@@ -13,9 +13,9 @@ CREATE INDEX IF NOT EXISTS idx_cache_entries_expires_at ON cache_entries (expire
 CREATE INDEX IF NOT EXISTS idx_cache_entries_created_at ON cache_entries (created_at);
 CREATE INDEX IF NOT EXISTS idx_cache_entries_size ON cache_entries (size_bytes);
 
--- Partial index for non-expired entries
-CREATE INDEX IF NOT EXISTS idx_cache_entries_active 
-ON cache_entries (key) WHERE expires_at > NOW();
+-- Partial index for non-expired entries (commented out due to NOW() immutability issue)
+-- CREATE INDEX IF NOT EXISTS idx_cache_entries_active 
+-- ON cache_entries (key) WHERE expires_at > NOW();
 
 -- Function to clean up expired cache entries
 CREATE OR REPLACE FUNCTION cleanup_expired_cache()

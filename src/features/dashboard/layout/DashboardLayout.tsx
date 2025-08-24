@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import EnhancedSidebar from './EnhancedSidebar'
 import RightPanel from '@/features/shared/components/RightPanel'
 import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'
+import GlobalNavigationBar from '@/components/navigation/GlobalNavigationBar'
+import RoutePreloader, { useRoutePreloadConfig } from '@/components/performance/RoutePreloader'
 import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from '@/hooks/useKeyboardShortcuts'
 
 interface DashboardLayoutProps {
@@ -20,6 +22,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Right panel state - ensure panel is closed by default
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'ai-chat' | 'logs' | 'fyi'>('ai-chat')
+  
+  // Get route preload configuration
+  const preloadConfig = useRoutePreloadConfig()
 
   useEffect(() => {
     checkUser()
@@ -91,31 +96,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 relative">
-      {/* Sidebar */}
-      <div className="w-64 flex-shrink-0">
-        <EnhancedSidebar />
-      </div>
+    <>
+      {/* Route Preloader */}
+      <RoutePreloader config={preloadConfig} />
       
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+      <div className="flex h-screen bg-gray-50 relative">
+        {/* Global Navigation - spans full width at top */}
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <GlobalNavigationBar />
+        </div>
+        
+        {/* Main layout container with top padding for fixed navigation */}
+        <div className="flex w-full pt-16">
+          {/* Sidebar */}
+          <div className="w-64 flex-shrink-0 h-screen">
+            <EnhancedSidebar />
+          </div>
+          
+          {/* Main content */}
+          <div className="flex-1 flex flex-col overflow-hidden h-screen">
+            <main className="flex-1 overflow-y-auto">
+              {children}
+            </main>
+          </div>
+
+          {/* Right Panel */}
+          <RightPanel 
+            externalControl={{
+              isOpen: isPanelOpen,
+              activeTab: activeTab,
+              onOpenChange: setIsPanelOpen,
+              onTabChange: setActiveTab
+            }}
+          />
+        </div>
+
+        {/* Quick Access FAB */}
+        <QuickAccessFAB onOpenPanel={handleOpenPanel} />
       </div>
-
-      {/* Right Panel */}
-      <RightPanel 
-        externalControl={{
-          isOpen: isPanelOpen,
-          activeTab: activeTab,
-          onOpenChange: setIsPanelOpen,
-          onTabChange: setActiveTab
-        }}
-      />
-
-      {/* Quick Access FAB */}
-      <QuickAccessFAB onOpenPanel={handleOpenPanel} />
-    </div>
+    </>
   )
 }

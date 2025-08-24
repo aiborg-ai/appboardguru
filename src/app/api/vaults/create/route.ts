@@ -54,11 +54,42 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
     
-    // Get current user
+    // Get current user with detailed logging
+    console.log('Attempting to get authenticated user...');
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    if (authError) {
+      console.error('Auth error:', authError);
+      return NextResponse.json({ 
+        error: 'Authentication failed', 
+        details: authError.message 
+      }, { status: 401 });
     }
+    
+    if (!user) {
+      console.log('No user found in session');
+      return NextResponse.json({ 
+        error: 'No authenticated user found. Please log in and try again.' 
+      }, { status: 401 });
+    }
+    
+    console.log('Authenticated user:', { id: user.id, email: user.email });
+    
+    // Verify user exists in public.users table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, email, full_name, role, status')
+      .eq('id', user.id)
+      .single();
+    
+    if (profileError || !userProfile) {
+      console.error('User profile not found:', profileError);
+      return NextResponse.json({ 
+        error: 'User profile not found. Please complete your profile setup.' 
+      }, { status: 403 });
+    }
+    
+    console.log('User profile found:', userProfile);
 
     const body = await request.json();
     

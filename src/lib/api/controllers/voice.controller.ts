@@ -68,60 +68,76 @@ export class VoiceController extends BaseController {
     }
 
     try {
-      // Convert base64 audio to a format suitable for transcription
+      // Convert base64 audio to binary buffer
       const audioBuffer = Buffer.from(audioData, 'base64');
       const audioSizeKB = audioBuffer.length / 1024;
       
-      // For now, use OpenRouter's chat completion API with a prompt about the audio
-      // In a production environment, you would use a dedicated speech-to-text service
-      // like OpenAI Whisper API or Google Cloud Speech-to-Text through OpenRouter
-      
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      // Validate file size (max 25MB for Whisper)
+      const maxSize = 25 * 1024 * 1024; // 25MB
+      if (audioBuffer.length > maxSize) {
+        throw new Error('Audio file too large for transcription (max 25MB)');
+      }
+
+      // Create FormData for Whisper API
+      const formData = new FormData();
+      const audioBlob = new Blob([audioBuffer], { 
+        type: format === 'webm' ? 'audio/webm' : 'audio/wav' 
+      });
+      formData.append('file', audioBlob, `voice-annotation.${format}`);
+      formData.append('model', 'openai/whisper-large-v3');
+      formData.append('response_format', 'json');
+      formData.append('language', 'en');
+
+      // Use OpenRouter's Whisper transcription endpoint
+      const response = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${openRouterApiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-          'X-Title': 'AppBoardGuru Voice Transcription'
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+          'X-Title': 'AppBoardGuru Voice Annotations'
         },
-        body: JSON.stringify({
-          model: 'openai/whisper-1', // Use Whisper for speech-to-text if available
-          messages: [{
-            role: 'user',
-            content: `Please transcribe this audio. The audio is in ${format} format and is ${audioSizeKB.toFixed(1)}KB in size. For now, return a placeholder response indicating voice input was received and processed.`
-          }],
-          max_tokens: 150,
-          temperature: 0.1
-        })
+        body: formData
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorData.error?.message || 'Unknown error'}`);
+        const errorText = await response.text().catch(() => '');
+        console.error('OpenRouter transcription error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        
+        // Provide helpful error messages
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again in a moment.');
+        } else if (response.status === 413) {
+          throw new Error('Audio file too large. Please use a shorter recording.');
+        } else {
+          throw new Error(`Transcription service unavailable (${response.status})`);
+        }
       }
 
-      const data = await response.json();
+      const transcriptionResult = await response.json();
       
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        const transcriptText = data.choices[0].message.content.trim();
-        
-        // If the response looks like an error or empty, provide fallback
-        if (!transcriptText || transcriptText.length < 5) {
-          return `Voice input received and processed (${format} format, ${audioSizeKB.toFixed(1)}KB). Transcription service is processing...`;
-        }
-        
-        return transcriptText;
+      // Return the transcribed text
+      if (transcriptionResult && transcriptionResult.text) {
+        const transcriptText = transcriptionResult.text.trim();
+        return transcriptText || 'No speech detected in audio';
       } else {
-        throw new Error('Invalid response format from OpenRouter API');
+        throw new Error('Invalid response format from transcription service');
       }
-    } catch (error) {
-      console.error('OpenRouter transcription error:', error);
       
-      // Provide a helpful fallback response
+    } catch (error) {
+      console.error('Voice transcription error:', error);
+      
+      // Provide helpful fallback responses
+      if (error instanceof Error) {
+        throw error; // Re-throw known errors with helpful messages
+      }
+      
       const audioBuffer = Buffer.from(audioData, 'base64');
       const audioSizeKB = audioBuffer.length / 1024;
-      
-      return `Voice input received (${format} format, ${audioSizeKB.toFixed(1)}KB). Transcription temporarily unavailable - please try again.`;
+      throw new Error(`Transcription failed for ${format} audio (${audioSizeKB.toFixed(1)}KB). Please try again.`);
     }
   }
 

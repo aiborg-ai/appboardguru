@@ -1,0 +1,18 @@
+{
+  "name": "boardguru-mcp-demo",
+  "version": "1.0.0",
+  "description": "BoardGuru MCP Demo - AI-powered governance intelligence",
+  "main": "demo/demo-server.cjs",
+  "scripts": {
+    "start": "node demo/demo-server.cjs",
+    "dev": "node demo/demo-server.cjs"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

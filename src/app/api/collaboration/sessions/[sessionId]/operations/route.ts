@@ -1,45 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-
 /**
- * POST /api/collaboration/sessions/[sessionId]/operations
- * Apply document operation (insert, delete, format, etc.)
+ * Collaboration Operations API Endpoint
+ * Delegates to CollaborationController for consistent architecture
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
-  return NextResponse.json({
-    success: true,
-    message: 'Document operation applied',
-    data: {
-      sessionId: params.sessionId,
-      operationId: 'op-' + Math.random().toString(36).substr(2, 9),
-      status: 'applied',
-      version: 1
-    }
-  })
-}
 
-/**
- * GET /api/collaboration/sessions/[sessionId]/operations
- * Get operation history with pagination
- */
+import { NextRequest, NextResponse } from 'next/server';
+import { CollaborationController } from '@/lib/api/controllers/collaboration.controller';
+
+const collaborationController = new CollaborationController();
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
-  return NextResponse.json({
-    success: true,
-    message: 'Operation history retrieved',
-    data: {
-      sessionId: params.sessionId,
-      operations: [],
-      pagination: {
-        page: 1,
-        limit: 50,
-        total: 0,
-        totalPages: 0
-      }
-    }
-  })
+  context: { params: { sessionId: string } }
+): Promise<NextResponse> {
+  return collaborationController.getOperations(request, context);
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: { sessionId: string } }
+): Promise<NextResponse> {
+  return collaborationController.applyOperation(request, context);
+}
+
+export async function OPTIONS(): Promise<NextResponse> {
+  return collaborationController.handleOptions();
 }

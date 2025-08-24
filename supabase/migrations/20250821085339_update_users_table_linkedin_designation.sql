@@ -9,22 +9,31 @@ ADD COLUMN IF NOT EXISTS linkedin_url TEXT,
 ADD COLUMN IF NOT EXISTS designation VARCHAR(200),
 ADD COLUMN IF NOT EXISTS bio TEXT;
 
--- Add constraints for the new fields
-ALTER TABLE users 
-ADD CONSTRAINT IF NOT EXISTS check_linkedin_url_format 
-CHECK (
-  linkedin_url IS NULL OR 
-  linkedin_url ~ '^https?://(www\.)?linkedin\.com/.*' OR
-  linkedin_url ~ '^https?://(www\.)?linkedin\.com/in/.*'
-);
-
-ALTER TABLE users 
-ADD CONSTRAINT IF NOT EXISTS check_designation_length 
-CHECK (designation IS NULL OR length(designation) <= 200);
-
-ALTER TABLE users 
-ADD CONSTRAINT IF NOT EXISTS check_bio_length 
-CHECK (bio IS NULL OR length(bio) <= 2000);
+-- Add constraints for the new fields (skip if they already exist)
+DO $$
+BEGIN
+    -- Add LinkedIn URL constraint if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_linkedin_url_format') THEN
+        ALTER TABLE users ADD CONSTRAINT check_linkedin_url_format 
+        CHECK (
+            linkedin_url IS NULL OR 
+            linkedin_url ~ '^https?://(www\.)?linkedin\.com/.*' OR
+            linkedin_url ~ '^https?://(www\.)?linkedin\.com/in/.*'
+        );
+    END IF;
+    
+    -- Add designation constraint if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_designation_length') THEN
+        ALTER TABLE users ADD CONSTRAINT check_designation_length 
+        CHECK (designation IS NULL OR length(designation) <= 200);
+    END IF;
+    
+    -- Add bio constraint if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_bio_length') THEN
+        ALTER TABLE users ADD CONSTRAINT check_bio_length 
+        CHECK (bio IS NULL OR length(bio) <= 2000);
+    END IF;
+END $$;
 
 -- Add index on designation for filtering
 CREATE INDEX IF NOT EXISTS idx_users_designation ON users(designation);
@@ -68,9 +77,9 @@ SELECT
   om.role as org_role,
   om.status as org_status,
   om.joined_at as org_joined_at,
-  om.last_accessed as org_last_accessed,
+  NULL as org_last_accessed, -- Column doesn't exist yet
   o.name as organization_name,
-  o.logo_url as organization_logo,
+  NULL as organization_logo, -- Column doesn't exist yet
   
   -- Board memberships (aggregated)
   COALESCE(
@@ -113,22 +122,8 @@ SELECT
     '[]'::json
   ) as committee_memberships,
   
-  -- Vault memberships (aggregated)
-  COALESCE(
-    json_agg(
-      DISTINCT jsonb_build_object(
-        'vault_id', vm.vault_id,
-        'vault_name', v.name,
-        'vault_status', v.status,
-        'member_role', vm.role,
-        'member_status', vm.status,
-        'joined_at', vm.joined_at,
-        'last_accessed_at', vm.last_accessed_at,
-        'access_count', vm.access_count
-      )
-    ) FILTER (WHERE vm.id IS NOT NULL), 
-    '[]'::json
-  ) as vault_memberships
+  -- Vault memberships (not implemented yet)
+  '[]'::json as vault_memberships
 
 FROM users u
 LEFT JOIN organization_members om ON u.id = om.user_id
@@ -138,16 +133,16 @@ LEFT JOIN boards b ON bm.board_id = b.id
 LEFT JOIN committee_members cm ON u.id = cm.user_id AND cm.status = 'active'
 LEFT JOIN committees c ON cm.committee_id = c.id
 LEFT JOIN boards cb ON cm.board_id = cb.id
-LEFT JOIN vault_members vm ON u.id = vm.user_id AND vm.status = 'active'
-LEFT JOIN vaults v ON vm.vault_id = v.id
+-- LEFT JOIN vault_members vm ON u.id = vm.user_id AND vm.status = 'active'
+-- LEFT JOIN vaults v ON vm.vault_id = v.id
 
 WHERE u.status = 'approved'
 GROUP BY 
   u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, 
   u.company, u.position, u.designation, u.linkedin_url, u.bio,
   u.created_at, u.updated_at,
-  om.organization_id, om.role, om.status, om.joined_at, om.last_accessed,
-  o.name, o.logo_url;
+  om.organization_id, om.role, om.status, om.joined_at,
+  o.name;
 
 -- Enable RLS on the view (inherits from base tables)
 ALTER VIEW boardmate_profiles OWNER TO postgres;

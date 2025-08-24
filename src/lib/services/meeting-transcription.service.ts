@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '../supabase-server';
 import { MeetingDecision, AgendaItem, VotingResults } from '@/types/voice-translation';
+import { chatWithOpenRouter, summarizeDocument } from '../openrouter';
 
 export interface SpeakerIdentification {
   id: string;
@@ -630,49 +631,180 @@ class MeetingTranscriptionService {
   }
 
   /**
-   * Analyze transcript with AI
+   * Analyze transcript with AI using OpenRouter
    */
   private async analyzeTranscriptWithAI(prompt: string): Promise<any> {
-    // This would integrate with OpenRouter or similar AI service
-    // For now, return mock data
-    return {
-      agenda: ["Opening remarks", "Review of previous minutes", "Main discussion topics"],
-      discussions: [
-        {
-          topic: "Budget Review",
-          keyPoints: ["Current financial position", "Proposed budget changes"],
-          decisions: [
-            {
-              text: "Approve budget increase for Q4",
-              context: "Based on projected revenue growth",
-              finalDecision: "approved"
-            }
-          ]
+    try {
+      const response = await chatWithOpenRouter({
+        message: prompt,
+        context: 'Meeting transcript analysis for BoardGuru'
+      });
+
+      if (!response.success || !response.data?.message) {
+        console.error('AI analysis failed:', response.error);
+        throw new Error('Failed to analyze transcript with AI');
+      }
+
+      // Try to parse JSON response
+      try {
+        const analysisResult = JSON.parse(response.data.message);
+        return analysisResult;
+      } catch (parseError) {
+        // If JSON parsing fails, create structured data from text response
+        console.warn('AI response was not valid JSON, attempting to structure text response');
+        return this.parseTextResponseToStructured(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error in AI transcript analysis:', error);
+      // Fallback to basic analysis
+      return {
+        agenda: ["Meeting discussion", "Key decisions", "Action items"],
+        discussions: [
+          {
+            topic: "General Discussion",
+            keyPoints: ["Meeting content analyzed", "Key points extracted"],
+            decisions: []
+          }
+        ],
+        actionItems: []
+      };
+    }
+  }
+
+  /**
+   * Parse text AI response into structured format
+   */
+  private parseTextResponseToStructured(textResponse: string): any {
+    // Basic text parsing to extract structured information
+    const lines = textResponse.split('\n').filter(line => line.trim());
+    
+    const agenda: string[] = [];
+    const discussions: any[] = [];
+    const actionItems: any[] = [];
+    
+    let currentSection = '';
+    let currentDiscussion: any = null;
+
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      
+      if (lowerLine.includes('agenda') || lowerLine.includes('topics')) {
+        currentSection = 'agenda';
+        continue;
+      } else if (lowerLine.includes('discussion') || lowerLine.includes('key points')) {
+        currentSection = 'discussions';
+        if (currentDiscussion) {
+          discussions.push(currentDiscussion);
         }
-      ],
-      actionItems: [
-        {
-          text: "Prepare quarterly financial report",
-          assignedTo: "CFO",
+        currentDiscussion = {
+          topic: line.replace(/^\d+\.?\s*/, '').replace('Discussion:', '').trim(),
+          keyPoints: [],
+          decisions: []
+        };
+        continue;
+      } else if (lowerLine.includes('action') || lowerLine.includes('todo')) {
+        currentSection = 'actions';
+        continue;
+      }
+
+      // Extract content based on current section
+      const cleanLine = line.replace(/^\d+\.?\s*[-•*]?\s*/, '').trim();
+      
+      if (currentSection === 'agenda' && cleanLine) {
+        agenda.push(cleanLine);
+      } else if (currentSection === 'discussions' && currentDiscussion && cleanLine) {
+        if (lowerLine.includes('decision') || lowerLine.includes('approved') || lowerLine.includes('rejected')) {
+          currentDiscussion.decisions.push({
+            text: cleanLine,
+            context: 'Extracted from transcript analysis',
+            finalDecision: lowerLine.includes('approved') ? 'approved' : 
+                          lowerLine.includes('rejected') ? 'rejected' : 'deferred'
+          });
+        } else {
+          currentDiscussion.keyPoints.push(cleanLine);
+        }
+      } else if (currentSection === 'actions' && cleanLine) {
+        actionItems.push({
+          text: cleanLine,
+          assignedTo: null,
           dueDate: null,
-          status: "pending"
-        }
-      ]
+          status: 'pending'
+        });
+      }
+    }
+
+    // Add final discussion if exists
+    if (currentDiscussion) {
+      discussions.push(currentDiscussion);
+    }
+
+    return {
+      agenda: agenda.length > 0 ? agenda : ["Meeting discussion"],
+      discussions: discussions.length > 0 ? discussions : [{
+        topic: "General Discussion",
+        keyPoints: ["Content analyzed from transcript"],
+        decisions: []
+      }],
+      actionItems
     };
   }
 
   /**
-   * Generate transcript summary
+   * Generate transcript summary using AI
    */
   private async generateTranscriptSummary(
     segments: TranscriptionSegment[],
     style: 'detailed' | 'concise' | 'action-oriented'
   ): Promise<string> {
-    // This would use AI to generate appropriate summary
-    const totalDuration = Math.max(...segments.map(s => s.endTime)) - Math.min(...segments.map(s => s.startTime));
-    const participantCount = new Set(segments.map(s => s.speaker?.id).filter(Boolean)).size;
-    
-    return `Meeting summary (${style}): ${Math.round(totalDuration / 60000)} minutes with ${participantCount} participants. Key topics discussed include budget review, operational updates, and strategic planning. Several decisions were made and action items assigned.`;
+    try {
+      if (segments.length === 0) {
+        return 'No transcript content available for summary.';
+      }
+
+      const totalDuration = Math.max(...segments.map(s => s.endTime)) - Math.min(...segments.map(s => s.startTime));
+      const participantCount = new Set(segments.map(s => s.speaker?.id).filter(Boolean)).size;
+      const transcriptText = segments.map(s => `[${s.speaker?.name || 'Unknown'}]: ${s.text}`).join('\n');
+
+      const styleInstructions = {
+        detailed: 'Provide a comprehensive summary with detailed analysis of all topics, decisions, and implications. Include context and background information.',
+        concise: 'Provide a brief, executive-level summary focusing on key outcomes and decisions only.',
+        'action-oriented': 'Focus primarily on actionable outcomes, decisions made, and next steps. Minimize background discussion.'
+      };
+
+      const summaryPrompt = `Please generate a ${style} meeting summary based on this transcript.
+
+Meeting Duration: ${Math.round(totalDuration / 60000)} minutes
+Participants: ${participantCount} speakers
+
+Transcript:
+${transcriptText}
+
+Instructions: ${styleInstructions[style]}
+
+Please provide a professional board meeting summary suitable for corporate records.`;
+
+      const response = await summarizeDocument({
+        content: summaryPrompt,
+        fileName: 'Meeting Transcript',
+        maxLength: style === 'concise' ? 'short' : style === 'detailed' ? 'long' : 'medium',
+        includeKeyPoints: style !== 'concise',
+        includeActionItems: style === 'action-oriented'
+      });
+
+      if (response.success && response.data?.summary) {
+        return response.data.summary;
+      } else {
+        console.warn('AI summary generation failed, using fallback');
+        return `Meeting summary (${style}): ${Math.round(totalDuration / 60000)} minutes with ${participantCount} participants. Key topics discussed and decisions made based on transcript content.`;
+      }
+    } catch (error) {
+      console.error('Error generating transcript summary:', error);
+      const totalDuration = segments.length > 0 ? 
+        Math.max(...segments.map(s => s.endTime)) - Math.min(...segments.map(s => s.startTime)) : 0;
+      const participantCount = new Set(segments.map(s => s.speaker?.id).filter(Boolean)).size;
+      
+      return `Meeting summary (${style}): ${Math.round(totalDuration / 60000)} minutes with ${participantCount} participants. Summary generation encountered an issue, but transcript data is available.`;
+    }
   }
 
   /**

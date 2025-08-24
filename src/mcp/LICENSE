@@ -1,0 +1,192 @@
+BoardGuru MCP Server Commercial License
+
+Copyright (c) 2024 BoardGuru Ltd. All rights reserved.
+
+COMMERCIAL SOFTWARE LICENSE AGREEMENT
+
+This Software License Agreement ("Agreement") is entered into between BoardGuru Ltd., 
+a company incorporated in England and Wales ("BoardGuru", "we", "us", or "our"), and 
+you ("Licensee", "you", or "your").
+
+1. GRANT OF LICENSE
+
+Subject to the terms and conditions of this Agreement, BoardGuru grants you a 
+non-exclusive, non-transferable license to use the BoardGuru Model Context Protocol 
+Server ("Software") solely for your internal business purposes.
+
+2. PERMITTED USES
+
+You may:
+- Install and use the Software on your systems
+- Integrate the Software with your applications via the provided APIs
+- Modify configuration files and settings for your environment
+- Create derivative works that interface with the Software through its APIs
+
+3. RESTRICTIONS
+
+You may NOT:
+- Redistribute, sublicense, or sell copies of the Software
+- Reverse engineer, decompile, or disassemble the Software
+- Remove or modify any copyright notices or proprietary markings
+- Use the Software to provide competing services to third parties
+- Access the Software's source code or underlying algorithms
+- Create derivative works of the core Software functionality
+
+4. SUBSCRIPTION TERMS
+
+This Software is provided as a subscription service with the following tiers:
+
+STARTER TIER: £2,500/month (£25,000 annual)
+- Up to 50 board analyses per month
+- Basic compliance monitoring
+- Email support
+- Single organization
+
+PROFESSIONAL TIER: £7,500/month (£75,000 annual)
+- Up to 200 board analyses per month
+- Full compliance intelligence
+- API access
+- Priority support
+- Up to 3 organizations
+
+ENTERPRISE TIER: £20,000/month (£200,000 annual)
+- Unlimited analyses
+- Custom AI models
+- Dedicated support
+- White-label options
+- Unlimited organizations
+
+WHITE LABEL PARTNER: £50,000/month + revenue share
+- Full platform licensing
+- Complete branding customization
+- Reseller capabilities
+- Dedicated engineering support
+
+5. PAYMENT TERMS
+
+- Annual subscriptions required for all tiers
+- Payment due within 30 days of invoice
+- Automatic renewal unless cancelled with 90 days notice
+- Price increases with 180 days advance notice
+
+6. DATA AND PRIVACY
+
+- You retain ownership of all data you input into the Software
+- BoardGuru may collect usage analytics for service improvement
+- All data processing complies with GDPR, CCPA, and applicable privacy laws
+- Data residency options available for Enterprise tier
+
+7. SUPPORT AND MAINTENANCE
+
+- Support levels vary by subscription tier
+- Software updates included in subscription
+- Security patches provided promptly
+- New features may require tier upgrades
+
+8. INTELLECTUAL PROPERTY
+
+- BoardGuru retains all rights in the Software
+- This license does not grant any rights to BoardGuru's trademarks
+- You grant BoardGuru a license to use your feedback for improvements
+
+9. WARRANTIES AND DISCLAIMERS
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND.
+BOARDGURU DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+10. LIMITATION OF LIABILITY
+
+BOARDGURU'S TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT PAID BY
+LICENSEE IN THE 12 MONTHS PRECEDING THE CLAIM.
+
+11. INDEMNIFICATION
+
+Licensee agrees to indemnify BoardGuru against claims arising from
+Licensee's use of the Software in violation of this Agreement.
+
+12. TERMINATION
+
+- Either party may terminate with 90 days written notice
+- BoardGuru may terminate immediately for breach
+- Upon termination, Licensee must cease using and delete the Software
+- Data export assistance provided for 30 days post-termination
+
+13. COMPLIANCE AND AUDIT
+
+- Licensee must maintain accurate usage records
+- BoardGuru may audit compliance with reasonable notice
+- Overages subject to additional charges
+
+14. GOVERNING LAW
+
+This Agreement is governed by the laws of England and Wales.
+Disputes resolved through binding arbitration in London.
+
+15. ENTERPRISE FEATURES
+
+Additional terms for Enterprise and White Label tiers:
+
+SECURITY:
+- SOC 2 Type II compliance
+- ISO 27001 certification
+- GDPR compliance
+- Custom security assessments available
+
+AVAILABILITY:
+- 99.9% uptime SLA (99.99% for Enterprise)
+- 24/7 monitoring and support
+- Disaster recovery and backup
+
+CUSTOMIZATION:
+- White-label branding options
+- Custom AI model training
+- Dedicated infrastructure options
+- On-premises deployment available
+
+16. API USAGE TERMS
+
+- API access subject to rate limits by tier
+- Commercial use of APIs requires appropriate subscription
+- API keys must be kept confidential
+- Abuse may result in service suspension
+
+17. COMPLIANCE CERTIFICATIONS
+
+BoardGuru maintains the following certifications:
+- SOC 2 Type II
+- ISO 27001
+- GDPR compliance
+- Various regulatory framework compliance
+
+18. CONTACT INFORMATION
+
+BoardGuru Ltd.
+Enterprise Licensing Division
+Email: enterprise@boardguru.com
+Phone: +44 20 1234 5678
+Address: London, United Kingdom
+
+For technical support: support@boardguru.com
+For billing inquiries: billing@boardguru.com
+For partnership opportunities: partners@boardguru.com
+
+19. UPDATES TO AGREEMENT
+
+BoardGuru may update this Agreement with 60 days notice.
+Continued use constitutes acceptance of updates.
+
+20. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between the parties
+and supersedes all prior negotiations and agreements.
+
+By installing, accessing, or using the Software, you acknowledge that you have read,
+understood, and agree to be bound by the terms of this Agreement.
+
+For the latest version of this license, visit:
+https://boardguru.com/license/mcp
+
+© 2024 BoardGuru Ltd. All rights reserved.
+
+"BoardGuru", "Governance Intelligence", and associated logos are trademarks of BoardGuru Ltd.

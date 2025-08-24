@@ -1,5 +1,6 @@
 // Service exports
 export { BaseService } from './base.service'
+export { EnhancedBaseService } from './enhanced-base-service'
 export { VaultService } from './vault.service'
 export { NotificationService } from './notification.service'
 export { AssetService } from './asset.service'
@@ -14,6 +15,11 @@ export { VoiceService } from './voice.service'
 export { EventBus } from './event-bus.service'
 export { ServiceOrchestrator } from './service-orchestrator'
 export { ServiceMonitor } from './service-monitor'
+
+// Enhanced services with advanced patterns
+export { EnhancedUserService } from './enhanced-user.service'
+export { EnhancedAssetService } from './enhanced-asset.service'
+export { EnhancedNotificationService } from './enhanced-notification.service'
 
 // Legacy service exports (keep existing services working)
 export * from './email-templates'
@@ -37,6 +43,11 @@ import { WorkflowService } from './workflow.service'
 import { ComplianceService } from './compliance.service'
 import { BoardService } from './board.service'
 import { VoiceService } from './voice.service'
+
+// Enhanced service imports
+import { EnhancedUserService } from './enhanced-user.service'
+import { EnhancedAssetService } from './enhanced-asset.service'
+import { EnhancedNotificationService } from './enhanced-notification.service'
 
 // TODO: Re-add OrganizationService when domains structure is properly implemented
 
@@ -96,6 +107,19 @@ export class ServiceFactory {
 
   get voice() {
     return this.getOrCreateService('voice', () => new VoiceService(this.supabase))
+  }
+
+  // Enhanced services with advanced patterns
+  get enhancedUsers() {
+    return this.getOrCreateService('enhancedUsers', () => new EnhancedUserService(this.supabase))
+  }
+
+  get enhancedAssets() {
+    return this.getOrCreateService('enhancedAssets', () => new EnhancedAssetService(this.supabase))
+  }
+
+  get enhancedNotifications() {
+    return this.getOrCreateService('enhancedNotifications', () => new EnhancedNotificationService(this.supabase))
   }
 
   // Infrastructure services

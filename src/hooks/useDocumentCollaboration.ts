@@ -1,293 +1,472 @@
-/**
- * Document Collaboration Hook
- * Real-time collaborative editing functionality
- */
-
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useUser } from '../lib/stores'
-import { useWebSocket } from './useWebSocket'
-import type {
-  UseDocumentCollaborationReturn,
-  DocumentCursor,
-  DocumentChange,
-  UserPresence,
-  RoomId
-} from '../types/websocket'
-import type { AssetId, UserId } from '../types/database'
-import { createRoomId } from '../types/websocket'
-import { nanoid } from 'nanoid'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRealTimeCollaborationStore } from '@/lib/stores/realtime-collaboration.store'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import type { AssetId, UserId } from '@/types/branded'
+import type { DocumentCursor, DocumentChange } from '@/types/websocket'
 
-interface UseDocumentCollaborationOptions {
-  assetId: AssetId
-  enabled?: boolean
-  conflictResolution?: 'manual' | 'automatic' | 'last-writer-wins'
-  debounceMs?: number
+interface OperationalTransform {
+  id: string
+  operation: DocumentChange
+  transformedBy: UserId[]
+  applied: boolean
+  timestamp: string
 }
 
-export function useDocumentCollaboration({
-  assetId,
-  enabled = true,
-  conflictResolution = 'last-writer-wins',
-  debounceMs = 500
-}: UseDocumentCollaborationOptions): UseDocumentCollaborationReturn {
-  const user = useUser()
-  const roomId = createRoomId(`document_${assetId}`)
-  
-  // WebSocket connection
-  const {
-    isConnected,
-    joinRoom,
-    leaveRoom,
-    sendMessage,
-    onMessage,
-    onPresenceChange
-  } = useWebSocket()
+interface ConflictResolution {
+  id: string
+  conflictType: 'concurrent_edit' | 'ordering_issue' | 'state_divergence'
+  operations: DocumentChange[]
+  resolution: 'accept_local' | 'accept_remote' | 'merge' | 'manual'
+  resolvedBy?: UserId
+  resolvedAt?: string
+}
 
-  // State
-  const [activeUsers, setActiveUsers] = useState<UserPresence[]>([])
+export interface UseDocumentCollaborationOptions {
+  enableOperationalTransform?: boolean
+  conflictResolution?: 'manual' | 'automatic' | 'last-writer-wins'
+  maxPendingChanges?: number
+  transformTimeout?: number
+}
+
+export function useDocumentCollaboration(
+  documentId: AssetId,
+  options: UseDocumentCollaborationOptions = {}
+) {
+  const {
+    enableOperationalTransform = true,
+    conflictResolution = 'automatic',
+    maxPendingChanges = 50,
+    transformTimeout = 5000
+  } = options
+
+  const queryClient = useQueryClient()
+  const collaborationStore = useRealTimeCollaborationStore()
+  const { sendMessage, onMessage } = useWebSocket()
+
+  // Local state
   const [cursors, setCursors] = useState<DocumentCursor[]>([])
   const [pendingChanges, setPendingChanges] = useState<DocumentChange[]>([])
+  const [transformQueue, setTransformQueue] = useState<OperationalTransform[]>([])
+  const [conflicts, setConflicts] = useState<ConflictResolution[]>([])
+  const [isProcessingChanges, setIsProcessingChanges] = useState(false)
 
-  // Refs
-  const currentCursor = useRef<{ line: number; column: number }>({ line: 0, column: 0 })
-  const debounceTimeout = useRef<NodeJS.Timeout>()
-  const changeQueue = useRef<DocumentChange[]>([])
-  const lastChangeId = useRef<string>()
+  // Refs for tracking state
+  const operationIdCounter = useRef(0)
+  const pendingTransforms = useRef(new Map<string, NodeJS.Timeout>())
+  const lastProcessedTimestamp = useRef<string | null>(null)
 
-  // Join document room when connected and enabled
-  useEffect(() => {
-    if (isConnected && enabled && user) {
-      joinRoom(roomId)
-      
-      return () => {
-        leaveRoom(roomId)
-      }
-    }
-  }, [isConnected, enabled, user, roomId, joinRoom, leaveRoom])
+  // Get document state from collaboration store
+  const documentState = collaborationStore.documents.documents.get(documentId)
+  const currentUserId = collaborationStore.config.userId
 
-  // Listen for presence changes
-  useEffect(() => {
-    const cleanup = onPresenceChange((presence) => {
-      setActiveUsers(presence.filter(p => p.currentRoom === roomId))
-    })
+  // Fetch initial collaboration data
+  const { data: collaborationData } = useQuery({
+    queryKey: ['document-collaboration', documentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/documents/${documentId}/collaboration`)
+      if (!response.ok) throw new Error('Failed to fetch collaboration data')
+      return response.json()
+    },
+    enabled: !!documentId
+  })
 
-    return cleanup
-  }, [onPresenceChange, roomId])
-
-  // Listen for cursor updates
-  useEffect(() => {
-    const cleanup = onMessage('cursor_movement', (data: { cursor: DocumentCursor }) => {
-      setCursors(prev => {
-        const filtered = prev.filter(c => c.userId !== data.cursor.userId)
-        return [...filtered, data.cursor]
+  // Apply change mutation
+  const applyChangeMutation = useMutation({
+    mutationFn: async (change: DocumentChange) => {
+      const response = await fetch(`/api/documents/${documentId}/changes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(change)
       })
-    })
-
-    return cleanup
-  }, [onMessage])
-
-  // Listen for document changes
-  useEffect(() => {
-    const cleanup = onMessage('text_change', (data: { change: DocumentChange }) => {
-      const change = data.change
+      if (!response.ok) throw new Error('Failed to apply change')
+      return response.json()
+    },
+    onSuccess: (data, variables) => {
+      // Update local state
+      setPendingChanges(prev => prev.filter(c => c.id !== variables.id))
       
-      if (change.userId === user?.id) {
-        // Remove from pending changes if it's our change
-        setPendingChanges(prev => prev.filter(c => c.id !== change.id))
+      // Update collaboration store
+      collaborationStore.actions.applyDocumentChange(documentId, variables)
+    }
+  })
+
+  // Resolve conflict mutation
+  const resolveConflictMutation = useMutation({
+    mutationFn: async ({ conflictId, resolution }: { 
+      conflictId: string
+      resolution: 'accept' | 'reject' | 'merge'
+    }) => {
+      const response = await fetch(`/api/documents/${documentId}/conflicts/${conflictId}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolution })
+      })
+      if (!response.ok) throw new Error('Failed to resolve conflict')
+      return response.json()
+    },
+    onSuccess: (_, { conflictId }) => {
+      setConflicts(prev => prev.filter(c => c.id !== conflictId))
+    }
+  })
+
+  // Load initial data
+  useEffect(() => {
+    if (collaborationData) {
+      setCursors(collaborationData.cursors || [])
+      setPendingChanges(collaborationData.pendingChanges || [])
+      setConflicts(collaborationData.conflicts || [])
+      lastProcessedTimestamp.current = collaborationData.lastProcessed
+    }
+  }, [collaborationData])
+
+  // Set up WebSocket listeners for real-time updates
+  useEffect(() => {
+    const unsubscribeCursor = onMessage('cursor_update', handleCursorUpdate)
+    const unsubscribeChange = onMessage('document_change', handleRemoteChange)
+    const unsubscribeConflict = onMessage('conflict_detected', handleConflictDetected)
+    const unsubscribeResolution = onMessage('conflict_resolved', handleConflictResolved)
+    const unsubscribeTransform = onMessage('operation_transformed', handleOperationTransformed)
+
+    return () => {
+      unsubscribeCursor()
+      unsubscribeChange()
+      unsubscribeConflict()
+      unsubscribeResolution()
+      unsubscribeTransform()
+    }
+  }, [documentId])
+
+  // Handle cursor updates from other users
+  const handleCursorUpdate = useCallback((data: any) => {
+    if (data.userId !== currentUserId && data.assetId === documentId) {
+      setCursors(prev => {
+        const existing = prev.findIndex(c => c.userId === data.userId)
+        const cursor: DocumentCursor = {
+          userId: data.userId,
+          assetId: documentId,
+          position: data.position,
+          selection: data.selection,
+          color: data.color || '#3B82F6',
+          timestamp: data.timestamp || new Date().toISOString()
+        }
+
+        if (existing >= 0) {
+          const updated = [...prev]
+          updated[existing] = cursor
+          return updated
+        } else {
+          return [...prev, cursor]
+        }
+      })
+    }
+  }, [currentUserId, documentId])
+
+  // Handle remote document changes
+  const handleRemoteChange = useCallback((data: DocumentChange) => {
+    if (data.userId !== currentUserId && data.assetId === documentId) {
+      if (enableOperationalTransform) {
+        processRemoteChangeWithOT(data)
       } else {
-        // Apply remote change
-        applyRemoteChange(change)
+        applyRemoteChangeDirectly(data)
       }
-    })
+    }
+  }, [currentUserId, documentId, enableOperationalTransform])
 
-    return cleanup
-  }, [onMessage, user?.id])
-
-  // Update cursor position
-  const updateCursor = useCallback((position: { line: number; column: number }): void => {
-    if (!user || !isConnected) return
-
-    currentCursor.current = position
-
-    // Debounce cursor updates
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current)
+  // Handle conflict detection
+  const handleConflictDetected = useCallback((data: any) => {
+    const conflict: ConflictResolution = {
+      id: data.conflictId,
+      conflictType: data.type,
+      operations: data.operations,
+      resolution: conflictResolution,
     }
 
-    debounceTimeout.current = setTimeout(() => {
-      const cursor: DocumentCursor = {
-        userId: user?.id as UserId,
-        assetId,
-        position,
-        color: generateUserColor(user?.id || ''),
-        timestamp: new Date().toISOString()
+    setConflicts(prev => [...prev, conflict])
+
+    // Auto-resolve if configured
+    if (conflictResolution === 'automatic') {
+      setTimeout(() => {
+        resolveConflict(conflict.id, 'merge')
+      }, 1000)
+    } else if (conflictResolution === 'last-writer-wins') {
+      setTimeout(() => {
+        resolveConflict(conflict.id, 'accept')
+      }, 100)
+    }
+  }, [conflictResolution])
+
+  // Handle conflict resolution
+  const handleConflictResolved = useCallback((data: any) => {
+    setConflicts(prev => prev.filter(c => c.id !== data.conflictId))
+    
+    // Apply resolved operations
+    if (data.resolvedOperations) {
+      data.resolvedOperations.forEach((op: DocumentChange) => {
+        applyRemoteChangeDirectly(op)
+      })
+    }
+  }, [])
+
+  // Handle operational transform results
+  const handleOperationTransformed = useCallback((data: any) => {
+    const transformId = data.transformId
+    const timeout = pendingTransforms.current.get(transformId)
+    
+    if (timeout) {
+      clearTimeout(timeout)
+      pendingTransforms.current.delete(transformId)
+    }
+
+    // Apply transformed operation
+    if (data.transformedOperation) {
+      applyRemoteChangeDirectly(data.transformedOperation)
+    }
+
+    // Update transform queue
+    setTransformQueue(prev => 
+      prev.map(t => 
+        t.id === transformId 
+          ? { ...t, applied: true, transformedBy: [...t.transformedBy, data.transformedBy] }
+          : t
+      )
+    )
+  }, [])
+
+  // Process remote change with Operational Transform
+  const processRemoteChangeWithOT = useCallback((change: DocumentChange) => {
+    const transformId = `transform_${operationIdCounter.current++}`
+    
+    // Add to transform queue
+    const transform: OperationalTransform = {
+      id: transformId,
+      operation: change,
+      transformedBy: [],
+      applied: false,
+      timestamp: new Date().toISOString()
+    }
+
+    setTransformQueue(prev => [...prev, transform])
+
+    // Set up timeout for transformation
+    const timeout = setTimeout(() => {
+      console.warn(`Transform timeout for ${transformId}, applying directly`)
+      applyRemoteChangeDirectly(change)
+      
+      setTransformQueue(prev => prev.filter(t => t.id !== transformId))
+      pendingTransforms.current.delete(transformId)
+    }, transformTimeout)
+
+    pendingTransforms.current.set(transformId, timeout)
+
+    // Request transformation from server
+    sendMessage('transform_operation', {
+      transformId,
+      operation: change,
+      currentState: documentState ? {
+        content: documentState.content,
+        version: documentState.version,
+        pendingOperations: documentState.pendingOperations
+      } : null
+    }, `document_${documentId}`)
+  }, [documentId, documentState, transformTimeout, sendMessage])
+
+  // Apply remote change directly (without OT)
+  const applyRemoteChangeDirectly = useCallback((change: DocumentChange) => {
+    // Update cursors based on change (simple position adjustment)
+    setCursors(prev => prev.map(cursor => {
+      if (cursor.userId === change.userId) return cursor
+      
+      const adjustedCursor = { ...cursor }
+      
+      if (change.type === 'insert' && change.position && 
+          cursor.position.line >= change.position.line) {
+        if (cursor.position.line === change.position.line && 
+            cursor.position.column >= change.position.column) {
+          adjustedCursor.position.column += change.content?.length || 0
+        }
+      } else if (change.type === 'delete' && change.position && change.length &&
+                 cursor.position.line >= change.position.line) {
+        if (cursor.position.line === change.position.line && 
+            cursor.position.column >= change.position.column) {
+          adjustedCursor.position.column = Math.max(
+            change.position.column,
+            cursor.position.column - change.length
+          )
+        }
       }
+      
+      return adjustedCursor
+    }))
 
-      sendMessage('cursor_movement', { cursor }, roomId)
-    }, 100) // Short debounce for cursors
-  }, [user, isConnected, assetId, sendMessage, roomId])
+    // Track processed timestamp
+    lastProcessedTimestamp.current = change.timestamp
+  }, [])
 
-  // Apply document change
-  const applyChange = useCallback((
-    change: Omit<DocumentChange, 'id' | 'userId' | 'timestamp'>
-  ): void => {
-    if (!user || !isConnected) return
-
+  // Apply a local change
+  const applyChange = useCallback((change: Omit<DocumentChange, 'id' | 'userId' | 'timestamp'>) => {
     const fullChange: DocumentChange = {
       ...change,
-      id: nanoid(),
-      userId: user?.id as UserId,
-      assetId,
+      id: `change_${Date.now()}_${operationIdCounter.current++}`,
+      userId: currentUserId,
+      assetId: documentId,
       timestamp: new Date().toISOString()
     }
 
     // Add to pending changes
-    setPendingChanges(prev => [...prev, fullChange])
-    
-    // Add to queue for potential conflict resolution
-    changeQueue.current.push(fullChange)
-
-    // Send change immediately
-    sendMessage('text_change', { change: fullChange }, roomId)
-    lastChangeId.current = fullChange.id
-
-    // Clean up old changes in queue
-    setTimeout(() => {
-      changeQueue.current = changeQueue.current.filter(c => c.id !== fullChange.id)
-    }, 30000) // Keep for 30 seconds for conflict resolution
-  }, [user, isConnected, assetId, sendMessage, roomId])
-
-  // Apply remote change with conflict resolution
-  const applyRemoteChange = useCallback((remoteChange: DocumentChange): void => {
-    // Find conflicting local changes
-    const conflicts = changeQueue.current.filter(localChange => 
-      isConflicting(localChange, remoteChange)
-    )
-
-    if (conflicts.length === 0) {
-      // No conflicts, apply directly
-      onChangeApplied(remoteChange)
-      return
-    }
-
-    // Handle conflicts based on resolution strategy
-    switch (conflictResolution) {
-      case 'last-writer-wins':
-        // Apply the most recent change
-        const mostRecent = [...conflicts, remoteChange]
-          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
-        
-        if (mostRecent.id !== remoteChange.id) {
-          // Local change wins, reject remote
-          return
-        }
-        
-        onChangeApplied(remoteChange)
-        break
-
-      case 'automatic':
-        // Use operational transform to merge changes
-        const transformedChange = transformChange(remoteChange, conflicts)
-        onChangeApplied(transformedChange)
-        break
-
-      case 'manual':
-        // Add to pending for manual resolution
-        setPendingChanges(prev => [...prev, remoteChange])
-        break
-    }
-  }, [conflictResolution])
-
-  // Resolve conflict manually
-  const resolveConflict = useCallback((
-    changeId: string, 
-    resolution: 'accept' | 'reject'
-  ): void => {
     setPendingChanges(prev => {
-      const change = prev.find(c => c.id === changeId)
-      const filtered = prev.filter(c => c.id !== changeId)
-
-      if (change && resolution === 'accept') {
-        onChangeApplied(change)
-      }
-
-      return filtered
+      const updated = [...prev, fullChange]
+      // Keep only recent changes
+      return updated.length > maxPendingChanges 
+        ? updated.slice(-maxPendingChanges)
+        : updated
     })
-  }, [])
 
-  // Helper function to check if changes conflict
-  const isConflicting = (change1: DocumentChange, change2: DocumentChange): boolean => {
-    // Simple conflict detection based on position overlap
-    if (change1.position.line !== change2.position.line) {
-      return false
+    // Apply optimistically to local state
+    collaborationStore.actions.applyDocumentChange(documentId, fullChange)
+
+    // Send to server
+    applyChangeMutation.mutate(fullChange)
+
+    // Broadcast to other users
+    sendMessage('document_change', fullChange, `document_${documentId}`)
+  }, [currentUserId, documentId, maxPendingChanges, sendMessage])
+
+  // Resolve a conflict
+  const resolveConflict = useCallback((conflictId: string, resolution: 'accept' | 'reject' | 'merge') => {
+    const conflict = conflicts.find(c => c.id === conflictId)
+    if (!conflict) return
+
+    // Apply resolution logic
+    switch (resolution) {
+      case 'accept':
+        // Accept the remote operations
+        conflict.operations.forEach(op => {
+          if (op.userId !== currentUserId) {
+            applyRemoteChangeDirectly(op)
+          }
+        })
+        break
+        
+      case 'reject':
+        // Keep local state, reject remote operations
+        break
+        
+      case 'merge':
+        // Attempt to merge operations (simplified)
+        const sortedOps = [...conflict.operations].sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        sortedOps.forEach(op => applyRemoteChangeDirectly(op))
+        break
     }
 
-    // Check if positions overlap
-    const c1End = change1.position.column + (change1.length || change1.content?.length || 0)
-    const c2End = change2.position.column + (change2.length || change2.content?.length || 0)
+    // Submit resolution
+    resolveConflictMutation.mutate({ conflictId, resolution })
 
-    return !(c1End <= change2.position.column || c2End <= change1.position.column)
-  }
+    // Broadcast resolution
+    sendMessage('conflict_resolved', {
+      conflictId,
+      resolution,
+      resolvedBy: currentUserId
+    }, `document_${documentId}`)
+  }, [conflicts, currentUserId, documentId, sendMessage])
 
-  // Simple operational transform for text changes
-  const transformChange = (change: DocumentChange, conflicts: DocumentChange[]): DocumentChange => {
-    let transformedChange = { ...change }
+  // Update cursor position
+  const updateCursor = useCallback((position: { line: number; column: number }, selection?: any) => {
+    const cursor: DocumentCursor = {
+      userId: currentUserId,
+      assetId: documentId,
+      position,
+      selection,
+      color: '#3B82F6', // Default blue
+      timestamp: new Date().toISOString()
+    }
 
-    for (const conflict of conflicts) {
-      if (conflict.position.line === change.position.line) {
-        // Adjust column position based on earlier changes
-        if (conflict.position.column < change.position.column) {
-          const offset = conflict.type === 'insert' 
-            ? (conflict.content?.length || 0)
-            : -(conflict.length || 0)
-          
-          transformedChange.position.column += offset
-        }
+    // Update local cursors
+    setCursors(prev => {
+      const existing = prev.findIndex(c => c.userId === currentUserId)
+      if (existing >= 0) {
+        const updated = [...prev]
+        updated[existing] = cursor
+        return updated
+      } else {
+        return [...prev, cursor]
       }
+    })
+
+    // Update collaboration store
+    collaborationStore.actions.updateCursor(documentId, position)
+
+    // Broadcast cursor update
+    sendMessage('cursor_update', {
+      userId: currentUserId,
+      assetId: documentId,
+      position,
+      selection,
+      timestamp: cursor.timestamp
+    }, `document_${documentId}`)
+  }, [currentUserId, documentId, sendMessage])
+
+  // Get collaboration statistics
+  const getCollaborationStats = useCallback(() => {
+    return {
+      activeCursors: cursors.filter(c => 
+        Date.now() - new Date(c.timestamp).getTime() < 60000 // Active in last minute
+      ).length,
+      pendingChanges: pendingChanges.length,
+      unresolvedConflicts: conflicts.length,
+      transformQueueSize: transformQueue.filter(t => !t.applied).length,
+      lastActivity: lastProcessedTimestamp.current
     }
+  }, [cursors, pendingChanges, conflicts, transformQueue])
 
-    return transformedChange
-  }
+  // Clear expired cursors
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now()
+      setCursors(prev => 
+        prev.filter(cursor => 
+          now - new Date(cursor.timestamp).getTime() < 300000 // 5 minutes
+        )
+      )
+    }, 60000) // Check every minute
 
-  // Generate consistent color for user
-  const generateUserColor = (userId: string): string => {
-    const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-    ]
-    
-    let hash = 0
-    for (let i = 0; i < userId.length; i++) {
-      hash = userId.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    
-    return colors[Math.abs(hash) % colors.length]
-  }
-
-  // Callback for when changes are applied (to be implemented by consumer)
-  const onChangeApplied = useCallback((change: DocumentChange) => {
-    // Default implementation - this can be extended by consumers
-    console.log('Remote change applied:', change)
+    return () => clearInterval(interval)
   }, [])
 
-  // Cleanup on unmount
+  // Cleanup pending transforms on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current)
-      }
+      pendingTransforms.current.forEach(timeout => clearTimeout(timeout))
+      pendingTransforms.current.clear()
     }
   }, [])
 
   return {
-    activeUsers,
-    cursors: cursors.filter(c => c.userId !== user?.id), // Exclude own cursor
+    // State
+    cursors: cursors.filter(c => c.userId !== currentUserId), // Exclude own cursor
     pendingChanges,
-    conflictResolution,
-    updateCursor,
+    conflicts,
+    transformQueue,
+    isProcessingChanges,
+    
+    // Actions
     applyChange,
-    resolveConflict
+    resolveConflict,
+    updateCursor,
+    
+    // Utilities
+    getCollaborationStats,
+    
+    // Status
+    isOperationalTransformEnabled: enableOperationalTransform,
+    conflictResolutionMode: conflictResolution,
+    
+    // Loading states
+    isApplyingChange: applyChangeMutation.isPending,
+    isResolvingConflict: resolveConflictMutation.isPending
   }
 }

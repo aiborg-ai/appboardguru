@@ -19,12 +19,16 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 // Validation schemas using Zod
 const createAnnotationSchema = z.object({
-  annotationType: z.enum(['highlight', 'area', 'textbox', 'drawing', 'stamp']),
+  annotationType: z.enum(['highlight', 'area', 'textbox', 'drawing', 'stamp', 'voice']),
   content: z.object({
     text: z.string().optional(),
-    image: z.string().optional()
-  }).refine(data => data.text || data.image, {
-    message: 'Either text or image content is required'
+    image: z.string().optional(),
+    audioUrl: z.string().optional(),
+    audioTranscription: z.string().optional(),
+    audioDuration: z.number().optional(),
+    audioFormat: z.string().optional()
+  }).refine(data => data.text || data.image || data.audioUrl, {
+    message: 'Either text, image, or audio content is required'
   }),
   pageNumber: z.number().int().positive(),
   position: z.object({
@@ -50,7 +54,11 @@ const createAnnotationSchema = z.object({
   commentText: z.string().max(2000).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   opacity: z.number().min(0).max(1).optional(),
-  isPrivate: z.boolean().optional()
+  isPrivate: z.boolean().optional(),
+  // Voice annotation specific fields
+  audioData: z.string().optional(),
+  audioFormat: z.string().optional(),
+  transcribeAudio: z.boolean().optional()
 })
 
 const updateAnnotationSchema = z.object({
@@ -65,7 +73,7 @@ const queryParametersSchema = z.object({
   page: z.string().optional(),
   limit: z.string().optional(),
   offset: z.string().optional(),
-  type: z.enum(['highlight', 'area', 'textbox', 'drawing', 'stamp']).optional(),
+  type: z.enum(['highlight', 'area', 'textbox', 'drawing', 'stamp', 'voice']).optional(),
   private: z.string().optional(),
   resolved: z.string().optional(),
   pageNumber: z.string().optional()
@@ -208,8 +216,8 @@ export class AnnotationController {
 
       // Get asset to verify access and get organization ID
       const { data: asset } = await supabase
-        .from('board_packs')
-        .select('id, organization_id, title')
+        .from('assets')
+        .select('id, organization_id, file_name')
         .eq('id', assetId)
         .single()
 

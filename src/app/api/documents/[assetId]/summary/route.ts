@@ -1,28 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createDocumentController } from '@/lib/controllers/document.controller'
+/**
+ * Document Summary API Endpoint
+ * Delegates to DocumentController for consistent architecture
+ */
 
-// Initialize controller
-let controller: any = null
+import { NextRequest, NextResponse } from 'next/server';
+import { DocumentController } from '@/lib/api/controllers/document.controller';
 
-async function getController() {
-  if (!controller) {
-    controller = await createDocumentController()
-  }
-  return controller
-}
+const documentController = new DocumentController();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { assetId: string } }
-) {
-  const documentController = await getController()
-  return documentController.getSummaries(request, { params })
+  context: { params: { assetId: string } }
+): Promise<NextResponse> {
+  return documentController.getSummaries(request, context);
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { assetId: string } }
-) {
-  const documentController = await getController()
-  return documentController.generateSummary(request, { params })
+  context: { params: { assetId: string } }
+): Promise<NextResponse> {
+  return documentController.generateSummary(request, context);
+}
+
+export async function OPTIONS(): Promise<NextResponse> {
+  return documentController.handleOptions();
 }

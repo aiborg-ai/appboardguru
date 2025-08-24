@@ -19,6 +19,7 @@ import { CompliancePanel } from './CompliancePanel'
 import { ResourceQuotas } from './ResourceQuotas'
 import { NotificationPreferences } from './NotificationPreferences'
 import { PrivacyControls } from './PrivacyControls'
+import type { UserId, OrganizationId } from '@/types/branded'
 
 type AccountSettingsSection = 
   | 'overview' 
@@ -30,7 +31,13 @@ type AccountSettingsSection =
   | 'notifications' 
   | 'privacy'
 
-export function AccountSettingsTab() {
+interface AccountSettingsTabProps {
+  accountType: 'Superuser' | 'Administrator' | 'User' | 'Viewer'
+  userId: UserId
+  organizationId?: OrganizationId | null
+}
+
+export function AccountSettingsTab({ accountType, userId, organizationId }: AccountSettingsTabProps) {
   const [activeSection, setActiveSection] = useState<AccountSettingsSection>('overview')
 
   const sections = [

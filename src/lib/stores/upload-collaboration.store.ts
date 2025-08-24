@@ -46,6 +46,7 @@ interface UploadCollaborationStore extends CollaborationState {
   broadcastUploadProgress: (fileId: string, fileName: string, progress: number, bytesUploaded: number, totalBytes: number, speed?: number) => Promise<void>
   broadcastUploadCompleted: (fileId: string, asset: UploadedAsset, duration: number) => Promise<void>
   broadcastUploadFailed: (fileId: string, fileName: string, error: string, retryCount: number) => Promise<void>
+  broadcastUploadRetry: (fileId: string, fileName: string, attempt: number, maxRetries: number) => Promise<void>
   
   // Presence actions
   updatePresence: (presence: UserPresence[]) => void
@@ -179,6 +180,13 @@ export const useUploadCollaborationStore = create<UploadCollaborationStore>()(
       }
     },
     
+    broadcastUploadRetry: async (fileId: string, fileName: string, attempt: number, maxRetries: number) => {
+      const { collaborationService } = get()
+      if (collaborationService) {
+        await collaborationService.broadcastUploadRetry(fileId, fileName, attempt, maxRetries)
+      }
+    },
+    
     // Event handling
     handleCollaborationEvent: (event: CollaborationEvent) => {
       const state = get()
@@ -247,6 +255,23 @@ export const useUploadCollaborationStore = create<UploadCollaborationStore>()(
           get().addNotification({
             type: 'error',
             message: `Upload failed: ${(event as any).data.fileName}`,
+            userId: event.userId
+          })
+          break
+          
+        case 'upload:retry':
+          // Update retry status and add notification
+          set({
+            teamUploads: state.teamUploads.map(upload =>
+              upload.fileId === (event as any).data.fileId
+                ? { ...upload, status: 'retrying', progress: 0 }
+                : upload
+            )
+          })
+          
+          get().addNotification({
+            type: 'info',
+            message: `${event.user.name} is retrying upload: ${(event as any).data.fileName} (${(event as any).data.attempt}/${(event as any).data.maxRetries})`,
             userId: event.userId
           })
           break

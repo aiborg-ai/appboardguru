@@ -1,0 +1,367 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'BoardGuru MCP Demo Hosting - Production Ready Infrastructure'
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: 'demo.boardguru.ai'
+    Description: 'Domain name for the demo site'
+  
+  CertificateArn:
+    Type: String
+    Description: 'ARN of SSL certificate in ACM'
+    
+  Environment:
+    Type: String
+    Default: 'production'
+    AllowedValues: ['production', 'staging']
+
+Resources:
+  # S3 Bucket for Static Assets
+  DemoAssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${DomainName}-assets'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: 'demo.html'
+        ErrorDocument: 'error.html'
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ['*']
+            AllowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD']
+            AllowedHeaders: ['*']
+            MaxAge: 3600
+
+  # S3 Bucket Policy
+  DemoAssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DemoAssetsBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub '${DemoAssetsBucket}/*'
+
+  # CloudFront Distribution
+  DemoCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref DomainName
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt DemoAssetsBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+          - Id: APIOrigin
+            DomainName: !GetAtt DemoALB.DNSName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: ['TLSv1.2']
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'POST', 'PATCH', 'DELETE']
+          Compress: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # Managed caching disabled
+        CacheBehaviors:
+          - PathPattern: '/api/*'
+            TargetOriginId: APIOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'POST', 'PATCH', 'DELETE']
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+          - PathPattern: '/health'
+            TargetOriginId: APIOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: ['GET', 'HEAD']
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Enabled: true
+        HttpVersion: http2
+        DefaultRootObject: 'demo.html'
+        Comment: 'BoardGuru MCP Demo Distribution'
+        PriceClass: PriceClass_100
+
+  # VPC for ECS
+  DemoVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${DomainName}-vpc'
+
+  # Internet Gateway
+  DemoIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${DomainName}-igw'
+
+  DemoIGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref DemoVPC
+      InternetGatewayId: !Ref DemoIGW
+
+  # Subnets
+  DemoSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DemoVPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  DemoSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DemoVPC
+      CidrBlock: '10.0.2.0/24'
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  # Route Table
+  DemoRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DemoVPC
+
+  DemoRoute:
+    Type: AWS::EC2::Route
+    DependsOn: DemoIGWAttachment
+    Properties:
+      RouteTableId: !Ref DemoRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref DemoIGW
+
+  DemoSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref DemoSubnet1
+      RouteTableId: !Ref DemoRouteTable
+
+  DemoSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref DemoSubnet2
+      RouteTableId: !Ref DemoRouteTable
+
+  # Security Groups
+  DemoALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for ALB'
+      VpcId: !Ref DemoVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: '0.0.0.0/0'
+
+  DemoECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for ECS tasks'
+      VpcId: !Ref DemoVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3001
+          SourceSecurityGroupId: !Ref DemoALBSecurityGroup
+
+  # Application Load Balancer
+  DemoALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${DomainName}-alb'
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref DemoSubnet1
+        - !Ref DemoSubnet2
+      SecurityGroups:
+        - !Ref DemoALBSecurityGroup
+
+  # Target Group
+  DemoTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${DomainName}-tg'
+      Port: 3000
+      Protocol: HTTP
+      VpcId: !Ref DemoVPC
+      TargetType: ip
+      HealthCheckPath: '/health'
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+
+  # ALB Listener
+  DemoALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref DemoTargetGroup
+      LoadBalancerArn: !Ref DemoALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+
+  # ECS Cluster
+  DemoECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub '${DomainName}-cluster'
+      CapacityProviders: ['FARGATE']
+
+  # ECS Task Definition
+  DemoTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub '${DomainName}-task'
+      NetworkMode: awsvpc
+      RequiresAttributes:
+        - Name: com.amazonaws.ecs.capability.docker-remote-api.1.18
+      Cpu: '512'
+      Memory: '1024'
+      ExecutionRoleArn: !Ref DemoTaskExecutionRole
+      TaskRoleArn: !Ref DemoTaskRole
+      ContainerDefinitions:
+        - Name: boardguru-mcp-demo
+          Image: 'boardguru/governance-mcp:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+              Protocol: tcp
+            - ContainerPort: 3001
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: DEMO_MODE
+              Value: 'true'
+            - Name: PORT
+              Value: '3000'
+            - Name: DEMO_PORT
+              Value: '3001'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref DemoLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - 'curl -f http://localhost:3000/health || exit 1'
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+
+  # ECS Service
+  DemoECSService:
+    Type: AWS::ECS::Service
+    DependsOn: DemoALBListener
+    Properties:
+      ServiceName: !Sub '${DomainName}-service'
+      Cluster: !Ref DemoECSCluster
+      TaskDefinition: !Ref DemoTaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: 2
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref DemoECSSecurityGroup
+          Subnets:
+            - !Ref DemoSubnet1
+            - !Ref DemoSubnet2
+          AssignPublicIp: ENABLED
+      LoadBalancers:
+        - ContainerName: boardguru-mcp-demo
+          ContainerPort: 3000
+          TargetGroupArn: !Ref DemoTargetGroup
+
+  # IAM Roles
+  DemoTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  DemoTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+  # CloudWatch Log Group
+  DemoLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/ecs/${DomainName}'
+      RetentionInDays: 30
+
+  # Route53 Record
+  DemoRoute53Record:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: 'boardguru.ai.'
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt DemoCloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID
+
+Outputs:
+  DemoURL:
+    Description: 'Demo site URL'
+    Value: !Sub 'https://${DomainName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-DemoURL'
+
+  CloudFrontDistributionId:
+    Description: 'CloudFront Distribution ID'
+    Value: !Ref DemoCloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDistributionId'
+
+  S3BucketName:
+    Description: 'S3 bucket for static assets'
+    Value: !Ref DemoAssetsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-S3BucketName'

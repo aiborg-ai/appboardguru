@@ -44,42 +44,39 @@ export class AnnotationService implements IAnnotationService {
     assetId: AssetId, 
     criteria?: Partial<AnnotationQueryCriteria>
   ): Promise<AnnotationsResult> {
-    try {
-      const annotations = await this.annotationRepository.findByAssetId(assetId, criteria)
-      return { success: true, data: annotations }
-    } catch (error) {
+    const result = await this.annotationRepository.findByAssetId(assetId, criteria)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to fetch annotations: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to fetch annotations: ${result.error.message}`) 
       }
     }
+    return { success: true, data: result.data }
   }
 
   async getAnnotationById(id: AnnotationId): Promise<SingleAnnotationResult> {
-    try {
-      const annotation = await this.annotationRepository.findById(id)
-      if (!annotation) {
-        return { success: false, error: new Error('Annotation not found') }
-      }
-      return { success: true, data: annotation }
-    } catch (error) {
+    const result = await this.annotationRepository.findById(id)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to fetch annotation: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to fetch annotation: ${result.error.message}`) 
       }
     }
+    if (!result.data) {
+      return { success: false, error: new Error('Annotation not found') }
+    }
+    return { success: true, data: result.data }
   }
 
   async getAnnotationsByPage(assetId: AssetId, pageNumber: number): Promise<AnnotationsResult> {
-    try {
-      const annotations = await this.annotationRepository.findByPageNumber(assetId, pageNumber)
-      return { success: true, data: annotations }
-    } catch (error) {
+    const result = await this.annotationRepository.findByPageNumber(assetId, pageNumber)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to fetch page annotations: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to fetch page annotations: ${result.error.message}`) 
       }
     }
+    return { success: true, data: result.data }
   }
 
   async createAnnotation(
@@ -95,15 +92,14 @@ export class AnnotationService implements IAnnotationService {
       return { success: false, error: new Error(`Validation failed: ${errorMessage}`) }
     }
 
-    try {
-      const annotation = await this.annotationRepository.create(data, assetId, userId, organizationId)
-      return { success: true, data: annotation }
-    } catch (error) {
+    const result = await this.annotationRepository.create(data, assetId, userId, organizationId)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to create annotation: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to create annotation: ${result.error.message}`) 
       }
     }
+    return { success: true, data: result.data }
   }
 
   async updateAnnotation(
@@ -124,15 +120,14 @@ export class AnnotationService implements IAnnotationService {
       return { success: false, error: new Error(`Validation failed: ${errorMessage}`) }
     }
 
-    try {
-      const annotation = await this.annotationRepository.update(id, data)
-      return { success: true, data: annotation }
-    } catch (error) {
+    const result = await this.annotationRepository.update(id, data)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to update annotation: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to update annotation: ${result.error.message}`) 
       }
     }
+    return { success: true, data: result.data }
   }
 
   async deleteAnnotation(id: AnnotationId, userId: UserId): Promise<Result<void>> {
@@ -142,27 +137,25 @@ export class AnnotationService implements IAnnotationService {
       return { success: false, error: new Error('Permission denied: Cannot delete this annotation') }
     }
 
-    try {
-      await this.annotationRepository.softDelete(id, userId)
-      return { success: true, data: undefined }
-    } catch (error) {
+    const result = await this.annotationRepository.softDelete(id, userId)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to delete annotation: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to delete annotation: ${result.error.message}`) 
       }
     }
+    return { success: true, data: undefined }
   }
 
   async countAnnotations(criteria: AnnotationQueryCriteria): Promise<AnnotationCountResult> {
-    try {
-      const count = await this.annotationRepository.count(criteria)
-      return { success: true, data: count }
-    } catch (error) {
+    const result = await this.annotationRepository.count(criteria)
+    if (!result.success) {
       return { 
         success: false, 
-        error: new Error(`Failed to count annotations: ${error instanceof Error ? error.message : 'Unknown error'}`) 
+        error: new Error(`Failed to count annotations: ${result.error.message}`) 
       }
     }
+    return { success: true, data: result.data }
   }
 
   validateAnnotationData(data: CreateAnnotationRequest): AnnotationValidationResult {
@@ -299,57 +292,47 @@ export class AnnotationService implements IAnnotationService {
   }
 
   async canUserAccessAnnotation(annotationId: AnnotationId, userId: UserId): Promise<boolean> {
-    try {
-      const annotation = await this.annotationRepository.findById(annotationId)
-      if (!annotation) {
-        return false
-      }
-
-      // User can access their own annotations
-      if (annotation.createdBy === userId) {
-        return true
-      }
-
-      // User can access public annotations
-      if (!annotation.isPrivate) {
-        return true
-      }
-
-      // For private annotations, additional organization/permission checks would go here
-      // This would typically involve checking organization membership
-      return false
-    } catch (error) {
+    const result = await this.annotationRepository.findById(annotationId)
+    if (!result.success || !result.data) {
       return false
     }
+
+    const annotation = result.data
+    
+    // User can access their own annotations
+    if (annotation.createdBy === userId) {
+      return true
+    }
+
+    // User can access public annotations
+    if (!annotation.isPrivate) {
+      return true
+    }
+
+    // For private annotations, additional organization/permission checks would go here
+    // This would typically involve checking organization membership
+    return false
   }
 
   async canUserEditAnnotation(annotationId: AnnotationId, userId: UserId): Promise<boolean> {
-    try {
-      const annotation = await this.annotationRepository.findById(annotationId)
-      if (!annotation) {
-        return false
-      }
-
-      // Only the creator can edit their annotation
-      // In a more complex system, organization admins might also be allowed
-      return annotation.createdBy === userId
-    } catch (error) {
+    const result = await this.annotationRepository.findById(annotationId)
+    if (!result.success || !result.data) {
       return false
     }
+
+    // Only the creator can edit their annotation
+    // In a more complex system, organization admins might also be allowed
+    return result.data.createdBy === userId
   }
 
   async canUserDeleteAnnotation(annotationId: AnnotationId, userId: UserId): Promise<boolean> {
-    try {
-      const annotation = await this.annotationRepository.findById(annotationId)
-      if (!annotation) {
-        return false
-      }
-
-      // Only the creator can delete their annotation
-      // In a more complex system, organization admins might also be allowed
-      return annotation.createdBy === userId
-    } catch (error) {
+    const result = await this.annotationRepository.findById(annotationId)
+    if (!result.success || !result.data) {
       return false
     }
+
+    // Only the creator can delete their annotation
+    // In a more complex system, organization admins might also be allowed
+    return result.data.createdBy === userId
   }
 }

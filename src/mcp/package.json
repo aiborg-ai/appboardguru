@@ -16,13 +16,18 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:demo": "echo 'Demo build completed - using pre-built assets'",
     "start": "node dist/server.js",
     "dev": "tsx server.ts",
     "test": "jest",
     "lint": "eslint *.ts",
     "package": "npm run build && npm pack",
     "publish:npm": "npm publish --access public",
-    "validate": "npm run lint && npm run test && npm run build"
+    "validate": "npm run lint && npm run test && npm run build",
+    "demo": "node demo/demo-server.cjs",
+    "install-global": "npm install -g .",
+    "docker:build": "docker build -t boardguru/governance-mcp .",
+    "docker:run": "docker run -p 3000:3000 boardguru/governance-mcp"
   },
   "bin": {
     "boardguru-governance-mcp": "./dist/server.js"
@@ -31,22 +36,38 @@
     "dist/**/*",
     "README.md",
     "LICENSE",
-    "package.json"
+    "package.json",
+    "demo/**/*"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
+    "rate-limiter-flexible": "^5.0.3",
+    "winston": "^3.11.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.0.0",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.0",
-    "tsx": "^4.7.0",
-    "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.0.0",
     "jest": "^29.0.0",
-    "@types/jest": "^29.0.0",
-    "ts-jest": "^29.0.0"
+    "nodemon": "^3.0.2",
+    "ts-jest": "^29.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vercel": "^46.0.2"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -67,17 +88,31 @@
       {
         "name": "Starter",
         "price": "£2,500/month",
-        "features": ["Up to 5 boards", "Basic AI insights", "Email support"]
+        "features": [
+          "Up to 5 boards",
+          "Basic AI insights",
+          "Email support"
+        ]
       },
       {
-        "name": "Enterprise", 
+        "name": "Enterprise",
         "price": "£8,333/month",
-        "features": ["Up to 50 boards", "Advanced AI & predictions", "24/7 support", "Custom integrations"]
+        "features": [
+          "Up to 50 boards",
+          "Advanced AI & predictions",
+          "24/7 support",
+          "Custom integrations"
+        ]
       },
       {
         "name": "Government",
-        "price": "£12,500/month", 
-        "features": ["Unlimited boards", "Security clearance", "On-premise deployment", "Regulatory specialization"]
+        "price": "£12,500/month",
+        "features": [
+          "Unlimited boards",
+          "Security clearance",
+          "On-premise deployment",
+          "Regulatory specialization"
+        ]
       }
     ],
     "paymentTerms": "Annual subscription required",

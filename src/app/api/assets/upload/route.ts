@@ -80,41 +80,121 @@ export async function POST(request: NextRequest) {
     const vaultId = formData.get('vaultId') as string || null
     const tagsString = formData.get('tags') as string
 
+    // Enhanced file validation
+    const validationErrors: { field: string; message: string; code: string }[] = []
+
     // Basic validation
     if (!file) {
-      return NextResponse.json({ 
-        error: 'No file provided',
+      validationErrors.push({
+        field: 'file',
+        message: 'No file provided. Please select a file to upload.',
         code: 'FILE_REQUIRED'
-      }, { status: 400 })
+      })
     }
 
     if (!title || title.trim().length === 0) {
-      return NextResponse.json({ 
-        error: 'Title is required',
+      validationErrors.push({
+        field: 'title',
+        message: 'Title is required. Please provide a descriptive title for your file.',
         code: 'TITLE_REQUIRED'
-      }, { status: 400 })
+      })
     }
 
     if (!organizationId) {
-      return NextResponse.json({ 
-        error: 'Organization ID is required',
+      validationErrors.push({
+        field: 'organizationId',
+        message: 'Organization context is required for file uploads.',
         code: 'ORGANIZATION_REQUIRED'
-      }, { status: 400 })
+      })
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ 
-        error: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`,
-        code: 'FILE_TOO_LARGE'
-      }, { status: 400 })
+    // Enhanced file validations
+    if (file) {
+      // Check for zero-byte files
+      if (file.size === 0) {
+        validationErrors.push({
+          field: 'file',
+          message: 'Empty files are not allowed. Please select a file with content.',
+          code: 'FILE_EMPTY'
+        })
+      }
+
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        validationErrors.push({
+          field: 'file',
+          message: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit. Please choose a smaller file.`,
+          code: 'FILE_TOO_LARGE'
+        })
+      }
+
+      // Check minimum file size (prevent accidentally small files)
+      const MIN_FILE_SIZE = 10 // 10 bytes minimum
+      if (file.size < MIN_FILE_SIZE) {
+        validationErrors.push({
+          field: 'file',
+          message: 'File appears to be too small or corrupted. Please check the file and try again.',
+          code: 'FILE_TOO_SMALL'
+        })
+      }
+
+      // Validate file type
+      if (!validateFileType(file.type)) {
+        const allowedTypes = [
+          'PDF', 'DOC/DOCX', 'PPT/PPTX', 'XLS/XLSX', 
+          'TXT', 'JPG/PNG', 'MP4', 'ZIP'
+        ]
+        validationErrors.push({
+          field: 'file',
+          message: `File type "${file.type}" is not supported. Allowed types: ${allowedTypes.join(', ')}.`,
+          code: 'INVALID_FILE_TYPE'
+        })
+      }
+
+      // Check for potentially malicious file extensions
+      const fileName = file.name.toLowerCase()
+      const dangerousExtensions = ['.exe', '.bat', '.cmd', '.scr', '.msi', '.jar', '.com']
+      if (dangerousExtensions.some(ext => fileName.endsWith(ext))) {
+        validationErrors.push({
+          field: 'file',
+          message: 'Executable files are not allowed for security reasons.',
+          code: 'FILE_TYPE_BLOCKED'
+        })
+      }
+
+      // Store file buffer for later use (avoid reading twice)
+      let fileBuffer: ArrayBuffer | null = null
+      try {
+        fileBuffer = await file.arrayBuffer()
+        const buffer = Buffer.from(fileBuffer)
+        
+        // Check for executable signatures
+        const executableSignatures = [
+          Buffer.from([0x4D, 0x5A]), // PE executable
+          Buffer.from([0x7F, 0x45, 0x4C, 0x46]), // ELF executable
+          Buffer.from([0xCA, 0xFE, 0xBA, 0xBE]), // Java class file
+        ]
+        
+        if (executableSignatures.some(sig => buffer.subarray(0, sig.length).equals(sig))) {
+          validationErrors.push({
+            field: 'file',
+            message: 'File appears to contain executable code and cannot be uploaded.',
+            code: 'FILE_CONTAINS_EXECUTABLE'
+          })
+        }
+      } catch (error) {
+        console.warn('Could not validate file content:', error)
+        // Don't fail upload for content validation errors, just log them
+      }
     }
 
-    // Validate file type
-    if (!validateFileType(file.type)) {
+    // Return validation errors if any
+    if (validationErrors.length > 0) {
       return NextResponse.json({ 
-        error: `File type ${file.type} is not allowed`,
-        code: 'INVALID_FILE_TYPE'
+        error: 'File validation failed',
+        code: 'VALIDATION_FAILED',
+        validationErrors,
+        message: validationErrors.map(err => err.message).join(' ')
       }, { status: 400 })
     }
 
@@ -163,8 +243,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Convert file to buffer
-    const fileBuffer = await file.arrayBuffer()
+    // Use the file buffer we already read (or read it now if validation was skipped)
+    if (!fileBuffer) {
+      fileBuffer = await file.arrayBuffer()
+    }
     const buffer = Buffer.from(fileBuffer)
 
     // Prepare upload data
