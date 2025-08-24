@@ -1,0 +1,191 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: boardguru-ingress
+  labels:
+    app: boardguru
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "20"
+    nginx.ingress.kubernetes.io/rate-limit-requests-per-second: "10"
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; media-src 'self'; object-src 'none'; child-src 'none'; worker-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; manifest-src 'self';" always;
+    # Enable CORS for API endpoints
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://boardguru.ai,https://*.boardguru.ai"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    # Certificate management
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/acme-challenge-type: http01
+spec:
+  tls:
+  - hosts:
+    - boardguru.ai
+    - www.boardguru.ai
+    - api.boardguru.ai
+    secretName: boardguru-tls-cert
+  - hosts:
+    - staging.boardguru.ai
+    secretName: boardguru-staging-tls-cert
+  rules:
+  # Production domain
+  - host: boardguru.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: boardguru-app-service
+            port:
+              number: 3000
+  - host: www.boardguru.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: boardguru-app-service
+            port:
+              number: 3000
+  # API subdomain
+  - host: api.boardguru.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: boardguru-app-service
+            port:
+              number: 3000
+  # Staging domain
+  - host: staging.boardguru.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: boardguru-app-service
+            port:
+              number: 3000
+---
+# Blue-Green deployment ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: boardguru-blue-ingress
+  labels:
+    app: boardguru
+    version: blue
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - blue.boardguru.ai
+    secretName: boardguru-blue-tls-cert
+  rules:
+  - host: blue.boardguru.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: boardguru-app-blue-service
+            port:
+              number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: boardguru-green-ingress
+  labels:
+    app: boardguru
+    version: green
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - green.boardguru.ai
+    secretName: boardguru-green-tls-cert
+  rules:
+  - host: green.boardguru.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: boardguru-app-green-service
+            port:
+              number: 3000
+---
+# Network Policy for ingress security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: boardguru-ingress-policy
+  labels:
+    app: boardguru
+spec:
+  podSelector:
+    matchLabels:
+      app: boardguru
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow HTTPS outbound
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  # Allow database access
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow Redis access
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 6379

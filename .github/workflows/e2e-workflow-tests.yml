@@ -1,0 +1,577 @@
+name: End-to-End Workflow Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run comprehensive workflow tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        default: 'comprehensive'
+        type: choice
+        options:
+        - comprehensive
+        - smoke
+        - performance
+        - integration
+      concurrent_users:
+        description: 'Number of concurrent users for load testing'
+        required: false
+        default: '50'
+        type: number
+      test_duration:
+        description: 'Test duration in minutes'
+        required: false
+        default: '30'
+        type: number
+
+env:
+  NODE_VERSION: '18.x'
+  PLAYWRIGHT_VERSION: '1.40.0'
+
+jobs:
+  # Pre-test setup and validation
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      test-matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      test-config: ${{ steps.generate-config.outputs.config }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps
+      
+      - name: Generate test matrix
+        id: generate-matrix
+        run: |
+          if [ "${{ github.event.inputs.test_suite }}" = "comprehensive" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            echo 'matrix={"include":[
+              {"suite":"pre-meeting","browsers":["chromium","firefox"],"workers":2},
+              {"suite":"live-meeting","browsers":["chromium"],"workers":1},
+              {"suite":"post-meeting","browsers":["chromium","webkit"],"workers":2},
+              {"suite":"integration","browsers":["chromium"],"workers":1},
+              {"suite":"performance","browsers":["chromium"],"workers":1}
+            ]}' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix={"include":[
+              {"suite":"${{ github.event.inputs.test_suite }}","browsers":["chromium"],"workers":1}
+            ]}' >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate test configuration
+        id: generate-config
+        run: |
+          echo 'config={
+            "concurrent_users": ${{ github.event.inputs.concurrent_users || 25 }},
+            "test_duration_minutes": ${{ github.event.inputs.test_duration || 15 }},
+            "performance_monitoring": true,
+            "real_time_validation": true,
+            "compliance_validation": true,
+            "ai_analysis_enabled": true
+          }' >> $GITHUB_OUTPUT
+
+  # Pre-meeting phase workflow tests
+  pre-meeting-workflows:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: contains(fromJson(needs.setup.outputs.test-matrix).include[*].suite, 'pre-meeting') || github.event.inputs.test_suite == 'comprehensive'
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        scenario: [standard, complex, high-compliance]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps ${{ matrix.browser }}
+      
+      - name: Setup test environment
+        run: |
+          # Start local services for testing
+          npm run test:setup-services &
+          sleep 10
+      
+      - name: Run pre-meeting workflow tests
+        run: |
+          npx playwright test __tests__/e2e/workflow-engine/board-meeting-lifecycle.spec.ts \
+            --project=${{ matrix.browser }} \
+            --grep="Pre-Meeting Phase Workflows" \
+            --workers=2 \
+            --reporter=html,junit,json \
+            --output-dir=test-results/pre-meeting/${{ matrix.browser }}/${{ matrix.scenario }}
+        env:
+          TEST_SCENARIO: ${{ matrix.scenario }}
+          PERFORMANCE_MONITORING: true
+          COMPLIANCE_FRAMEWORKS: SOX,SEC,CORPORATE_GOVERNANCE
+          AI_ANALYSIS_ENABLED: true
+          CONCURRENT_USERS: ${{ fromJson(needs.setup.outputs.test-config).concurrent_users }}
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pre-meeting-results-${{ matrix.browser }}-${{ matrix.scenario }}
+          path: |
+            test-results/pre-meeting/${{ matrix.browser }}/${{ matrix.scenario }}/
+            playwright-report/
+          retention-days: 30
+      
+      - name: Upload performance metrics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-metrics-pre-meeting-${{ matrix.browser }}-${{ matrix.scenario }}
+          path: test-results/performance/
+          retention-days: 30
+
+  # Live meeting phase workflow tests
+  live-meeting-workflows:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: contains(fromJson(needs.setup.outputs.test-matrix).include[*].suite, 'live-meeting') || github.event.inputs.test_suite == 'comprehensive'
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [standard-meeting, complex-voting, ai-enhanced, high-concurrency]
+        include:
+          - scenario: high-concurrency
+            concurrent_users: 100
+          - scenario: ai-enhanced
+            ai_features: transcription,sentiment,action-items,decision-tracking
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      
+      - name: Setup test environment with WebSocket support
+        run: |
+          npm run test:setup-websocket-services &
+          npm run test:setup-ai-services &
+          sleep 15
+      
+      - name: Run live meeting workflow tests
+        run: |
+          npx playwright test __tests__/e2e/workflow-engine/board-meeting-lifecycle.spec.ts \
+            --project=chromium \
+            --grep="During-Meeting Phase Workflows" \
+            --workers=1 \
+            --timeout=300000 \
+            --reporter=html,junit,json \
+            --output-dir=test-results/live-meeting/${{ matrix.scenario }}
+        env:
+          TEST_SCENARIO: ${{ matrix.scenario }}
+          CONCURRENT_USERS: ${{ matrix.concurrent_users || fromJson(needs.setup.outputs.test-config).concurrent_users }}
+          AI_FEATURES: ${{ matrix.ai_features || 'transcription,sentiment' }}
+          WEBSOCKET_TESTING: true
+          REAL_TIME_VALIDATION: true
+          PERFORMANCE_MONITORING: true
+      
+      - name: Capture live meeting artifacts
+        if: always()
+        run: |
+          mkdir -p test-results/live-meeting/${{ matrix.scenario }}/artifacts
+          # Capture WebSocket logs
+          cp logs/websocket-*.log test-results/live-meeting/${{ matrix.scenario }}/artifacts/ || true
+          # Capture AI analysis results
+          cp logs/ai-analysis-*.json test-results/live-meeting/${{ matrix.scenario }}/artifacts/ || true
+          # Capture real-time metrics
+          cp logs/real-time-metrics-*.json test-results/live-meeting/${{ matrix.scenario }}/artifacts/ || true
+      
+      - name: Upload live meeting results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-meeting-results-${{ matrix.scenario }}
+          path: |
+            test-results/live-meeting/${{ matrix.scenario }}/
+            playwright-report/
+          retention-days: 30
+
+  # Post-meeting phase workflow tests
+  post-meeting-workflows:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: contains(fromJson(needs.setup.outputs.test-matrix).include[*].suite, 'post-meeting') || github.event.inputs.test_suite == 'comprehensive'
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [ai-minutes-generation, compliance-audit, follow-up-automation]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium webkit
+      
+      - name: Setup AI and compliance services
+        run: |
+          npm run test:setup-ai-services &
+          npm run test:setup-compliance-services &
+          sleep 10
+      
+      - name: Run post-meeting workflow tests
+        run: |
+          npx playwright test __tests__/e2e/workflow-engine/board-meeting-lifecycle.spec.ts \
+            --project=chromium \
+            --grep="Post-Meeting Phase Workflows" \
+            --workers=2 \
+            --reporter=html,junit,json \
+            --output-dir=test-results/post-meeting/${{ matrix.scenario }}
+        env:
+          TEST_SCENARIO: ${{ matrix.scenario }}
+          AI_ANALYSIS_ENABLED: true
+          COMPLIANCE_VALIDATION: true
+          AUTOMATION_TESTING: true
+      
+      - name: Validate AI-generated artifacts
+        run: |
+          node scripts/validate-ai-artifacts.js test-results/post-meeting/${{ matrix.scenario }}/
+      
+      - name: Upload post-meeting results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: post-meeting-results-${{ matrix.scenario }}
+          path: |
+            test-results/post-meeting/${{ matrix.scenario }}/
+            playwright-report/
+          retention-days: 30
+
+  # Integration workflow tests (cross-system)
+  integration-workflows:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: contains(fromJson(needs.setup.outputs.test-matrix).include[*].suite, 'integration') || github.event.inputs.test_suite == 'comprehensive'
+    strategy:
+      fail-fast: false
+      matrix:
+        integration: 
+          - document-meeting-ai-compliance
+          - voting-ai-compliance-followup
+          - real-time-collaboration
+          - data-consistency-validation
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps
+      
+      - name: Setup all integrated services
+        run: |
+          npm run test:setup-all-services &
+          sleep 20
+      
+      - name: Run integration workflow tests
+        run: |
+          npx playwright test __tests__/e2e/workflow-engine/board-meeting-lifecycle.spec.ts \
+            --project=chromium \
+            --grep="Workflow Integration Scenarios" \
+            --workers=1 \
+            --timeout=600000 \
+            --reporter=html,junit,json \
+            --output-dir=test-results/integration/${{ matrix.integration }}
+        env:
+          INTEGRATION_TEST: ${{ matrix.integration }}
+          ALL_SYSTEMS_ENABLED: true
+          DATA_CONSISTENCY_CHECKS: true
+          CROSS_SYSTEM_VALIDATION: true
+      
+      - name: Generate integration report
+        run: |
+          node scripts/generate-integration-report.js \
+            --input=test-results/integration/${{ matrix.integration }} \
+            --output=test-results/integration/${{ matrix.integration }}/integration-report.json
+      
+      - name: Upload integration results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-results-${{ matrix.integration }}
+          path: |
+            test-results/integration/${{ matrix.integration }}/
+            playwright-report/
+          retention-days: 30
+
+  # Performance and load testing
+  performance-workflows:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: contains(fromJson(needs.setup.outputs.test-matrix).include[*].suite, 'performance') || github.event.inputs.test_suite == 'performance'
+    strategy:
+      fail-fast: false
+      matrix:
+        test_type: [load-testing, endurance-testing, failure-recovery]
+        include:
+          - test_type: load-testing
+            concurrent_users: 100
+            duration_minutes: 10
+          - test_type: endurance-testing
+            concurrent_users: 25
+            duration_minutes: 30
+          - test_type: failure-recovery
+            concurrent_users: 50
+            duration_minutes: 15
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      
+      - name: Setup performance monitoring
+        run: |
+          npm run test:setup-performance-monitoring &
+          npm run test:setup-all-services &
+          sleep 15
+      
+      - name: Run performance workflow tests
+        run: |
+          npx playwright test __tests__/e2e/workflow-engine/board-meeting-lifecycle.spec.ts \
+            --project=chromium \
+            --grep="Performance and Load Testing" \
+            --workers=1 \
+            --timeout=1800000 \
+            --reporter=html,junit,json \
+            --output-dir=test-results/performance/${{ matrix.test_type }}
+        env:
+          PERFORMANCE_TEST_TYPE: ${{ matrix.test_type }}
+          CONCURRENT_USERS: ${{ matrix.concurrent_users }}
+          TEST_DURATION_MINUTES: ${{ matrix.duration_minutes }}
+          MEMORY_MONITORING: true
+          CPU_MONITORING: true
+          NETWORK_MONITORING: true
+      
+      - name: Generate performance report
+        run: |
+          node scripts/generate-performance-report.js \
+            --input=test-results/performance/${{ matrix.test_type }} \
+            --output=test-results/performance/${{ matrix.test_type }}/performance-report.html
+      
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-results-${{ matrix.test_type }}
+          path: |
+            test-results/performance/${{ matrix.test_type }}/
+            playwright-report/
+          retention-days: 30
+
+  # Error handling and recovery testing
+  error-recovery-workflows:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_suite == 'comprehensive' || github.event_name == 'schedule'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      
+      - name: Setup chaos testing environment
+        run: |
+          npm run test:setup-chaos-services &
+          sleep 10
+      
+      - name: Run error recovery workflow tests
+        run: |
+          npx playwright test __tests__/e2e/workflow-engine/board-meeting-lifecycle.spec.ts \
+            --project=chromium \
+            --grep="Error Handling and Recovery" \
+            --workers=1 \
+            --reporter=html,junit,json \
+            --output-dir=test-results/error-recovery
+        env:
+          CHAOS_TESTING: true
+          ERROR_INJECTION: true
+          RECOVERY_TESTING: true
+      
+      - name: Upload error recovery results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: error-recovery-results
+          path: |
+            test-results/error-recovery/
+            playwright-report/
+          retention-days: 30
+
+  # Consolidate and report results
+  report-results:
+    needs: [pre-meeting-workflows, live-meeting-workflows, post-meeting-workflows, integration-workflows, performance-workflows]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: consolidated-results/
+      
+      - name: Generate comprehensive workflow report
+        run: |
+          node scripts/generate-comprehensive-report.js \
+            --input=consolidated-results/ \
+            --output=comprehensive-workflow-report/
+      
+      - name: Upload comprehensive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: comprehensive-workflow-report
+          path: comprehensive-workflow-report/
+          retention-days: 90
+      
+      - name: Comment PR with results summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'comprehensive-workflow-report/summary.json';
+            
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              
+              const comment = `
+            ## 🤖 E2E Workflow Test Results
+            
+            **Overall Status:** ${report.overallStatus === 'passed' ? '✅ PASSED' : '❌ FAILED'}
+            **Test Duration:** ${report.totalDurationMinutes} minutes
+            **Scenarios Tested:** ${report.totalScenarios}
+            
+            ### Phase Results
+            | Phase | Status | Success Rate | Avg Response Time |
+            |-------|--------|--------------|-------------------|
+            | Pre-Meeting | ${report.phases.preMeeting.status} | ${report.phases.preMeeting.successRate}% | ${report.phases.preMeeting.avgResponseTime}ms |
+            | Live Meeting | ${report.phases.liveMeeting.status} | ${report.phases.liveMeeting.successRate}% | ${report.phases.liveMeeting.avgResponseTime}ms |
+            | Post-Meeting | ${report.phases.postMeeting.status} | ${report.phases.postMeeting.successRate}% | ${report.phases.postMeeting.avgResponseTime}ms |
+            
+            ### Integration Results
+            - **Cross-System Integration:** ${report.integration.crossSystem.status}
+            - **Data Consistency:** ${report.integration.dataConsistency.score}/100
+            - **Performance Under Load:** ${report.performance.loadTesting.status}
+            
+            ### Key Metrics
+            - **Max Concurrent Users Tested:** ${report.performance.maxConcurrentUsers}
+            - **Memory Usage Peak:** ${report.performance.memoryUsagePeak}MB
+            - **Compliance Validation:** ${report.compliance.overallScore}/100
+            
+            [📊 View Detailed Report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+      
+      - name: Set workflow status
+        run: |
+          if [ -f "comprehensive-workflow-report/summary.json" ]; then
+            OVERALL_STATUS=$(jq -r '.overallStatus' comprehensive-workflow-report/summary.json)
+            if [ "$OVERALL_STATUS" != "passed" ]; then
+              echo "Workflow tests failed with status: $OVERALL_STATUS"
+              exit 1
+            fi
+          else
+            echo "Report not found, assuming failure"
+            exit 1
+          fi
+
+  # Deployment gate for production
+  deployment-gate:
+    needs: report-results
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production-gate
+    
+    steps:
+      - name: Workflow tests passed - Ready for deployment
+        run: |
+          echo "✅ All end-to-end workflow tests passed"
+          echo "✅ System integration validated" 
+          echo "✅ Performance thresholds met"
+          echo "✅ Compliance requirements satisfied"
+          echo "🚀 Ready for production deployment"

@@ -1,0 +1,142 @@
+# BoardGuru Docker Build Exclusions
+
+# Git
+.git
+.gitignore
+.github/
+
+# Documentation
+*.md
+docs/
+DEPLOYMENT_GUIDE.md
+CICD_SETUP.md
+CICD_RUNBOOK.md
+
+# Development files
+.env*
+!.env.local.example
+.env.local
+.env.development
+.env.test
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Test artifacts
+test-results/
+playwright-report/
+.playwright/
+__tests__/
+tests/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Build artifacts (keep for multi-stage)
+# .next/
+# dist/
+# build/
+
+# Dependencies (will be installed in container)
+node_modules/
+
+# Package manager files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Storybook
+.storybook/
+storybook-static/
+
+# Performance tests
+performance-tests/
+k6/
+
+# Infrastructure
+infrastructure/
+terraform/
+k8s/
+deployment/
+secrets/
+
+# CI/CD
+.github/workflows/
+docker-compose*.yml
+Dockerfile.dev
+Dockerfile.test
+
+# Backup and temporary files
+*.bak
+*.tmp
+*.temp
+backup/
+backups/
+
+# Database files
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Miscellaneous
+.nyc_output/
+.sass-cache/
+connect.lock/
+typings/
+.history/
+eslint-cache/
+.eslintcache

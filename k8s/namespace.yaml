@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: boardguru-staging
+  labels:
+    name: boardguru-staging
+    environment: staging
+    app: boardguru
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: boardguru-production
+  labels:
+    name: boardguru-production
+    environment: production
+    app: boardguru
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    purpose: monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    name: ingress-nginx
+    purpose: ingress
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging
+  labels:
+    name: logging
+    purpose: logging

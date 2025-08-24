@@ -1,0 +1,70 @@
+# GitLeaks configuration for BoardGuru
+
+title = "BoardGuru GitLeaks Configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "boardguru-database-url"
+description = "BoardGuru database URL"
+regex = '''postgresql://[^:\s]+:[^@\s]+@[^/\s]+/[^\s]+'''
+tags = ["database", "credentials"]
+
+[[rules]]
+id = "boardguru-api-keys"
+description = "API keys and tokens"
+regex = '''(?i)(api[_-]?key|token|secret)['"]*\s*[:=]\s*['"][a-z0-9]{20,}['"]'''
+tags = ["api-key", "secret"]
+
+[[rules]]
+id = "boardguru-jwt-secrets"
+description = "JWT secrets"
+regex = '''(?i)(jwt[_-]?secret|nextauth[_-]?secret)['"]*\s*[:=]\s*['"][a-z0-9]{32,}['"]'''
+tags = ["jwt", "secret"]
+
+[[rules]]
+id = "boardguru-smtp-credentials"
+description = "SMTP credentials"
+regex = '''(?i)(smtp[_-]?pass|smtp[_-]?password)['"]*\s*[:=]\s*['"][^'"]+['"]'''
+tags = ["smtp", "credentials"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "credentials"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''[A-Za-z0-9/+=]{40}'''
+tags = ["aws", "secret"]
+
+[[rules]]
+id = "supabase-keys"
+description = "Supabase API keys"
+regex = '''(?i)supabase[_-]?(anon[_-]?key|service[_-]?role[_-]?key)['"]*\s*[:=]\s*['"]eyJ[A-Za-z0-9_/+=.-]+['"]'''
+tags = ["supabase", "api-key"]
+
+[allowlist]
+description = "Allowlist for false positives"
+paths = [
+    ".env.local.example",
+    ".env.template",
+    "secrets/templates/",
+    "README.md",
+    "docs/",
+    "__tests__/",
+    "DEPLOYMENT_GUIDE.md"
+]
+
+regexes = [
+    '''your-[a-z-]+-key''',
+    '''your-[a-z-]+-secret''',
+    '''your-[a-z-]+-password''',
+    '''example[_-]?[a-z]+''',
+    '''test[_-]?[a-z]+''',
+    '''placeholder[_-]?[a-z]+''',
+    '''AKIA\d{16}'''  # Example AWS key format in docs
+]

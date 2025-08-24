@@ -1,0 +1,232 @@
+# Health Check Configuration for BoardGuru
+
+# Application Health Check Endpoint
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: health-check-config
+  namespace: monitoring
+data:
+  health-check.yml: |
+    checks:
+      - name: application-health
+        url: https://boardguru.ai/api/health
+        method: GET
+        timeout: 10s
+        interval: 30s
+        expected_status: 200
+        expected_body_contains: "healthy"
+        
+      - name: application-ready
+        url: https://boardguru.ai/api/health/ready
+        method: GET
+        timeout: 5s
+        interval: 15s
+        expected_status: 200
+        
+      - name: database-health
+        url: https://boardguru.ai/api/health/database
+        method: GET
+        timeout: 15s
+        interval: 60s
+        expected_status: 200
+        
+      - name: redis-health
+        url: https://boardguru.ai/api/health/redis
+        method: GET
+        timeout: 5s
+        interval: 30s
+        expected_status: 200
+        
+      - name: api-endpoints
+        url: https://boardguru.ai/api/assets
+        method: GET
+        timeout: 10s
+        interval: 60s
+        expected_status: 401  # Should require auth
+        headers:
+          User-Agent: "BoardGuru-HealthCheck/1.0"
+          
+      - name: static-assets
+        url: https://boardguru.ai/boardguru-logo.png
+        method: GET
+        timeout: 5s
+        interval: 300s  # 5 minutes
+        expected_status: 200
+        
+      - name: auth-endpoints
+        url: https://boardguru.ai/api/auth/signin
+        method: POST
+        timeout: 10s
+        interval: 120s
+        expected_status: 400  # Should fail without credentials
+        body: '{"test": "health-check"}'
+        headers:
+          Content-Type: "application/json"
+
+    alerts:
+      - name: application-down
+        condition: "application-health.status != 200"
+        severity: critical
+        message: "BoardGuru application is down"
+        
+      - name: database-issues
+        condition: "database-health.status != 200"
+        severity: critical
+        message: "Database connectivity issues detected"
+        
+      - name: redis-issues
+        condition: "redis-health.status != 200"
+        severity: warning
+        message: "Redis connectivity issues detected"
+        
+      - name: high-response-time
+        condition: "application-health.response_time > 2000"
+        severity: warning
+        message: "Application response time is high"
+        
+      - name: static-assets-down
+        condition: "static-assets.status != 200"
+        severity: warning
+        message: "Static assets are not accessible"
+
+---
+# Kubernetes CronJob for health checks
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: health-check-job
+  namespace: monitoring
+spec:
+  schedule: "*/2 * * * *"  # Every 2 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: health-checker
+            image: curlimages/curl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Basic health check
+              echo "Performing health check at $(date)"
+              
+              # Check main application
+              if curl -f --max-time 10 https://boardguru.ai/api/health; then
+                echo "✅ Application health check passed"
+              else
+                echo "❌ Application health check failed"
+                exit 1
+              fi
+              
+              # Check database connectivity
+              if curl -f --max-time 15 https://boardguru.ai/api/health/database; then
+                echo "✅ Database health check passed"
+              else
+                echo "❌ Database health check failed"
+                exit 1
+              fi
+              
+              # Check Redis connectivity
+              if curl -f --max-time 10 https://boardguru.ai/api/health/redis; then
+                echo "✅ Redis health check passed"
+              else
+                echo "⚠️ Redis health check failed (non-critical)"
+              fi
+              
+              echo "Health check completed successfully at $(date)"
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "50m"
+              limits:
+                memory: "128Mi"
+                cpu: "100m"
+
+---
+# Advanced health check with metrics collection
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: performance-health-check
+  namespace: monitoring
+spec:
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: performance-checker
+            image: curlimages/curl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting performance health check at $(date)"
+              
+              # Measure response times
+              start_time=$(date +%s%N)
+              if curl -f --max-time 30 -w "%{time_total}" https://boardguru.ai > /tmp/response_time.txt 2>&1; then
+                end_time=$(date +%s%N)
+                response_time=$(cat /tmp/response_time.txt | tail -1)
+                echo "Response time: ${response_time}s"
+                
+                # Convert to milliseconds for easier reading
+                response_time_ms=$(echo "$response_time * 1000" | bc 2>/dev/null || echo "0")
+                echo "Response time: ${response_time_ms}ms"
+                
+                # Alert if response time is too high
+                if (( $(echo "$response_time > 2.0" | bc -l 2>/dev/null || echo "0") )); then
+                  echo "⚠️  High response time detected: ${response_time}s"
+                else
+                  echo "✅ Response time within acceptable range"
+                fi
+              else
+                echo "❌ Performance health check failed"
+                exit 1
+              fi
+              
+              # Check memory usage (if metrics endpoint is available)
+              if curl -f --max-time 10 https://boardguru.ai/api/metrics 2>/dev/null; then
+                echo "✅ Metrics endpoint accessible"
+              else
+                echo "⚠️  Metrics endpoint not accessible"
+              fi
+              
+              echo "Performance health check completed at $(date)"
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+
+---
+# Health check service monitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: boardguru-health-metrics
+  namespace: monitoring
+  labels:
+    app: boardguru
+    component: health-check
+spec:
+  selector:
+    matchLabels:
+      app: boardguru
+  endpoints:
+  - port: http
+    path: /api/metrics
+    interval: 30s
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - boardguru-production
+    - boardguru-staging

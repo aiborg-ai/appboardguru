@@ -1,0 +1,157 @@
+# BoardGuru Testing Docker Compose
+version: '3.8'
+
+services:
+  # Test application
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        NODE_ENV: test
+    container_name: boardguru-app-test
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=postgresql://test:test@test-db:5432/boardguru_test
+      - REDIS_URL=redis://test-redis:6379
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:3000
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=test-key
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - test-db
+      - test-redis
+    networks:
+      - boardguru-test-network
+    profiles:
+      - testing
+    command: npm run test:watch
+
+  # Test database
+  test-db:
+    image: postgres:15-alpine
+    container_name: boardguru-test-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: boardguru_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      - boardguru-test-network
+    profiles:
+      - testing
+
+  # Test Redis
+  test-redis:
+    image: redis:7-alpine
+    container_name: boardguru-test-redis
+    ports:
+      - "6380:6379"
+    tmpfs:
+      - /data
+    networks:
+      - boardguru-test-network
+    profiles:
+      - testing
+
+  # E2E Testing with Playwright
+  e2e-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    container_name: boardguru-e2e-tests
+    environment:
+      - NODE_ENV=test
+      - BASE_URL=http://app-test:3000
+    volumes:
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    depends_on:
+      - app-test
+    networks:
+      - boardguru-test-network
+    profiles:
+      - e2e-testing
+    command: npm run e2e
+
+  # API Testing
+  api-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: boardguru-api-tests
+    environment:
+      - NODE_ENV=test
+      - API_BASE_URL=http://app-test:3000/api
+    volumes:
+      - ./test-results:/app/test-results
+    depends_on:
+      - app-test
+    networks:
+      - boardguru-test-network
+    profiles:
+      - api-testing
+    command: npm run test:api
+
+  # Load Testing with K6
+  load-tests:
+    image: grafana/k6:latest
+    container_name: boardguru-load-tests
+    environment:
+      - BASE_URL=http://app-test:3000
+    volumes:
+      - ./performance-tests:/scripts
+      - ./test-results:/results
+    depends_on:
+      - app-test
+    networks:
+      - boardguru-test-network
+    profiles:
+      - load-testing
+    command: run /scripts/load-test.js
+
+  # Security Testing
+  security-tests:
+    image: owasp/zap2docker-stable
+    container_name: boardguru-security-tests
+    volumes:
+      - ./test-results:/zap/wrk
+    depends_on:
+      - app-test
+    networks:
+      - boardguru-test-network
+    profiles:
+      - security-testing
+    command: zap-baseline.py -t http://app-test:3000 -J zap-report.json
+
+  # Test database seeding
+  db-seed:
+    image: node:18-alpine
+    container_name: boardguru-db-seed
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://test:test@test-db:5432/boardguru_test
+    depends_on:
+      - test-db
+    networks:
+      - boardguru-test-network
+    profiles:
+      - testing
+    command: npm run db:seed:test
+
+networks:
+  boardguru-test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16

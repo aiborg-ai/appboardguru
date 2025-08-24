@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boardguru-config
+  labels:
+    app: boardguru
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  PORT: "3000"
+  
+  # Public URLs
+  supabase-url: "https://your-project.supabase.co"
+  
+  # Email Configuration
+  admin-email: "hirendra.vikram@boardguru.ai"
+  smtp-host: "smtp.gmail.com"
+  smtp-port: "587"
+  
+  # File Upload Configuration
+  max-file-size: "50MB"
+  allowed-file-types: "pdf,docx,pptx,xlsx,txt"
+  
+  # Feature Flags
+  enable-ai-chat: "true"
+  enable-document-processing: "true"
+  enable-voice-input: "true"
+  enable-compliance-monitoring: "true"
+  
+  # Performance Settings
+  max-concurrent-uploads: "5"
+  cache-ttl: "3600"
+  
+  # Security Settings
+  session-timeout: "86400"
+  max-login-attempts: "5"
+  
+  # Observability
+  enable-metrics: "true"
+  enable-tracing: "true"
+  log-level: "info"
+  
+  # Database Connection Pool
+  db-pool-min: "2"
+  db-pool-max: "10"
+  
+  # Redis Configuration
+  redis-ttl: "3600"
+  redis-max-connections: "20"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boardguru-nginx-config
+  labels:
+    app: boardguru
+    component: nginx
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+        worker_connections 1024;
+        use epoll;
+        multi_accept on;
+    }
+    
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        # Logging format
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                       '$status $body_bytes_sent "$http_referer" '
+                       '"$http_user_agent" "$http_x_forwarded_for"';
+        
+        access_log /var/log/nginx/access.log main;
+        
+        # Performance settings
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        client_max_body_size 50m;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+        
+        # Gzip compression
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 10240;
+        gzip_proxied expired no-cache no-store private must-revalidate auth;
+        gzip_types
+            text/plain
+            text/css
+            text/xml
+            text/javascript
+            application/javascript
+            application/xml+rss
+            application/json;
+        
+        upstream boardguru_app {
+            server boardguru-app-service:3000;
+            keepalive 32;
+        }
+        
+        server {
+            listen 80;
+            server_name _;
+            
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+            
+            location / {
+                proxy_pass http://boardguru_app;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_cache_bypass $http_upgrade;
+                
+                # Timeout settings
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 30s;
+                proxy_read_timeout 30s;
+            }
+            
+            # Static assets caching
+            location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+                expires 1y;
+                add_header Cache-Control "public, immutable";
+            }
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boardguru-fluent-bit-config
+  labels:
+    app: boardguru
+    component: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         1
+        Log_Level     info
+        Daemon        off
+        Parsers_File  parsers.conf
+        HTTP_Server   On
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+    
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        multiline.parser  docker, cri
+        Tag               kube.*
+        Mem_Buf_Limit     50MB
+        Skip_Long_Lines   On
+    
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     kube.var.log.containers.
+        Merge_Log           On
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+    
+    [OUTPUT]
+        Name  cloudwatch_logs
+        Match *
+        region us-east-1
+        log_group_name /aws/eks/boardguru/application
+        log_stream_prefix eks-
+        auto_create_group On
