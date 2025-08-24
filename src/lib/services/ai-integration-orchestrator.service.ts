@@ -299,7 +299,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     organizationId: string,
     config: Partial<AIOrchestrationConfig> = {}
   ): Promise<Result<AIOrchestrationState>> {
-    return success(await (async () => {
+    try {
       // Create default configuration
       const defaultConfig = this.createDefaultConfig(organizationId)
       const orchestrationConfig = { ...defaultConfig, ...config }
@@ -336,10 +336,12 @@ export class AIIntegrationOrchestratorService extends BaseService {
         organizationId,
         payload: { action: 'orchestration_initialized', servicesCount: services.length },
         correlationId: `orch_init_${Date.now()}`
-      }))
+      })
 
-      return orchestrationState
-    }))
+      return success(orchestrationState)
+    } catch (error) {
+      return failure(new Error(`Failed to initialize orchestration: ${error}`))
+    }
   }
 
   /**

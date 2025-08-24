@@ -6,6 +6,8 @@
 import { BaseService } from './base.service'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
+import type { Result } from '@/lib/repositories/result'
+import { success, failure } from '@/lib/repositories/result'
 
 import { z } from 'zod'
 
@@ -352,9 +354,9 @@ export class AIBoardSecretaryService extends BaseService {
           video_file_url: validation.data.video_file_url,
           language: validation.data.language,
           processing_status: 'queued'
-        }))
+        })
         .select()
-        .single()
+        .single();
 
       if (error) throw error
 
@@ -369,7 +371,7 @@ export class AIBoardSecretaryService extends BaseService {
           language: validation.data.language
         },
         priority: 5
-      }))
+      })
 
       return transcription as MeetingTranscription
     }, 'request_transcription')
@@ -421,8 +423,8 @@ export class AIBoardSecretaryService extends BaseService {
           language: language,
           response_format: 'verbose_json',
           timestamp_granularities: ['segment'],
-        }))
-      }))
+        })
+      })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -463,7 +465,7 @@ export class AIBoardSecretaryService extends BaseService {
           id: speakerId,
           name: `Speaker ${speakersMap.size + 1}`,
           segments: []
-        }))
+        })
       }
 
       const speaker = speakersMap.get(speakerId)!
@@ -473,8 +475,8 @@ export class AIBoardSecretaryService extends BaseService {
         text: segment.text || '',
         confidence: segment.avg_logprob || 0.8,
         speaker_id: speakerId
-      }))
-    }))
+      })
+    })
 
     return Array.from(speakersMap.values())
   }
@@ -554,7 +556,7 @@ export class AIBoardSecretaryService extends BaseService {
           transcription_id: transcriptionId,
           status: 'draft',
           created_by: (await this.getCurrentUser()).data?.id
-        }))
+        })
         .select()
         .single()
 
