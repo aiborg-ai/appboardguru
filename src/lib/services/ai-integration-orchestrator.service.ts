@@ -358,7 +358,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
       traceId?: string
     } = {}
   ): Promise<Result<T>> {
-    return success(await (async () => {
+    try {
       const traceId = options.traceId || `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const correlationId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
@@ -370,7 +370,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         payload: { requestType, options },
         correlationId,
         traceId
-      }))
+      })
 
       try {
         // Check service health
@@ -409,12 +409,12 @@ export class AIIntegrationOrchestratorService extends BaseService {
           payload: { success: true, resultSize: JSON.stringify(result).length },
           correlationId,
           traceId
-        }))
+        })
 
         // Update metrics
         await this.updateMetrics(organizationId, requestType, 'success', Date.now())
 
-        return result
+        return success(result)
       } catch (error) {
         // Log failure
         await this.logEvent({
@@ -424,7 +424,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
           payload: { error: error instanceof Error ? error.message : 'Unknown error' },
           correlationId,
           traceId
-        }))
+        })
 
         // Update metrics
         await this.updateMetrics(organizationId, requestType, 'failure', Date.now())
@@ -433,13 +433,15 @@ export class AIIntegrationOrchestratorService extends BaseService {
         if (options.fallbackEnabled) {
           const fallbackResult = await this.attemptFallback(requestType, request, organizationId, traceId)
           if (fallbackResult) {
-            return fallbackResult as T
+            return success(fallbackResult as T)
           }
         }
 
         throw error
       }
-    }))
+    } catch (error) {
+      return failure(new Error(`AI request processing failed: ${error}`))
+    }
   }
 
   /**
@@ -453,10 +455,10 @@ export class AIIntegrationOrchestratorService extends BaseService {
     recommendations: OrchestrationRecommendation[]
     trends: OrchestrationTrend[]
   }>> {
-    return success(await (async () => {
+    try {
       const state = this.orchestrationStates.get(organizationId)
       if (!state) {
-        throw new Error('Orchestration not initialized for organization')
+        return failure(new Error('Orchestration not initialized for organization'))
       }
 
       // Calculate current performance
@@ -468,13 +470,15 @@ export class AIIntegrationOrchestratorService extends BaseService {
       // Calculate trends
       const trends = await this.calculateOrchestrationTrends(organizationId)
 
-      return {
+      return success({
         state,
         performance,
         recommendations,
         trends
-      }
-    }))
+      })
+    } catch (error) {
+      return failure(new Error(`Failed to get orchestration dashboard: ${error}`))
+    }
   }
 
   // ========================================
@@ -505,7 +509,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         this.logger.error('Coordination rule execution failed', {
           ruleId: rule.id,
           error: error instanceof Error ? error.message : 'Unknown error'
-        }))
+        })
       }
     }
   }
@@ -623,7 +627,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
       batchSize: config.batchSize,
       flushInterval: config.flushInterval,
       compressionEnabled: config.compressionEnabled
-    }))
+    })
 
     // Set up periodic flush
     setInterval(async () => {
@@ -678,7 +682,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
           organizationId: orgId,
           eventCount: events.length,
           error: error instanceof Error ? error.message : 'Unknown error'
-        }))
+        })
       }
     }
   }
@@ -688,7 +692,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     this.logger.debug('Persisting event batch', {
       organizationId,
       eventCount: events.length
-    }))
+    })
   }
 
   // ========================================
@@ -716,7 +720,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
       tracingEnabled: config.tracingEnabled,
       loggingLevel: config.loggingLevel,
       healthChecks: config.healthChecks.length
-    }))
+    })
   }
 
   private async initializeMetricsCollection(): Promise<void> {
@@ -759,7 +763,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         this.logger.error('Health check failed', {
           service: config.service,
           error: error instanceof Error ? error.message : 'Unknown error'
-        }))
+        })
       }
     }, config.interval)
   }
@@ -793,7 +797,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     this.logger.warn('Service health alert', {
       service,
       alertId: alert.id
-    }))
+    })
   }
 
   private async setupAlerting(config: AlertingConfig): Promise<void> {
@@ -985,7 +989,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         queueDepth: 0,
         errorRate: 0,
         responseTime: 0
-      }))
+      })
     }
 
     return services

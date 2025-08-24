@@ -427,7 +427,7 @@ export class AIBoardSecretaryService extends BaseService {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = await response.json().catch(() => ({})))
         throw RepositoryError.externalService(
           'OpenRouter', 
           `Transcription failed: ${response.statusText}`,
@@ -445,7 +445,7 @@ export class AIBoardSecretaryService extends BaseService {
         speakers,
         confidence_score: this.calculateAverageConfidence(result.segments || [])
       }
-    }))
+    })
   }
 
   /**
@@ -685,8 +685,8 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
           ],
           temperature: 0.1, // Low temperature for accuracy
           max_tokens: 4000
-        }))
-      }))
+        })
+      }
 
       if (!response.ok) {
         throw RepositoryError.externalService('OpenRouter', `AI processing failed: ${response.statusText}`)
@@ -714,7 +714,7 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response', parseError)
       }
-    }))
+    })
   }
 
   /**
@@ -768,7 +768,7 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
             context_reference: item.context_reference,
             tags: item.tags,
             created_by: userResult.data.id
-          }))
+          })
           .select()
           .single()
 
@@ -863,8 +863,8 @@ Be specific and actionable in your titles and descriptions.
           ],
           temperature: 0.1,
           max_tokens: 3000
-        }))
-      }))
+        })
+      })
 
       if (!response.ok) {
         throw RepositoryError.externalService('OpenRouter', `AI processing failed: ${response.statusText}`)
@@ -883,7 +883,7 @@ Be specific and actionable in your titles and descriptions.
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response for action items', parseError)
       }
-    }))
+    })
   }
 
   /**
@@ -903,7 +903,7 @@ Be specific and actionable in your titles and descriptions.
           ...validation.data,
           ai_extracted: false,
           created_by: userResult.data.id
-        }))
+        })
         .select()
         .single()
 
@@ -1054,7 +1054,7 @@ Be specific and actionable in your titles and descriptions.
         .insert({
           ...validation.data,
           created_by: userResult.data.id
-        }))
+        })
         .select()
         .single()
 
@@ -1097,7 +1097,7 @@ Be specific and actionable in your titles and descriptions.
             severity: daysUntilDue <= 7 ? 'high' : daysUntilDue <= 14 ? 'medium' : 'low',
             target_audience: req.responsible_party ? [req.responsible_party] : [],
             alert_date: today.toISOString()
-          }))
+          })
           
           if (alert.success) {
             alerts.push(alert.data)
@@ -1112,7 +1112,7 @@ Be specific and actionable in your titles and descriptions.
             severity: 'critical',
             target_audience: req.responsible_party ? [req.responsible_party] : [],
             alert_date: today.toISOString()
-          }))
+          })
           
           if (alert.success) {
             alerts.push(alert.data)
@@ -1256,7 +1256,7 @@ Be specific and actionable in your titles and descriptions.
           template_used: options.template_id,
           status: 'draft',
           created_by: userResult.data.id
-        }))
+        })
         .select()
         .single()
 
@@ -1379,8 +1379,8 @@ Include relevant pending action items in the "Old Business" section.
           ],
           temperature: 0.2,
           max_tokens: 3000
-        }))
-      }))
+        })
+      })
 
       if (!response.ok) {
         throw RepositoryError.externalService('OpenRouter', `AI processing failed: ${response.statusText}`)
@@ -1409,7 +1409,7 @@ Include relevant pending action items in the "Old Business" section.
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response for agenda', parseError)
       }
-    }))
+    })
   }
 
   /**
@@ -1438,7 +1438,7 @@ Include relevant pending action items in the "Old Business" section.
           ...jobData,
           status: 'queued',
           created_by: userResult.data.id
-        }))
+        })
 
       if (error) throw error
     }, 'queue_ai_job')
@@ -1489,7 +1489,7 @@ Include relevant pending action items in the "Old Business" section.
           board_id: boardId,
           ...settings,
           updated_at: new Date().toISOString()
-        }))
+        })
         .select()
         .single()
 
