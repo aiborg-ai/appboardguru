@@ -10,8 +10,8 @@ import { aiDocumentIntelligenceService } from './ai-document-intelligence.servic
 import { aiMeetingIntelligenceService } from './ai-meeting-intelligence.service'
 import { aiPredictiveAnalyticsService } from './ai-predictive-analytics.service'
 import { aiIntelligentAutomationService } from './ai-intelligent-automation.service'
-import type { Result } from '@/lib/repositories/result'
-import { success, failure } from '@/lib/repositories/result'
+import type { Result } from '../repositories/result'
+import { success, failure } from '../repositories/result'
 
 interface RecommendationEngine {
   organizationId: string

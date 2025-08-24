@@ -346,7 +346,7 @@ export class CommentService extends BaseService {
       return failure(RepositoryError.internal(
         'COMMENT_CREATE_ERROR',
         `Failed to create comment: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -389,9 +389,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'COMMENT_GET_ERROR',
+ 'COMMENT_GET_ERROR',
         `Failed to get comment: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -421,10 +421,7 @@ export class CommentService extends BaseService {
       // Check if currently being edited by others
       if (existingComment.concurrentEditors.length > 0 && 
           !existingComment.concurrentEditors.includes(userId)) {
-        return failure(RepositoryError.internal(
-          'CONCURRENT_EDIT_CONFLICT', 
-          'Comment is currently being edited by another user'
-        )
+        return failure(RepositoryError.internal('CONCURRENT_EDIT_CONFLICT', 'Comment is currently being edited by another user'))
       }
 
       // Process new mentions if content changed
@@ -486,9 +483,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'COMMENT_UPDATE_ERROR',
+ 'COMMENT_UPDATE_ERROR',
         `Failed to update comment: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -541,9 +538,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'COMMENT_DELETE_ERROR',
+ 'COMMENT_DELETE_ERROR',
         `Failed to delete comment: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -568,16 +565,16 @@ export class CommentService extends BaseService {
       commentIds.push(threadResult.data.rootComment.id)
       
       await Promise.all(
-        commentIds.map(id => this.trackCommentView(id, userId))
+        commentIds.map(id => this.trackCommentView(id, userId)
       )
 
       return success(threadResult.data)
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'THREAD_GET_ERROR',
+ 'THREAD_GET_ERROR',
         `Failed to get comment thread: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -628,9 +625,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'ASSET_COMMENTS_ERROR',
+ 'ASSET_COMMENTS_ERROR',
         `Failed to get asset comments: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -657,9 +654,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'START_EDITING_ERROR',
+ 'START_EDITING_ERROR',
         `Failed to start editing: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -685,9 +682,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'STOP_EDITING_ERROR',
+ 'STOP_EDITING_ERROR',
         `Failed to stop editing: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -741,9 +738,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'ADD_REACTION_ERROR',
+ 'ADD_REACTION_ERROR',
         `Failed to add reaction: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -791,9 +788,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'RESOLVE_COMMENT_ERROR',
+ 'RESOLVE_COMMENT_ERROR',
         `Failed to resolve comment: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -838,9 +835,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'SAVE_DRAFT_ERROR',
+ 'SAVE_DRAFT_ERROR',
         `Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -871,9 +868,9 @@ export class CommentService extends BaseService {
 
     } catch (error) {
       return failure(RepositoryError.internal(
-        'GET_MENTIONS_ERROR',
+ 'GET_MENTIONS_ERROR',
         `Failed to get unread mentions: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 

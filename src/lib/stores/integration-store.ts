@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
 
 interface RecentItem {
   id: string
@@ -142,7 +141,7 @@ export const integrationStore = create<IntegrationStore>()(
   devtools(
     persist(
       subscribeWithSelector(
-        immer((set, get) => ({
+        (set, get) => ({
           ...initialState,
 
           // Recent items
@@ -153,24 +152,31 @@ export const integrationStore = create<IntegrationStore>()(
             }
             
             // Remove existing item with same id if exists
-            state.recentItems = state.recentItems.filter(i => i.id !== item.id)
+            const filteredItems = state.recentItems.filter(i => i.id !== item.id)
             
             // Add to beginning
-            state.recentItems.unshift(newItem)
+            const newItems = [newItem, ...filteredItems]
             
             // Limit to max items
-            if (state.recentItems.length > state.maxRecentItems) {
-              state.recentItems = state.recentItems.slice(0, state.maxRecentItems)
+            const limitedItems = newItems.length > state.maxRecentItems 
+              ? newItems.slice(0, state.maxRecentItems)
+              : newItems
+            
+            return {
+              ...state,
+              recentItems: limitedItems
             }
           }),
 
-          removeRecentItem: (id) => set((state) => {
-            state.recentItems = state.recentItems.filter(item => item.id !== id)
-          }),
+          removeRecentItem: (id) => set((state) => ({
+            ...state,
+            recentItems: state.recentItems.filter(item => item.id !== id)
+          })),
 
-          clearRecentItems: () => set((state) => {
-            state.recentItems = []
-          }),
+          clearRecentItems: () => set((state) => ({
+            ...state,
+            recentItems: []
+          })),
 
           getRecentItemsByType: (type) => {
             return get().recentItems.filter(item => item.type === type)
@@ -187,13 +193,18 @@ export const integrationStore = create<IntegrationStore>()(
             // Check if bookmark already exists
             const exists = state.bookmarks.some(b => b.href === bookmark.href)
             if (!exists) {
-              state.bookmarks.unshift(newBookmark)
+              return {
+                ...state,
+                bookmarks: [newBookmark, ...state.bookmarks]
+              }
             }
+            return state
           }),
 
-          removeBookmark: (id) => set((state) => {
-            state.bookmarks = state.bookmarks.filter(bookmark => bookmark.id !== id)
-          }),
+          removeBookmark: (id) => set((state) => ({
+            ...state,
+            bookmarks: state.bookmarks.filter(bookmark => bookmark.id !== id)
+          })),
 
           toggleBookmark: (bookmark) => {
             const state = get()
@@ -215,20 +226,28 @@ export const integrationStore = create<IntegrationStore>()(
           },
 
           // Context management
-          setContext: (context) => set((state) => {
-            state.currentContext = { ...state.currentContext, ...context }
-          }),
+          setContext: (context) => set((state) => ({
+            ...state,
+            currentContext: { ...state.currentContext, ...context }
+          })),
 
-          clearContext: () => set((state) => {
-            state.currentContext = { navigationPath: [] }
-          }),
+          clearContext: () => set((state) => ({
+            ...state,
+            currentContext: { navigationPath: [] }
+          })),
 
           updateNavigationPath: (page) => set((state) => {
-            state.currentContext.navigationPath.push(page)
+            const newPath = [...state.currentContext.navigationPath, page]
             
             // Limit navigation path to last 10 items
-            if (state.currentContext.navigationPath.length > 10) {
-              state.currentContext.navigationPath = state.currentContext.navigationPath.slice(-10)
+            const limitedPath = newPath.length > 10 ? newPath.slice(-10) : newPath
+            
+            return {
+              ...state,
+              currentContext: {
+                ...state.currentContext,
+                navigationPath: limitedPath
+              }
             }
           }),
 
@@ -240,12 +259,12 @@ export const integrationStore = create<IntegrationStore>()(
               timestamp: new Date().toISOString()
             }
             
-            state.activities.unshift(newActivity)
+            const newActivities = [newActivity, ...state.activities]
             
             // Limit to max activities
-            if (state.activities.length > state.maxActivities) {
-              state.activities = state.activities.slice(0, state.maxActivities)
-            }
+            const limitedActivities = newActivities.length > state.maxActivities
+              ? newActivities.slice(0, state.maxActivities)
+              : newActivities
             
             // Also add to recent items if it's a view action
             if (activity.type === 'view') {
@@ -258,7 +277,13 @@ export const integrationStore = create<IntegrationStore>()(
                 metadata: activity.metadata
               }
               
-              get().addRecentItem(recentItem)
+              // Call addRecentItem after this set completes
+              setTimeout(() => get().addRecentItem(recentItem), 0)
+            }
+            
+            return {
+              ...state,
+              activities: limitedActivities
             }
           }),
 
@@ -270,68 +295,82 @@ export const integrationStore = create<IntegrationStore>()(
             return get().activities.slice(0, limit)
           },
 
-          clearActivities: () => set((state) => {
-            state.activities = []
-          }),
+          clearActivities: () => set((state) => ({
+            ...state,
+            activities: []
+          })),
 
           // Shared data
-          setSharedData: (key, data) => set((state) => {
-            state.sharedData[key] = data
-          }),
+          setSharedData: (key, data) => set((state) => ({
+            ...state,
+            sharedData: { ...state.sharedData, [key]: data }
+          })),
 
           getSharedData: (key) => {
             return get().sharedData[key]
           },
 
           removeSharedData: (key) => set((state) => {
-            delete state.sharedData[key]
+            const { [key]: removed, ...rest } = state.sharedData
+            return { ...state, sharedData: rest }
           }),
 
-          clearSharedData: () => set((state) => {
-            state.sharedData = {}
-          }),
+          clearSharedData: () => set((state) => ({
+            ...state,
+            sharedData: {}
+          })),
 
           // Search
           addSearchQuery: (query) => set((state) => {
             if (query.trim()) {
               // Remove existing query if exists
-              state.globalSearchHistory = state.globalSearchHistory.filter(q => q !== query)
+              const filteredHistory = state.globalSearchHistory.filter(q => q !== query)
               
               // Add to beginning
-              state.globalSearchHistory.unshift(query)
+              const newHistory = [query, ...filteredHistory]
               
               // Limit to max history
-              if (state.globalSearchHistory.length > state.maxSearchHistory) {
-                state.globalSearchHistory = state.globalSearchHistory.slice(0, state.maxSearchHistory)
+              const limitedHistory = newHistory.length > state.maxSearchHistory 
+                ? newHistory.slice(0, state.maxSearchHistory)
+                : newHistory
+              
+              return {
+                ...state,
+                globalSearchHistory: limitedHistory
               }
             }
+            return state
           }),
 
           getSearchHistory: () => {
             return get().globalSearchHistory
           },
 
-          clearSearchHistory: () => set((state) => {
-            state.globalSearchHistory = []
-          }),
+          clearSearchHistory: () => set((state) => ({
+            ...state,
+            globalSearchHistory: []
+          })),
 
           // Navigation
-          setBreadcrumbs: (breadcrumbs) => set((state) => {
-            state.breadcrumbs = breadcrumbs
-          }),
+          setBreadcrumbs: (breadcrumbs) => set((state) => ({
+            ...state,
+            breadcrumbs
+          })),
 
-          setNavigating: (isNavigating) => set((state) => {
-            state.isNavigating = isNavigating
-          }),
+          setNavigating: (isNavigating) => set((state) => ({
+            ...state,
+            isNavigating
+          })),
 
-          setLastVisitedPage: (pageType, pageId) => set((state) => {
-            state.lastVisitedPages[pageType] = pageId
-          }),
+          setLastVisitedPage: (pageType, pageId) => set((state) => ({
+            ...state,
+            lastVisitedPages: { ...state.lastVisitedPages, [pageType]: pageId }
+          })),
 
           getLastVisitedPage: (pageType) => {
             return get().lastVisitedPages[pageType]
           }
-        }))
+        })
       ),
       {
         name: 'integration-store',
@@ -343,8 +382,7 @@ export const integrationStore = create<IntegrationStore>()(
           lastVisitedPages: state.lastVisitedPages
         })
       }
-    ),
-    { name: 'IntegrationStore' }
+    )
   )
 )
 
@@ -382,22 +420,24 @@ export const useIntegrationActions = () => {
 }
 
 // Subscribe to store changes for cross-page synchronization
-integrationStore.subscribe(
-  (state) => state.currentContext,
-  (context) => {
-    // Emit custom events for cross-page communication
-    window.dispatchEvent(new CustomEvent('contextChanged', { 
-      detail: context 
-    }))
-  }
-)
+if (typeof window !== 'undefined') {
+  integrationStore.subscribe(
+    (state) => state.currentContext,
+    (context) => {
+      // Emit custom events for cross-page communication
+      window.dispatchEvent(new CustomEvent('contextChanged', { 
+        detail: context 
+      }))
+    }
+  )
 
-integrationStore.subscribe(
-  (state) => state.recentItems,
-  (recentItems) => {
-    // Emit custom events for recent items updates
-    window.dispatchEvent(new CustomEvent('recentItemsChanged', { 
-      detail: recentItems 
-    }))
-  }
-)
+  integrationStore.subscribe(
+    (state) => state.recentItems,
+    (recentItems) => {
+      // Emit custom events for recent items updates
+      window.dispatchEvent(new CustomEvent('recentItemsChanged', { 
+        detail: recentItems 
+      }))
+    }
+  )
+}

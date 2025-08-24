@@ -35,7 +35,7 @@
     "DEMO_PORT": "3000"
   },
   "functions": {
-    "demo/demo-server.js": {
+    "demo/demo-server-simple.cjs": {
       "maxDuration": 30
     }
   },

@@ -3,8 +3,8 @@
  */
 
 import { BaseService } from './base.service'
-import type { Result } from '@/lib/repositories/result'
-import { success, failure } from '@/lib/repositories/result'
+import type { Result } from '../repositories/result'
+import { success, failure } from '../repositories/result'
 
 export class AIDocumentIntelligenceService extends BaseService {
   async generateSmartSummary(documentId: string, options: any): Promise<Result<any, string>> {

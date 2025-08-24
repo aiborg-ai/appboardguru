@@ -29,10 +29,10 @@ cat > "$DEPLOY_DIR/package.json" << 'EOF'
   "name": "boardguru-mcp-demo",
   "version": "1.0.0",
   "description": "BoardGuru MCP Demo - AI-powered governance intelligence",
-  "main": "demo/demo-server.cjs",
+  "main": "demo/demo-server-simple.cjs",
   "scripts": {
-    "start": "node demo/demo-server.cjs",
-    "dev": "node demo/demo-server.cjs"
+    "start": "node demo/demo-server-simple.cjs",
+    "dev": "node demo/demo-server-simple.cjs"
   },
   "dependencies": {
     "express": "^4.18.2",

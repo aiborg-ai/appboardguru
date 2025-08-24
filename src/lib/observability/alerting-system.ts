@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events'
 import { z } from 'zod'
-import { Result, success, failure } from '../patterns/result'
+import { Result, success, failure } from '../repositories/result'
 import { MetricsCollector } from './metrics-collector'
 import { DistributedTracer } from './distributed-tracer'
 import { CentralizedLoggingManager } from './centralized-logging'

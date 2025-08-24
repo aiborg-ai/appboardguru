@@ -4,7 +4,7 @@
  */
 
 import { createCipherGCM, createDecipherGCM, randomBytes } from 'crypto'
-import { Result, success, failure } from '../patterns/result'
+import { Result, success, failure } from '../repositories/result'
 import { MetricsCollector } from '../observability/metrics-collector'
 import { DistributedTracer } from '../observability/distributed-tracer'
 import { nanoid } from 'nanoid'

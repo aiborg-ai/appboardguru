@@ -318,7 +318,7 @@ export const ShortcutsIntegration: React.FC<ShortcutsIntegrationProps> = ({
     <Card className="mb-4">
       <CardHeader>
         <CardTitle className="text-sm flex items-center space-x-2">
-          <Settings className="h-4 w-4 text-blue-600" />
+          <Zap className="h-4 w-4 text-blue-600" />
           <span>Shortcuts Integration</span>
         </CardTitle>
       </CardHeader>

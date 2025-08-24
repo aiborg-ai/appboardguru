@@ -14,7 +14,7 @@ import { BatchSpanProcessor, SimpleSpanProcessor } from '@opentelemetry/sdk-trac
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { EventEmitter } from 'events'
 import { z } from 'zod'
-import { Result, success, failure } from '../patterns/result'
+import { Result, success, failure } from '../repositories/result'
 import { nanoid } from 'nanoid'
 
 // Tracing schemas

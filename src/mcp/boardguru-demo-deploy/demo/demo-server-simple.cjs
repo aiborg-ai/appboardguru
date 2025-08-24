@@ -180,7 +180,7 @@ app.post('/api/demo/calculate-roi', (req, res) => {
       meetingTime: boardSize * meetingsPerYear * 2.5 * avgMemberRate,
       preparation: boardSize * meetingsPerYear * 1.8 * avgMemberRate,
       compliance: 15000,
-      subscription: 100000,
+      subscription: 30000,
       total: 0
     }
   };

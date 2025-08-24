@@ -36,7 +36,11 @@ export const useDeviceDetection = (): DeviceInfo => {
     isTouchDevice: false,
     isTablet: false,
     supportsHover: false,
-    screenSize: { width: 0, height: 0, ratio: 1 },
+    screenSize: { 
+      width: typeof window !== 'undefined' ? window.innerWidth : 1024, 
+      height: typeof window !== 'undefined' ? window.innerHeight : 768, 
+      ratio: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1 
+    },
     orientation: 'portrait',
     capabilities: {
       pencilSupport: false,
@@ -50,6 +54,11 @@ export const useDeviceDetection = (): DeviceInfo => {
   });
 
   useEffect(() => {
+    // Only run detection on the client side
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return;
+    }
+
     const detectDevice = (): DeviceInfo => {
       const userAgent = navigator.userAgent;
       const platform = navigator.platform;

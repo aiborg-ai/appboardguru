@@ -6,7 +6,7 @@
 import { EventEmitter } from 'events'
 import { z } from 'zod'
 import { DomainEvent } from '../events/event-store'
-import { Result, success, failure } from '../patterns/result'
+import { Result, success, failure } from '../repositories/result'
 import { nanoid } from 'nanoid'
 
 // Aggregate metadata interface

@@ -6,8 +6,8 @@
 import { BaseService } from './base.service'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
-import type { Result } from '@/lib/repositories/result'
-import { success, failure, RepositoryError } from '@/lib/repositories/result'
+import type { Result } from '../repositories/result'
+import { success, failure } from '../repositories/result'
 
 import { z } from 'zod'
 

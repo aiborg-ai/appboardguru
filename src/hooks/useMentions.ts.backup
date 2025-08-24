@@ -11,6 +11,8 @@ import { useUser } from '../lib/stores'
 import { CommentService } from '../lib/services/comment.service'
 import type { OrganizationId, UserId } from '../types/database'
 import type { Result } from '../lib/types/result'
+import { success, failure } from '../lib/types/result'
+import { RepositoryError } from '../lib/errors/repository-error'
 
 export interface MentionUser {
   id: UserId
@@ -224,7 +226,7 @@ export function useMentions({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to process mentions'
       setError(errorMessage)
-      return failure(RepositoryError.internal('MENTION_PROCESSING_ERROR', errorMessage)
+      return failure(RepositoryError.internal('MENTION_PROCESSING_ERROR', errorMessage))
     }
   }, [enabled, detectMentions, userCache, clearError])
 
@@ -387,7 +389,7 @@ export function useMentions({
    */
   const searchUsers = useCallback(async (query: string): Promise<Result<MentionUser[]>> => {
     if (!user || !organizationId) {
-      return failure(RepositoryError.internal('NOT_AUTHENTICATED', 'User not authenticated')
+      return failure(RepositoryError.internal('NOT_AUTHENTICATED', 'User not authenticated'))
     }
 
     try {
@@ -423,7 +425,7 @@ export function useMentions({
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to search users'
-      return failure(RepositoryError.internal('USER_SEARCH_ERROR', errorMessage)
+      return failure(RepositoryError.internal('USER_SEARCH_ERROR', errorMessage))
     }
   }, [user, organizationId])
 

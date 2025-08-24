@@ -14,7 +14,7 @@ import {
   register as defaultRegister
 } from 'prom-client'
 import { z } from 'zod'
-import { Result, success, failure } from '../patterns/result'
+import { Result, success, failure } from '../repositories/result'
 import { nanoid } from 'nanoid'
 
 // Metrics schemas

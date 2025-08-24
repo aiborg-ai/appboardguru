@@ -3,17 +3,46 @@
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useCallback } from 'react';
-import { 
-  MeetingOrchestrator,
-  TabletDocumentViewer,
-  TabletVotingInterface,
-  CollaborativeWhiteboard,
-  RealTimeComments,
-  useDeviceDetection,
-  DEFAULT_TABLET_CONFIG,
-  SUPPORTED_FEATURES
-} from '@/components/tablet';
+import React, { useState, useCallback, useEffect } from 'react';
+import dynamicImport from 'next/dynamic';
+
+// Dynamically import tablet components only on client side
+const MeetingOrchestrator = dynamicImport(
+  () => import('@/components/tablet/meetings/MeetingOrchestrator'), 
+  { ssr: false }
+);
+
+const TabletDocumentViewer = dynamicImport(
+  () => import('@/components/tablet/documents/TabletDocumentViewer'), 
+  { ssr: false }
+);
+
+const TabletVotingInterface = dynamicImport(
+  () => import('@/components/tablet/voting/TabletVotingInterface'), 
+  { ssr: false }
+);
+
+const CollaborativeWhiteboard = dynamicImport(
+  () => import('@/components/tablet/collaboration/CollaborativeWhiteboard'), 
+  { ssr: false }
+);
+
+const RealTimeComments = dynamicImport(
+  () => import('@/components/tablet/collaboration/RealTimeComments'), 
+  { ssr: false }
+);
+
+// Dynamic import for device detection hook
+let useDeviceDetection: () => any;
+let DEFAULT_TABLET_CONFIG: any;
+let SUPPORTED_FEATURES: any;
+
+if (typeof window !== 'undefined') {
+  const tabletModule = require('@/components/tablet');
+  useDeviceDetection = tabletModule.useDeviceDetection;
+  DEFAULT_TABLET_CONFIG = tabletModule.DEFAULT_TABLET_CONFIG;
+  SUPPORTED_FEATURES = tabletModule.SUPPORTED_FEATURES;
+}
 import { Button } from '@/features/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Badge } from '@/features/shared/ui/badge';
@@ -232,28 +261,30 @@ export default function TabletDemoPage() {
   const [activeDemo, setActiveDemo] = useState<'meeting' | 'document' | 'voting' | 'whiteboard' | 'comments'>('meeting');
   const [currentUserId] = useState('user-1');
   const [isClient, setIsClient] = useState(false);
+  const [deviceInfo, setDeviceInfo] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    orientation: 'landscape' as const,
+    screenSize: { width: 1024, height: 768 },
+    pixelRatio: 1,
+    touchSupport: false,
+    platform: 'unknown' as const,
+    browserInfo: { name: 'unknown', version: 'unknown' }
+  });
   
-  // Always call the hook, but provide fallback during SSR
-  let deviceInfo;
-  try {
-    deviceInfo = useDeviceDetection();
-  } catch {
-    // Fallback for SSR
-    deviceInfo = {
-      isMobile: false,
-      isTablet: false,
-      isDesktop: true,
-      orientation: 'landscape' as const,
-      screenSize: { width: 1024, height: 768 },
-      pixelRatio: 1,
-      touchSupport: false,
-      platform: 'unknown' as const,
-      browserInfo: { name: 'unknown', version: 'unknown' }
-    };
-  }
-  
-  React.useEffect(() => {
+  useEffect(() => {
     setIsClient(true);
+    
+    // Only try to use device detection on client side
+    if (typeof window !== 'undefined' && useDeviceDetection) {
+      try {
+        const detectedInfo = useDeviceDetection();
+        setDeviceInfo(detectedInfo);
+      } catch (error) {
+        console.warn('Device detection failed:', error);
+      }
+    }
   }, []);
 
   // Demo handlers
@@ -299,6 +330,18 @@ export default function TabletDemoPage() {
   };
 
   const renderDemo = () => {
+    // Only render tablet components on client-side
+    if (!isClient) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-pulse text-gray-500 mb-2">Loading tablet interface...</div>
+            <div className="text-sm text-gray-400">Initializing {activeDemo} demo</div>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeDemo) {
       case 'meeting':
         return (
