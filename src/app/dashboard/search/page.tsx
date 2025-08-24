@@ -1,14 +1,25 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import UniversalSearch from '@/components/search/UniversalSearch'
 import { Search } from 'lucide-react'
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get('q') || ''
+
+  return (
+    <UniversalSearch 
+      query={initialQuery}
+      autoFocus={!initialQuery}
+      placeholder="Search across all content..."
+    />
+  )
+}
+
+export default function SearchPage() {
 
   return (
     <DashboardLayout>
@@ -26,11 +37,9 @@ export default function SearchPage() {
           </div>
 
           {/* Search Component */}
-          <UniversalSearch 
-            query={initialQuery}
-            autoFocus={!initialQuery}
-            placeholder="Search across all content..."
-          />
+          <Suspense fallback={<div className="animate-pulse">Loading search...</div>}>
+            <SearchContent />
+          </Suspense>
         </div>
       </div>
     </DashboardLayout>

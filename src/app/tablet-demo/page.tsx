@@ -228,7 +228,24 @@ const demoCollaborators = [
 export default function TabletDemoPage() {
   const [activeDemo, setActiveDemo] = useState<'meeting' | 'document' | 'voting' | 'whiteboard' | 'comments'>('meeting');
   const [currentUserId] = useState('user-1');
-  const deviceInfo = useDeviceDetection();
+  const [isClient, setIsClient] = useState(false);
+  
+  // Only use device detection on client side
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  const deviceInfo = isClient ? useDeviceDetection() : {
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    orientation: 'landscape' as const,
+    screenSize: { width: 1024, height: 768 },
+    pixelRatio: 1,
+    touchSupport: false,
+    platform: 'unknown' as const,
+    browserInfo: { name: 'unknown', version: 'unknown' }
+  };
 
   // Demo handlers
   const handleMeetingAction = useCallback((action: string, data?: any) => {

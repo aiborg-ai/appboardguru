@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { z } from 'zod'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 const calendarViewSchema = z.object({
   default_view: z.enum(['day', 'week', 'month', 'year', 'agenda']).default('month'),
   week_start_day: z.number().min(0).max(6).default(0), // 0 = Sunday

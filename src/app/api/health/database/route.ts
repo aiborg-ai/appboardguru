@@ -6,6 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { performDatabaseHealthCheck, validateDatabaseSchema } from '@/lib/database/connection-test'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Starting database health check API...')

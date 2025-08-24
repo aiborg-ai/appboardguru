@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server'
 import { checkOrganizationSlugAvailability } from '@/lib/services/organization'
 import { RateLimiter } from '@/lib/security'
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
 import {
   createSuccessResponse,
   createErrorResponse,
