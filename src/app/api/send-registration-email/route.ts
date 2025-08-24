@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import nodemailer from 'nodemailer'
 import { generateApprovalUrls } from '@/utils/url'
 import { env, getSmtpConfig } from '@/config/environment'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { 
   validateRegistrationData, 
   generateSecureApprovalToken,
@@ -38,6 +38,7 @@ async function handleRegistrationEmail(request: NextRequest) {
 
   let body: any
   try {
+    const supabase = await createSupabaseServerClient()
     body = await request.json()
   } catch (error) {
     return createErrorResponse('Invalid JSON in request body', 400)
@@ -57,6 +58,7 @@ async function handleRegistrationEmail(request: NextRequest) {
   }
 
   try {
+    const supabase = await createSupabaseServerClient()
     // Check if email already has a registration request
     const { data: existingRequest, error: checkError } = await supabase
       .from('registration_requests')
@@ -142,6 +144,7 @@ async function handleRegistrationEmail(request: NextRequest) {
     // Verify SMTP connection (in development)
     if (env.NODE_ENV === 'development') {
       try {
+    const supabase = await createSupabaseServerClient()
         await transporter.verify()
         console.log('✅ SMTP connection verified')
       } catch (error) {

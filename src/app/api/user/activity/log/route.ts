@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { 
   UserActivityLogger,
   getRequestContext,
@@ -50,6 +50,7 @@ async function handleLogActivity(request: NextRequest) {
 
   try {
     // Get current user session
+    const supabase = await createSupabaseServerClient()
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
     if (sessionError || !session?.user) {

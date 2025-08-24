@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import nodemailer from 'nodemailer'
 import { getAppUrl } from '@/utils/url'
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const token = searchParams.get('token')
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
 
     // Send rejection email to the user
     try {
+    const supabase = await createSupabaseServerClient()
       const transporter = nodemailer.createTransport({
         host: process.env['SMTP_HOST'] || 'smtp.gmail.com',
         port: parseInt(process.env['SMTP_PORT'] || '587'),

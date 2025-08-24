@@ -6,7 +6,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import nodemailer from 'nodemailer'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { createOtpCode, OtpRateLimiter } from '@/lib/otp'
 import { env, getSmtpConfig, getAppUrl } from '@/config/environment'
 import { 
@@ -52,6 +52,7 @@ async function handleResendOtp(request: NextRequest) {
   }
 
   try {
+    const supabase = await createSupabaseServerClient()
     // Parse and validate request body
     const body = await request.json()
     const { email, purpose } = resendOtpSchema.parse(body)
@@ -97,6 +98,7 @@ async function handleResendOtp(request: NextRequest) {
 
       // Send OTP email
       try {
+    const supabase = await createSupabaseServerClient()
         const transporter = nodemailer.createTransport(getSmtpConfig())
 
         const resendOtpEmailHTML = `

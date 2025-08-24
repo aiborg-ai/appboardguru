@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { createUserForApprovedRegistration, generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
 import { createOtpCode } from '@/lib/otp'
 import nodemailer from 'nodemailer'
@@ -27,6 +27,7 @@ async function handleApprovalRequest(request: NextRequest) {
   }
 
   try {
+    const supabase = await createSupabaseServerClient()
     // Get the registration request with token verification
     const { data: registrationRequest, error: fetchError } = await supabase
       .from('registration_requests')
@@ -81,6 +82,7 @@ async function handleApprovalRequest(request: NextRequest) {
     let userRecord: any = null
     
     try {
+    const supabase = await createSupabaseServerClient()
       // Import debug logger
       const { debugLogger } = await import('@/lib/debug-logger')
       
@@ -168,6 +170,7 @@ async function handleApprovalRequest(request: NextRequest) {
 
     // Send approval email to the user
     try {
+    const supabase = await createSupabaseServerClient()
       const transporter = nodemailer.createTransport(getSmtpConfig())
 
       const approvalEmailHTML = `

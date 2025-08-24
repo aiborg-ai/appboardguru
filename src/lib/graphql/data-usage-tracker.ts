@@ -56,15 +56,23 @@ export class DataUsageTracker {
   private monthlyLimit = 1024 * 1024 * 1024; // 1GB default monthly limit
 
   constructor() {
-    this.initDatabase();
-    this.startPeriodicReporting();
-    this.monitorNetworkConditions();
+    // Only initialize in browser environment
+    if (typeof window !== 'undefined' && 'indexedDB' in window) {
+      this.initDatabase();
+      this.startPeriodicReporting();
+      this.monitorNetworkConditions();
+    }
   }
 
   /**
    * Initialize IndexedDB for usage tracking
    */
   private async initDatabase(): Promise<void> {
+    if (typeof indexedDB === 'undefined') {
+      console.warn('IndexedDB not available in this environment')
+      return Promise.resolve()
+    }
+    
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('DataUsageTracker', 1);
 

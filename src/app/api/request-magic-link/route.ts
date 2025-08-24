@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
 import nodemailer from 'nodemailer'
 import { getAppUrl, env, getSmtpConfig } from '@/config/environment'
@@ -26,6 +26,9 @@ async function handleMagicLinkRequest(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json()
     const { email } = requestSchema.parse(body)
+
+    // Initialize Supabase client
+    const supabase = await createSupabaseServerClient()
 
     // Check if user exists and is approved but hasn't set password
     const { data: registrationData, error: regError } = await supabase

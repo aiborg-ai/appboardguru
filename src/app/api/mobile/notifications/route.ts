@@ -7,12 +7,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import webpush from 'web-push';
 
-// Configure web-push
-webpush.setVapidDetails(
-  'mailto:support@boardguru.ai',
-  process.env.VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-);
+// Configure web-push with validation - moved to route handlers to avoid module-level initialization
+function configureWebPush() {
+  const publicKey = process.env.VAPID_PUBLIC_KEY
+  const privateKey = process.env.VAPID_PRIVATE_KEY
+  
+  if (!publicKey || !privateKey) {
+    console.warn('VAPID keys not configured - push notifications will not work')
+    return false
+  }
+  
+  webpush.setVapidDetails(
+    'mailto:support@boardguru.ai',
+    publicKey,
+    privateKey
+  )
+  return true
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -64,6 +75,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Configure web-push if not already done
+    if (!configureWebPush()) {
+      return NextResponse.json(
+        { error: 'Push notifications are not configured on this server' },
+        { status: 503 }
+      );
+    }
+
     const { action, userId, subscription, preferences, message } = await request.json();
 
     if (!userId) {

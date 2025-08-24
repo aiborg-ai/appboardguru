@@ -44,13 +44,21 @@ export class OfflineSyncEngine {
   private syncListeners = new Set<Function>();
 
   constructor() {
-    this.initializeDatabase();
+    // Only initialize database in browser environment
+    if (typeof window !== 'undefined' && 'indexedDB' in window) {
+      this.initializeDatabase();
+    }
   }
 
   /**
    * Initialize IndexedDB for offline storage
    */
   private async initializeDatabase(): Promise<void> {
+    if (typeof indexedDB === 'undefined') {
+      console.warn('IndexedDB not available in this environment')
+      return Promise.resolve()
+    }
+    
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('BoardGuruSync', 2);
 

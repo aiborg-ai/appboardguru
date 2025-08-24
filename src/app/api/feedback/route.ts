@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { NotificationService } from '@/lib/services/notification.service'
 import { createAdminFeedbackTemplate, createUserConfirmationTemplate, generateFeedbackTextFallback, generateConfirmationTextFallback } from '@/lib/services/feedback-templates'
 import { z } from 'zod'
@@ -51,6 +51,7 @@ function generateReferenceId(): string {
 // Get user info from request
 async function getUserInfo(request: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient()
     // Try to get user from session/auth
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
@@ -69,6 +70,7 @@ async function getUserInfo(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient()
     // Parse request body
     const body = await request.json()
     
@@ -190,6 +192,7 @@ export async function POST(request: NextRequest) {
 
     // Log the feedback submission (optional - store in database for tracking)
     try {
+    const supabase = await createSupabaseServerClient()
       await supabase
         .from('feedback_submissions')
         .insert({

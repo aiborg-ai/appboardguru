@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { 
   createErrorResponse,
   createValidationErrorResponse,
@@ -78,6 +78,7 @@ async function handleExportUserActivity(request: NextRequest) {
   }
 
   try {
+    const supabase = await createSupabaseServerClient()
     // Get current user session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     

@@ -666,4 +666,5 @@ Focus on creating actionable, trackable items that board members can actually ex
   }
 }
 
-export const intelligentActionItemsService = new IntelligentActionItemsService();
+// Singleton export removed to fix cookies() scope issues
+// Create instances in route handlers instead
