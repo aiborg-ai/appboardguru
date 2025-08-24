@@ -4,8 +4,7 @@
  * Following AppBoardGuru architecture guidelines from CLAUDE.md
  */
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient, createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
 import type { TypedSupabaseClient } from '@/types/api'
 import { Result } from '@/lib/repositories/result'
@@ -56,35 +55,46 @@ export interface EnhancedTypedSupabaseClient {
 }
 
 /**
- * Create a properly typed Supabase server client for API routes
+ * Create a properly typed Supabase client that works in both server and client contexts
  */
-export async function createTypedSupabaseClient(): Promise<TypedSupabaseClient> {
-  const cookieStore = await cookies()
-  
-  return createServerClient<Database>(
-    process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
+export function createTypedSupabaseClient(): TypedSupabaseClient {
+  // Check if we're on the server side
+  if (typeof window === 'undefined') {
+    // Server-side: use createServerClient with cookies (dynamic import)
+    const { cookies } = require('next/headers')
+    const cookieStore = cookies()
+    
+    return createServerClient<Database>(
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options)
+            })
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
+      }
+    )
+  } else {
+    // Client-side: use createBrowserClient
+    return createBrowserClient<Database>(
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!
+    )
+  }
 }
 
 /**
  * Create enhanced Supabase client with Result pattern and repository compatibility
  */
-export async function createEnhancedSupabaseClient(): Promise<Result<EnhancedTypedSupabaseClient>> {
+export function createEnhancedSupabaseClient(): Result<EnhancedTypedSupabaseClient> {
   try {
-    const client = await createTypedSupabaseClient()
+    const client = createTypedSupabaseClient()
 
     const enhancedClient: EnhancedTypedSupabaseClient = {
       client,

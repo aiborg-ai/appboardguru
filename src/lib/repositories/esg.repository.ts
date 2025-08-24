@@ -1,4 +1,4 @@
-import { BaseRepository } from './base-repository'
+import { BaseRepository } from './base.repository'
 import { Result } from './result'
 import type { TypedSupabaseClient } from '@/types/api'
 import type {

@@ -237,8 +237,8 @@ interface AIEvent {
   organizationId: string
   userId?: string
   payload: Record<string, any>
-  correlation Id: string
-  causation Id?: string
+  correlationId: string
+  causationId?: string
   version: number
   metadata: EventMetadata
 }
