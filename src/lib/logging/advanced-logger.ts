@@ -533,10 +533,14 @@ export class LogTransportFactory {
       format: options.format || 'json',
       enabled: typeof window === 'undefined', // Only enable in Node.js
       transport: async (entry: LogEntry) => {
-        if (typeof require !== 'undefined') {
-          const fs = require('fs').promises
-          const formattedEntry = JSON.stringify(entry) + '\n'
-          await fs.appendFile(filePath, formattedEntry)
+        if (typeof require !== 'undefined' && typeof window === 'undefined') {
+          try {
+            const fs = eval('require')('fs').promises
+            const formattedEntry = JSON.stringify(entry) + '\n'
+            await fs.appendFile(filePath, formattedEntry)
+          } catch (error) {
+            console.warn('File logging not available:', error)
+          }
         }
       }
     }
