@@ -5,6 +5,9 @@ import IntegratedPageLayout from '@/components/shared/IntegratedPageLayout'
 import WorkflowIntegration from '@/components/workflow/WorkflowIntegration'
 import { Link2, Plus, Filter, Settings } from 'lucide-react'
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
 export default function WorkflowPage() {
   const handleCreateConnection = () => {
     console.log('Create new workflow connection')
@@ -73,9 +76,13 @@ export default function WorkflowPage() {
       }}
     >
       {/* Main workflow content */}
-      <WorkflowIntegration 
-        showSuggestions={true}
-      />
+      {typeof window !== 'undefined' ? (
+        <WorkflowIntegration 
+          showSuggestions={true}
+        />
+      ) : (
+        <div className="animate-pulse">Loading workflow integration...</div>
+      )}
     </IntegratedPageLayout>
   )
 }
