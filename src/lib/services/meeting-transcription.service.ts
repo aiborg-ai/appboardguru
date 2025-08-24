@@ -103,7 +103,7 @@ class MeetingTranscriptionService {
   private supabase: any;
 
   constructor() {
-    this.initializeSupabase();
+    // Don't initialize Supabase in constructor to avoid cookies outside request scope
   }
 
   private async initializeSupabase() {
@@ -844,4 +844,4 @@ Please provide a professional board meeting summary suitable for corporate recor
   }
 }
 
-export const meetingTranscriptionService = new MeetingTranscriptionService();
+export { MeetingTranscriptionService };

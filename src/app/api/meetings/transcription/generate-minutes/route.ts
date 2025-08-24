@@ -5,7 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed';
-import { meetingTranscriptionService } from '@/lib/services/meeting-transcription.service';
+import { MeetingTranscriptionService } from '@/lib/services/meeting-transcription.service';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/meetings/transcription/generate-minutes - Generate AI meeting minutes
@@ -63,6 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate meeting minutes using AI
+    const meetingTranscriptionService = new MeetingTranscriptionService();
     const meetingMinutes = await meetingTranscriptionService.generateMeetingMinutes(
       transcriptionId,
       user.id,

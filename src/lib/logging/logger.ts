@@ -165,16 +165,21 @@ export class FileTransport implements LogTransport {
   }
 
   private async initializeStream(): Promise<void> {
-    const fs = await import('fs')
-    const path = await import('path')
-    
-    // Ensure directory exists
-    const dir = path.dirname(this.filePath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
+    try {
+      const fs = await import('fs')
+      const path = await import('path')
+      
+      // Ensure directory exists
+      const dir = path.dirname(this.filePath)
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
+      }
 
-    this.writeStream = fs.createWriteStream(this.filePath, { flags: 'a' })
+      this.writeStream = fs.createWriteStream(this.filePath, { flags: 'a' })
+    } catch (error) {
+      console.error(`Failed to initialize log file stream for ${this.filePath}:`, error)
+      throw error
+    }
   }
 
   private shouldRotate(newLine: string): boolean {
@@ -351,11 +356,18 @@ export class Logger {
         maxDataSize: 10000
       }
 
-      // Add file transport in production
-      if (process.env['NODE_ENV'] === 'production') {
-        defaultConfig.transports.push(
-          new FileTransport(`/var/log/${name}.log`)
-        )
+      // Add file transport in production (use relative path for Vercel compatibility)
+      if (process.env['NODE_ENV'] === 'production' && typeof window === 'undefined') {
+        try {
+          // Use .next/logs directory for Vercel compatibility
+          const logPath = process.env['LOG_DIR'] || '.next/logs'
+          defaultConfig.transports.push(
+            new FileTransport(`${logPath}/${name}.log`)
+          )
+        } catch (error) {
+          // Fallback to console only if file transport fails
+          console.warn(`Failed to initialize file logging for ${name}:`, error)
+        }
       }
 
       // Add HTTP transport if configured

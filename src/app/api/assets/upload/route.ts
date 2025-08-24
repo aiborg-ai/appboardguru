@@ -4,6 +4,9 @@ import { AssetService } from '@/lib/services/asset.service'
 import { AssetRepository, AssetUploadData } from '@/lib/repositories/asset.repository.enhanced'
 import { createOrganizationId, createUserId } from '@/types/branded'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
 interface UploadFormData {

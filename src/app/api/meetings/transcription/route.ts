@@ -5,7 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed';
-import { meetingTranscriptionService } from '@/lib/services/meeting-transcription.service';
+import { MeetingTranscriptionService } from '@/lib/services/meeting-transcription.service';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/meetings/transcription - Start a new meeting transcription
@@ -32,6 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start transcription session
+    const meetingTranscriptionService = new MeetingTranscriptionService();
     const result = await meetingTranscriptionService.startMeetingTranscription(
       user.id,
       organizationId,
@@ -159,6 +163,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Add transcription segment
+    const meetingTranscriptionService = new MeetingTranscriptionService();
     const result = await meetingTranscriptionService.addTranscriptionSegment(
       sessionId,
       transcriptionId,

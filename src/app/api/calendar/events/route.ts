@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { z } from 'zod'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 const createEventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
