@@ -11,10 +11,10 @@ import {
   DEFAULT_TABLET_CONFIG,
   SUPPORTED_FEATURES
 } from '@/components/tablet';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/features/shared/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Badge } from '@/features/shared/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { 
   Tablet,
   Play,

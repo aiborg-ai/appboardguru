@@ -6,7 +6,7 @@ import { Badge } from '@/components/atoms/display/badge'
 import { Button } from '@/components/atoms/Button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/atoms/form/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
 import { Textarea } from '@/components/atoms/form/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { 

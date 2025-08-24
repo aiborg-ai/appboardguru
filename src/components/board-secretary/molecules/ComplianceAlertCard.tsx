@@ -4,10 +4,10 @@
  */
 
 import React from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/features/shared/ui/card'
+import { Button } from '@/features/shared/ui/button'
 import { ComplianceAlertBadge, type ComplianceAlertSeverity } from '../atoms/ComplianceAlertBadge'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/features/shared/ui/badge'
 import { cn } from '@/lib/utils'
 import { 
   Calendar, 

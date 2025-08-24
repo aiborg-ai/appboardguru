@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules
 import { Button } from '@/components/atoms/Button'
 import { Badge } from '@/components/atoms/display/badge'
 import { Separator } from '@/components/atoms/display/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { 
   Activity, 
   AlertTriangle, 

@@ -6,7 +6,7 @@ import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/display/badge';
 import { Switch } from '@/components/atoms/form/switch';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/atoms/display/progress';
 import { useToast } from '@/components/ui/use-toast';

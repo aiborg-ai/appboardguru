@@ -3,7 +3,7 @@
 import React, { memo, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import type { SettingsSelectProps } from './types'
 

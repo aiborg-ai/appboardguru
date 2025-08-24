@@ -6,7 +6,7 @@ import { Input } from '@/components/atoms/form/input'
 import { Button } from '@/components/atoms/Button'
 import { Badge } from '@/components/atoms/display/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
 import { Search, Filter, Clock, User, FileText, Download, Sparkles } from 'lucide-react'
 import { debounce } from 'lodash'
 

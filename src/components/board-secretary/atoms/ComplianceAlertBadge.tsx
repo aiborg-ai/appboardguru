@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/features/shared/ui/badge'
 import { cn } from '@/lib/utils'
 import { AlertCircle, AlertTriangle, Info, Zap } from 'lucide-react'
 

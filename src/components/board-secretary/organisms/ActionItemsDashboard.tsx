@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Button } from '@/features/shared/ui/button'
+import { Input } from '@/features/shared/ui/input'
+import { Badge } from '@/features/shared/ui/badge'
 import { ActionItemCard, type ActionItemStatus } from '../molecules/ActionItemCard'
 import { ActionItemPriorityBadge, type ActionItemPriority } from '../atoms/ActionItemPriorityBadge'
 import { cn } from '@/lib/utils'
@@ -29,15 +29,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/features/shared/ui/select'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs'
+} from '@/features/shared/ui/tabs'
 import { Progress } from '@/components/ui/progress'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/features/shared/ui/skeleton'
 
 interface ActionItem {
   id: string

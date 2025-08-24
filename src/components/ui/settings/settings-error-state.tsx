@@ -3,7 +3,7 @@
 import React, { memo } from 'react'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/features/shared/ui/button'
 import type { SettingsErrorStateProps } from './types'
 
 export const SettingsErrorState = memo<SettingsErrorStateProps>(({

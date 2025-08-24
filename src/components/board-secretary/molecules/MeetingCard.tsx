@@ -4,10 +4,10 @@
  */
 
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Button } from '@/features/shared/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/features/shared/ui/badge'
 import { MeetingStatusBadge, type MeetingStatus } from '../atoms/MeetingStatusBadge'
 import { cn } from '@/lib/utils'
 import { 

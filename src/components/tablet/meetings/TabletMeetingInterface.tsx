@@ -5,10 +5,10 @@ import { cn } from '@/lib/utils';
 import { TabletMeetingLayout } from '../layout/TabletMeetingLayout';
 import { SplitViewContainer } from '../layout/SplitViewContainer';
 import { FloatingActionPanel } from '../layout/FloatingActionPanel';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/features/shared/ui/button';
+import { Badge } from '@/features/shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { 
   Calendar,
   Clock,

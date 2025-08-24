@@ -6,12 +6,12 @@ import { useAuth } from '@/lib/stores/auth-store'
 import { useOrganizations } from '@/lib/stores/organization-store'
 import ExecutiveDashboard from '@/components/executive/ExecutiveDashboard'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/features/shared/ui/skeleton'
+import { Alert, AlertDescription } from '@/features/shared/ui/alert'
 import { AlertTriangle, Crown, Building, Shield, Target } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/features/shared/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
 
 /**
  * Executive Dashboard Page

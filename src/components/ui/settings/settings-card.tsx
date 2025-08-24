@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react'
 import { cn } from '@/lib/utils'
-import { Card } from '@/components/ui/card'
+import { Card } from '@/features/shared/ui/card'
 import { SettingsSkeleton } from './settings-skeleton'
 import { SettingsErrorState } from './settings-error-state'
 import { SettingsSuccessState } from './settings-success-state'

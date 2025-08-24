@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/features/shared/ui/badge'
 import { cn } from '@/lib/utils'
 import { Clock, Loader2, CheckCircle, XCircle, Play } from 'lucide-react'
 

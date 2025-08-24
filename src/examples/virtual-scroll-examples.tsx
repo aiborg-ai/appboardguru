@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/c
 import { Button } from '@/features/shared/ui/button'
 import { Input } from '@/features/shared/ui/input'
 import { Badge } from '@/features/shared/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { Switch } from '@/components/atoms/form/switch'
 import { Label } from '@/components/ui/label'
 

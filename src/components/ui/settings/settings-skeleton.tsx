@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react'
 import { cn } from '@/lib/utils'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/features/shared/ui/skeleton'
 import type { SettingsSkeletonProps } from './types'
 
 export const SettingsSkeleton = memo<SettingsSkeletonProps>(({

@@ -37,8 +37,8 @@ import {
 import { useDebounce } from '@/hooks/useDebounce'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/features/shared/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { 
   Users,
