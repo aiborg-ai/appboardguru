@@ -1,5 +1,6 @@
-import { Result, success, failure } from '../patterns/result'
-import { createClient } from '@/lib/supabase-server'
+import { Ok as success, Err as failure } from '../result/result'
+import type { Result } from '../result/types'
+import { createSupabaseClient } from '@/lib/supabase-client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
 
@@ -7,7 +8,7 @@ export abstract class BaseService {
   protected supabase: SupabaseClient<Database>
 
   constructor() {
-    this.supabase = createClient()
+    this.supabase = createSupabaseClient()
   }
 
   /**

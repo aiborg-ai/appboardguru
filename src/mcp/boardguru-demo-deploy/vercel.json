@@ -3,7 +3,7 @@
   "name": "boardguru-mcp-demo",
   "builds": [
     {
-      "src": "demo/demo-server.cjs",
+      "src": "demo/demo-server-simple.cjs",
       "use": "@vercel/node"
     },
     {
@@ -18,11 +18,11 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "/demo/demo-server.cjs"
+      "dest": "/demo/demo-server-simple.cjs"
     },
     {
       "src": "/health",
-      "dest": "/demo/demo-server.cjs"
+      "dest": "/demo/demo-server-simple.cjs"
     },
     {
       "src": "/(.*)",

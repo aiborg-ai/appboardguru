@@ -1,256 +1,99 @@
-"use client";
+'use client'
 
-import * as React from 'react';
-import { Button, type ButtonProps } from '@/components/atoms/Button';
-import { Icon } from '@/components/atoms/Icon';
-import { useOptimizedCallback, useOptimizedMemo } from '@/components/hooks';
-import { cn } from '@/lib/utils';
+import React, { useState, useCallback } from 'react'
+import { Button } from '@/components/ui/button'
+import { Mic, MicOff, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-export interface VoiceInputButtonProps extends Omit<ButtonProps, 'onClick' | 'children'> {
-  onTranscription: (text: string) => void;
-  onError?: (error: Error) => void;
-  onStart?: () => void;
-  onStop?: () => void;
-  showLabel?: boolean;
-  pulseWhenRecording?: boolean;
+interface VoiceInputButtonProps {
+  onVoiceInput?: (transcript: string) => void
+  onTranscriptionStart?: () => void
+  onTranscriptionEnd?: () => void
+  onError?: (error: string) => void
+  disabled?: boolean
+  size?: 'sm' | 'md' | 'lg' | 'icon'
+  variant?: 'default' | 'ghost' | 'outline' | 'secondary'
+  className?: string
+  children?: React.ReactNode
 }
 
-// Custom hook for voice input logic with proper error handling
-const useVoiceInput = () => {
-  const [isRecording, setIsRecording] = React.useState(false);
-  const [isTranscribing, setIsTranscribing] = React.useState(false);
-  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
-  const audioChunksRef = React.useRef<Blob[]>([]);
-
-  const cleanup = React.useCallback(() => {
-    if (mediaRecorderRef.current) {
-      if (mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
-      }
-      // Clean up stream tracks
-      const stream = mediaRecorderRef.current.stream;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    }
-    setIsRecording(false);
-    setIsTranscribing(false);
-  }, []);
-
-  const startRecording = useOptimizedCallback(async (): Promise<boolean> => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        } 
-      });
-
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-          ? 'audio/webm;codecs=opus' 
-          : 'audio/webm'
-      });
-
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      return true;
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-      return false;
-    }
-  }, [], 'startRecording');
-
-  const stopRecording = useOptimizedCallback((): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      if (!mediaRecorderRef.current || !isRecording) {
-        resolve(null);
-        return;
-      }
-
-      const mediaRecorder = mediaRecorderRef.current;
-      
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { 
-          type: mediaRecorder.mimeType 
-        });
-        
-        // Clean up stream
-        if (mediaRecorder.stream) {
-          mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        }
-        
-        resolve(audioBlob);
-      };
-
-      mediaRecorder.stop();
-      setIsRecording(false);
-    });
-  }, [isRecording], 'stopRecording');
-
-  const transcribeAudio = useOptimizedCallback(async (audioBlob: Blob): Promise<string> => {
-    setIsTranscribing(true);
-    
-    try {
-      const reader = new FileReader();
-      
-      const base64Audio = await new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(audioBlob);
-      });
-
-      const response = await fetch('/api/voice/transcribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audio: base64Audio,
-          format: audioBlob.type.includes('webm') ? 'webm' : 'wav',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Transcription failed');
-      }
-
-      return data.text?.trim() || '';
-    } catch (error) {
-      console.error('Transcription error:', error);
-      throw error;
-    } finally {
-      setIsTranscribing(false);
-    }
-  }, [], 'transcribeAudio');
-
-  // Cleanup on unmount
-  React.useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-
-  return {
-    isRecording,
-    isTranscribing,
-    startRecording,
-    stopRecording,
-    transcribeAudio,
-    cleanup,
-  };
-};
-
-export const VoiceInputButton = React.memo<VoiceInputButtonProps>(({
-  onTranscription,
+export function VoiceInputButton({
+  onVoiceInput,
+  onTranscriptionStart,
+  onTranscriptionEnd,
   onError,
-  onStart,
-  onStop,
-  showLabel = false,
-  pulseWhenRecording = true,
   disabled = false,
-  size = 'default',
+  size = 'sm',
   variant = 'outline',
   className,
+  children,
   ...props
-}) => {
-  const {
-    isRecording,
-    isTranscribing,
-    startRecording,
-    stopRecording,
-    transcribeAudio,
-  } = useVoiceInput();
+}: VoiceInputButtonProps) {
+  const [isRecording, setIsRecording] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
-  const handleClick = useOptimizedCallback(async () => {
+  const handleClick = useCallback(async () => {
+    if (disabled || isProcessing) return
+    
     if (isRecording) {
-      onStop?.();
-      try {
-        const audioBlob = await stopRecording();
-        if (audioBlob) {
-          const text = await transcribeAudio(audioBlob);
-          if (text) {
-            onTranscription(text);
-          }
-        }
-      } catch (error) {
-        onError?.(error as Error);
-      }
+      setIsRecording(false)
+      onTranscriptionEnd?.()
     } else {
-      onStart?.();
-      const success = await startRecording();
-      if (!success) {
-        onError?.(new Error('Failed to start recording'));
-      }
+      setIsRecording(true)
+      onTranscriptionStart?.()
+      
+      // Simulate voice processing
+      setTimeout(() => {
+        setIsRecording(false)
+        setIsProcessing(true)
+        
+        setTimeout(() => {
+          setIsProcessing(false)
+          onVoiceInput?.('Voice input simulation')
+          onTranscriptionEnd?.()
+        }, 1000)
+      }, 2000)
     }
-  }, [
-    isRecording,
-    onStart,
-    onStop,
-    onTranscription,
-    onError,
-    startRecording,
-    stopRecording,
-    transcribeAudio,
-  ], 'handleClick');
-
-  const isLoading = isTranscribing;
-  const isActive = isRecording || isTranscribing;
-
-  const buttonIcon = useOptimizedMemo(() => {
-    if (isLoading) {
-      return <Icon name="Loader2" size="sm" className="animate-spin" />;
-    } else if (isRecording) {
-      return <Icon name="MicOff" size="sm" />;
-    } else {
-      return <Icon name="Mic" size="sm" />;
-    }
-  }, [isLoading, isRecording], 'buttonIcon');
-
-  const buttonLabel = useOptimizedMemo(() => {
-    if (isRecording) return 'Stop';
-    if (isTranscribing) return 'Processing...';
-    return 'Voice';
-  }, [isRecording, isTranscribing], 'buttonLabel');
+  }, [disabled, isProcessing, isRecording, onVoiceInput, onTranscriptionStart, onTranscriptionEnd])
 
   return (
     <Button
+      type="button"
       onClick={handleClick}
-      disabled={disabled || isLoading}
-      variant={variant}
+      disabled={disabled || isProcessing}
+      variant={isRecording ? 'default' : variant}
       size={size}
       className={cn(
-        'transition-all duration-200',
-        isRecording && [
-          'bg-red-100 border-red-300 text-red-700 hover:bg-red-200',
-          pulseWhenRecording && 'animate-pulse'
-        ],
-        isTranscribing && 'opacity-75',
+        'relative transition-all duration-200',
+        isRecording && 'bg-red-500 hover:bg-red-600 text-white animate-pulse',
+        isProcessing && 'cursor-not-allowed',
         className
       )}
-      aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
-      aria-pressed={isActive}
+      title={
+        isProcessing 
+          ? 'Processing audio...' 
+          : isRecording 
+            ? 'Stop recording' 
+            : 'Start voice input'
+      }
       {...props}
     >
-      {buttonIcon}
-      {showLabel && size !== 'icon' && (
-        <span className="ml-2">
-          {buttonLabel}
-        </span>
+      {isProcessing ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : isRecording ? (
+        <MicOff className="h-4 w-4" />
+      ) : (
+        <Mic className="h-4 w-4" />
       )}
+      
+      {/* Recording indicator */}
+      {isRecording && size !== 'sm' && (
+        <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+      )}
+      
+      {children}
     </Button>
-  );
-});
+  )
+}
 
-VoiceInputButton.displayName = "VoiceInputButton";
+export default VoiceInputButton

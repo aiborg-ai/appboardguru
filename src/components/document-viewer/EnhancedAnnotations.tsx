@@ -40,7 +40,7 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/features/shared/ui/dialog'
-import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import { 
   useDocumentContext, 
   useDocumentActions, 

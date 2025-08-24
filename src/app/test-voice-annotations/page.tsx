@@ -6,7 +6,7 @@ import { VoiceAnnotationRecorder } from '@/components/pdf/VoiceAnnotationRecorde
 import { VoiceAnnotationPlayer } from '@/components/pdf/VoiceAnnotationPlayer'
 import { OCRExtractor } from '@/components/pdf/OCRExtractor'
 import { Card } from '@/components/molecules/cards/card'
-import { Button } from '@/components/atoms/Button'
+import { Button } from '@/components/atoms/Button/Button'
 import { AssetId, AnnotationType } from '@/types/annotation-types'
 
 export default function TestVoiceAnnotationsPage() {

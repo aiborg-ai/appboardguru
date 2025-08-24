@@ -34,7 +34,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/features/shared/ui/dropdown-menu'
-import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import { 
   useDocumentContext, 
   useDocumentActions 

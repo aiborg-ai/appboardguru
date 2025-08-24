@@ -393,7 +393,7 @@ export class AIAnalysisWebSocketService extends BaseService {
           'topic-modeling'
         ]
       }
-    })
+    }))
   }
 
   /**
@@ -469,7 +469,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       this.metrics.throughput.transcriptionChunksPerSecond++
 
       return [chunk]
-    })
+    }))
   }
 
   // =============================================
@@ -583,7 +583,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       this.metrics.throughput.sentimentUpdatesPerMinute++
 
       return analysis
-    })
+    }))
   }
 
   // =============================================
@@ -641,7 +641,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       this.metrics.throughput.insightsGeneratedPerHour += insights.length
 
       return insights
-    })
+    }))
   }
 
   /**
@@ -746,7 +746,7 @@ export class AIAnalysisWebSocketService extends BaseService {
         updatedTask.endTime = new Date().toISOString()
         this.processingTasks.set(taskId, updatedTask)
       }
-    })
+    }))
   }
 
   // =============================================

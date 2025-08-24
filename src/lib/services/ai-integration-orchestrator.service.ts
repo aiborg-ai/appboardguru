@@ -10,7 +10,8 @@ import { aiMeetingIntelligenceService } from './ai-meeting-intelligence.service'
 import { aiPredictiveAnalyticsService } from './ai-predictive-analytics.service'
 import { aiIntelligentAutomationService } from './ai-intelligent-automation.service'
 import { aiRecommendationEngineService } from './ai-recommendation-engine.service'
-import { Result, success, failure } from '../patterns/result'
+import type { Result } from '@/lib/repositories/result'
+import { success, failure } from '@/lib/repositories/result'
 
 
 interface AIOrchestrationConfig {
@@ -335,10 +336,10 @@ export class AIIntegrationOrchestratorService extends BaseService {
         organizationId,
         payload: { action: 'orchestration_initialized', servicesCount: services.length },
         correlationId: `orch_init_${Date.now()}`
-      })
+      }))
 
       return orchestrationState
-    })
+    }))
   }
 
   /**
@@ -367,7 +368,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         payload: { requestType, options },
         correlationId,
         traceId
-      })
+      }))
 
       try {
         // Check service health
@@ -406,7 +407,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
           payload: { success: true, resultSize: JSON.stringify(result).length },
           correlationId,
           traceId
-        })
+        }))
 
         // Update metrics
         await this.updateMetrics(organizationId, requestType, 'success', Date.now())
@@ -421,7 +422,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
           payload: { error: error instanceof Error ? error.message : 'Unknown error' },
           correlationId,
           traceId
-        })
+        }))
 
         // Update metrics
         await this.updateMetrics(organizationId, requestType, 'failure', Date.now())
@@ -436,7 +437,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
 
         throw error
       }
-    })
+    }))
   }
 
   /**
@@ -471,7 +472,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         recommendations,
         trends
       }
-    })
+    }))
   }
 
   // ========================================
@@ -502,7 +503,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         this.logger.error('Coordination rule execution failed', {
           ruleId: rule.id,
           error: error instanceof Error ? error.message : 'Unknown error'
-        })
+        }))
       }
     }
   }
@@ -620,7 +621,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
       batchSize: config.batchSize,
       flushInterval: config.flushInterval,
       compressionEnabled: config.compressionEnabled
-    })
+    }))
 
     // Set up periodic flush
     setInterval(async () => {
@@ -675,7 +676,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
           organizationId: orgId,
           eventCount: events.length,
           error: error instanceof Error ? error.message : 'Unknown error'
-        })
+        }))
       }
     }
   }
@@ -685,7 +686,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     this.logger.debug('Persisting event batch', {
       organizationId,
       eventCount: events.length
-    })
+    }))
   }
 
   // ========================================
@@ -713,7 +714,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
       tracingEnabled: config.tracingEnabled,
       loggingLevel: config.loggingLevel,
       healthChecks: config.healthChecks.length
-    })
+    }))
   }
 
   private async initializeMetricsCollection(): Promise<void> {
@@ -756,7 +757,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         this.logger.error('Health check failed', {
           service: config.service,
           error: error instanceof Error ? error.message : 'Unknown error'
-        })
+        }))
       }
     }, config.interval)
   }
@@ -790,7 +791,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     this.logger.warn('Service health alert', {
       service,
       alertId: alert.id
-    })
+    }))
   }
 
   private async setupAlerting(config: AlertingConfig): Promise<void> {
@@ -982,7 +983,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         queueDepth: 0,
         errorRate: 0,
         responseTime: 0
-      })
+      }))
     }
 
     return services

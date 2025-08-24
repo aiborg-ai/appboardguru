@@ -3,7 +3,8 @@
  */
 
 import { BaseService } from './base.service'
-import { Result, success, failure } from '../patterns/result'
+import type { Result } from '@/lib/repositories/result'
+import { success, failure } from '@/lib/repositories/result'
 
 export class AIIntelligentAutomationService extends BaseService {
   async generateWorkflowRecommendations(organizationId: string, options: any): Promise<Result<any, string>> {
@@ -14,7 +15,7 @@ export class AIIntelligentAutomationService extends BaseService {
         recommendations: [],
         confidence: 0.8,
         generatedAt: new Date().toISOString()
-      })
+      }))
     } catch (error) {
       return failure(`Workflow recommendations failed: ${(error as Error).message}`)
     }
@@ -28,7 +29,7 @@ export class AIIntelligentAutomationService extends BaseService {
         regulations,
         status: 'compliant',
         checkedAt: new Date().toISOString()
-      })
+      }))
     } catch (error) {
       return failure(`Compliance check failed: ${(error as Error).message}`)
     }

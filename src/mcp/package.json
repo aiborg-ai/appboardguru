@@ -24,7 +24,7 @@
     "package": "npm run build && npm pack",
     "publish:npm": "npm publish --access public",
     "validate": "npm run lint && npm run test && npm run build",
-    "demo": "node demo/demo-server.cjs",
+    "demo": "node demo/demo-server-simple.cjs",
     "install-global": "npm install -g .",
     "docker:build": "docker build -t boardguru/governance-mcp .",
     "docker:run": "docker run -p 3000:3000 boardguru/governance-mcp"

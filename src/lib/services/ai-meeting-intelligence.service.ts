@@ -3,7 +3,8 @@
  */
 
 import { BaseService } from './base.service'
-import { Result, success, failure } from '../patterns/result'
+import type { Result } from '@/lib/repositories/result'
+import { success, failure } from '@/lib/repositories/result'
 
 export class AIMeetingIntelligenceService extends BaseService {
   async analyzeMeeting(meetingId: string, options: any): Promise<Result<any, string>> {

@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react'
 import { Button } from '@/components/atoms/Button'
 import { Input } from '@/components/atoms/form/input'
-import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import { 
   Paperclip, 
   Smile, 

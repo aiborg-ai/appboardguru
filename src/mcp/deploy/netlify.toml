@@ -8,7 +8,7 @@
   NPM_FLAGS = "--production=false"
 
 [[functions]]
-  path = "demo/demo-server.cjs"
+  path = "demo/demo-server-simple.cjs"
   node_bundler = "esbuild"
 
 [dev]

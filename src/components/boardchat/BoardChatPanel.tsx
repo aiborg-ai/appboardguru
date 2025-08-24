@@ -9,7 +9,7 @@ import { Input } from '@/components/atoms/form/input'
 import { Separator } from '@/components/atoms/display/separator'
 import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
-import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import {
   Dialog,
   DialogContent,

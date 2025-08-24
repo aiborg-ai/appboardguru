@@ -7,8 +7,8 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/atoms/Button'
-import { Badge } from '@/components/atoms/display/badge'
+import { Button } from '@/components/atoms/Button/Button'
+import { Badge } from '@/components/ui/badge'
 import { 
   Search,
   X,
