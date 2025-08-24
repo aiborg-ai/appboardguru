@@ -598,7 +598,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
         }
         break
       case 'reroute_request':
-        await this.reroute Request(action.parameters)
+        await this.rerouteRequest(action.parameters)
         break
       case 'send_alert':
         await this.sendCoordinationAlert(action.parameters)
