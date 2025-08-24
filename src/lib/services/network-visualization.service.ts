@@ -895,3 +895,6 @@ export class NetworkVisualizationService {
     return `network-${networkData.nodes.length}-${networkData.edges.length}-${Date.now()}`
   }
 }
+
+// Export singleton instance
+export const networkVisualizationService = new NetworkVisualizationService()

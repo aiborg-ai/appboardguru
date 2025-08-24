@@ -5,7 +5,7 @@ import { VirtualScrollList, VirtualScrollListRef, VirtualScrollListItem } from '
 import { Button } from '@/features/shared/ui/button'
 import { Badge } from '@/features/shared/ui/badge'
 import { Card } from '@/features/shared/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
 import {
   MessageSquare,
   Reply,
@@ -29,7 +29,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 

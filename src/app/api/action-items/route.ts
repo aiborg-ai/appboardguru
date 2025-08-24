@@ -3,12 +3,12 @@ import { IntelligentActionItemsService } from '@/lib/services/intelligent-action
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
-const actionItemsService = new IntelligentActionItemsService()
-
 // GET /api/action-items - Retrieve action items for user/organization
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const actionItemsService = new IntelligentActionItemsService()
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
 // POST /api/action-items - Create a new action item or extract from transcription
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const actionItemsService = new IntelligentActionItemsService()
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {

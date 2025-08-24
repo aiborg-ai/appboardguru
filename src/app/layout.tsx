@@ -1,4 +1,4 @@
-// import './globals.css' // Temporarily disabled to debug CSS processing issue
+// import './globals.css' // Temporarily disabled for troubleshooting
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 import { TooltipProvider } from '@/components/atoms/feedback/tooltip'

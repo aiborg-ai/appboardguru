@@ -11,7 +11,6 @@ import {
   User,
   FileText,
   Tag,
-  Compare,
   ChevronRight,
   ChevronDown,
   AlertTriangle,
@@ -291,7 +290,7 @@ export function FileVersionHistory({
                 size="sm"
                 onClick={handleCompareVersions}
               >
-                <Compare className="h-4 w-4 mr-1" />
+                <GitBranch className="h-4 w-4 mr-1" />
                 Compare
               </Button>
             )}

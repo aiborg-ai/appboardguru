@@ -4,14 +4,14 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/atoms/Button'
 import { Badge } from '@/components/atoms/display/badge'
 import { Separator } from '@/components/atoms/display/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import {
   Bell,
   Check,

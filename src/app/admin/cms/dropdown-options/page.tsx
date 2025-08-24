@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
 import { Button } from '@/components/atoms/Button'
 import { Input } from '@/components/atoms/form/input'
-import { Label } from '@/components/ui/label'
+import { Label } from '@/features/shared/ui/label'
 import { Textarea } from '@/components/atoms/form/textarea'
 import { Badge } from '@/components/atoms/display/badge'
 import { 

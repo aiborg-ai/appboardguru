@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/atoms/Button'
 import { Badge } from '@/components/atoms/display/badge'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/ui/tooltip'
 
 export interface RefreshIndicatorProps {
   isRefreshing: boolean

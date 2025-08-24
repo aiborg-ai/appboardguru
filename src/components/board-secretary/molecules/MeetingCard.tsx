@@ -6,7 +6,7 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
 import { Button } from '@/features/shared/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
 import { Badge } from '@/features/shared/ui/badge'
 import { MeetingStatusBadge, type MeetingStatus } from '../atoms/MeetingStatusBadge'
 import { cn } from '@/lib/utils'
@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 
 interface BoardMeeting {
   id: string

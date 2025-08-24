@@ -6,7 +6,7 @@
 import { BaseService } from './base.service'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
-import { Result, success, failure, RepositoryError, wrapAsync } from '../repositories/result'
+
 import { z } from 'zod'
 
 // Type definitions
@@ -390,7 +390,7 @@ export class AIBoardSecretaryService extends BaseService {
     const userResult = await this.getCurrentUser()
     if (!userResult.success) return userResult
 
-    return wrapAsync(async () => {
+    return success(await (async () => {
       // Get user's AI settings
       const { data: aiSettings } = await this.supabase
         .from('ai_user_settings')
@@ -583,7 +583,7 @@ export class AIBoardSecretaryService extends BaseService {
     const userResult = await this.getCurrentUser()
     if (!userResult.success) return userResult
 
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const { data: aiSettings } = await this.supabase
         .from('ai_user_settings')
         .select('*')
@@ -797,7 +797,7 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
     const userResult = await this.getCurrentUser()
     if (!userResult.success) return userResult
 
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const { data: aiSettings } = await this.supabase
         .from('ai_user_settings')
         .select('*')
@@ -1296,7 +1296,7 @@ Action items: ${actionItems.map((a: any) => `${a.title} (${a.status})`).join(', 
     const userResult = await this.getCurrentUser()
     if (!userResult.success) return userResult
 
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const { data: aiSettings } = await this.supabase
         .from('ai_user_settings')
         .select('*')

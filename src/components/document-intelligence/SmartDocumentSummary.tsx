@@ -9,11 +9,11 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
 import { Button } from '@/features/shared/ui/button'
 import { Badge } from '@/features/shared/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/features/shared/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/features/shared/ui/separator'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import {
   Select,
   SelectContent,

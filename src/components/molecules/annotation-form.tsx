@@ -10,7 +10,7 @@ import { Card } from '@/components/molecules/cards/card'
 import { Button } from '@/components/atoms/Button'
 import { Textarea } from '@/components/atoms/form/textarea'
 import { Badge } from '@/components/atoms/display/badge'
-import { Label } from '@/components/ui/label'
+import { Label } from '@/features/shared/ui/label'
 import { Checkbox } from '@/components/atoms/form/checkbox'
 import { 
   MessageSquare, 

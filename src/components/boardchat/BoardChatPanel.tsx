@@ -7,9 +7,9 @@ import { Button } from '@/components/atoms/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
 import { Input } from '@/components/atoms/form/input'
 import { Separator } from '@/components/atoms/display/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
-import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
+import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
 import {
   Dialog,
   DialogContent,
@@ -17,13 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
+} from '@/features/shared/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import {
   MessageCircle,
   Send,

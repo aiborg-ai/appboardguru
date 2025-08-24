@@ -5,7 +5,7 @@ export { assetStore, assetSelectors, useAssets, useCurrentAsset, useAssetUploads
 export { vaultStore, vaultSelectors, useVaults, useCurrentVault, useVaultInvitations, useVaultLoading, useVaultErrors, useVaultSelection } from './vault-store'
 export { notificationStore, notificationSelectors, useNotifications, useNotificationCounts, useNotificationPreferences, useNotificationLoading, useNotificationErrors, useNotificationSelection, useNotificationConnection } from './notification-store'
 export { uiStore, uiSelectors, useTheme, useColorScheme, useSidebar, useBreadcrumbs, useModals, useToasts, useUILoading, useLoadingOverlays, useCommandPalette, useScreenSize, useIsMobile } from './ui-store'
-export { documentStore, documentSelectors, useCurrentDocument, useDocumentAnnotations, useDocumentToc, useDocumentSummaries, useDocumentPodcast, useDocumentSearch, useDocumentViewSettings, useDocumentCollaborators, useDocumentChatHistory, useDocumentLoading, useDocumentErrors, useDocumentActions } from './document-store'
+export { useDocumentStore, documentStore, documentSelectors, useCurrentDocument, useDocumentAnnotations, useDocumentToc, useDocumentSummaries, useDocumentPodcast, useDocumentSearch, useDocumentViewSettings, useDocumentCollaborators, useDocumentChatHistory, useDocumentLoading, useDocumentErrors, useDocumentActions } from './document-store'
 export { integrationStore, integrationSelectors, useRecentItems, useBookmarks, useCurrentContext, useActivities, useSearchHistory, useIsNavigating, useIntegrationActions } from './integration-store'
 
 // Export store utilities
@@ -24,7 +24,7 @@ export type { AssetState } from './asset-store'
 export type { VaultState } from './vault-store'
 export type { NotificationState } from './notification-store'
 export type { UIState } from './ui-store'
-export type { DocumentState, DocumentCollaborator, DocumentViewSettings, DocumentAIChat } from './document-store'
+export type { DocumentStoreState } from './document-store'
 
 // Export data interfaces
 export type { CreateOrganizationData, UpdateOrganizationData, OrganizationInvitation, OrganizationMember, OrganizationSettings } from './organization-store'

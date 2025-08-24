@@ -20,10 +20,10 @@ import {
 } from 'lucide-react'
 
 // Import our collaborative features
-import DocumentCollaboration from '@/components/collaboration/DocumentCollaboration'
-import VoiceNoteMessage from '@/components/collaboration/VoiceNoteMessage'
-import MeetingIntegration from '@/components/collaboration/MeetingIntegration'
-import NotificationEscalation from '@/components/collaboration/NotificationEscalation'
+import { DocumentCollaboration } from '@/components/collaboration/DocumentCollaboration'
+import { VoiceNoteMessage } from '@/components/collaboration/VoiceNoteMessage'
+import { MeetingIntegration } from '@/components/collaboration/MeetingIntegration'
+import { NotificationEscalation } from '@/components/collaboration/NotificationEscalation'
 
 interface TestResult {
   component: string

@@ -18,7 +18,7 @@ import { Skeleton } from '@/features/shared/ui/skeleton'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/features/shared/ui/progress'
 import { 
   Shield,
   AlertTriangle,
@@ -64,8 +64,8 @@ import {
 } from 'recharts'
 
 // Hooks
-import { useOrganizationStore } from '@/lib/stores/organization-store'
-import { useAuthStore } from '@/lib/stores/auth-store'
+import { useOrganizations } from '@/lib/stores/organization-store'
+import { useAuth } from '@/lib/stores/auth-store'
 
 // Types
 interface ComplianceOverview {
@@ -145,8 +145,10 @@ const STATUS_COLORS = {
 
 export default function ComplianceTrackerPage() {
   const router = useRouter()
-  const { currentOrganization, loading: orgLoading } = useOrganizationStore()
-  const { user } = useAuthStore()
+  const organizations = useOrganizations()
+  const { user, loading: authLoading } = useAuth()
+  const currentOrganization = organizations[0] || null
+  const orgLoading = false
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

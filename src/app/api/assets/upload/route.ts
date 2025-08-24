@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { AssetService } from '@/lib/services/asset.service'
 import { AssetRepository, AssetUploadData } from '@/lib/repositories/asset.repository.enhanced'
 import { createOrganizationId, createUserId } from '@/types/branded'
@@ -64,10 +64,16 @@ function validateFileType(mimeType: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  let fileBuffer: ArrayBuffer | null = null;
+  
   try {
     // Get authenticated user
-    const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
+    const supabase = await createSupabaseServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Parse and validate form data
     const formData = await request.formData()
@@ -163,7 +169,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Store file buffer for later use (avoid reading twice)
-      let fileBuffer: ArrayBuffer | null = null
       try {
         fileBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(fileBuffer)

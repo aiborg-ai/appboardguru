@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useInView, useAnimation, Variants } from 'framer-motion'
+import { useInView, useAnimation, Variants, Easing } from 'framer-motion'
 
 interface StaggeredAnimationOptions {
   staggerDelay?: number
@@ -9,7 +9,7 @@ interface StaggeredAnimationOptions {
   direction?: 'up' | 'down' | 'left' | 'right' | 'scale' | 'fade'
   distance?: number
   duration?: number
-  easing?: string | number[]
+  easing?: Easing
 }
 
 interface StaggeredAnimationResult {

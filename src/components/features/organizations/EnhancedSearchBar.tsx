@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/features/shared/ui/input'
 import { Button } from '@/features/shared/ui/button'
 import { Badge } from '@/features/shared/ui/badge'
-import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
+import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
 import { 
   Search,
   X,

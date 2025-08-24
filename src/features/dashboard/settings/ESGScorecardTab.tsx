@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import * as React from 'react'
+import { useState, useEffect } from 'react'
 import {
   Leaf,
   Users,
@@ -31,7 +32,7 @@ import type {
   ESGRisk,
   ESGOpportunity
 } from '@/types/esg'
-import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
+import { InfoTooltip, InfoSection } from '@/components/ui/info-tooltip'
 
 interface ESGScorecardTabProps {
   organizationId: OrganizationId

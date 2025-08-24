@@ -18,7 +18,7 @@ import { Skeleton } from '@/features/shared/ui/skeleton'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/features/shared/ui/progress'
 import { 
   CheckCircle2,
   Leaf,
@@ -68,8 +68,8 @@ import {
 } from 'recharts'
 
 // Hooks
-import { useOrganizationStore } from '@/lib/stores/organization-store'
-import { useAuthStore } from '@/lib/stores/auth-store'
+import { useCurrentOrganization, useOrganizationLoading } from '@/lib/stores/organization-store'
+import { useAuth } from '@/lib/stores/auth-store'
 
 // Types
 interface ESGScore {
@@ -129,8 +129,9 @@ const CHART_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#0
 
 export default function ESGScorecardPage() {
   const router = useRouter()
-  const { currentOrganization, loading: orgLoading } = useOrganizationStore()
-  const { user } = useAuthStore()
+  const currentOrganization = useCurrentOrganization()
+  const orgLoading = useOrganizationLoading()
+  const { user } = useAuth()
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

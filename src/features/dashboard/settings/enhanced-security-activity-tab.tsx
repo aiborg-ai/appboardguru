@@ -38,7 +38,7 @@ import {
   SettingsExportImport,
   SettingsHistory,
   SettingsReset
-} from '@/components/ui/settings'
+} from '@/features/shared/ui/settings'
 import { useOptimizedCallback, useOptimizedMemo, usePerformanceMonitor } from '@/components/hooks'
 import { Badge } from '@/components/atoms/display/badge'
 import { Avatar } from '@/components/atoms/display/avatar'

@@ -712,6 +712,7 @@ export const organizationStore = createStore<OrganizationState>(
 export const organizationSelectors = createSelectors(organizationStore)
 
 // Utility hooks
+export const useOrganizationStore = () => organizationStore() // Main store hook
 export const useOrganizations = () => organizationStore(state => state.organizations)
 export const useCurrentOrganization = () => organizationStore(state => state.currentOrganization)
 export const useOrganizationMembers = () => organizationStore(state => state.members)

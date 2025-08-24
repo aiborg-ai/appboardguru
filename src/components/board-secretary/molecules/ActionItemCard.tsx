@@ -6,9 +6,9 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/features/shared/ui/card'
 import { Button } from '@/features/shared/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Textarea } from '@/components/ui/textarea'
+import { Progress } from '@/features/shared/ui/progress'
+import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+import { Textarea } from '@/features/shared/ui/textarea'
 import { ActionItemPriorityBadge, type ActionItemPriority } from '../atoms/ActionItemPriorityBadge'
 import { Badge } from '@/features/shared/ui/badge'
 import { cn } from '@/lib/utils'
@@ -30,7 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import {
   Select,
   SelectContent,

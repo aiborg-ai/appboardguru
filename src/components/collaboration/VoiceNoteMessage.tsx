@@ -14,7 +14,6 @@ import {
   Send,
   Download,
   Trash2,
-  Waveform,
   Clock,
   User
 } from 'lucide-react'
@@ -22,7 +21,7 @@ import { Button } from '@/components/atoms/Button'
 import { Card, CardContent } from '@/components/molecules/cards/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
 import { Badge } from '@/components/atoms/display/badge'
-import { Slider } from '@/components/ui/slider'
+import { Slider } from '@/features/shared/ui/slider'
 import { formatDistanceToNow, format } from 'date-fns'
 
 interface VoiceNoteMessageProps {
@@ -203,7 +202,7 @@ export function VoiceNoteRecorder({ onSend, onCancel, className = '' }: VoiceNot
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-gray-500">
-              <Waveform className="h-8 w-8" />
+              <Volume2 className="h-8 w-8" />
               <span className="text-sm">Voice waveform will appear here</span>
             </div>
           )}

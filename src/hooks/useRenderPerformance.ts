@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useEffect, useCallback } from 'react'
 
 interface RenderMetrics {
   componentName: string
@@ -247,16 +247,17 @@ export function useRenderPerformance(
  */
 export function usePerformanceMetrics() {
   const metrics = useRef<RenderMetrics[]>([])
-  const [, forceUpdate] = useCallback(() => ({}), [])
+  const [, forceUpdate] = React.useState(0)
+  const triggerUpdate = useCallback(() => forceUpdate(prev => prev + 1), [])
 
   useEffect(() => {
     const unsubscribe = performanceTracker.subscribe((newMetrics) => {
       metrics.current = newMetrics
-      forceUpdate()
+      triggerUpdate()
     })
 
     return unsubscribe
-  }, [forceUpdate])
+  }, [triggerUpdate])
 
   return {
     metrics: metrics.current,

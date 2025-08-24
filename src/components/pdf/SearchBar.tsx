@@ -54,7 +54,7 @@ export const SearchBar = React.memo<SearchBarProps>(function SearchBar({
   // Refs
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
-  const debounceRef = useRef<NodeJS.Timeout>()
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load recent searches from localStorage
   useEffect(() => {

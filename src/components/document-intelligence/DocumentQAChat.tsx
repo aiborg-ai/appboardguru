@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/c
 import { Button } from '@/features/shared/ui/button'
 import { Input } from '@/features/shared/ui/input'
 import { Badge } from '@/features/shared/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { Separator } from '@/features/shared/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { 
   Send, 
@@ -33,7 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 
 interface QAMessage {
   id: string

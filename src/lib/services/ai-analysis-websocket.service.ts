@@ -17,7 +17,7 @@ import { BaseService } from './base.service'
 import { EnhancedWebSocketCoordinatorService } from './enhanced-websocket-coordinator.service'
 import { RealTimeStateSyncService } from './real-time-state-sync.service'
 import { AdvancedMessageRouterService } from './advanced-message-router.service'
-import { Result, success, failure, wrapAsync, isFailure } from '../repositories/result'
+
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
 import {
@@ -338,7 +338,7 @@ export class AIAnalysisWebSocketService extends BaseService {
     readonly estimatedLatency: number
     readonly supportedFeatures: string[]
   }>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const transcriptionId = `transcription_${meetingId}_${Date.now()}`
 
       // Initialize transcription state
@@ -410,7 +410,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       readonly backgroundNoise: number
     }
   ): Promise<Result<TranscriptionChunk[]>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const startTime = Date.now()
       const transcriptionState = this.activeTranscriptions.get(meetingId)
       if (!transcriptionState) {
@@ -489,7 +489,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       readonly topicFocus?: string[]
     }
   ): Promise<Result<SentimentAnalysis>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const startTime = Date.now()
       const transcriptionState = this.activeTranscriptions.get(meetingId)
       if (!transcriptionState) {
@@ -603,7 +603,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       readonly crossMeetingAnalysis: boolean
     }
   ): Promise<Result<AIInsight[]>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const startTime = Date.now()
       const insights: AIInsight[] = []
 
@@ -658,7 +658,7 @@ export class AIAnalysisWebSocketService extends BaseService {
       readonly error?: string
     }
   ): Promise<Result<void>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const task = this.processingTasks.get(taskId)
       if (!task) {
         throw new Error('Processing task not found')

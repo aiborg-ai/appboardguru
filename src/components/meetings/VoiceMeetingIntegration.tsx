@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules
 import { Button } from '@/components/atoms/Button';
 import { Badge } from '@/components/atoms/display/badge';
 import { Switch } from '@/components/atoms/form/switch';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/features/shared/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/features/shared/ui/scroll-area';
 import { Progress } from '@/components/atoms/display/progress';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/features/shared/ui/use-toast';
 import {
   Mic,
   MicOff,

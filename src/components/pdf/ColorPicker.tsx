@@ -8,7 +8,7 @@
 import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/atoms/Button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/features/shared/ui/popover'
 import { Palette, Check } from 'lucide-react'
 
 interface Color {

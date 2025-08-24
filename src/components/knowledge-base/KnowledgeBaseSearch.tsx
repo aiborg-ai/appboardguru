@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/fea
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Badge } from '@/features/shared/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/features/shared/ui/textarea';
 import { 
   Search, 
   MessageCircle, 

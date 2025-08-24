@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/atoms/feedback/alert';
 import { Badge } from '@/components/atoms/display/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { Input } from '@/components/atoms/form/input';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/features/shared/ui/label';
 import { 
   Shield, 
   ShieldCheck, 

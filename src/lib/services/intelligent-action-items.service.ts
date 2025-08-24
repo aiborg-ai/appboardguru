@@ -48,7 +48,7 @@ export interface ActionItemAnalysis {
   };
 }
 
-class IntelligentActionItemsService {
+export class IntelligentActionItemsService {
   private supabase: any;
 
   constructor() {
@@ -586,6 +586,80 @@ Focus on creating actionable, trackable items that board members can actually ex
     } catch (error) {
       console.error('Error updating action item status:', error);
       throw new Error('Failed to update action item');
+    }
+  }
+
+  /**
+   * Get action items with filters
+   */
+  async getActionItems(filters: any = {}): Promise<EnhancedActionItem[]> {
+    if (!this.supabase) await this.initializeSupabase();
+
+    try {
+      let query = this.supabase
+        .from('action_items')
+        .select('*');
+
+      // Apply filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          query = query.eq(key, value);
+        }
+      });
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching action items:', error);
+      throw new Error('Failed to fetch action items');
+    }
+  }
+
+  /**
+   * Create a new action item
+   */
+  async createActionItem(itemData: any): Promise<EnhancedActionItem> {
+    if (!this.supabase) await this.initializeSupabase();
+
+    try {
+      const actionItem = {
+        id: `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: itemData.title,
+        description: itemData.description,
+        assigned_to: itemData.assignedTo,
+        assigned_to_name: itemData.assignedToName,
+        due_date: itemData.dueDate,
+        priority: itemData.priority,
+        status: 'pending',
+        category: itemData.category,
+        estimated_hours: itemData.estimatedHours,
+        organization_id: itemData.organizationId,
+        transcription_id: itemData.transcriptionId,
+        created_by: itemData.createdBy,
+        extraction_confidence: itemData.extractionConfidence,
+        assignment_confidence: itemData.assignmentConfidence,
+        due_date_confidence: itemData.dueDateConfidence,
+        urgency_score: itemData.urgencyScore,
+        complexity_score: itemData.complexityScore,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await this.supabase
+        .from('action_items')
+        .insert(actionItem)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error creating action item:', error);
+      throw new Error('Failed to create action item');
     }
   }
 }

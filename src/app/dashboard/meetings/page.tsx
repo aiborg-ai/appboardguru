@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRouter } from 'next/navigation';
-import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle';
+import { ViewToggle, type ViewMode } from '@/features/shared/ui/view-toggle';
 import { MeetingCardsView } from '@/features/meetings/components/views/MeetingCardsView';
 import { MeetingListView } from '@/features/meetings/components/views/MeetingListView';
 import { MeetingDetailsView } from '@/features/meetings/components/views/MeetingDetailsView';

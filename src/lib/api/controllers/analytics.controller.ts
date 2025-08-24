@@ -15,7 +15,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BaseController } from './base.controller';
-import { Result, Ok, Err } from '@/lib/utils/result';
+import type { Result } from '@/lib/repositories/result';
+import { success, failure } from '@/lib/repositories/result';
 import type { 
   OrganizationId, 
   UserId, 

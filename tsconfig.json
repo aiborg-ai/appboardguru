@@ -64,7 +64,6 @@
     "tests/**/*",
     "src/testing/**/*",
     "vitest.config.ts",
-    ".next/types/**/*",
     "src/components/performance/**/*"
   ]
 }

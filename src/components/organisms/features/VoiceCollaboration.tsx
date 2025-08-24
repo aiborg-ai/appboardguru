@@ -12,7 +12,7 @@ import { Badge } from '@/components/atoms/display/badge';
 import { Alert, AlertDescription } from '@/components/atoms/feedback/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { Progress } from '@/components/atoms/display/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/features/shared/ui/scroll-area';
 import { Slider } from '@/components/atoms/form/slider';
 import { Switch } from '@/components/atoms/form/switch';
 import { 

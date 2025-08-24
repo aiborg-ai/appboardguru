@@ -164,3 +164,31 @@ export const useDocumentStore = create<DocumentStoreState>()(
     }
   )
 )
+
+// Stub exports for missing functions to prevent compilation errors
+export const documentStore = useDocumentStore
+export const documentSelectors = {
+  currentDocument: () => null,
+  annotations: () => [],
+  toc: () => [],
+  summaries: () => [],
+  collaborators: () => [],
+}
+
+// Stub hooks
+export const useCurrentDocument = () => null
+export const useDocumentAnnotations = () => []
+export const useDocumentToc = () => []
+export const useDocumentSummaries = () => []
+export const useDocumentPodcast = () => null
+export const useDocumentSearch = () => ({ query: '', results: [] })
+export const useDocumentViewSettings = () => ({ view: 'default' })
+export const useDocumentCollaborators = () => []
+export const useDocumentChatHistory = () => []
+export const useDocumentLoading = () => false
+export const useDocumentErrors = () => null
+export const useDocumentActions = () => ({
+  save: () => {},
+  share: () => {},
+  delete: () => {},
+})

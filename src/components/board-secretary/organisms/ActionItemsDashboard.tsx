@@ -36,7 +36,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/features/shared/ui/tabs'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/features/shared/ui/progress'
 import { Skeleton } from '@/features/shared/ui/skeleton'
 
 interface ActionItem {

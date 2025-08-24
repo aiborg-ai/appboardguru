@@ -6,12 +6,12 @@ import { Badge } from '@/features/shared/ui/badge'
 import { Button } from '@/features/shared/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/features/shared/ui/alert'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/features/shared/ui/dialog'
 import { Input } from '@/features/shared/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Textarea } from '@/features/shared/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/features/shared/ui/separator'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import { 
   AlertTriangle, 
   Shield, 

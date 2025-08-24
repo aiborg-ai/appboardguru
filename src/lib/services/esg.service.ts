@@ -1,6 +1,6 @@
 import type { TypedSupabaseClient } from '@/types/api'
 import { ESGRepository } from '@/lib/repositories/esg.repository'
-import { Result } from '@/lib/repositories/result'
+import { Result, success, failure, RepositoryError } from '@/lib/repositories/result'
 import type {
   ESGScorecard,
   ESGScore,
@@ -47,7 +47,7 @@ export class ESGService {
       // Get organization configuration
       const configResult = await this.repository.getConfiguration(organizationId)
       if (!configResult.success) {
-        return Result.failure('Failed to retrieve ESG configuration')
+        return failure(RepositoryError.internal('Failed to retrieve ESG configuration'))
       }
 
       const config = configResult.data || this.getDefaultConfiguration(organizationId, framework)
@@ -55,7 +55,7 @@ export class ESGService {
       // Get all relevant metrics for the framework
       const metricsResult = await this.repository.getMetrics(framework)
       if (!metricsResult.success) {
-        return Result.failure('Failed to retrieve ESG metrics')
+        return failure(RepositoryError.internal('Failed to retrieve ESG metrics'))
       }
 
       const metrics = metricsResult.data
@@ -132,7 +132,7 @@ export class ESGService {
       })
 
       if (!scorecardResult.success) {
-        return Result.failure('Failed to create ESG scorecard')
+        return failure(RepositoryError.internal('Failed to create ESG scorecard'))
       }
 
       const scorecard = scorecardResult.data
@@ -142,9 +142,9 @@ export class ESGService {
       scorecard.opportunities = opportunities
       scorecard.recommendations = recommendations
 
-      return Result.success(scorecard)
+      return success(scorecard)
     } catch (error) {
-      return Result.failure('Failed to generate ESG scorecard', error as Error)
+      return failure(RepositoryError.internal('Failed to generate ESG scorecard', error))
     }
   }
 
@@ -160,13 +160,13 @@ export class ESGService {
         if (!scorecardsResult.success) return scorecardsResult
 
         const scorecard = scorecardsResult.data.find(s => s.period === period && (!framework || s.framework === framework))
-        return Result.success(scorecard || null)
+        return success(scorecard || null)
       }
 
       // Get latest scorecard
       return await this.repository.getLatestScorecard(organizationId, framework)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG scorecard', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG scorecard', error))
     }
   }
 
@@ -191,12 +191,12 @@ export class ESGService {
       // Get metric details
       const metricsResult = await this.repository.getMetrics()
       if (!metricsResult.success) {
-        return Result.failure('Failed to retrieve metric details')
+        return failure(RepositoryError.internal('Failed to retrieve metric details'))
       }
 
       const metric = metricsResult.data.find(m => m.id === metricId)
       if (!metric) {
-        return Result.failure('Metric not found')
+        return failure(RepositoryError.notFound('Metric', metricId))
       }
 
       // Create data point
@@ -213,7 +213,7 @@ export class ESGService {
       })
 
       if (!dataPointResult.success) {
-        return Result.failure('Failed to create ESG data point')
+        return failure(RepositoryError.internal('Failed to create ESG data point'))
       }
 
       // Trigger scorecard recalculation if needed
@@ -221,7 +221,7 @@ export class ESGService {
 
       return dataPointResult
     } catch (error) {
-      return Result.failure('Failed to update metric data', error as Error)
+      return failure(RepositoryError.internal('Failed to update metric data', error))
     }
   }
 
@@ -292,9 +292,9 @@ export class ESGService {
         ? sampleBenchmarks.filter(b => b.category === category)
         : sampleBenchmarks
 
-      return Result.success(filtered)
+      return success(filtered)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG benchmarks', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG benchmarks', error))
     }
   }
 
@@ -313,7 +313,7 @@ export class ESGService {
     if (!result.success || !result.data) {
       // Return default configuration
       const defaultConfig = this.getDefaultConfiguration(organizationId, 'GRI')
-      return Result.success(defaultConfig)
+      return success(defaultConfig)
     }
     return result
   }
@@ -325,7 +325,7 @@ export class ESGService {
     try {
       const currentResult = await this.getConfiguration(organizationId)
       if (!currentResult.success) {
-        return Result.failure('Failed to retrieve current configuration')
+        return failure(RepositoryError.internal('Failed to retrieve current configuration'))
       }
 
       const current = currentResult.data
@@ -344,7 +344,7 @@ export class ESGService {
         notification_settings: updated.notificationSettings
       })
     } catch (error) {
-      return Result.failure('Failed to update ESG configuration', error as Error)
+      return failure(RepositoryError.internal('Failed to update ESG configuration', error))
     }
   }
 

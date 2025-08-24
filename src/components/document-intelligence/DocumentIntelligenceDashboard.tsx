@@ -31,7 +31,7 @@ import { Button } from '@/features/shared/ui/button'
 import { Badge } from '@/features/shared/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
 import { Alert, AlertDescription } from '@/features/shared/ui/alert'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/features/shared/ui/progress'
 import { 
   TrendingUp, 
   TrendingDown, 

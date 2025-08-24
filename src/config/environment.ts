@@ -17,19 +17,19 @@ const envSchema = z.object({
   VERCEL_URL: z.string().optional(),
   
   // Database Configuration
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   
   // Email Configuration
   SMTP_HOST: z.string().default('smtp.gmail.com'),
   SMTP_PORT: z.string().default('587'),
-  SMTP_USER: z.string().email(),
-  SMTP_PASS: z.string().min(1),
-  ADMIN_EMAIL: z.string().email(),
+  SMTP_USER: z.string().email().optional(),
+  SMTP_PASS: z.string().optional(),
+  ADMIN_EMAIL: z.string().email().optional(),
   
   // Security
-  NEXTAUTH_SECRET: z.string().min(32),
+  NEXTAUTH_SECRET: z.string().optional(),
   
   // AI Configuration
   OPENROUTER_API_KEY: z.string().optional(),

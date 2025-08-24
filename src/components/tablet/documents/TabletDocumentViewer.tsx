@@ -6,7 +6,7 @@ import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '@/features/shared/ui/slider';
 import { 
   ZoomIn,
   ZoomOut,

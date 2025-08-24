@@ -11,7 +11,7 @@ import { aiMeetingIntelligenceService } from './ai-meeting-intelligence.service'
 import { aiPredictiveAnalyticsService } from './ai-predictive-analytics.service'
 import { aiIntelligentAutomationService } from './ai-intelligent-automation.service'
 import type { Result } from '@/lib/repositories/result'
-import { success, failure, wrapAsync } from '@/lib/repositories/result'
+import { success, failure } from '@/lib/repositories/result'
 
 interface RecommendationEngine {
   organizationId: string

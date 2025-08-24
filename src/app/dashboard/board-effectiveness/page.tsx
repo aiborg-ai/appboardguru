@@ -38,8 +38,8 @@ import {
 } from 'lucide-react'
 
 // Hooks
-import { useOrganizationStore } from '@/lib/stores/organization-store'
-import { useAuthStore } from '@/lib/stores/auth-store'
+import { useOrganizations } from '@/lib/stores/organization-store'
+import { useAuth } from '@/lib/stores/auth-store'
 
 // Types
 interface BoardEffectivenessScore {
@@ -63,8 +63,10 @@ interface QuickMetric {
 
 export default function BoardEffectivenessPage() {
   const router = useRouter()
-  const { currentOrganization, loading: orgLoading } = useOrganizationStore()
-  const { user } = useAuthStore()
+  const organizations = useOrganizations()
+  const { user, loading: authLoading } = useAuth()
+  const currentOrganization = organizations[0] || null
+  const orgLoading = false
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

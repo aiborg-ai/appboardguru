@@ -6,7 +6,7 @@
  */
 
 import { BaseService } from './base.service'
-import { Result, success, failure, wrapAsync } from '../repositories/result'
+
 import { AIMeetingInsightsRepository } from '../repositories/ai-meeting-insights.repository'
 import { AIMeetingTranscriptionRepository } from '../repositories/ai-meeting-transcription.repository'
 import type { SupabaseClient } from '@supabase/supabase-js'

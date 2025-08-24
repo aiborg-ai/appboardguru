@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 
 export type ComplianceAlertType = 'upcoming_deadline' | 'overdue' | 'regulatory_change' | 'frequency_violation' | 'director_qualification'
 

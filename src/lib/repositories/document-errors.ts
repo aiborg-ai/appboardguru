@@ -1,6 +1,9 @@
 import { RepositoryError } from './result'
 import { DocumentId, AnnotationId, TocId, SummaryId, PodcastId } from './document.repository'
 
+// Re-export RepositoryError for other modules
+export { RepositoryError }
+
 /**
  * Document-specific error codes extending the base error system
  */

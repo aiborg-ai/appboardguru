@@ -13,13 +13,13 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardHeader } from '@/features/shared/ui/card';
+import { Button } from '@/features/shared/ui/button';
+import { Badge } from '@/features/shared/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar';
+import { Separator } from '@/features/shared/ui/separator';
+import { Progress } from '@/features/shared/ui/progress';
+import { useToast } from '@/features/shared/ui/use-toast';
 import { cn } from '@/lib/utils';
 import {
   Bell,

@@ -478,6 +478,9 @@ export const INSTRUMENT_CONFIGS: Record<string, InstrumentConfig> = {
   }
 };
 
+// Export INSTRUMENTS for compatibility
+export const INSTRUMENTS = INSTRUMENT_CONFIGS;
+
 // Helper function to get instrument configuration
 export function getInstrumentConfig(instrumentId: string): InstrumentConfig | null {
   return INSTRUMENT_CONFIGS[instrumentId] || null;

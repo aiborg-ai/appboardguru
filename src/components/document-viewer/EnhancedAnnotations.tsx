@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/atoms/Button'
 import { Card } from '@/components/molecules/cards/card'
 import { Badge } from '@/components/atoms/display/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import { Textarea } from '@/components/atoms/form/textarea'
 import { Input } from '@/components/atoms/form/input'
 import {
@@ -32,15 +32,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog'
-import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
+} from '@/features/shared/ui/dialog'
+import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton'
 import { 
   useDocumentContext, 
   useDocumentActions, 

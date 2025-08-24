@@ -6,7 +6,7 @@
 'use client';
 
 import React from 'react';
-import { InstrumentPlayWizard } from '@/features/instruments/InstrumentPlayWizard';
+import InstrumentPlayWizard from '@/features/instruments/InstrumentPlayWizard';
 import { INSTRUMENTS } from '@/lib/instruments/instrument-configs';
 import { notFound } from 'next/navigation';
 

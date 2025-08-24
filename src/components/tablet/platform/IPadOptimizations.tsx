@@ -13,12 +13,11 @@ import {
   Copy,
   Share2,
   BookOpen,
-  Shortcuts,
+  Settings,
   Apple,
   Zap,
   Eye,
-  Hand,
-  Settings
+  Hand
 } from 'lucide-react';
 
 // iPad-specific Stage Manager integration
@@ -319,7 +318,7 @@ export const ShortcutsIntegration: React.FC<ShortcutsIntegrationProps> = ({
     <Card className="mb-4">
       <CardHeader>
         <CardTitle className="text-sm flex items-center space-x-2">
-          <Shortcuts className="h-4 w-4 text-blue-600" />
+          <Settings className="h-4 w-4 text-blue-600" />
           <span>Shortcuts Integration</span>
         </CardTitle>
       </CardHeader>

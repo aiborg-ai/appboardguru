@@ -10,8 +10,8 @@ import { aiMeetingIntelligenceService } from './ai-meeting-intelligence.service'
 import { aiPredictiveAnalyticsService } from './ai-predictive-analytics.service'
 import { aiIntelligentAutomationService } from './ai-intelligent-automation.service'
 import { aiRecommendationEngineService } from './ai-recommendation-engine.service'
-import type { Result } from '@/lib/repositories/result'
-import { success, failure, wrapAsync } from '@/lib/repositories/result'
+import { Result, success, failure } from '../patterns/result'
+
 
 interface AIOrchestrationConfig {
   organizationId: string
@@ -298,7 +298,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     organizationId: string,
     config: Partial<AIOrchestrationConfig> = {}
   ): Promise<Result<AIOrchestrationState>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       // Create default configuration
       const defaultConfig = this.createDefaultConfig(organizationId)
       const orchestrationConfig = { ...defaultConfig, ...config }
@@ -355,7 +355,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
       traceId?: string
     } = {}
   ): Promise<Result<T>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const traceId = options.traceId || `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const correlationId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
@@ -450,7 +450,7 @@ export class AIIntegrationOrchestratorService extends BaseService {
     recommendations: OrchestrationRecommendation[]
     trends: OrchestrationTrend[]
   }>> {
-    return wrapAsync(async () => {
+    return success(await (async () => {
       const state = this.orchestrationStates.get(organizationId)
       if (!state) {
         throw new Error('Orchestration not initialized for organization')

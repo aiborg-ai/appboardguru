@@ -1,7 +1,7 @@
 'use client'
 
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
-import { InstrumentPlayWizard } from '@/features/instruments/InstrumentPlayWizard'
+import InstrumentPlayWizard from '@/features/instruments/InstrumentPlayWizard'
 import { Brain } from 'lucide-react'
 
 export default function BoardPackAIPage() {

@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
 import { Badge } from '@/components/atoms/display/badge'
 import { Button } from '@/components/atoms/Button'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
 import { Input } from '@/components/atoms/form/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
 import { Textarea } from '@/components/atoms/form/textarea'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/features/shared/ui/dialog'
 import { 
   Bell, 
   Plus, 

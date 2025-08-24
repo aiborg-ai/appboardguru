@@ -13,7 +13,6 @@ import {
   Users,
   CheckCircle,
   AlertCircle,
-  Sync,
   Cloud,
   CloudOff,
   Activity,
@@ -408,7 +407,7 @@ export const RealTimeSync: React.FC<RealTimeSyncProps> = ({
       case 'synced':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'syncing':
-        return <Sync className="h-4 w-4 text-blue-500 animate-spin" />;
+        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'conflict':
         return <AlertCircle className="h-4 w-4 text-orange-500" />;
       case 'error':

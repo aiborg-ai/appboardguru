@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Badge } from '@/features/shared/ui/badge';
-import { VoiceInputButton } from '@/components/ui/VoiceInputButton';
+import { VoiceInputButton } from '@/features/shared/ui/VoiceInputButton';
 import { 
   Search,
   Filter,

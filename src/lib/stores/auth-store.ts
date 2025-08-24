@@ -544,6 +544,7 @@ export const authSelectors = createSelectors(authStore)
 
 // Utility hooks and functions
 export const useAuth = () => authStore()
+export const useAuthStore = () => authStore()  // Alternative name for compatibility
 export const useUser = () => authStore(state => state.user)
 export const useIsAuthenticated = () => authStore(state => state.isAuthenticated)
 export const useAuthLoading = () => authStore(state => state.isLoading)

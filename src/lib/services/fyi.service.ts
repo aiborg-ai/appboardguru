@@ -1,6 +1,6 @@
 import { FYIRepository } from '../repositories/fyi.repository'
-import { LLMSummarizer } from './llm-summarizer'
-import { RateLimiter } from '../rate-limiter'
+import { llmSummarizer } from './llm-summarizer'
+import { rateLimiter } from '../rate-limiter'
 import type { FYIInsight, FYIContext } from '../../types/fyi'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../types/database'
@@ -13,8 +13,8 @@ export interface FYIServiceOptions {
 
 export class FYIService {
   private repository: FYIRepository
-  private llmSummarizer: LLMSummarizer
-  private rateLimiter: RateLimiter
+  private llmSummarizer = llmSummarizer
+  private rateLimiter = rateLimiter
   private newsApiKey?: string
   private alphaVantageKey?: string
 

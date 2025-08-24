@@ -3,7 +3,7 @@
 import React, { memo, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/features/shared/ui/input'
-import { Label } from '@/components/ui/label'
+import { Label } from '@/features/shared/ui/label'
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import type { SettingsInputProps } from './types'
 
