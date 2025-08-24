@@ -4,6 +4,9 @@
  * PUT /api/board-secretary/settings - Update board secretary settings
  */
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { AIBoardSecretaryService } from '@/lib/services/ai-board-secretary.service'

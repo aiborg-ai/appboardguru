@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import nodemailer from 'nodemailer'
 import { generateApprovalUrls } from '@/utils/url'
 import { env, getSmtpConfig } from '@/config/environment'
