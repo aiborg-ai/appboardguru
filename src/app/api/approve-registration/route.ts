@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { createUserForApprovedRegistration, generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
 import { createOtpCode } from '@/lib/otp'
 import nodemailer from 'nodemailer'

@@ -6,7 +6,7 @@
 
 import { BaseService } from './base.service';
 import { CalendarRepository } from '../repositories/calendar.repository';
-import { Result, Ok, Err } from '../result';
+import { Result, Ok, Err } from '../repositories/result';
 import { CalendarEvent, CreateEventData, UpdateEventData } from '../../types/entities/calendar.types';
 import { EventId, UserId, OrganizationId } from '../../types/core';
 

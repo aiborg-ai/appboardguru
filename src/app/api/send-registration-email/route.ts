@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import nodemailer from 'nodemailer'
 import { generateApprovalUrls } from '@/utils/url'
 import { env, getSmtpConfig } from '@/config/environment'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { 
   validateRegistrationData, 
   generateSecureApprovalToken,

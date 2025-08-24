@@ -759,7 +759,7 @@ export class SearchController {
 
   private async generateSearchSuggestions(query: string, context?: any): Promise<Result<string[]>> {
     // Generate intelligent search suggestions
-    return Result.success([])
+    return success([])
   }
 
   private async getHistoricalSuggestions(partial: string, userId: string): Promise<string[]> {
@@ -787,7 +787,7 @@ export class SearchController {
   }
 
   private async generateSearchExport(searchResult: any, format: string, includeMetadata: boolean): Promise<Result<any>> {
-    return Result.success({ content: JSON.stringify(searchResult) })
+    return success({ content: JSON.stringify(searchResult) })
   }
 
   private async getCurrentUser() {

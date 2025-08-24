@@ -176,7 +176,7 @@ export function useMentions({
    */
   const processMentions = useCallback(async (text: string): Promise<Result<MentionMatch[]>> => {
     if (!enabled) {
-      return Result.success([])
+      return success([])
     }
 
     try {
@@ -184,7 +184,7 @@ export function useMentions({
       const mentions = detectMentions(text)
       
       if (mentions.length === 0) {
-        return Result.success([])
+        return success([])
       }
 
       // Validate mentions against organization users
@@ -219,12 +219,12 @@ export function useMentions({
         })
       )
 
-      return Result.success(validatedMentions)
+      return success(validatedMentions)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to process mentions'
       setError(errorMessage)
-      return Result.failure('MENTION_PROCESSING_ERROR', errorMessage)
+      return failure(RepositoryError.internal('MENTION_PROCESSING_ERROR', errorMessage)
     }
   }, [enabled, detectMentions, userCache, clearError])
 
@@ -387,7 +387,7 @@ export function useMentions({
    */
   const searchUsers = useCallback(async (query: string): Promise<Result<MentionUser[]>> => {
     if (!user || !organizationId) {
-      return Result.failure('NOT_AUTHENTICATED', 'User not authenticated')
+      return failure(RepositoryError.internal('NOT_AUTHENTICATED', 'User not authenticated')
     }
 
     try {
@@ -419,11 +419,11 @@ export function useMentions({
                user.email.toLowerCase().includes(searchQuery)
       })
 
-      return Result.success(mockUsers)
+      return success(mockUsers)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to search users'
-      return Result.failure('USER_SEARCH_ERROR', errorMessage)
+      return failure(RepositoryError.internal('USER_SEARCH_ERROR', errorMessage)
     }
   }, [user, organizationId])
 

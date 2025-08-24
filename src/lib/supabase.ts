@@ -1,3 +1,2 @@
-// This file re-exports client-side supabase utilities
-// For server-side usage, import from '@/lib/supabase-server'
+// This file re-exports client-side supabase utilities only
 export { supabase, createSupabaseBrowserClient } from './supabase-client'

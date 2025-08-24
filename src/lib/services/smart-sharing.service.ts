@@ -4,7 +4,7 @@
  */
 
 import { BaseService } from './base.service'
-import { Result, Ok, Err } from '../result'
+import { Result, Ok, Err } from '../repositories/result'
 import { SmartSharingRule, UploadedAsset } from '@/types/collaboration'
 import { UserId, OrganizationId, VaultId } from '@/types/branded'
 import { FileUploadItem } from '@/types/upload'

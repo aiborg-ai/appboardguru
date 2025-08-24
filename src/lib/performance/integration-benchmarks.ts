@@ -19,7 +19,7 @@
 import { EnhancedFeatureIntegrationService } from '../services/enhanced-feature-integration.service'
 import { WebSocketCoordinatorService } from '../services/websocket-coordinator.service'
 import { useCrossFeatureStateSyncStore } from '../stores/state-sync'
-import { Result, success, failure } from '../result'
+import { Result, success, failure } from '../repositories/result'
 import {
   OrganizationId,
   UserId,

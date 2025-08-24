@@ -1,5 +1,5 @@
 import { BaseRepository } from './base.repository'
-import { Result } from './result'
+import { Result, success, failure, RepositoryError } from './result'
 import type { TypedSupabaseClient } from '@/types/api'
 import type {
   ESGScorecard,
@@ -72,9 +72,9 @@ export class ESGRepository extends BaseRepository {
 
       if (error) throw error
 
-      return Result.success(this.mapToESGScorecard(data))
+      return success(this.mapToESGScorecard(data))
     } catch (error) {
-      return Result.failure('Failed to create ESG scorecard', error as Error)
+      return failure(RepositoryError.internal('Failed to create ESG scorecard', error as Error))
     }
   }
 
@@ -98,11 +98,11 @@ export class ESGRepository extends BaseRepository {
         .single()
 
       if (error) throw error
-      if (!data) return Result.failure('ESG scorecard not found')
+      if (!data) return failure(RepositoryError.notFound('ESG scorecard', id))
 
-      return Result.success(this.mapToESGScorecard(data))
+      return success(this.mapToESGScorecard(data))
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG scorecard', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG scorecard', error as Error))
     }
   }
 
@@ -127,9 +127,9 @@ export class ESGRepository extends BaseRepository {
       if (error) throw error
 
       const scorecards = (data || []).map(scorecard => this.mapToESGScorecard(scorecard))
-      return Result.success(scorecards)
+      return success(scorecards)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG scorecards', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG scorecards', error as Error))
     }
   }
 
@@ -160,11 +160,11 @@ export class ESGRepository extends BaseRepository {
       const { data, error } = await query.limit(1).single()
 
       if (error && error.code !== 'PGRST116') throw error
-      if (!data) return Result.success(null)
+      if (!data) return success(null)
 
-      return Result.success(this.mapToESGScorecard(data))
+      return success(this.mapToESGScorecard(data))
     } catch (error) {
-      return Result.failure('Failed to retrieve latest ESG scorecard', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve latest ESG scorecard', error as Error))
     }
   }
 
@@ -179,9 +179,9 @@ export class ESGRepository extends BaseRepository {
 
       if (error) throw error
 
-      return Result.success(this.mapToESGDataPoint(data))
+      return success(this.mapToESGDataPoint(data))
     } catch (error) {
-      return Result.failure('Failed to create ESG data point', error as Error)
+      return failure(RepositoryError.internal('Failed to create ESG data point', error as Error))
     }
   }
 
@@ -212,9 +212,9 @@ export class ESGRepository extends BaseRepository {
       if (error) throw error
 
       const dataPoints = (data || []).map(point => this.mapToESGDataPoint(point))
-      return Result.success(dataPoints)
+      return success(dataPoints)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG data points', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG data points', error as Error))
     }
   }
 
@@ -232,9 +232,9 @@ export class ESGRepository extends BaseRepository {
 
       if (error) throw error
 
-      return Result.success(this.mapToESGDataPoint(data))
+      return success(this.mapToESGDataPoint(data))
     } catch (error) {
-      return Result.failure('Failed to update ESG data point', error as Error)
+      return failure(RepositoryError.internal('Failed to update ESG data point', error as Error))
     }
   }
 
@@ -261,9 +261,9 @@ export class ESGRepository extends BaseRepository {
       if (error) throw error
 
       const metrics = (data || []).map(metric => this.mapToESGMetric(metric))
-      return Result.success(metrics)
+      return success(metrics)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG metrics', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG metrics', error as Error))
     }
   }
 
@@ -292,9 +292,9 @@ export class ESGRepository extends BaseRepository {
 
       if (error) throw error
 
-      return Result.success(this.mapToESGMetric(data))
+      return success(this.mapToESGMetric(data))
     } catch (error) {
-      return Result.failure('Failed to create custom ESG metric', error as Error)
+      return failure(RepositoryError.internal('Failed to create custom ESG metric', error as Error))
     }
   }
 
@@ -308,11 +308,11 @@ export class ESGRepository extends BaseRepository {
         .single()
 
       if (error && error.code !== 'PGRST116') throw error
-      if (!data) return Result.success(null)
+      if (!data) return success(null)
 
-      return Result.success(this.mapToESGConfiguration(data))
+      return success(this.mapToESGConfiguration(data))
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG configuration', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG configuration', error as Error))
     }
   }
 
@@ -332,9 +332,9 @@ export class ESGRepository extends BaseRepository {
 
       if (error) throw error
 
-      return Result.success(this.mapToESGConfiguration(data))
+      return success(this.mapToESGConfiguration(data))
     } catch (error) {
-      return Result.failure('Failed to update ESG configuration', error as Error)
+      return failure(RepositoryError.internal('Failed to update ESG configuration', error as Error))
     }
   }
 
@@ -416,9 +416,9 @@ export class ESGRepository extends BaseRepository {
         }
       }
 
-      return Result.success(analytics)
+      return success(analytics)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG analytics', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG analytics', error as Error))
     }
   }
 
@@ -434,9 +434,9 @@ export class ESGRepository extends BaseRepository {
       if (error) throw error
 
       const risks = (data || []).map(risk => this.mapToESGRisk(risk))
-      return Result.success(risks)
+      return success(risks)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG risks', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG risks', error as Error))
     }
   }
 
@@ -451,9 +451,9 @@ export class ESGRepository extends BaseRepository {
       if (error) throw error
 
       const opportunities = (data || []).map(opportunity => this.mapToESGOpportunity(opportunity))
-      return Result.success(opportunities)
+      return success(opportunities)
     } catch (error) {
-      return Result.failure('Failed to retrieve ESG opportunities', error as Error)
+      return failure(RepositoryError.internal('Failed to retrieve ESG opportunities', error as Error))
     }
   }
 

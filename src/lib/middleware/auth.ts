@@ -192,4 +192,31 @@ export async function requireRole(
   }
 }
 
+/**
+ * Higher-order function for route authentication
+ */
+export function withAuth(handler: (request: NextRequest, authResult: AuthResult) => Promise<Response> | Response) {
+  return async (request: NextRequest) => {
+    const authResult = await requireAuth(request)
+    
+    if (!authResult.success) {
+      return new Response(
+        JSON.stringify({
+          error: authResult.error.code,
+          message: authResult.error.message
+        }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'WWW-Authenticate': 'Bearer realm="API"'
+          }
+        }
+      )
+    }
+
+    return handler(request, authResult.data)
+  }
+}
+
 export type { AuthResult }

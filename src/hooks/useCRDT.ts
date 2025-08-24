@@ -88,7 +88,7 @@ export function useCRDT({
   const initializeCRDT = useCallback(async (): Promise<Result<void>> => {
     try {
       if (!user || isInitialized) {
-        return Result.success(undefined)
+        return success(undefined)
       }
 
       setIsSyncing(true)
@@ -106,7 +106,7 @@ export function useCRDT({
 
       if (!result.success) {
         setError(result.error.message)
-        return Result.failure(result.error.code, result.error.message)
+        return failure(RepositoryError.internal(result.error.code, result.error.message)
       }
 
       // Subscribe to changes
@@ -131,12 +131,12 @@ export function useCRDT({
         startAutoSync()
       }
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to initialize CRDT'
       setError(errorMessage)
-      return Result.failure('CRDT_INIT_ERROR', errorMessage)
+      return failure(RepositoryError.internal('CRDT_INIT_ERROR', errorMessage)
     } finally {
       setIsSyncing(false)
     }
@@ -220,19 +220,19 @@ export function useCRDT({
       setIsConnected(false)
       setIsInitialized(false)
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect'
       setError(errorMessage)
-      return Result.failure('DISCONNECT_ERROR', errorMessage)
+      return failure(RepositoryError.internal('DISCONNECT_ERROR', errorMessage)
     }
   }, [assetId, stopAutoSync])
 
   // Update content (full replace)
   const updateContent = useCallback(async (newContent: string): Promise<Result<void>> => {
     if (!crdtServiceRef.current || !user) {
-      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+      return failure(RepositoryError.internal('SERVICE_NOT_READY', 'CRDT service not initialized')
     }
 
     try {
@@ -281,12 +281,12 @@ export function useCRDT({
       lastContentRef.current = newContent
       setLastSync(new Date())
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update content'
       setError(errorMessage)
-      return Result.failure('UPDATE_ERROR', errorMessage)
+      return failure(RepositoryError.internal('UPDATE_ERROR', errorMessage)
     } finally {
       setIsSyncing(false)
     }
@@ -295,7 +295,7 @@ export function useCRDT({
   // Insert text at position
   const insertText = useCallback(async (position: number, text: string): Promise<Result<void>> => {
     if (!crdtServiceRef.current || !user) {
-      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+      return failure(RepositoryError.internal('SERVICE_NOT_READY', 'CRDT service not initialized')
     }
 
     try {
@@ -323,12 +323,12 @@ export function useCRDT({
       lastContentRef.current = newContent
       setLastSync(new Date())
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to insert text'
       setError(errorMessage)
-      return Result.failure('INSERT_ERROR', errorMessage)
+      return failure(RepositoryError.internal('INSERT_ERROR', errorMessage)
     } finally {
       setIsSyncing(false)
     }
@@ -337,7 +337,7 @@ export function useCRDT({
   // Delete text at position
   const deleteText = useCallback(async (position: number, length: number): Promise<Result<void>> => {
     if (!crdtServiceRef.current || !user) {
-      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+      return failure(RepositoryError.internal('SERVICE_NOT_READY', 'CRDT service not initialized')
     }
 
     try {
@@ -365,12 +365,12 @@ export function useCRDT({
       lastContentRef.current = newContent
       setLastSync(new Date())
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete text'
       setError(errorMessage)
-      return Result.failure('DELETE_ERROR', errorMessage)
+      return failure(RepositoryError.internal('DELETE_ERROR', errorMessage)
     } finally {
       setIsSyncing(false)
     }
@@ -383,7 +383,7 @@ export function useCRDT({
     attributes: Record<string, any>
   ): Promise<Result<void>> => {
     if (!crdtServiceRef.current || !user) {
-      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+      return failure(RepositoryError.internal('SERVICE_NOT_READY', 'CRDT service not initialized')
     }
 
     try {
@@ -408,12 +408,12 @@ export function useCRDT({
 
       setLastSync(new Date())
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to format text'
       setError(errorMessage)
-      return Result.failure('FORMAT_ERROR', errorMessage)
+      return failure(RepositoryError.internal('FORMAT_ERROR', errorMessage)
     } finally {
       setIsSyncing(false)
     }
@@ -422,14 +422,14 @@ export function useCRDT({
   // Get document snapshot
   const getSnapshot = useCallback(async (): Promise<Result<DocumentSnapshot>> => {
     if (!crdtServiceRef.current) {
-      return Result.failure('SERVICE_NOT_READY', 'CRDT service not initialized')
+      return failure(RepositoryError.internal('SERVICE_NOT_READY', 'CRDT service not initialized')
     }
 
     try {
       return await crdtServiceRef.current.getDocumentSnapshot(assetId)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to get snapshot'
-      return Result.failure('SNAPSHOT_ERROR', errorMessage)
+      return failure(RepositoryError.internal('SNAPSHOT_ERROR', errorMessage)
     }
   }, [assetId])
 

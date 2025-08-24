@@ -4,7 +4,7 @@
  */
 
 import { BaseService } from './base.service'
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase-server'
 import { aiDocumentIntelligenceService } from './ai-document-intelligence.service'
 import { aiMeetingIntelligenceService } from './ai-meeting-intelligence.service'
 import { aiPredictiveAnalyticsService } from './ai-predictive-analytics.service'
@@ -283,10 +283,17 @@ interface CoordinationExecution {
 }
 
 export class AIIntegrationOrchestratorService extends BaseService {
-  private supabase = createClient()
+  private supabase: any = null
   private orchestrationStates = new Map<string, AIOrchestrationState>()
   private eventStore = new Map<string, AIEvent[]>()
   private coordinationTimer?: NodeJS.Timeout
+
+  private async ensureSupabaseInitialized() {
+    if (!this.supabase) {
+      this.supabase = await createServerClient()
+    }
+    return this.supabase
+  }
 
   // ========================================
   // ORCHESTRATION MANAGEMENT

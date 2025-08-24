@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
 import nodemailer from 'nodemailer'
 import { getAppUrl, env, getSmtpConfig } from '@/config/environment'

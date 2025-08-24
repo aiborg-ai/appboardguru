@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { WebSocketService } from '@/lib/services/websocket.service'
 import { WebSocketRepository } from '@/lib/repositories/websocket.repository'
 import type { OrganizationEvent, OrganizationSubscription } from '@/lib/websocket/organizationChannel'

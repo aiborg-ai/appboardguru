@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, ZodSchema, ZodError } from 'zod'
 import { validateWithSchema, createValidationMiddleware, ValidationMiddlewareConfig } from '../types/validation'
-import { AppError, AppErrorFactory } from '../result'
+import { AppError, AppErrorFactory } from '../repositories/result'
 
 // ==== Enhanced Validation Context ====
 

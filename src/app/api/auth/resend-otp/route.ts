@@ -6,7 +6,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import nodemailer from 'nodemailer'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { createOtpCode, OtpRateLimiter } from '@/lib/otp'
 import { env, getSmtpConfig, getAppUrl } from '@/config/environment'
 import { 

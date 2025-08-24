@@ -221,18 +221,18 @@ export class CommentService extends BaseService {
       const assetResult = await assetRepository.findById(request.assetId)
       
       if (!assetResult.success) {
-        return Result.failure('ASSET_NOT_FOUND', 'Asset not found')
+        return failure(RepositoryError.internal('ASSET_NOT_FOUND', 'Asset not found')
       }
 
       if (assetResult.data.organizationId !== organizationId) {
-        return Result.failure('ACCESS_DENIED', 'Access denied to asset')
+        return failure(RepositoryError.internal('ACCESS_DENIED', 'Access denied to asset')
       }
 
       // Validate parent comment if specified
       if (request.parentCommentId) {
         const parentResult = await this.getComment(request.parentCommentId, userId, organizationId)
         if (!parentResult.success) {
-          return Result.failure('PARENT_COMMENT_NOT_FOUND', 'Parent comment not found')
+          return failure(RepositoryError.internal('PARENT_COMMENT_NOT_FOUND', 'Parent comment not found')
         }
       }
 
@@ -314,7 +314,7 @@ export class CommentService extends BaseService {
       const createResult = await repository.create(comment)
       
       if (!createResult.success) {
-        return Result.failure(createResult.error.code, createResult.error.message)
+        return failure(RepositoryError.internal(createResult.error.code, createResult.error.message)
       }
 
       // Store mentions
@@ -340,10 +340,10 @@ export class CommentService extends BaseService {
         priority: request.priority
       })
 
-      return Result.success(createResult.data)
+      return success(createResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'COMMENT_CREATE_ERROR',
         `Failed to create comment: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -363,14 +363,14 @@ export class CommentService extends BaseService {
       const result = await repository.findById(commentId)
       
       if (!result.success) {
-        return Result.failure(result.error.code, result.error.message)
+        return failure(RepositoryError.internal(result.error.code, result.error.message)
       }
 
       const comment = result.data
 
       // Verify access
       if (comment.organizationId !== organizationId) {
-        return Result.failure('ACCESS_DENIED', 'Access denied to comment')
+        return failure(RepositoryError.internal('ACCESS_DENIED', 'Access denied to comment')
       }
 
       // Check privacy settings
@@ -378,17 +378,17 @@ export class CommentService extends BaseService {
         // Check if user is mentioned
         const isMentioned = comment.mentions?.some(m => m.mentionedUserId === userId)
         if (!isMentioned) {
-          return Result.failure('ACCESS_DENIED', 'Private comment access denied')
+          return failure(RepositoryError.internal('ACCESS_DENIED', 'Private comment access denied')
         }
       }
 
       // Track view
       await this.trackCommentView(commentId, userId)
 
-      return Result.success(comment)
+      return success(comment)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'COMMENT_GET_ERROR',
         `Failed to get comment: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -415,13 +415,13 @@ export class CommentService extends BaseService {
 
       // Verify ownership (only author can edit)
       if (existingComment.userId !== userId) {
-        return Result.failure('ACCESS_DENIED', 'Only comment author can edit')
+        return failure(RepositoryError.internal('ACCESS_DENIED', 'Only comment author can edit')
       }
 
       // Check if currently being edited by others
       if (existingComment.concurrentEditors.length > 0 && 
           !existingComment.concurrentEditors.includes(userId)) {
-        return Result.failure(
+        return failure(RepositoryError.internal(
           'CONCURRENT_EDIT_CONFLICT', 
           'Comment is currently being edited by another user'
         )
@@ -460,7 +460,7 @@ export class CommentService extends BaseService {
       const updateResult = await repository.update(commentId, updates)
       
       if (!updateResult.success) {
-        return Result.failure(updateResult.error.code, updateResult.error.message)
+        return failure(RepositoryError.internal(updateResult.error.code, updateResult.error.message)
       }
 
       // Update mentions if changed
@@ -482,10 +482,10 @@ export class CommentService extends BaseService {
         editSummary: request.editSummary
       })
 
-      return Result.success(updateResult.data)
+      return success(updateResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'COMMENT_UPDATE_ERROR',
         `Failed to update comment: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -504,7 +504,7 @@ export class CommentService extends BaseService {
       // Get existing comment
       const existingResult = await this.getComment(commentId, userId, organizationId)
       if (!existingResult.success) {
-        return Result.failure(existingResult.error.code, existingResult.error.message)
+        return failure(RepositoryError.internal(existingResult.error.code, existingResult.error.message)
       }
 
       const existingComment = existingResult.data
@@ -514,7 +514,7 @@ export class CommentService extends BaseService {
                        await this.isOrganizationAdmin(userId, organizationId)
 
       if (!canDelete) {
-        return Result.failure('ACCESS_DENIED', 'Insufficient permissions to delete comment')
+        return failure(RepositoryError.internal('ACCESS_DENIED', 'Insufficient permissions to delete comment')
       }
 
       // Soft delete
@@ -522,7 +522,7 @@ export class CommentService extends BaseService {
       const deleteResult = await repository.softDelete(commentId)
       
       if (!deleteResult.success) {
-        return Result.failure(deleteResult.error.code, deleteResult.error.message)
+        return failure(RepositoryError.internal(deleteResult.error.code, deleteResult.error.message)
       }
 
       // Broadcast deletion
@@ -537,10 +537,10 @@ export class CommentService extends BaseService {
         deletedByAuthor: existingComment.userId === userId
       })
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'COMMENT_DELETE_ERROR',
         `Failed to delete comment: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -560,7 +560,7 @@ export class CommentService extends BaseService {
       const threadResult = await repository.getThread(threadId, userId, organizationId)
       
       if (!threadResult.success) {
-        return Result.failure(threadResult.error.code, threadResult.error.message)
+        return failure(RepositoryError.internal(threadResult.error.code, threadResult.error.message)
       }
 
       // Track views for all comments in thread
@@ -571,10 +571,10 @@ export class CommentService extends BaseService {
         commentIds.map(id => this.trackCommentView(id, userId))
       )
 
-      return Result.success(threadResult.data)
+      return success(threadResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'THREAD_GET_ERROR',
         `Failed to get comment thread: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -610,24 +610,24 @@ export class CommentService extends BaseService {
       const assetResult = await assetRepository.findById(assetId)
       
       if (!assetResult.success) {
-        return Result.failure('ASSET_NOT_FOUND', 'Asset not found')
+        return failure(RepositoryError.internal('ASSET_NOT_FOUND', 'Asset not found')
       }
 
       if (assetResult.data.organizationId !== organizationId) {
-        return Result.failure('ACCESS_DENIED', 'Access denied to asset')
+        return failure(RepositoryError.internal('ACCESS_DENIED', 'Access denied to asset')
       }
 
       const repository = this.repositoryFactory.createCommentRepository()
       const commentsResult = await repository.findByAsset(assetId, userId, options)
       
       if (!commentsResult.success) {
-        return Result.failure(commentsResult.error.code, commentsResult.error.message)
+        return failure(RepositoryError.internal(commentsResult.error.code, commentsResult.error.message)
       }
 
-      return Result.success(commentsResult.data)
+      return success(commentsResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'ASSET_COMMENTS_ERROR',
         `Failed to get asset comments: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -647,16 +647,16 @@ export class CommentService extends BaseService {
       const result = await repository.startEditing(commentId, userId)
       
       if (!result.success) {
-        return Result.failure(result.error.code, result.error.message)
+        return failure(RepositoryError.internal(result.error.code, result.error.message)
       }
 
       // Broadcast editing status
       await this.broadcastEditingStatus(commentId, userId, 'started_editing')
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'START_EDITING_ERROR',
         `Failed to start editing: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -675,16 +675,16 @@ export class CommentService extends BaseService {
       const result = await repository.stopEditing(commentId, userId)
       
       if (!result.success) {
-        return Result.failure(result.error.code, result.error.message)
+        return failure(RepositoryError.internal(result.error.code, result.error.message)
       }
 
       // Broadcast editing status
       await this.broadcastEditingStatus(commentId, userId, 'stopped_editing')
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'STOP_EDITING_ERROR',
         `Failed to stop editing: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -719,7 +719,7 @@ export class CommentService extends BaseService {
       })
 
       if (!reactionResult.success) {
-        return Result.failure(reactionResult.error.code, reactionResult.error.message)
+        return failure(RepositoryError.internal(reactionResult.error.code, reactionResult.error.message)
       }
 
       // Update reaction counts
@@ -737,10 +737,10 @@ export class CommentService extends BaseService {
         reactionCategory
       })
 
-      return Result.success(reactionResult.data)
+      return success(reactionResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'ADD_REACTION_ERROR',
         `Failed to add reaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -768,7 +768,7 @@ export class CommentService extends BaseService {
       const resolveResult = await repository.resolve(commentId, userId, resolve, resolutionNote)
       
       if (!resolveResult.success) {
-        return Result.failure(resolveResult.error.code, resolveResult.error.message)
+        return failure(RepositoryError.internal(resolveResult.error.code, resolveResult.error.message)
       }
 
       // Broadcast resolution
@@ -787,10 +787,10 @@ export class CommentService extends BaseService {
         resolutionNote: resolutionNote || null
       })
 
-      return Result.success(resolveResult.data)
+      return success(resolveResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'RESOLVE_COMMENT_ERROR',
         `Failed to resolve comment: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -831,13 +831,13 @@ export class CommentService extends BaseService {
       const draftResult = await repository.saveDraft(draft)
       
       if (!draftResult.success) {
-        return Result.failure(draftResult.error.code, draftResult.error.message)
+        return failure(RepositoryError.internal(draftResult.error.code, draftResult.error.message)
       }
 
-      return Result.success(draftResult.data)
+      return success(draftResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'SAVE_DRAFT_ERROR',
         `Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -864,13 +864,13 @@ export class CommentService extends BaseService {
       const mentionsResult = await repository.getUnreadMentions(userId, limit)
       
       if (!mentionsResult.success) {
-        return Result.failure(mentionsResult.error.code, mentionsResult.error.message)
+        return failure(RepositoryError.internal(mentionsResult.error.code, mentionsResult.error.message)
       }
 
-      return Result.success(mentionsResult.data)
+      return success(mentionsResult.data)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'GET_MENTIONS_ERROR',
         `Failed to get unread mentions: ${error instanceof Error ? error.message : 'Unknown error'}`
       )

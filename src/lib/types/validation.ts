@@ -4,7 +4,7 @@
  */
 
 import { z, ZodSchema, ZodType, ZodRawShape, ZodObject, ZodError } from 'zod'
-import { Result, Ok, Err, AppError, AppErrorFactory } from '../result'
+import { Result, Ok, Err, AppError, AppErrorFactory } from '../repositories/result'
 import { 
   UserId, OrganizationId, VaultId, AssetId, NotificationId,
   UserIdSchema, OrganizationIdSchema, VaultIdSchema, AssetIdSchema, NotificationIdSchema,

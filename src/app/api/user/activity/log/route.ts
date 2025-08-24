@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { 
   UserActivityLogger,
   getRequestContext,

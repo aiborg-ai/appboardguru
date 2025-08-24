@@ -69,7 +69,7 @@ export class CRDTService extends BaseService {
     try {
       // Check if document already exists
       if (this.documents.has(assetId)) {
-        return Result.success(this.documents.get(assetId)!)
+        return success(this.documents.get(assetId)!)
       }
 
       // Create new Yjs document
@@ -119,10 +119,10 @@ export class CRDTService extends BaseService {
         hasInitialContent: !!initialContent
       })
 
-      return Result.success(ydoc)
+      return success(ydoc)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CRDT_INIT_ERROR',
         `Failed to initialize CRDT document: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -135,9 +135,9 @@ export class CRDTService extends BaseService {
   getDocument(assetId: AssetId): Result<Y.Doc | null> {
     try {
       const doc = this.documents.get(assetId) || null
-      return Result.success(doc)
+      return success(doc)
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CRDT_GET_ERROR',
         `Failed to get CRDT document: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -161,7 +161,7 @@ export class CRDTService extends BaseService {
     try {
       const doc = this.documents.get(assetId)
       if (!doc) {
-        return Result.failure('DOCUMENT_NOT_FOUND', 'CRDT document not found')
+        return failure(RepositoryError.internal('DOCUMENT_NOT_FOUND', 'CRDT document not found')
       }
 
       const ytext = doc.getText('content')
@@ -203,10 +203,10 @@ export class CRDTService extends BaseService {
         contentLength: operation.content?.length || operation.length || 0
       })
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CRDT_OPERATION_ERROR',
         `Failed to apply operation: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -224,7 +224,7 @@ export class CRDTService extends BaseService {
     try {
       const provider = this.providers.get(assetId)
       if (!provider) {
-        return Result.failure('PROVIDER_NOT_FOUND', 'WebSocket provider not found')
+        return failure(RepositoryError.internal('PROVIDER_NOT_FOUND', 'WebSocket provider not found')
       }
 
       const awarenessData = {
@@ -235,10 +235,10 @@ export class CRDTService extends BaseService {
 
       provider.awareness.setLocalStateField('user', awarenessData)
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'AWARENESS_UPDATE_ERROR',
         `Failed to update awareness: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -252,7 +252,7 @@ export class CRDTService extends BaseService {
     try {
       const doc = this.documents.get(assetId)
       if (!doc) {
-        return Result.failure('DOCUMENT_NOT_FOUND', 'CRDT document not found')
+        return failure(RepositoryError.internal('DOCUMENT_NOT_FOUND', 'CRDT document not found')
       }
 
       const ytext = doc.getText('content')
@@ -266,10 +266,10 @@ export class CRDTService extends BaseService {
         timestamp: new Date().toISOString()
       }
 
-      return Result.success(snapshot)
+      return success(snapshot)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'SNAPSHOT_ERROR',
         `Failed to create snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -286,7 +286,7 @@ export class CRDTService extends BaseService {
     try {
       const doc = this.documents.get(assetId)
       if (!doc) {
-        return Result.failure('DOCUMENT_NOT_FOUND', 'CRDT document not found')
+        return failure(RepositoryError.internal('DOCUMENT_NOT_FOUND', 'CRDT document not found')
       }
 
       const subscriptions = this.subscriptions.get(assetId)!
@@ -328,10 +328,10 @@ export class CRDTService extends BaseService {
         subscriptions.delete(syncHandler)
       }
 
-      return Result.success(unsubscribe)
+      return success(unsubscribe)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'SUBSCRIPTION_ERROR',
         `Failed to subscribe to changes: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -348,7 +348,7 @@ export class CRDTService extends BaseService {
     try {
       const doc = this.documents.get(assetId)
       if (!doc) {
-        return Result.failure('DOCUMENT_NOT_FOUND', 'CRDT document not found')
+        return failure(RepositoryError.internal('DOCUMENT_NOT_FOUND', 'CRDT document not found')
       }
 
       Y.applyUpdate(doc, externalState)
@@ -358,10 +358,10 @@ export class CRDTService extends BaseService {
         updateSize: externalState.length
       })
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'MERGE_ERROR',
         `Failed to merge document state: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -375,14 +375,14 @@ export class CRDTService extends BaseService {
     try {
       const doc = this.documents.get(assetId)
       if (!doc) {
-        return Result.failure('DOCUMENT_NOT_FOUND', 'CRDT document not found')
+        return failure(RepositoryError.internal('DOCUMENT_NOT_FOUND', 'CRDT document not found')
       }
 
       const update = Y.encodeStateAsUpdate(doc, stateVector)
-      return Result.success(update)
+      return success(update)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'UPDATE_ENCODING_ERROR',
         `Failed to encode document update: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -410,10 +410,10 @@ export class CRDTService extends BaseService {
 
       await this.logActivity('crdt_document_cleanup', { assetId })
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CLEANUP_ERROR',
         `Failed to cleanup document: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -502,7 +502,7 @@ export class CRDTService extends BaseService {
     try {
       const doc = this.documents.get(assetId)
       if (!doc) {
-        return Result.failure('DOCUMENT_NOT_FOUND', 'CRDT document not found')
+        return failure(RepositoryError.internal('DOCUMENT_NOT_FOUND', 'CRDT document not found')
       }
 
       const metadata = doc.getMap('metadata')
@@ -513,10 +513,10 @@ export class CRDTService extends BaseService {
         lastActivity: metadata.get('lastModifiedAt') || new Date().toISOString()
       }
 
-      return Result.success(stats)
+      return success(stats)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'STATS_ERROR',
         `Failed to get conflict stats: ${error instanceof Error ? error.message : 'Unknown error'}`
       )

@@ -20,7 +20,7 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import { WebSocketCoordinatorService } from '../services/websocket-coordinator.service'
-import { Result, success, failure } from '../result'
+import { Result, success, failure } from '../repositories/result'
 import type { WebSocketMessage } from '../../types/websocket'
 import {
   OrganizationId,

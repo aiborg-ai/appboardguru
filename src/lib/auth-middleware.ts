@@ -249,3 +249,18 @@ export async function requireOrganization(
     context: authResult.context
   }
 }
+
+/**
+ * Higher-order function for route authentication
+ */
+export function withAuth(handler: (request: Request, authContext: AuthContext) => Promise<Response> | Response) {
+  return async (request: Request) => {
+    const authResult = await requireAuth(request)
+    
+    if (authResult.response) {
+      return authResult.response
+    }
+
+    return handler(request, authResult.context!)
+  }
+}

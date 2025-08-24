@@ -6,7 +6,7 @@
 
 import { BaseService } from './base.service';
 import { ComplianceRepository } from '../repositories/compliance.repository';
-import { Result, Ok, Err } from '../result';
+import { Result, Ok, Err } from '../repositories/result';
 import { ComplianceWorkflow, ComplianceRule, ComplianceReport } from '../../types/entities/compliance.types';
 import { WorkflowId, RuleId, UserId, OrganizationId } from '../../types/core';
 

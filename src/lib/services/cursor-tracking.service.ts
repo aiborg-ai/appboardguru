@@ -146,13 +146,13 @@ export class CursorTrackingService extends BaseService {
         hasSelection: !!selection
       })
 
-      return Result.success(cursor)
+      return success(cursor)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CURSOR_UPDATE_ERROR',
         `Failed to update cursor: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -181,13 +181,13 @@ export class CursorTrackingService extends BaseService {
         }
       }
 
-      return Result.success(cursors)
+      return success(cursors)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'GET_CURSORS_ERROR',
         `Failed to get document cursors: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -234,13 +234,13 @@ export class CursorTrackingService extends BaseService {
         await this.logActivity('cursor_removed', { userId, assetId })
       }
 
-      return Result.success(undefined)
+      return success(undefined)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CURSOR_REMOVE_ERROR',
         `Failed to remove cursor: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -252,13 +252,13 @@ export class CursorTrackingService extends BaseService {
       const cursorKey = `${assetId}_${userId}`
       const history = this.cursorHistory.get(cursorKey) || []
       
-      return Result.success([...history]) // Return copy
+      return success([...history]) // Return copy
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CURSOR_HISTORY_ERROR',
         `Failed to get cursor history: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -285,13 +285,13 @@ export class CursorTrackingService extends BaseService {
         }
       }
 
-      return Result.success(unsubscribe)
+      return success(unsubscribe)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'SUBSCRIBE_ERROR',
         `Failed to subscribe to cursors: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -303,7 +303,7 @@ export class CursorTrackingService extends BaseService {
       const cursorsResult = await this.getDocumentCursors(assetId)
       
       if (!cursorsResult.success) {
-        return Result.failure(cursorsResult.error.code, cursorsResult.error.message)
+        return failure(RepositoryError.internal(cursorsResult.error.code, cursorsResult.error.message))
       }
 
       const batch: CursorBatch = {
@@ -312,13 +312,13 @@ export class CursorTrackingService extends BaseService {
         version: Date.now() // Simple versioning
       }
 
-      return Result.success(batch)
+      return success(batch)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CURSOR_BATCH_ERROR',
         `Failed to get cursor batch: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 
@@ -481,13 +481,13 @@ export class CursorTrackingService extends BaseService {
         await this.logActivity('stale_cursors_cleaned', { count: cleanedCount })
       }
 
-      return Result.success(cleanedCount)
+      return success(cleanedCount)
 
     } catch (error) {
-      return Result.failure(
+      return failure(RepositoryError.internal(
         'CLEANUP_ERROR',
         `Failed to cleanup stale cursors: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      ))
     }
   }
 }

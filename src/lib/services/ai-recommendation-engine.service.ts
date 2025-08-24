@@ -5,7 +5,7 @@
 
 import { BaseService } from './base.service'
 import { chatWithOpenRouter } from '@/lib/openrouter'
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase-server'
 import { aiDocumentIntelligenceService } from './ai-document-intelligence.service'
 import { aiMeetingIntelligenceService } from './ai-meeting-intelligence.service'
 import { aiPredictiveAnalyticsService } from './ai-predictive-analytics.service'

@@ -52,11 +52,13 @@ export class IntelligentActionItemsService {
   private supabase: any;
 
   constructor() {
-    this.initializeSupabase();
+    // Don't initialize Supabase in constructor to avoid cookies outside request scope
   }
 
   private async initializeSupabase() {
-    this.supabase = await createSupabaseServerClient();
+    if (!this.supabase) {
+      this.supabase = await createSupabaseServerClient();
+    }
   }
 
   /**

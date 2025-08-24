@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { NotificationService } from '@/lib/services/notification.service'
 import { createAdminFeedbackTemplate, createUserConfirmationTemplate, generateFeedbackTextFallback, generateConfirmationTextFallback } from '@/lib/services/feedback-templates'
 import { z } from 'zod'

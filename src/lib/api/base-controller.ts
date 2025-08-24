@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodSchema, z } from 'zod';
 import type { Result } from '../result/types';
-import { Ok, Err, ResultUtils } from '../result';
+import { Ok, Err, ResultUtils } from '../repositories/result';
 import { APIResponse } from '../../types/api';
 
 /**

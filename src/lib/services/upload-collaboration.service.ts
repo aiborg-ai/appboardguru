@@ -4,7 +4,7 @@
  */
 
 import { BaseService } from './base.service'
-import { Result, Ok, Err } from '../result'
+import { Result, Ok, Err } from '../repositories/result'
 import { 
   CollaborationEvent, 
   CollaborationState, 

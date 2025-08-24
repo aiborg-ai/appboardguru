@@ -3,7 +3,7 @@
  * Advanced Result pattern utilities with async support, error accumulation, and functional composition
  */
 
-import { Result, Ok, Err, AppError, AppErrorFactory } from '../result'
+import { Result, Ok, Err, AppError, AppErrorFactory } from '../repositories/result'
 import { match } from 'ts-pattern'
 
 // ==== Result Factory Types ====

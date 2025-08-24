@@ -3,7 +3,7 @@
  * Strongly-typed event emitter with compile-time validation, middleware support, and event filtering
  */
 
-import { Result, Ok, Err, AppError, AppErrorFactory } from '../result'
+import { Result, Ok, Err, AppError, AppErrorFactory } from '../repositories/result'
 import { 
   UserId, OrganizationId, VaultId, AssetId, MeetingId, NotificationId,
   isUserId, isOrganizationId, isVaultId, isAssetId, isMeetingId, isNotificationId

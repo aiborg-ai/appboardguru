@@ -6,7 +6,7 @@
 
 import { BaseService } from './base.service';
 import { AssetRepository, AssetUploadData, AssetWithDetails } from '../repositories/asset.repository.enhanced';
-import { Result, Ok, Err } from '../result';
+import { Result, Ok, Err } from '../repositories/result';
 import { Asset, AssetMetadata, AssetVersion } from '../../types/entities/asset.types';
 import { AssetId, UserId, OrganizationId, VaultId } from '../../types/core';
 
