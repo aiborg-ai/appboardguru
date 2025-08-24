@@ -445,7 +445,7 @@ export class AIBoardSecretaryService extends BaseService {
         speakers,
         confidence_score: this.calculateAverageConfidence(result.segments || [])
       }
-    })()))
+    })())
   }
 
   /**
