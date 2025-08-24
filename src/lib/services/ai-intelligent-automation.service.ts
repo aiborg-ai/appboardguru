@@ -15,7 +15,7 @@ export class AIIntelligentAutomationService extends BaseService {
         recommendations: [],
         confidence: 0.8,
         generatedAt: new Date().toISOString()
-      }
+      })
     } catch (error) {
       return failure(`Workflow recommendations failed: ${(error as Error).message}`)
     }

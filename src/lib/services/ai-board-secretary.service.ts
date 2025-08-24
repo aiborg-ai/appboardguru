@@ -445,7 +445,7 @@ export class AIBoardSecretaryService extends BaseService {
         speakers,
         confidence_score: this.calculateAverageConfidence(result.segments || [])
       }
-    })()
+    })()))
   }
 
   /**
@@ -714,7 +714,7 @@ Focus on accuracy, completeness, and professional formatting. Extract all decisi
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response', parseError)
       }
-    })()
+    })())
   }
 
   /**
@@ -883,7 +883,7 @@ Be specific and actionable in your titles and descriptions.
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response for action items', parseError)
       }
-    })()
+    })())
   }
 
   /**
@@ -1409,7 +1409,7 @@ Include relevant pending action items in the "Old Business" section.
       } catch (parseError) {
         throw RepositoryError.internal('Failed to parse AI response for agenda', parseError)
       }
-    })()
+    })())
   }
 
   /**
