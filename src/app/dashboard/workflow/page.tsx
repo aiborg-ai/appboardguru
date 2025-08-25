@@ -4,9 +4,17 @@
 export const dynamic = 'force-dynamic'
 
 import React from 'react'
+import dynamic from 'next/dynamic'
 import IntegratedPageLayout from '@/components/shared/IntegratedPageLayout'
-import WorkflowIntegration from '@/components/workflow/WorkflowIntegration'
 import { Link2, Plus, Filter, Settings } from 'lucide-react'
+
+const WorkflowIntegration = dynamic(
+  () => import('@/components/workflow/WorkflowIntegration'),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse">Loading workflow integration...</div>
+  }
+)
 
 export default function WorkflowPage() {
   const handleCreateConnection = () => {
@@ -76,13 +84,9 @@ export default function WorkflowPage() {
       }}
     >
       {/* Main workflow content */}
-      {typeof window !== 'undefined' ? (
-        <WorkflowIntegration 
-          showSuggestions={true}
-        />
-      ) : (
-        <div className="animate-pulse">Loading workflow integration...</div>
-      )}
+      <WorkflowIntegration 
+        showSuggestions={true}
+      />
     </IntegratedPageLayout>
   )
 }
