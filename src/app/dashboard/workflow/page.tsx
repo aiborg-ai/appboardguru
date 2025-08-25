@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import React from 'react'
 import IntegratedPageLayout from '@/components/shared/IntegratedPageLayout'
 import WorkflowIntegration from '@/components/workflow/WorkflowIntegration'
