@@ -8,9 +8,6 @@ import IntegratedPageLayout from '@/components/shared/IntegratedPageLayout'
 import WorkflowIntegration from '@/components/workflow/WorkflowIntegration'
 import { Link2, Plus, Filter, Settings } from 'lucide-react'
 
-// Force dynamic rendering for this page
-export const dynamic = 'force-dynamic'
-
 export default function WorkflowPage() {
   const handleCreateConnection = () => {
     console.log('Create new workflow connection')
