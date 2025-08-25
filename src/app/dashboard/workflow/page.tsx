@@ -12,8 +12,21 @@ const WorkflowIntegration = dynamicImport(
   () => import('@/components/workflow/WorkflowIntegration'),
   {
     ssr: false,
-    loading: () => <div className="animate-pulse">Loading workflow integration...</div>
+    loading: () => <div className="animate-pulse p-8 text-center">Loading workflow integration...</div>
   }
+)
+
+// Simple fallback component for server-side rendering
+const WorkflowPlaceholder = () => (
+  <div className="p-8">
+    <div className="text-center text-gray-500">
+      <div className="animate-pulse mb-4">
+        <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+      </div>
+      <p>Workflow integration loading...</p>
+    </div>
+  </div>
 )
 
 export default function WorkflowPage() {
@@ -84,9 +97,13 @@ export default function WorkflowPage() {
       }}
     >
       {/* Main workflow content */}
-      <WorkflowIntegration 
-        showSuggestions={true}
-      />
+      {typeof window !== 'undefined' ? (
+        <WorkflowIntegration 
+          showSuggestions={true}
+        />
+      ) : (
+        <WorkflowPlaceholder />
+      )}
     </IntegratedPageLayout>
   )
 }
