@@ -4,11 +4,11 @@
 export const dynamic = 'force-dynamic'
 
 import React from 'react'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 import IntegratedPageLayout from '@/components/shared/IntegratedPageLayout'
 import { Link2, Plus, Filter, Settings } from 'lucide-react'
 
-const WorkflowIntegration = dynamic(
+const WorkflowIntegration = dynamicImport(
   () => import('@/components/workflow/WorkflowIntegration'),
   {
     ssr: false,
