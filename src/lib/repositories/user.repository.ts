@@ -155,4 +155,273 @@ export class UserRepository extends BaseRepository {
       this.handleError(error, 'updateLastAccess')
     }
   }
+
+  /**
+   * Update user's role (with Result pattern)
+   * Agent: REPO-02 Enhancement
+   */
+  async updateUserRole(userId: string, role: UserRole): Promise<Result<User>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .update({
+          role,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'Failed to update user role',
+            'UPDATE_ERROR',
+            { userId, role, error: error.message }
+          )
+        }
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'No data returned after role update',
+            'NO_DATA',
+            { userId, role }
+          )
+        }
+      }
+
+      return { success: true, data }
+    } catch (error) {
+      return {
+        success: false,
+        error: new RepositoryError(
+          'Unexpected error updating user role',
+          'INTERNAL_ERROR',
+          { userId, role, error }
+        )
+      }
+    }
+  }
+
+  /**
+   * Get all users with reviewer role
+   * Agent: REPO-02 Enhancement
+   */
+  async getReviewers(organizationId?: string): Promise<Result<User[]>> {
+    try {
+      let query = this.supabase
+        .from('users')
+        .select('*')
+        .or('role.eq.reviewer,is_reviewer.eq.true')
+
+      if (organizationId) {
+        // Join with organization_members to filter by organization
+        query = query
+          .select(`
+            *,
+            organization_members!inner(
+              organization_id
+            )
+          `)
+          .eq('organization_members.organization_id', organizationId)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
+
+      if (error) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'Failed to get reviewers',
+            'QUERY_ERROR',
+            { organizationId, error: error.message }
+          )
+        }
+      }
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      return {
+        success: false,
+        error: new RepositoryError(
+          'Unexpected error getting reviewers',
+          'INTERNAL_ERROR',
+          { organizationId, error }
+        )
+      }
+    }
+  }
+
+  /**
+   * Check if user has a specific permission
+   * Agent: REPO-02 Enhancement
+   */
+  async checkPermission(userId: string, permission: string): Promise<Result<boolean>> {
+    try {
+      // First get the user's role
+      const { data: user, error: userError } = await this.supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single()
+
+      if (userError || !user) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'User not found',
+            'NOT_FOUND',
+            { userId }
+          )
+        }
+      }
+
+      // Check permission based on role using the database function
+      const { data, error } = await this.supabase
+        .rpc('check_permission', {
+          p_user_id: userId,
+          p_permission_key: permission
+        })
+
+      if (error) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'Failed to check permission',
+            'RPC_ERROR',
+            { userId, permission, error: error.message }
+          )
+        }
+      }
+
+      return { success: true, data: data || false }
+    } catch (error) {
+      return {
+        success: false,
+        error: new RepositoryError(
+          'Unexpected error checking permission',
+          'INTERNAL_ERROR',
+          { userId, permission, error }
+        )
+      }
+    }
+  }
+
+  /**
+   * Get users by role
+   * Agent: REPO-02 Enhancement
+   */
+  async getUsersByRole(role: UserRole, organizationId?: string): Promise<Result<User[]>> {
+    try {
+      let query = this.supabase
+        .from('users')
+        .select('*')
+        .eq('role', role)
+        .eq('status', 'approved')
+
+      if (organizationId) {
+        query = query
+          .select(`
+            *,
+            organization_members!inner(
+              organization_id,
+              status
+            )
+          `)
+          .eq('organization_members.organization_id', organizationId)
+          .eq('organization_members.status', 'active')
+      }
+
+      const { data, error } = await query.order('full_name')
+
+      if (error) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'Failed to get users by role',
+            'QUERY_ERROR',
+            { role, organizationId, error: error.message }
+          )
+        }
+      }
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      return {
+        success: false,
+        error: new RepositoryError(
+          'Unexpected error getting users by role',
+          'INTERNAL_ERROR',
+          { role, organizationId, error }
+        )
+      }
+    }
+  }
+
+  /**
+   * Create a reviewer account with special permissions
+   * Agent: REPO-02 Enhancement
+   */
+  async createReviewer(
+    email: string,
+    fullName: string,
+    testEnvAccess: boolean = false
+  ): Promise<Result<User>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .insert({
+          email,
+          full_name: fullName,
+          role: 'reviewer' as UserRole,
+          is_reviewer: true,
+          test_environment_access: testEnvAccess,
+          reviewer_metadata: {
+            created_as_reviewer: true,
+            created_at: new Date().toISOString()
+          },
+          status: 'approved',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'Failed to create reviewer account',
+            'INSERT_ERROR',
+            { email, error: error.message }
+          )
+        }
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          error: new RepositoryError(
+            'No data returned after creating reviewer',
+            'NO_DATA',
+            { email }
+          )
+        }
+      }
+
+      return { success: true, data }
+    } catch (error) {
+      return {
+        success: false,
+        error: new RepositoryError(
+          'Unexpected error creating reviewer',
+          'INTERNAL_ERROR',
+          { email, error }
+        )
+      }
+    }
+  }
 }

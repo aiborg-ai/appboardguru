@@ -202,20 +202,22 @@ export function useContextDetection(): ContextDetectionResult & {
       }
     })
 
-    // Start observing
-    const targetNode = document.querySelector('main') || document.body
-    if (targetNode) {
-      observer.observe(targetNode, {
-        childList: true,
-        subtree: true,
-        characterData: true
-      })
-    }
-
-    // Initial context detection
-    const initialContent = targetNode?.textContent || ''
-    if (initialContent) {
-      updateContext(initialContent)
+    // Start observing - ensure document.body exists
+    if (typeof document !== 'undefined' && document.body) {
+      const targetNode = document.querySelector('main') || document.body
+      if (targetNode) {
+        observer.observe(targetNode, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        })
+        
+        // Initial context detection
+        const initialContent = targetNode.textContent || ''
+        if (initialContent) {
+          updateContext(initialContent)
+        }
+      }
     }
 
     return () => {

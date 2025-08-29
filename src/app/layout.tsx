@@ -88,15 +88,30 @@ export default function RootLayout({
                 
                 // Set up observers and intervals
                 if (typeof window !== 'undefined') {
-                  // Remove on DOM changes
-                  const observer = new MutationObserver(() => {
-                    removeAllOverlays();
-                  });
+                  // Wait for document.body to exist
+                  const setupObserver = () => {
+                    if (document.body) {
+                      // Remove on DOM changes
+                      const observer = new MutationObserver(() => {
+                        removeAllOverlays();
+                      });
+                      
+                      observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                      });
+                    } else {
+                      // If body doesn't exist yet, try again
+                      setTimeout(setupObserver, 10);
+                    }
+                  };
                   
-                  observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                  });
+                  // Start the setup process
+                  if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', setupObserver);
+                  } else {
+                    setupObserver();
+                  }
                   
                   // Aggressive removal every 100ms
                   setInterval(removeAllOverlays, 100);
