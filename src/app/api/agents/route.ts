@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
         });
       
       case 'handoff':
-        const { from, to, task, context, priority } = body;
+        const { from, to, task, context, priority: handoffPriority } = body;
         
         if (!from || !to || !task) {
           return NextResponse.json({ 
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
           to,
           task,
           context: context || {},
-          priority: priority || 'medium',
+          priority: handoffPriority || 'medium',
           timestamp: new Date()
         });
         
