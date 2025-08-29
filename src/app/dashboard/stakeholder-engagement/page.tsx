@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/features/shared/ui/card'
 import { Button } from '@/features/shared/ui/button'

@@ -1,9 +1,12 @@
+'use client'
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 /**
  * Real-time Organizations Demo Page
  * Comprehensive demonstration of all real-time features and capabilities
  */
-
-'use client'
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'

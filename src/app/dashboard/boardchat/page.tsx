@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import React from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import BoardChatButton from '@/components/boardchat/BoardChatButton'

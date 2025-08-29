@@ -52,46 +52,8 @@ export default function RoutePreloader({ config, children }: RoutePreloaderProps
   return <>{children}</>
 }
 
-// Smart link component that preloads on hover
-interface SmartLinkProps {
-  href: string
-  children: React.ReactNode
-  className?: string
-  preloadOnHover?: boolean
-  priority?: 'high' | 'low'
-}
-
-export function SmartLink({ 
-  href, 
-  children, 
-  className, 
-  preloadOnHover = true,
-  priority = 'low'
-}: SmartLinkProps) {
-  const router = useRouter()
-  const hasPreloaded = useRef(false)
-
-  const handleMouseEnter = () => {
-    if (preloadOnHover && !hasPreloaded.current) {
-      router.prefetch(href)
-      hasPreloaded.current = true
-      console.debug(`Preloaded on hover: ${href}`)
-    }
-  }
-
-  return (
-    <Link 
-      href={href} 
-      className={className}
-      onMouseEnter={handleMouseEnter}
-    >
-      {children}
-    </Link>
-  )
-}
-
 // Preloader configurations for different page types
-// NOTE: This must be defined before useRoutePreloadConfig to avoid "Cannot access before initialization" error
+// This MUST be defined before SmartLink and useRoutePreloadConfig to avoid "Cannot access before initialization" error
 export const preloadConfigs = {
   dashboard: {
     routes: [

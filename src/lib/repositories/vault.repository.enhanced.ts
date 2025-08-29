@@ -176,6 +176,29 @@ export interface VaultPermission {
   inherited_from?: 'organization' | 'vault_role'
 }
 
+export interface VaultAssetWithDetails {
+  id: string
+  file_name: string
+  original_file_name?: string
+  file_type: string
+  file_size: number
+  file_path?: string
+  description?: string
+  tags?: string[]
+  uploaded_by: string
+  created_at: string
+  updated_at: string
+  view_count?: number
+  download_count?: number
+  is_featured?: boolean
+  is_required_reading?: boolean
+  display_order?: number
+  uploader?: {
+    full_name?: string
+    email: string
+  }
+}
+
 export class VaultRepository extends BaseRepository {
   protected getEntityName(): string {
     return 'Vault'
@@ -720,6 +743,60 @@ export class VaultRepository extends BaseRepository {
     })
 
     return success(undefined)
+  }
+
+  async getVaultAssets(
+    vaultId: VaultId,
+    userId: UserId
+  ): Promise<Result<VaultAssetWithDetails[]>> {
+    // Check user has access to this vault
+    const permissionCheck = await this.checkVaultPermission(vaultId, userId, ['viewer', 'member', 'admin', 'owner'])
+    if (!permissionCheck.success) {
+      return permissionCheck
+    }
+
+    const { data, error } = await this.supabase
+      .from('vault_assets')
+      .select(`
+        asset_id,
+        is_featured,
+        is_required_reading,
+        display_order,
+        assets!inner(
+          *,
+          uploader:uploaded_by(full_name, email)
+        )
+      `)
+      .eq('vault_id', vaultId)
+      .order('is_featured', { ascending: false })
+      .order('is_required_reading', { ascending: false })
+      .order('display_order', { ascending: true })
+
+    if (error) {
+      return failure(RepositoryError.fromSupabaseError(error, 'getVaultAssets'))
+    }
+
+    // Transform the data to match the expected interface
+    const transformedAssets: VaultAssetWithDetails[] = data?.map(item => ({
+      ...item.assets,
+      is_featured: item.is_featured,
+      is_required_reading: item.is_required_reading,
+      display_order: item.display_order
+    })) || []
+
+    await this.logActivity({
+      user_id: userId,
+      event_type: 'vault_management',
+      event_category: 'asset_access',
+      action: 'list_assets',
+      resource_type: 'vault',
+      resource_id: vaultId,
+      event_description: `Listed vault assets`,
+      outcome: 'success',
+      severity: 'low'
+    })
+
+    return success(transformedAssets)
   }
 
   async getStats(

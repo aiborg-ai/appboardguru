@@ -1,3 +1,6 @@
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 // Agent Dashboard Page
 
 import AgentDashboard from '@/components/agents/AgentDashboard';

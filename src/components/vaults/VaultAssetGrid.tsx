@@ -46,7 +46,9 @@ import {
   SelectValue,
 } from '@/features/shared/ui/select'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase-client'
+import { VaultRepository, createClientRepositoryFactory } from '@/lib/repositories'
+import { VaultId, UserId, createVaultId, createUserId } from '@/lib/repositories/types'
+import { useAuthStore } from '@/lib/stores/auth-store'
 
 // Simple toast implementation
 const toast = {
@@ -90,45 +92,38 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
   const [filterType, setFilterType] = useState('all')
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   
+  // Get current user from auth store
+  const { user } = useAuthStore()
+  
   // Fetch assets
   useEffect(() => {
     const fetchAssets = async () => {
+      if (!user?.id) {
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
-        const supabase = createClient()
         
-        // Query through vault_assets table to get assets in this vault
-        const { data, error } = await supabase
-          .from('vault_assets')
-          .select(`
-            asset_id,
-            is_featured,
-            is_required_reading,
-            display_order,
-            assets!inner(
-              *,
-              uploader:uploaded_by(full_name, email)
-            )
-          `)
-          .eq('vault_id', vaultId)
-          .order('is_featured', { ascending: false })
-          .order('is_required_reading', { ascending: false })
-          .order('display_order', { ascending: true })
+        // Create repository factory and get vault repository
+        const repositoryFactory = createClientRepositoryFactory()
+        const vaultRepository = repositoryFactory.vaults
         
-        if (error) {
-          console.error('Error fetching assets:', error)
-          toast.error('Failed to load assets')
+        // Convert string IDs to branded types
+        const vaultIdBranded = createVaultId(vaultId)
+        const userIdBranded = createUserId(user.id)
+        
+        // Get vault assets using repository pattern
+        const result = await vaultRepository.getVaultAssets(vaultIdBranded, userIdBranded)
+        
+        if (!result.success) {
+          console.error('Error fetching assets:', result.error)
+          toast.error('Failed to load assets: ' + result.error.message)
           return
         }
         
-        // Extract the assets from the vault_assets join
-        const extractedAssets = data?.map(item => ({
-          ...item.assets,
-          is_featured: item.is_featured,
-          is_required_reading: item.is_required_reading
-        })) || []
-        
-        setAssets(extractedAssets)
+        setAssets(result.data)
       } catch (error) {
         console.error('Error:', error)
         toast.error('An error occurred while loading assets')
@@ -138,7 +133,7 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
     }
     
     fetchAssets()
-  }, [vaultId])
+  }, [vaultId, user?.id])
   
   // Get file icon based on type
   const getFileIcon = (fileType: string) => {

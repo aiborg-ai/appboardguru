@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import InstrumentPlayWizard from '@/features/instruments/InstrumentPlayWizard'
 import { Brain } from 'lucide-react'

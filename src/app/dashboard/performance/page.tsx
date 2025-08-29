@@ -1,9 +1,12 @@
+'use client'
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 /**
  * Performance Dashboard Page
  * Main dashboard for monitoring application performance
  */
-
-'use client'
 
 import { Suspense } from 'react'
 import { PerformanceDashboard } from '@/components/performance/PerformanceDashboard'

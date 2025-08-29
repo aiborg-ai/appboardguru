@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase-client'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import EnhancedSidebar from './EnhancedSidebar'
 import RightPanel from '@/features/shared/components/RightPanel'
 import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'
@@ -74,6 +74,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
       
       // Normal authentication check for non-demo users
+      const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {

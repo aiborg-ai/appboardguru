@@ -1,4 +1,7 @@
-'use client';
+'use client'
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback, ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';

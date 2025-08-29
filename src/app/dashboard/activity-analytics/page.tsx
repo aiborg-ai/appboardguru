@@ -1,9 +1,12 @@
+'use client'
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 /**
  * Advanced Activity Analytics Dashboard
  * Real-time activity monitoring with AI insights and predictive analytics
  */
-
-'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'

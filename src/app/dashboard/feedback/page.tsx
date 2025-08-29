@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { MessageCircle, Send, CheckCircle, AlertCircle } from 'lucide-react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'

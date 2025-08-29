@@ -1,7 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
-import { TooltipProvider } from '@/components/atoms/feedback/tooltip'
+import { Providers } from './providers'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -136,13 +136,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans antialiased ${inter.variable}`}>
-        <TooltipProvider delayDuration={300}>
+        <Providers>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">
               {children}
             </main>
           </div>
-        </TooltipProvider>
+        </Providers>
       </body>
     </html>
   )

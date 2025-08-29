@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
+
 import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'

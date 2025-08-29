@@ -85,6 +85,30 @@ const OrganizationContext = createContext<OrganizationContextType | null>(null)
 export const useOrganization = () => {
   const context = useContext(OrganizationContext)
   if (!context) {
+    // During build/SSR, return a dummy context to prevent errors
+    if (typeof window === 'undefined') {
+      return {
+        currentOrganization: null,
+        currentVault: null,
+        organizations: [],
+        vaults: [],
+        pendingInvitations: [],
+        isLoadingOrganizations: false,
+        isLoadingVaults: false,
+        isLoadingInvitations: false,
+        selectOrganization: () => {},
+        selectVault: () => {},
+        refreshOrganizations: () => {},
+        refreshVaults: () => {},
+        refreshInvitations: () => {},
+        acceptInvitation: async () => false,
+        rejectInvitation: async () => false,
+        filterByOrganization: (items: any[]) => items,
+        isCurrentOrganization: () => false,
+        totalVaults: 0,
+        totalPendingInvitations: 0
+      } as OrganizationContextType
+    }
     throw new Error('useOrganization must be used within an OrganizationProvider')
   }
   return context
