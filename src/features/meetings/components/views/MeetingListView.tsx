@@ -64,7 +64,8 @@ interface MeetingListViewProps {
 export const MeetingListView = React.memo(function MeetingListView({
   meetings
 }: MeetingListViewProps) {
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const router = useRouter();
+  
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return {
@@ -195,9 +196,9 @@ export const MeetingListView = React.memo(function MeetingListView({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setSelectedMeetingId(meeting.id)}
+                    onClick={() => router.push(`/dashboard/meetings/${meeting.id}`)}
                   >
-                    <Maximize2 className="h-4 w-4 mr-1" />
+                    <Eye className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">View Details</span>
                   </Button>
                   <Button variant="ghost" size="sm">
@@ -223,15 +224,6 @@ export const MeetingListView = React.memo(function MeetingListView({
         );
         })}
       </div>
-
-      {/* Meeting Detail Modal */}
-      {selectedMeetingId && (
-        <MeetingDetailView
-          meetingId={selectedMeetingId}
-          isModal={true}
-          onClose={() => setSelectedMeetingId(null)}
-        />
-      )}
     </>
   );
 });

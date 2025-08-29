@@ -17,9 +17,28 @@ async function handleApprovalRequest(request: NextRequest) {
     return NextResponse.redirect(errorUrl, 302)
   }
 
-  const { searchParams } = new URL(request.url)
-  const id = searchParams.get('id')
-  const token = searchParams.get('token')
+  // Try multiple methods to get parameters (Next.js App Router compatibility)
+  let id: string | null = null
+  let token: string | null = null
+  
+  // Method 1: Using request.url
+  try {
+    const url = new URL(request.url)
+    id = url.searchParams.get('id')
+    token = url.searchParams.get('token')
+  } catch (e) {
+    console.error('Method 1 failed:', e)
+  }
+  
+  // Method 2: Using request.nextUrl (Next.js specific)
+  if ((!id || !token) && request.nextUrl) {
+    try {
+      id = request.nextUrl.searchParams.get('id') || id
+      token = request.nextUrl.searchParams.get('token') || token
+    } catch (e) {
+      console.error('Method 2 failed:', e)
+    }
+  }
 
   // Enhanced debug logging for troubleshooting
   console.log('🔍 Approval Request Debug:', {
@@ -367,4 +386,7 @@ async function handleApprovalRequest(request: NextRequest) {
   }
 }
 
-export const GET = handleApprovalRequest
+// Direct export for better Vercel compatibility
+export async function GET(request: NextRequest) {
+  return handleApprovalRequest(request)
+}

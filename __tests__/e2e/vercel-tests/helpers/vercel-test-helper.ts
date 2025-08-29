@@ -353,4 +353,196 @@ export class VercelTestHelper {
       }
     }
   }
+
+  /**
+   * Organization context methods
+   */
+  async waitForOrganizationContext() {
+    // Wait for organization context to load
+    await this.page.waitForFunction(
+      () => {
+        const orgData = localStorage.getItem('boardguru_current_organization')
+        return orgData !== null
+      },
+      { timeout: 10000 }
+    )
+  }
+
+  async getCurrentOrganization(): Promise<string | null> {
+    return await this.page.evaluate(() => {
+      return localStorage.getItem('boardguru_current_organization')
+    })
+  }
+
+  async setOrganization(orgId: string) {
+    await this.page.evaluate((id) => {
+      localStorage.setItem('boardguru_current_organization', id)
+    }, orgId)
+  }
+
+  async clearOrganization() {
+    await this.page.evaluate(() => {
+      localStorage.removeItem('boardguru_current_organization')
+    })
+  }
+
+  /**
+   * Assets page specific methods
+   */
+  async waitForAssetsToLoad() {
+    // Wait for either assets grid or empty state
+    await this.page.waitForSelector(
+      '[data-testid="assets-grid"], [data-testid="assets-empty"], .grid, .empty-state, [role="grid"], .asset-grid',
+      { timeout: 15000 }
+    )
+  }
+
+  async getAssetCount(): Promise<number> {
+    // Try multiple selectors for asset items
+    const selectors = [
+      '[data-testid="asset-item"]',
+      '.asset-card',
+      '[role="gridcell"]',
+      '.grid > div',
+      'div[class*="asset"]',
+      '.file-card'
+    ]
+    
+    for (const selector of selectors) {
+      const count = await this.page.locator(selector).count()
+      if (count > 0) return count
+    }
+    
+    return 0
+  }
+
+  async searchAssets(query: string) {
+    // Find and fill search input
+    const searchSelectors = [
+      'input[placeholder*="Search" i]',
+      'input[type="search"]',
+      '[data-testid="search-input"]',
+      'input[name="search"]',
+      '.search-bar input'
+    ]
+    
+    for (const selector of searchSelectors) {
+      const input = await this.page.locator(selector).first()
+      if (await input.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await input.fill(query)
+        await this.page.keyboard.press('Enter')
+        await this.page.waitForTimeout(1000) // Wait for search results
+        return
+      }
+    }
+    
+    throw new Error('Could not find search input')
+  }
+
+  async selectAssetCategory(category: string) {
+    // Find category selector/filter
+    const categorySelectors = [
+      `button:has-text("${category}")`,
+      `[data-testid="category-${category}"]`,
+      `select option:has-text("${category}")`,
+      `[role="tab"]:has-text("${category}")`,
+      `.category-filter:has-text("${category}")`
+    ]
+    
+    for (const selector of categorySelectors) {
+      const element = await this.page.locator(selector).first()
+      if (await element.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await element.click()
+        await this.page.waitForTimeout(1000) // Wait for filter to apply
+        return
+      }
+    }
+  }
+
+  async isAssetsPageEmpty(): Promise<boolean> {
+    // Check for empty state indicators
+    const emptySelectors = [
+      'text="No assets found"',
+      'text="No documents"',
+      'text="Get started by uploading"',
+      '[data-testid="assets-empty"]',
+      '.empty-state',
+      'text="No board packs"'
+    ]
+    
+    for (const selector of emptySelectors) {
+      if (await this.page.locator(selector).isVisible({ timeout: 1000 }).catch(() => false)) {
+        return true
+      }
+    }
+    
+    return false
+  }
+
+  async uploadAsset(filePath: string) {
+    // Find file input for upload
+    const fileInput = await this.page.locator('input[type="file"]').first()
+    await fileInput.setInputFiles(filePath)
+    
+    // Wait for upload to complete
+    await this.page.waitForSelector(
+      'text="Upload complete", text="Successfully uploaded"',
+      { timeout: 30000 }
+    ).catch(() => {
+      console.log('Upload completion message not found, continuing...')
+    })
+  }
+
+  async getAssetTitles(): Promise<string[]> {
+    // Get all asset titles
+    const titleSelectors = [
+      '[data-testid="asset-title"]',
+      '.asset-title',
+      '.file-name',
+      'h3',
+      '.card-title'
+    ]
+    
+    for (const selector of titleSelectors) {
+      const elements = await this.page.locator(selector).all()
+      if (elements.length > 0) {
+        const titles = await Promise.all(
+          elements.map(el => el.textContent())
+        )
+        return titles.filter(t => t !== null) as string[]
+      }
+    }
+    
+    return []
+  }
+
+  async clickAsset(title: string) {
+    // Click on a specific asset by title
+    const asset = await this.page.locator(`text="${title}"`).first()
+    await asset.click()
+    await this.page.waitForLoadState('networkidle')
+  }
+
+  async selectMenuItem(item: string) {
+    // Try different menu selectors
+    const menuSelectors = [
+      `text="${item}"`,
+      `text*="${item}"`,
+      `[aria-label*="${item}" i]`,
+      `a:has-text("${item}")`,
+      `button:has-text("${item}")`,
+      `div[role="menuitem"]:has-text("${item}")`,
+      `li:has-text("${item}")`
+    ]
+    
+    for (const selector of menuSelectors) {
+      const element = await this.page.locator(selector).first()
+      if (await element.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await element.click()
+        return
+      }
+    }
+    
+    throw new Error(`Could not find menu item: ${item}`)
+  }
 }
