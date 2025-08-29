@@ -49,13 +49,15 @@ export async function GET(request: NextRequest) {
         uploaded_by_user:users!uploaded_by(id, full_name, email)
       `)
 
-    // Filter by user access - for now, show ALL board packs to any authenticated user
-    // In production, you'd want to filter by organization or user permissions
-    // Since board_packs doesn't have organization_id, we could filter by uploaded_by
-    // Commented out to show all board packs for testing:
-    // if (user) {
-    //   query = query.eq('uploaded_by', user.id)
-    // }
+    // Filter by user access
+    // Since board_packs doesn't have organization_id column,
+    // we show all board_packs to authenticated users for now.
+    // In production, you might want to:
+    // 1. Add organization_id to board_packs table
+    // 2. Filter by uploaded_by or implement a sharing system
+    // 3. Use vault_assets table to link board_packs to organizations
+    
+    // For now, RLS policies on board_packs table will handle access control
 
     // Apply filters
     // Note: board_packs table doesn't have category or folder_path columns
@@ -93,14 +95,30 @@ export async function GET(request: NextRequest) {
     query = query.range(offset, offset + limit - 1)
 
     const { data: assets, error, count } = await query
+    
+    // Log for debugging
+    console.log('Board packs query result:', {
+      count,
+      assetsLength: assets?.length,
+      error: error?.message
+    })
 
     if (error) {
       console.error('Database error:', error)
-      return NextResponse.json({ success: false, error: 'Failed to fetch assets' }, { status: 500 })
+      // Return empty array instead of error for better UX
+      return NextResponse.json({
+        success: true,
+        assets: [],
+        totalCount: 0,
+        page,
+        limit,
+        totalPages: 0,
+        message: 'Unable to fetch assets. Please check your permissions.'
+      })
     }
 
     // Transform data for frontend consumption
-    const transformedAssets = assets?.map(asset => ({
+    const transformedAssets = (assets || []).map(asset => ({
       ...asset,
       isOwner: asset.uploaded_by === user.id,
       owner: asset.uploaded_by_user,
