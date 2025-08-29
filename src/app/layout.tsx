@@ -154,3 +154,4 @@ export default function RootLayout({
 // Force Vercel rebuild - Fix duplicate OrganizationProvider Fri 29 Aug 20:45:30 BST 2025
 // Force Vercel rebuild - Fix demo mode initialization Fri 29 Aug 21:10:00 BST 2025
 // Force Vercel rebuild - Fix React hydration errors in demo mode Fri 29 Aug 21:20:00 BST 2025
+// Force Vercel rebuild - Fix useDemo context error with safe access Fri 29 Aug 21:25:00 BST 2025
