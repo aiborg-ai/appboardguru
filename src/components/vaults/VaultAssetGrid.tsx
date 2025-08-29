@@ -97,14 +97,23 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
         setLoading(true)
         const supabase = createClient()
         
+        // Query through vault_assets table to get assets in this vault
         const { data, error } = await supabase
-          .from('assets')
+          .from('vault_assets')
           .select(`
-            *,
-            uploader:uploaded_by(full_name, email)
+            asset_id,
+            is_featured,
+            is_required_reading,
+            display_order,
+            assets!inner(
+              *,
+              uploader:uploaded_by(full_name, email)
+            )
           `)
           .eq('vault_id', vaultId)
-          .order('created_at', { ascending: false })
+          .order('is_featured', { ascending: false })
+          .order('is_required_reading', { ascending: false })
+          .order('display_order', { ascending: true })
         
         if (error) {
           console.error('Error fetching assets:', error)
@@ -112,7 +121,14 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
           return
         }
         
-        setAssets(data || [])
+        // Extract the assets from the vault_assets join
+        const extractedAssets = data?.map(item => ({
+          ...item.assets,
+          is_featured: item.is_featured,
+          is_required_reading: item.is_required_reading
+        })) || []
+        
+        setAssets(extractedAssets)
       } catch (error) {
         console.error('Error:', error)
         toast.error('An error occurred while loading assets')
