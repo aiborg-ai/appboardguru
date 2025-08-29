@@ -102,7 +102,9 @@ export async function createUserForApprovedRegistration(email: string, fullName:
           full_name: fullName,
           password_set: false,
           status: 'approved',
-          role: 'director' // Default role for approved registrations
+          role: 'director', // Valid enum values are: 'director', 'admin', 'pending'
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single()
@@ -117,8 +119,9 @@ export async function createUserForApprovedRegistration(email: string, fullName:
             .update({ 
               password_set: false,
               status: 'approved',
-              role: 'director',
-              full_name: fullName
+              role: 'director', // Valid enum values are: 'director', 'admin', 'pending'
+              full_name: fullName,
+              updated_at: new Date().toISOString()
             })
             .eq('id', authUser.user.id)
             .select()
