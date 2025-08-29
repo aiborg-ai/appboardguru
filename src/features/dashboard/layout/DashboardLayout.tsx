@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
-import { DemoContext } from '@/contexts/DemoContext'
+import { useDemoSafe } from '@/contexts/DemoContext'
 import EnhancedSidebar from './EnhancedSidebar'
 import RightPanel from '@/features/shared/components/RightPanel'
 import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'
@@ -22,10 +22,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   
-  // Safely get demo context - it might not be available yet
-  const demoContext = useContext(DemoContext)
-  const isDemoMode = demoContext?.isDemoMode ?? false
-  const demoUser = demoContext?.demoUser ?? null
+  // Safely get demo context using the safe hook
+  const { isDemoMode, demoUser } = useDemoSafe()
   
   // Right panel state - ensure panel is closed by default
   const [isPanelOpen, setIsPanelOpen] = useState(false)

@@ -87,7 +87,7 @@ const defaultTourSteps: DemoTourStep[] = [
   }
 ]
 
-const DemoContext = createContext<DemoContextType | undefined>(undefined)
+export const DemoContext = createContext<DemoContextType | undefined>(undefined)
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [isDemoMode, setIsDemoMode] = useState(false)
@@ -223,8 +223,52 @@ export function useDemo() {
 
 // Helper hook to check if we're in demo mode
 export function useDemoMode() {
-  const context = useContext(DemoContext)
-  return context?.isDemoMode ?? false
+  try {
+    const context = useContext(DemoContext)
+    return context?.isDemoMode ?? false
+  } catch {
+    // Context not available, return false
+    return false
+  }
+}
+
+// Safe hook to get demo context without throwing errors
+export function useDemoSafe() {
+  try {
+    const context = useContext(DemoContext)
+    return {
+      isDemoMode: context?.isDemoMode ?? false,
+      demoUser: context?.demoUser ?? null,
+      tourActive: context?.tourActive ?? false,
+      startTour: context?.startTour ?? (() => {}),
+      endTour: context?.endTour ?? (() => {}),
+      currentTourStep: context?.currentTourStep ?? 0,
+      nextTourStep: context?.nextTourStep ?? (() => {}),
+      previousTourStep: context?.previousTourStep ?? (() => {}),
+      tourSteps: context?.tourSteps ?? [],
+      featuresExplored: context?.featuresExplored ?? [],
+      markFeatureExplored: context?.markFeatureExplored ?? (() => {}),
+      demoProgress: context?.demoProgress ?? 0,
+      setDemoMode: context?.setDemoMode ?? (() => {})
+    }
+  } catch {
+    // Return safe defaults when context is not available
+    return {
+      isDemoMode: false,
+      demoUser: null,
+      tourActive: false,
+      startTour: () => {},
+      endTour: () => {},
+      currentTourStep: 0,
+      nextTourStep: () => {},
+      previousTourStep: () => {},
+      tourSteps: [],
+      featuresExplored: [],
+      markFeatureExplored: () => {},
+      demoProgress: 0,
+      setDemoMode: () => {}
+    }
+  }
 }
 
 // Helper hook for demo tour
