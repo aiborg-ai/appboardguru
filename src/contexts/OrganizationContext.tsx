@@ -224,6 +224,18 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
           assetCount: 67,
           userRole: 'contributor',
           lastActivityAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'vault-004',
+          name: 'Financial Reports',
+          description: 'Quarterly and annual financial reports including the Adidas Annual Report 2024',
+          meetingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'active',
+          priority: 'high',
+          memberCount: 10,
+          assetCount: 1,
+          userRole: 'owner',
+          lastActivityAt: new Date().toISOString()
         }
       ]
       
