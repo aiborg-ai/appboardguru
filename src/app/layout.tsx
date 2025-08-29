@@ -153,3 +153,4 @@ export default function RootLayout({
 // Force Vercel rebuild - Vault creation authentication fix Fri 29 Aug 18:46:21 BST 2025
 // Force Vercel rebuild - Fix duplicate OrganizationProvider Fri 29 Aug 20:45:30 BST 2025
 // Force Vercel rebuild - Fix demo mode initialization Fri 29 Aug 21:10:00 BST 2025
+// Force Vercel rebuild - Fix React hydration errors in demo mode Fri 29 Aug 21:20:00 BST 2025
