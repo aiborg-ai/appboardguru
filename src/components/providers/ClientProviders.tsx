@@ -18,9 +18,13 @@ export function ClientProviders({ children }: ClientProvidersProps) {
     setMounted(true)
   }, [])
 
-  // Prevent hydration mismatch by only rendering after mount
+  // During SSR/initial render, render minimal structure to prevent hydration mismatch
   if (!mounted) {
-    return <>{children}</>
+    return (
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
+    )
   }
 
   return (

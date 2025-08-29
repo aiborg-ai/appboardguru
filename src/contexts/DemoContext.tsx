@@ -94,33 +94,41 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [tourActive, setTourActive] = useState(false)
   const [currentTourStep, setCurrentTourStep] = useState(0)
   const [featuresExplored, setFeaturesExplored] = useState<string[]>([])
+  const [mounted, setMounted] = useState(false)
 
   // Check if we're in demo mode based on URL or localStorage
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const demoParam = urlParams.get('demo')
-    const storedDemoMode = localStorage.getItem('boardguru_demo_mode')
+    setMounted(true)
     
-    if (demoParam === 'true' || storedDemoMode === 'true') {
-      setIsDemoMode(true)
-    }
+    // Only access window/localStorage after mount to prevent hydration issues
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const demoParam = urlParams.get('demo')
+      const storedDemoMode = localStorage.getItem('boardguru_demo_mode')
+      
+      if (demoParam === 'true' || storedDemoMode === 'true') {
+        setIsDemoMode(true)
+      }
 
-    // Check if we're on /demo path
-    if (window.location.pathname.startsWith('/demo')) {
-      setIsDemoMode(true)
-      localStorage.setItem('boardguru_demo_mode', 'true')
+      // Check if we're on /demo path
+      if (window.location.pathname.startsWith('/demo')) {
+        setIsDemoMode(true)
+        localStorage.setItem('boardguru_demo_mode', 'true')
+      }
     }
   }, [])
 
   const setDemoMode = (enabled: boolean) => {
     setIsDemoMode(enabled)
-    if (enabled) {
-      localStorage.setItem('boardguru_demo_mode', 'true')
-    } else {
-      localStorage.removeItem('boardguru_demo_mode')
-      setFeaturesExplored([])
-      setCurrentTourStep(0)
-      setTourActive(false)
+    if (typeof window !== 'undefined') {
+      if (enabled) {
+        localStorage.setItem('boardguru_demo_mode', 'true')
+      } else {
+        localStorage.removeItem('boardguru_demo_mode')
+        setFeaturesExplored([])
+        setCurrentTourStep(0)
+        setTourActive(false)
+      }
     }
   }
 
@@ -156,7 +164,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setFeaturesExplored(prev => {
       if (!prev.includes(featureId)) {
         const updated = [...prev, featureId]
-        localStorage.setItem('boardguru_demo_features_explored', JSON.stringify(updated))
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('boardguru_demo_features_explored', JSON.stringify(updated))
+        }
         return updated
       }
       return prev
@@ -165,12 +175,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   // Load explored features from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('boardguru_demo_features_explored')
-    if (stored) {
-      try {
-        setFeaturesExplored(JSON.parse(stored))
-      } catch {
-        // Invalid JSON, ignore
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('boardguru_demo_features_explored')
+      if (stored) {
+        try {
+          setFeaturesExplored(JSON.parse(stored))
+        } catch {
+          // Invalid JSON, ignore
+        }
       }
     }
   }, [])
