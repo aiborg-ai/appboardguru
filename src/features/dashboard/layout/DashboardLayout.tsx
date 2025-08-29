@@ -9,6 +9,8 @@ import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'
 import GlobalNavigationBar from '@/components/navigation/GlobalNavigationBar'
 import RoutePreloader, { useRoutePreloadConfig } from '@/components/performance/RoutePreloader'
 import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from '@/hooks/useKeyboardShortcuts'
+import DemoModeBadge from '@/components/demo/DemoModeBadge'
+import DemoTourOverlay from '@/components/demo/DemoTourOverlay'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -32,6 +34,46 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const checkUser = async () => {
     try {
+      // Check if we're in demo mode first
+      const urlParams = new URLSearchParams(window.location.search)
+      const isDemoMode = urlParams.get('demo') === 'true' || 
+                        localStorage.getItem('boardguru_demo_mode') === 'true' ||
+                        window.location.pathname.startsWith('/demo')
+      
+      if (isDemoMode) {
+        // Create a mock demo user for demo mode
+        const demoUser = {
+          id: 'demo-user-001',
+          email: 'demo@boardguru.ai',
+          user_metadata: {
+            name: 'Alex Thompson',
+            role: 'Board Director',
+            organization: 'TechCorp Solutions',
+            avatar: '/demo-avatar.png'
+          },
+          app_metadata: {
+            provider: 'demo',
+            providers: ['demo']
+          },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          role: 'authenticated'
+        }
+        
+        setUser(demoUser)
+        setIsLoading(false)
+        
+        // Start tour if specified in URL
+        if (urlParams.get('tour') === 'true') {
+          // Tour will be handled by demo tour component
+          console.log('Demo mode activated with tour')
+        }
+        
+        return
+      }
+      
+      // Normal authentication check for non-demo users
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -99,6 +141,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <>
       {/* Route Preloader */}
       <RoutePreloader config={preloadConfig} />
+      
+      {/* Demo Mode Badge */}
+      <DemoModeBadge />
+      
+      {/* Demo Tour Overlay */}
+      <DemoTourOverlay />
       
       <div className="flex flex-col h-screen bg-gray-50">
         {/* Global Navigation - fixed at top */}

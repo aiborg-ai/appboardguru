@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useUserOrganizations } from '@/hooks/useOrganizations'
+import { demoOrganizations } from '@/lib/demo/demo-data-provider'
 
 // Types
 export interface Organization {
@@ -93,6 +94,9 @@ export const useOrganization = () => {
 export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
+  // Check for demo mode
+  const [isDemoMode, setIsDemoMode] = useState(false)
+  
   // State
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null)
   const [currentVault, setCurrentVault] = useState<Vault | null>(null)
@@ -105,11 +109,33 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   
   // User and organizations
   const [userId, setUserId] = useState<string>('')
+  
+  // Check for demo mode
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const demoModeActive = urlParams.get('demo') === 'true' || 
+                          localStorage.getItem('boardguru_demo_mode') === 'true' ||
+                          window.location.pathname.startsWith('/demo')
+    setIsDemoMode(demoModeActive)
+  }, [])
+  
+  // Use demo organizations or real organizations based on mode
   const { 
-    data: organizations = [], 
-    isLoading: isLoadingOrganizations,
+    data: realOrganizations = [], 
+    isLoading: isLoadingRealOrganizations,
     refetch: refetchOrganizations
-  } = useUserOrganizations(userId)
+  } = useUserOrganizations(isDemoMode ? '' : userId)
+  
+  // Use demo organizations in demo mode
+  const organizations = isDemoMode 
+    ? demoOrganizations.map(org => ({
+        ...org,
+        userRole: 'owner' as const,
+        membershipStatus: 'active' as const
+      }))
+    : realOrganizations
+    
+  const isLoadingOrganizations = isDemoMode ? false : isLoadingRealOrganizations
 
   // Supabase client
   const supabase = createSupabaseBrowserClient()
@@ -117,13 +143,20 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Get current user
   useEffect(() => {
     const getUser = async () => {
+      // In demo mode, use a demo user ID
+      if (isDemoMode) {
+        setUserId('demo-user-001')
+        return
+      }
+      
+      // Normal user authentication for non-demo mode
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
       }
     }
     getUser()
-  }, [supabase])
+  }, [supabase, isDemoMode])
 
   // Load user's default organization from localStorage or set first available
   useEffect(() => {
@@ -152,6 +185,57 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!currentOrganization || !userId) return
 
     setIsLoadingVaults(true)
+    
+    // In demo mode, provide demo vaults
+    if (isDemoMode) {
+      // Create demo vaults for the current organization
+      const demoVaults: Vault[] = [
+        {
+          id: 'vault-001',
+          name: 'Board Documents Q4 2024',
+          description: 'Financial reports, meeting minutes, and strategic plans',
+          meetingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'active',
+          priority: 'high',
+          memberCount: 8,
+          assetCount: 45,
+          userRole: 'owner',
+          lastActivityAt: new Date().toISOString()
+        },
+        {
+          id: 'vault-002',
+          name: 'Annual Strategy Review',
+          description: 'Strategic planning documents for 2025',
+          meetingDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'active',
+          priority: 'urgent',
+          memberCount: 12,
+          assetCount: 23,
+          userRole: 'admin',
+          lastActivityAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'vault-003',
+          name: 'Compliance & Risk Assessment',
+          description: 'Regulatory compliance and risk management documents',
+          status: 'active',
+          priority: 'medium',
+          memberCount: 6,
+          assetCount: 67,
+          userRole: 'contributor',
+          lastActivityAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+      
+      setTimeout(() => {
+        setVaults(demoVaults)
+        setIsLoadingVaults(false)
+      }, 500) // Simulate loading delay
+      
+      return
+    }
+    
+    // Normal vault fetching for non-demo mode
     try {
       const response = await fetch(`/api/vaults?organizationId=${currentOrganization.id}`, {
         method: 'GET',
@@ -178,7 +262,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsLoadingVaults(false)
     }
-  }, [currentOrganization, userId, currentVault])
+  }, [currentOrganization, userId, currentVault, isDemoMode])
 
   // Load vaults when organization changes
   useEffect(() => {
@@ -188,6 +272,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Load pending invitations
   const refreshInvitations = useCallback(async () => {
     if (!userId) return
+    
+    // Skip invitations in demo mode
+    if (isDemoMode) {
+      setPendingInvitations([])
+      setIsLoadingInvitations(false)
+      return
+    }
 
     setIsLoadingInvitations(true)
     try {
@@ -211,7 +302,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsLoadingInvitations(false)
     }
-  }, [userId])
+  }, [userId, isDemoMode])
 
   // Load invitations on mount and when user changes
   useEffect(() => {
