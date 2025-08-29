@@ -126,6 +126,9 @@ export async function GET(request: NextRequest) {
             } catch (e) {
               console.log('Users table insert failed (non-fatal):', e)
             }
+            
+            // Send approval email with login credentials
+            await sendApprovalEmail(registration)
           }
         } else {
           userMessage = ' (User already exists)'
@@ -147,4 +150,148 @@ export async function GET(request: NextRequest) {
     const errorUrl = `${getAppUrl()}/approval-result?type=error&title=System Error&message=An unexpected error occurred`
     return NextResponse.redirect(errorUrl, 302)
   }
+}
+
+/**
+ * Send approval email with login credentials
+ */
+async function sendApprovalEmail(registration: any) {
+  try {
+    // Check if email service is configured
+    if (!isEmailServiceConfigured()) {
+      console.log('⚠️  Email service not configured - skipping approval email')
+      console.log('📧 User details for manual notification:')
+      console.log(`   Email: ${registration.email}`)
+      console.log(`   Name: ${registration.full_name}`)
+      return
+    }
+    
+    // Generate OTP code for first-time login
+    let otpCode: string | null = null
+    let magicLink: string | null = null
+    
+    try {
+      const { success: otpSuccess, otpCode: generatedOtpCode } = await createOtpCode(
+        registration.email,
+        'first_login',
+        24 // 24 hours
+      )
+      
+      if (otpSuccess && generatedOtpCode) {
+        otpCode = generatedOtpCode
+        console.log(`✅ OTP code generated for ${registration.email}: ${otpCode}`)
+      }
+    } catch (e) {
+      console.error('Failed to generate OTP:', e)
+    }
+    
+    // Try to generate magic link as fallback
+    try {
+      const { magicLink: generatedLink, success: linkSuccess } = await generatePasswordSetupMagicLink(
+        registration.email
+      )
+      
+      if (linkSuccess && generatedLink) {
+        magicLink = generatedLink
+        console.log(`✅ Magic link generated for ${registration.email}`)
+      }
+    } catch (e) {
+      console.error('Failed to generate magic link:', e)
+    }
+    
+    // If we have neither OTP nor magic link, don't send email
+    if (!otpCode && !magicLink) {
+      console.log('⚠️  No login credentials generated - skipping email')
+      return
+    }
+    
+    // Send email with credentials
+    const smtpConfig = getSmtpConfig()
+    if (!smtpConfig) {
+      console.log('⚠️  SMTP not configured - cannot send email')
+      console.log(`📧 OTP Code for ${registration.email}: ${otpCode || 'Not generated'}`)
+      return
+    }
+    
+    const transporter = nodemailer.createTransport(smtpConfig)
+    
+    const emailHTML = generateApprovalEmailHTML(registration, otpCode, magicLink)
+    
+    await transporter.sendMail({
+      from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
+      to: registration.email,
+      subject: '🎉 BoardGuru Registration Approved - Welcome!',
+      html: emailHTML,
+    })
+    
+    console.log(`✅ Approval email sent to ${registration.email}`)
+    
+  } catch (error) {
+    console.error('Failed to send approval email:', error)
+    // Don't fail the approval process if email fails
+  }
+}
+
+/**
+ * Generate approval email HTML
+ */
+function generateApprovalEmailHTML(registration: any, otpCode: string | null, magicLink: string | null): string {
+  const appUrl = getAppUrl()
+  
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">🎉 Registration Approved!</h1>
+        <p style="color: #bbf7d0; margin: 10px 0 0 0; font-size: 16px;">Welcome to BoardGuru</p>
+      </div>
+      
+      <div style="padding: 40px; background: white; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="color: #1f2937; margin-bottom: 24px; font-size: 24px;">Welcome to BoardGuru!</h2>
+        
+        <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
+          Dear ${registration.full_name},
+        </p>
+        
+        <p style="color: #6b7280; line-height: 1.6; margin-bottom: 24px; font-size: 16px;">
+          Congratulations! Your registration request for BoardGuru has been approved. 
+          You can now access our enterprise board management platform.
+        </p>
+        
+        ${otpCode ? `
+          <div style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+            <h3 style="color: #1e40af; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">🔐 Your Sign-In Code</h3>
+            <div style="background: #ffffff; border: 2px dashed #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <p style="color: #374151; font-size: 16px; margin: 0 0 12px 0;">Enter this code when signing in:</p>
+              <div style="font-size: 36px; font-weight: 900; color: #1e40af; font-family: 'Courier New', monospace; letter-spacing: 8px; margin: 12px 0;">${otpCode}</div>
+              <p style="color: #6b7280; font-size: 14px; margin: 12px 0 0 0;">Valid for 24 hours</p>
+            </div>
+          </div>
+        ` : ''}
+        
+        <div style="text-align: center; margin: 30px 0;">
+          ${otpCode ? `
+            <a href="${appUrl}/auth/signin" 
+               style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
+              🚀 Sign In with Your Code
+            </a>
+          ` : magicLink ? `
+            <a href="${magicLink}" 
+               style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
+              🔐 Set Up Your Password
+            </a>
+          ` : `
+            <a href="${appUrl}/auth/signin" 
+               style="background: #059669; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
+              Sign In Now
+            </a>
+          `}
+        </div>
+        
+        <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">
+          Best regards,<br>
+          <strong style="color: #374151;">The BoardGuru Team</strong>
+        </p>
+      </div>
+    </div>
+  `
 }
