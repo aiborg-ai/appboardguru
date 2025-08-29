@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -40,6 +40,27 @@ export default function SignInPage() {
   const [resendMessage, setResendMessage] = useState('')
   
   const router = useRouter()
+  
+  // Check for demo mode on mount and redirect if active
+  useEffect(() => {
+    const checkDemoMode = () => {
+      // Check URL params
+      const urlParams = new URLSearchParams(window.location.search)
+      const isDemoParam = urlParams.get('demo') === 'true'
+      
+      // Check localStorage
+      const storedDemoMode = localStorage.getItem('boardguru_demo_mode') === 'true'
+      
+      // If demo mode is active, redirect to dashboard
+      if (isDemoParam || storedDemoMode) {
+        console.log('[SignIn] Demo mode detected, redirecting to dashboard')
+        // Preserve the demo parameter in the redirect
+        router.push('/dashboard?demo=true&tour=true')
+      }
+    }
+    
+    checkDemoMode()
+  }, [router])
 
   const {
     register,

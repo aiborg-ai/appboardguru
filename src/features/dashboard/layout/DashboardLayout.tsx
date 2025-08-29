@@ -38,23 +38,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const checkUser = async () => {
     try {
+      // Check URL params directly as a fallback
+      const urlParams = new URLSearchParams(window.location.search)
+      const isDemoParam = urlParams.get('demo') === 'true'
+      const isInDemoMode = isDemoMode || isDemoParam
+      
       console.log('[DashboardLayout] Demo mode check:', {
         isDemoMode,
+        isDemoParam,
+        isInDemoMode,
         demoUser,
         pathname: window.location.pathname
       })
       
-      if (isDemoMode && demoUser) {
-        console.log('[DashboardLayout] Demo mode activated, using demo user from context')
-        // Use the demo user from context
+      if (isInDemoMode) {
+        console.log('[DashboardLayout] Demo mode activated, creating demo user')
+        // Create a demo user even if demoUser from context is not available yet
         const mockUser = {
-          id: demoUser.id,
-          email: demoUser.email,
+          id: demoUser?.id || 'demo-user-001',
+          email: demoUser?.email || 'demo@boardguru.ai',
           user_metadata: {
-            name: demoUser.name,
-            role: demoUser.role,
-            organization: demoUser.organization,
-            avatar: demoUser.avatar
+            name: demoUser?.name || 'Alex Thompson',
+            role: demoUser?.role || 'Board Director',
+            organization: demoUser?.organization || 'TechCorp Solutions',
+            avatar: demoUser?.avatar || '/demo-avatar.png'
           },
           app_metadata: {
             provider: 'demo',

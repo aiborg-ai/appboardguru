@@ -89,30 +89,48 @@ const defaultTourSteps: DemoTourStep[] = [
 
 export const DemoContext = createContext<DemoContextType | undefined>(undefined)
 
+// Helper function to check demo mode synchronously
+function checkDemoMode(): boolean {
+  if (typeof window === 'undefined') return false
+  
+  // Check URL params
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('demo') === 'true') return true
+  
+  // Check localStorage
+  if (localStorage.getItem('boardguru_demo_mode') === 'true') return true
+  
+  // Check if on /demo path
+  if (window.location.pathname.startsWith('/demo')) return true
+  
+  // Check if on /dashboard path with demo param
+  if (window.location.pathname.startsWith('/dashboard') && urlParams.get('demo') === 'true') return true
+  
+  return false
+}
+
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const [isDemoMode, setIsDemoMode] = useState(false)
+  // Initialize demo mode synchronously on first render
+  const [isDemoMode, setIsDemoMode] = useState(() => checkDemoMode())
   const [tourActive, setTourActive] = useState(false)
   const [currentTourStep, setCurrentTourStep] = useState(0)
   const [featuresExplored, setFeaturesExplored] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
 
-  // Check if we're in demo mode based on URL or localStorage
+  // Set mounted state and ensure demo mode persistence
   useEffect(() => {
     setMounted(true)
     
-    // Only access window/localStorage after mount to prevent hydration issues
+    // Re-check demo mode after mount and persist if needed
     if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search)
-      const demoParam = urlParams.get('demo')
-      const storedDemoMode = localStorage.getItem('boardguru_demo_mode')
+      const shouldBeInDemoMode = checkDemoMode()
       
-      if (demoParam === 'true' || storedDemoMode === 'true') {
-        setIsDemoMode(true)
+      if (shouldBeInDemoMode !== isDemoMode) {
+        setIsDemoMode(shouldBeInDemoMode)
       }
-
-      // Check if we're on /demo path
-      if (window.location.pathname.startsWith('/demo')) {
-        setIsDemoMode(true)
+      
+      // Persist demo mode to localStorage if active
+      if (shouldBeInDemoMode) {
         localStorage.setItem('boardguru_demo_mode', 'true')
       }
     }
