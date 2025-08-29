@@ -15,12 +15,20 @@ CREATE TABLE IF NOT EXISTS registration_requests (
   token_expires_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  reviewed_at TIMESTAMP WITH TIME ZONE,
   approved_at TIMESTAMP WITH TIME ZONE,
   rejected_at TIMESTAMP WITH TIME ZONE,
   approved_by UUID REFERENCES users(id),
   rejected_by UUID REFERENCES users(id),
   rejection_reason TEXT
 );
+
+-- Add missing columns to existing table (if table already exists)
+ALTER TABLE registration_requests 
+ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES users(id),
+ADD COLUMN IF NOT EXISTS rejected_by UUID REFERENCES users(id),
+ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_registration_requests_email ON registration_requests(email);

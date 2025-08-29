@@ -17,10 +17,12 @@ import {
   TransactionUtils,
   OptimisticLock 
 } from './transaction-coordinator'
+import { getDemoData, isDemoMode } from '../demo/demo-data-provider'
 
 export abstract class BaseRepository {
   protected supabase: SupabaseClient<Database>
   protected transactionCoordinator?: TransactionCoordinator
+  protected demoMode: boolean = false
 
   constructor(
     supabase: SupabaseClient<Database>,
@@ -28,6 +30,21 @@ export abstract class BaseRepository {
   ) {
     this.supabase = supabase
     this.transactionCoordinator = transactionCoordinator
+    this.demoMode = isDemoMode()
+  }
+
+  /**
+   * Check if repository is in demo mode
+   */
+  protected isDemoMode(): boolean {
+    return this.demoMode || isDemoMode()
+  }
+
+  /**
+   * Get demo data for a specific entity type
+   */
+  protected async getDemoData<T>(entityType: string, id?: string): Promise<Result<T>> {
+    return getDemoData<T>(entityType, id)
   }
 
   /**

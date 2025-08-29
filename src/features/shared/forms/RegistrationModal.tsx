@@ -50,14 +50,44 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
         body: JSON.stringify(data),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to submit registration request')
+        // Handle specific error cases with user-friendly messages
+        const errorMessage = result.error || result.message || 'Failed to submit registration request'
+        
+        // Check for specific error types
+        if (response.status === 409) {
+          // Conflict - duplicate registration
+          if (errorMessage.includes('already pending')) {
+            setErrorMessage('A registration request for this email is already pending review. Please wait for our team to process it.')
+          } else if (errorMessage.includes('already been approved')) {
+            setErrorMessage('This email has already been approved. Please sign in using the login page.')
+          } else {
+            setErrorMessage(errorMessage)
+          }
+        } else if (response.status === 429) {
+          // Rate limit exceeded
+          setErrorMessage('Too many registration attempts. Please try again in 15 minutes.')
+        } else if (response.status === 400) {
+          // Validation error
+          if (result.errors && Array.isArray(result.errors)) {
+            const errorMessages = result.errors.map((err: any) => err.message).join(', ')
+            setErrorMessage(`Validation error: ${errorMessages}`)
+          } else {
+            setErrorMessage(errorMessage)
+          }
+        } else {
+          // Generic error
+          setErrorMessage('Failed to submit registration request. Please try again later or contact support.')
+        }
+        
+        setSubmitStatus('error')
+        return
       }
 
-      const result = await response.json()
+      // Success - show the success message from the server
       console.log('Registration submitted successfully:', result)
-
       setSubmitStatus('success')
       reset()
       
@@ -70,7 +100,15 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
     } catch (error) {
       console.error('Registration error:', error)
       setSubmitStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred')
+      
+      // Handle network errors
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        setErrorMessage('Network error. Please check your internet connection and try again.')
+      } else if (error instanceof SyntaxError) {
+        setErrorMessage('Server response error. Please try again later.')
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -198,9 +236,17 @@ export function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
                     <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <h4 className="text-sm font-medium text-red-800">Request Failed</h4>
-                      <p className="text-sm text-red-600 mt-1">{errorMessage}</p>
+                      <p className="text-sm text-red-600 mt-1 break-words">{errorMessage}</p>
+                      {errorMessage.includes('already been approved') && (
+                        <a 
+                          href="/auth/signin" 
+                          className="text-sm text-blue-600 hover:text-blue-800 underline mt-2 inline-block"
+                        >
+                          Go to Sign In page →
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
