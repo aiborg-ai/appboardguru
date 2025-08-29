@@ -67,12 +67,24 @@ export const env = getEnvironment()
  */
 export function getAppUrl(): string {
   // Priority order for URL determination:
-  // 1. VERCEL_URL for Vercel deployments (automatic, most reliable)
-  // 2. APP_URL environment variable (explicit override if needed)
-  // 3. NEXTAUTH_URL fallback
+  // 1. APP_URL environment variable (explicit override - highest priority)
+  // 2. NEXTAUTH_URL (usually set to main domain)
+  // 3. VERCEL_URL for Vercel deployments (automatic but includes preview URLs)
   // 4. localhost fallback for development
   
-  // In production on Vercel, prefer VERCEL_URL as it's automatically set
+  // Check for explicit APP_URL first (recommended for production)
+  if (env.APP_URL) {
+    console.log('🔗 Using APP_URL:', env.APP_URL)
+    return env.APP_URL
+  }
+  
+  // Use NEXTAUTH_URL if set (usually the main domain)
+  if (env.NEXTAUTH_URL) {
+    console.log('🔗 Using NEXTAUTH_URL:', env.NEXTAUTH_URL)
+    return env.NEXTAUTH_URL
+  }
+  
+  // Fall back to VERCEL_URL if available (includes preview deployments)
   if (env.VERCEL_URL) {
     // VERCEL_URL doesn't include protocol, so add it
     const url = env.VERCEL_URL.startsWith('http') 
@@ -80,17 +92,6 @@ export function getAppUrl(): string {
       : `https://${env.VERCEL_URL}`
     console.log('🔗 Using VERCEL_URL:', url)
     return url
-  }
-  
-  // Allow explicit override with APP_URL if needed
-  if (env.APP_URL) {
-    console.log('🔗 Using APP_URL:', env.APP_URL)
-    return env.APP_URL
-  }
-  
-  if (env.NEXTAUTH_URL) {
-    console.log('🔗 Using NEXTAUTH_URL:', env.NEXTAUTH_URL)
-    return env.NEXTAUTH_URL
   }
   
   console.log('🔗 Using localhost fallback')
