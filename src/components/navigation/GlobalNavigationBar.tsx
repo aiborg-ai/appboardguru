@@ -36,7 +36,7 @@ import { Badge } from '@/features/shared/ui/badge'
 import { useAuth } from '@/lib/stores'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { useGlobalKeyboardShortcuts } from '@/hooks/useGlobalKeyboardShortcuts'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-client'
 
 interface BreadcrumbItem {
   label: string

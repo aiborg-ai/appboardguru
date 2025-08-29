@@ -5,7 +5,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 export interface FeatureFlags {
   // API Layer Flags

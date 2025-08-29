@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-client'
 import EnhancedSidebar from './EnhancedSidebar'
 import RightPanel from '@/features/shared/components/RightPanel'
 import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'

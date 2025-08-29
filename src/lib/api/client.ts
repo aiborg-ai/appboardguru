@@ -1,6 +1,6 @@
 "use client"
 
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 export class ApiError extends Error {
   constructor(

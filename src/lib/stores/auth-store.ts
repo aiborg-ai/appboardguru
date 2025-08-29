@@ -1,6 +1,6 @@
 import { createStore, createSelectors } from './store-config'
 import { UserWithProfile, LoadingState, ErrorState, StoreSlice } from './types'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import type { User as SupabaseUser, Session, AuthError } from '@supabase/supabase-js'
 
 // Auth state interface

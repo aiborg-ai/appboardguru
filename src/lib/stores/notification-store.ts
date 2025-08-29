@@ -2,7 +2,7 @@ import { createStore, createSelectors } from './store-config'
 import { NotificationWithMetadata, LoadingState, ErrorState, StoreSlice, FilterState, SortState, PaginationState } from './types'
 import { apiClient } from '@/lib/api/client'
 import { authStore } from './auth-store'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 // Notification preferences interface
 export interface NotificationPreferences {

@@ -13,7 +13,7 @@ import {
   UpdateAnnotationRequest,
   AnnotationEvent
 } from '@/types/annotation-types'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 // Loading states using discriminated unions
 type LoadingState = 

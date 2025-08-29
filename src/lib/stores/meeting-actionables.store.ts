@@ -15,7 +15,7 @@ import {
 } from '../../types/meetings'
 import { MeetingActionableService } from '../services/meeting-actionable.service'
 import { WebSocketService } from '../services/websocket.service'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { nanoid } from 'nanoid'
 
 // ============================================================================

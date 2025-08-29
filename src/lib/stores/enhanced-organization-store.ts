@@ -3,7 +3,7 @@ import { withComputedProperties } from './computed-store'
 import { withOptimisticUpdates } from './optimistic-store'
 import { withSynchronization } from './sync-manager'
 import { OrganizationWithRole, LoadingState, ErrorState, StoreSlice, PaginationState, FilterState, SortState } from './types'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 // Enhanced organization state
 export interface EnhancedOrganizationState extends StoreSlice {

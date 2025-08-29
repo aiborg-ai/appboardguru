@@ -20,3 +20,6 @@ export const createSupabaseClient = () => {
     process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || 'placeholder-key'
   )
 }
+
+// Alias for backward compatibility
+export { createSupabaseClient as createClient }

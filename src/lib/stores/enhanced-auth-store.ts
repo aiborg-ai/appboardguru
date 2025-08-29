@@ -3,7 +3,7 @@ import { withComputedProperties } from './computed-store'
 import { withOptimisticUpdates } from './optimistic-store'
 import { withSynchronization } from './sync-manager'
 import { UserWithProfile, LoadingState, ErrorState, StoreSlice } from './types'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import type { User as SupabaseUser, Session, AuthError } from '@supabase/supabase-js'
 
 // Enhanced auth state with advanced patterns

@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 type ActivityType = 
   | 'asset_opened' | 'asset_downloaded' | 'asset_uploaded' | 'asset_shared' | 'asset_deleted'

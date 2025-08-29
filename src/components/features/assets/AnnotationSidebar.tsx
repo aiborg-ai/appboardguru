@@ -15,7 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 interface AnnotationSidebarProps {
   assetId: string

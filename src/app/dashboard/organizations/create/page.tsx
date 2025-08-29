@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
 import Link from 'next/link';
-import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 import { useCreateOrganization } from '@/hooks/useOrganizations';
 
 export default function CreateOrganizationPage() {

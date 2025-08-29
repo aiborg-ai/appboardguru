@@ -1,4 +1,4 @@
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { Database } from '@/types/database'
 
 type CalendarEvent = Database['public']['Tables']['calendar_events']['Row']

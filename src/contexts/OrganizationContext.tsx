@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { useUserOrganizations } from '@/hooks/useOrganizations'
 import { demoOrganizations } from '@/lib/demo/demo-data-provider'
 
