@@ -70,7 +70,7 @@ const tourSteps: TourStep[] = [
   {
     id: 'complete',
     title: 'Tour Complete!',
-    description: 'You've explored the key features of BoardGuru. Continue exploring on your own or sign up to start managing your board with AI-powered efficiency.',
+    description: 'You have explored the key features of BoardGuru. Continue exploring on your own or sign up to start managing your board with AI-powered efficiency.',
     icon: CheckCircle
   }
 ]
