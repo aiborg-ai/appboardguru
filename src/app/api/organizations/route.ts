@@ -7,7 +7,8 @@ import type {
 import { z } from 'zod'
 import { 
   ValidationError, 
-  AuthorizationError, 
+  AuthorizationError,
+  AuthenticationError, 
   ConflictError, 
   NotFoundError, 
   BusinessLogicError,

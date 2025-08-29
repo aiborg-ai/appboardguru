@@ -100,22 +100,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Route Preloader */}
       <RoutePreloader config={preloadConfig} />
       
-      <div className="flex h-screen bg-gray-50 relative">
-        {/* Global Navigation - spans full width at top */}
-        <div className="fixed top-0 left-0 right-0 z-50">
+      <div className="flex flex-col h-screen bg-gray-50">
+        {/* Global Navigation - fixed at top */}
+        <div className="fixed top-0 left-0 right-0 z-50 h-16">
           <GlobalNavigationBar />
         </div>
         
-        {/* Main layout container with top padding for fixed navigation */}
-        <div className="flex w-full pt-16">
-          {/* Sidebar */}
-          <div className="w-64 flex-shrink-0 h-screen">
+        {/* Main layout container - accounts for fixed nav height */}
+        <div className="flex flex-1 pt-16">
+          {/* Sidebar - height calculated to exclude navbar */}
+          <div className="w-64 flex-shrink-0 h-[calc(100vh-4rem)]">
             <EnhancedSidebar />
           </div>
           
-          {/* Main content */}
-          <div className="flex-1 flex flex-col overflow-hidden h-screen">
-            <main className="flex-1 overflow-y-auto">
+          {/* Main content - height calculated to exclude navbar */}
+          <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+            <main className="flex-1 overflow-y-auto bg-gray-50">
               {children}
             </main>
           </div>

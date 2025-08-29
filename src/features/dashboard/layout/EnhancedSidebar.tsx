@@ -245,18 +245,7 @@ export default function EnhancedSidebar() {
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
-      {/* Logo */}
-      <div className="flex items-center px-4 py-6 border-b border-gray-200">
-        <div className="flex items-center">
-          <img 
-            src="/boardguru-logo.svg" 
-            alt="BoardGuru" 
-            className="h-10 w-auto"
-          />
-        </div>
-      </div>
-
-      {/* Navigation */}
+      {/* Navigation - removed duplicate logo since it's in GlobalNavigationBar */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         {/* Base menu items */}
         {baseMenuItems.map(item => renderMenuItem(item))}
