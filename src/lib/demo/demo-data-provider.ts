@@ -13,9 +13,37 @@ export const demoOrganizations = [
     slug: 'techcorp',
     industry: 'Technology',
     size: 'enterprise',
+    organization_size: 'enterprise',
     logo_url: '/demo/logos/techcorp.png',
     description: 'Leading technology solutions provider',
-    created_at: '2024-01-15T10:00:00Z'
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-12-01T10:00:00Z',
+    is_active: true,
+    website: 'https://techcorp.example.com',
+    // Additional fields for organization listing
+    userRole: 'owner',
+    membershipStatus: 'active',
+    status: 'active',
+    memberCount: 25,
+    role: 'owner',
+    settings: {
+      board_pack_auto_archive_days: 365,
+      invitation_expires_hours: 72,
+      max_members: 100,
+      enable_audit_logs: true,
+      require_2fa: false,
+      allowed_file_types: ['pdf', 'docx', 'pptx', 'xlsx'],
+    },
+    compliance_settings: {
+      sox_compliant: true,
+      gdpr_compliant: true,
+      hipaa_compliant: false
+    },
+    billing_settings: {
+      plan: 'enterprise',
+      billing_cycle: 'annual',
+      next_billing_date: '2025-01-15'
+    }
   },
   {
     id: 'org-002',
@@ -23,9 +51,37 @@ export const demoOrganizations = [
     slug: 'global-finance',
     industry: 'Financial Services',
     size: 'enterprise',
+    organization_size: 'enterprise',
     logo_url: '/demo/logos/finance.png',
     description: 'International financial services corporation',
-    created_at: '2024-01-10T10:00:00Z'
+    created_at: '2024-01-10T10:00:00Z',
+    updated_at: '2024-11-25T10:00:00Z',
+    is_active: true,
+    website: 'https://globalfinance.example.com',
+    // Additional fields for organization listing
+    userRole: 'owner',
+    membershipStatus: 'active',
+    status: 'active',
+    memberCount: 18,
+    role: 'owner',
+    settings: {
+      board_pack_auto_archive_days: 180,
+      invitation_expires_hours: 48,
+      max_members: 50,
+      enable_audit_logs: true,
+      require_2fa: true,
+      allowed_file_types: ['pdf', 'docx', 'xlsx'],
+    },
+    compliance_settings: {
+      sox_compliant: true,
+      gdpr_compliant: true,
+      hipaa_compliant: false
+    },
+    billing_settings: {
+      plan: 'enterprise',
+      billing_cycle: 'annual',
+      next_billing_date: '2025-01-10'
+    }
   },
   {
     id: 'org-003',
@@ -33,9 +89,37 @@ export const demoOrganizations = [
     slug: 'healthcare-inn',
     industry: 'Healthcare',
     size: 'large',
+    organization_size: 'large',
     logo_url: '/demo/logos/healthcare.png',
     description: 'Pioneering healthcare technology and services',
-    created_at: '2024-01-05T10:00:00Z'
+    created_at: '2024-01-05T10:00:00Z',
+    updated_at: '2024-11-20T10:00:00Z',
+    is_active: true,
+    website: 'https://healthcare-inn.example.com',
+    // Additional fields for organization listing
+    userRole: 'owner',
+    membershipStatus: 'active',
+    status: 'active',
+    memberCount: 12,
+    role: 'owner',
+    settings: {
+      board_pack_auto_archive_days: 90,
+      invitation_expires_hours: 24,
+      max_members: 30,
+      enable_audit_logs: true,
+      require_2fa: true,
+      allowed_file_types: ['pdf', 'docx'],
+    },
+    compliance_settings: {
+      sox_compliant: false,
+      gdpr_compliant: true,
+      hipaa_compliant: true
+    },
+    billing_settings: {
+      plan: 'professional',
+      billing_cycle: 'monthly',
+      next_billing_date: '2025-01-05'
+    }
   }
 ]
 

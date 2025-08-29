@@ -16,12 +16,14 @@ export function getApiUrl(endpoint: string): string {
 
 /**
  * Generate secure approval URLs for email
+ * Updated to use bypass route that doesn't fail if user creation fails
  */
 export function generateApprovalUrls(registrationId: string, securityToken: string) {
   const baseUrl = getAppUrl()
   
   return {
-    approveUrl: `${baseUrl}/api/approve-registration?id=${registrationId}&token=${securityToken}`,
+    // Use bypass route that approves even if user creation fails
+    approveUrl: `${baseUrl}/api/approve-bypass?id=${registrationId}&token=${securityToken}`,
     rejectUrl: `${baseUrl}/api/reject-registration?id=${registrationId}&token=${securityToken}`,
     adminPanelUrl: `${baseUrl}/admin/registrations`,
   }

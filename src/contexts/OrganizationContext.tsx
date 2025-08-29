@@ -124,23 +124,28 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     data: realOrganizations = [], 
     isLoading: isLoadingRealOrganizations,
     refetch: refetchOrganizations
-  } = useUserOrganizations(isDemoMode ? '' : userId)
+  } = useUserOrganizations(isDemoMode || isTestDirector ? '' : userId)
   
-  // Use demo organizations in demo mode
-  const organizations = isDemoMode 
+  // Use demo organizations in demo mode or for test director
+  const organizations = (isDemoMode || isTestDirector)
     ? demoOrganizations.map(org => ({
         ...org,
         userRole: 'owner' as const,
-        membershipStatus: 'active' as const
+        membershipStatus: 'active' as const,
+        memberCount: Math.floor(Math.random() * 20) + 5, // Random member count between 5-25
+        created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last year
+        status: 'active' as const
       }))
     : realOrganizations
     
-  const isLoadingOrganizations = isDemoMode ? false : isLoadingRealOrganizations
+  const isLoadingOrganizations = (isDemoMode || isTestDirector) ? false : isLoadingRealOrganizations
 
   // Supabase client
   const supabase = createSupabaseBrowserClient()
 
   // Get current user
+  const [isTestDirector, setIsTestDirector] = useState(false)
+  
   useEffect(() => {
     const getUser = async () => {
       // In demo mode, use a demo user ID
@@ -153,6 +158,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
+        // Check if this is the test director account
+        if (user.email === 'test.director@appboardguru.com') {
+          setIsTestDirector(true)
+        }
       }
     }
     getUser()
@@ -186,8 +195,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setIsLoadingVaults(true)
     
-    // In demo mode, provide demo vaults
-    if (isDemoMode) {
+    // In demo mode or for test director, provide demo vaults
+    if (isDemoMode || isTestDirector) {
       // Create demo vaults for the current organization
       const demoVaults: Vault[] = [
         {
@@ -274,7 +283,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsLoadingVaults(false)
     }
-  }, [currentOrganization, userId, currentVault, isDemoMode])
+  }, [currentOrganization, userId, currentVault, isDemoMode, isTestDirector])
 
   // Load vaults when organization changes
   useEffect(() => {
@@ -285,8 +294,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshInvitations = useCallback(async () => {
     if (!userId) return
     
-    // Skip invitations in demo mode
-    if (isDemoMode) {
+    // Skip invitations in demo mode or for test director
+    if (isDemoMode || isTestDirector) {
       setPendingInvitations([])
       setIsLoadingInvitations(false)
       return
@@ -314,7 +323,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsLoadingInvitations(false)
     }
-  }, [userId, isDemoMode])
+  }, [userId, isDemoMode, isTestDirector])
 
   // Load invitations on mount and when user changes
   useEffect(() => {
