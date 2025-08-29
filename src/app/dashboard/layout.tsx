@@ -1,8 +1,10 @@
-'use client'
-
 import { OrganizationProvider } from '@/contexts/OrganizationContext'
 import { QueryProvider } from '@/lib/providers/query-provider'
 import { Toaster } from '@/features/shared/ui/toaster'
+
+// Force dynamic rendering for all dashboard pages
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default function DashboardLayout({
   children,

@@ -14,6 +14,10 @@ const nextConfig = {
     }
     return config
   },
+  experimental: {
+    // Force server components for dashboard routes
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+  },
 }
 
 module.exports = nextConfig
