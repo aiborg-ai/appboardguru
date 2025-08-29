@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
@@ -25,7 +25,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { MeetingDetailView } from '../MeetingDetailView';
+import { useRouter } from 'next/navigation';
 
 const MEETING_TYPE_LABELS = {
   agm: 'Annual General Meeting',
@@ -70,7 +70,8 @@ interface MeetingDetailsViewProps {
 export const MeetingDetailsView = React.memo(function MeetingDetailsView({
   meetings
 }: MeetingDetailsViewProps) {
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const router = useRouter();
+  
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return {
@@ -139,7 +140,10 @@ export const MeetingDetailsView = React.memo(function MeetingDetailsView({
                   <p className="text-gray-600 mt-2">{meeting.description}</p>
                 </div>
                 <div className="flex items-center space-x-2 ml-4">
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => router.push(`/dashboard/meetings/${meeting.id}`)}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>

@@ -67,23 +67,33 @@ export const env = getEnvironment()
  */
 export function getAppUrl(): string {
   // Priority order for URL determination:
-  // 1. APP_URL environment variable (explicitly set)
-  // 2. VERCEL_URL for Vercel deployments (with https prefix)
+  // 1. VERCEL_URL for Vercel deployments (automatic, most reliable)
+  // 2. APP_URL environment variable (explicit override if needed)
   // 3. NEXTAUTH_URL fallback
   // 4. localhost fallback for development
   
+  // In production on Vercel, prefer VERCEL_URL as it's automatically set
+  if (env.VERCEL_URL) {
+    // VERCEL_URL doesn't include protocol, so add it
+    const url = env.VERCEL_URL.startsWith('http') 
+      ? env.VERCEL_URL 
+      : `https://${env.VERCEL_URL}`
+    console.log('🔗 Using VERCEL_URL:', url)
+    return url
+  }
+  
+  // Allow explicit override with APP_URL if needed
   if (env.APP_URL) {
+    console.log('🔗 Using APP_URL:', env.APP_URL)
     return env.APP_URL
   }
   
-  if (env.VERCEL_URL) {
-    return `https://${env.VERCEL_URL}`
-  }
-  
   if (env.NEXTAUTH_URL) {
+    console.log('🔗 Using NEXTAUTH_URL:', env.NEXTAUTH_URL)
     return env.NEXTAUTH_URL
   }
   
+  console.log('🔗 Using localhost fallback')
   return 'http://localhost:3000'
 }
 

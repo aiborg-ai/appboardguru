@@ -15,12 +15,14 @@ if (!env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations')
 }
 
-// Log initialization for debugging
-console.log('🔐 Initializing supabaseAdmin with:', {
-  url: env.NEXT_PUBLIC_SUPABASE_URL,
-  hasServiceKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
-  keyLength: env.SUPABASE_SERVICE_ROLE_KEY?.length
-})
+// Log initialization for debugging only in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔐 Initializing supabaseAdmin with:', {
+    url: env.NEXT_PUBLIC_SUPABASE_URL,
+    hasServiceKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
+    keyLength: env.SUPABASE_SERVICE_ROLE_KEY?.length
+  })
+}
 
 // Admin client with service role key for server-side operations
 export const supabaseAdmin = createClient<Database>(

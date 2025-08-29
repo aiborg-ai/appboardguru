@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
@@ -19,7 +19,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { MeetingDetailView } from '../MeetingDetailView';
+import { useRouter } from 'next/navigation';
 
 const MEETING_TYPE_LABELS = {
   agm: 'AGM',

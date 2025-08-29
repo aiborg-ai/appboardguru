@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
@@ -19,7 +19,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { MeetingDetailView } from '../MeetingDetailView';
+import { useRouter } from 'next/navigation';
 
 const MEETING_TYPE_LABELS = {
   agm: 'AGM',
@@ -64,7 +64,8 @@ interface MeetingCardsViewProps {
 export const MeetingCardsView = React.memo(function MeetingCardsView({
   meetings
 }: MeetingCardsViewProps) {
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const router = useRouter();
+  
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return {
@@ -203,9 +204,9 @@ export const MeetingCardsView = React.memo(function MeetingCardsView({
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => setSelectedMeetingId(meeting.id)}
+                  onClick={() => router.push(`/dashboard/meetings/${meeting.id}`)}
                 >
-                  <Maximize2 className="h-4 w-4 mr-1" />
+                  <Eye className="h-4 w-4 mr-1" />
                   View Details
                 </Button>
                 <Button variant="ghost" size="sm">
@@ -217,15 +218,6 @@ export const MeetingCardsView = React.memo(function MeetingCardsView({
         );
         })}
       </div>
-
-      {/* Meeting Detail Modal */}
-      {selectedMeetingId && (
-        <MeetingDetailView
-          meetingId={selectedMeetingId}
-          isModal={true}
-          onClose={() => setSelectedMeetingId(null)}
-        />
-      )}
     </>
   );
 });

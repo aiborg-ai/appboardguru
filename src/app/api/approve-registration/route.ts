@@ -21,13 +21,18 @@ async function handleApprovalRequest(request: NextRequest) {
   const id = searchParams.get('id')
   const token = searchParams.get('token')
 
-  // Debug logging for troubleshooting
+  // Enhanced debug logging for troubleshooting
   console.log('🔍 Approval Request Debug:', {
     id,
     tokenReceived: !!token,
     tokenLength: token?.length,
     hasServiceKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+    currentAppUrl: getAppUrl(),
+    requestUrl: request.url,
+    vercelUrl: process.env.VERCEL_URL,
+    appUrl: process.env.APP_URL,
+    nodeEnv: process.env.NODE_ENV,
     timestamp: new Date().toISOString()
   })
 
@@ -67,11 +72,29 @@ async function handleApprovalRequest(request: NextRequest) {
     if (fetchError || !registrationRequest) {
       console.error('❌ Registration request fetch error:', {
         error: fetchError,
+        errorCode: fetchError?.code,
+        errorMessage: fetchError?.message,
+        errorDetails: fetchError?.details,
         id,
         queryAttempted: 'registration_requests.eq(id)',
-        supabaseConfigured: !!supabaseAdmin
+        supabaseConfigured: !!supabaseAdmin,
+        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+        hasServiceKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
+        serviceKeyLength: env.SUPABASE_SERVICE_ROLE_KEY?.length
       })
-      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Request Not Found&message=Registration request not found&details=The request may have already been processed or the link has expired.`
+      
+      // Try to provide more specific error message
+      let errorMessage = 'Registration request not found'
+      let errorDetails = 'The request may have already been processed or the link has expired.'
+      
+      if (fetchError?.code === 'PGRST116') {
+        errorDetails = 'No registration found with this ID. The link may be invalid.'
+      } else if (fetchError?.message?.includes('JWT')) {
+        errorMessage = 'Authentication error'
+        errorDetails = 'Server configuration issue. Please contact support.'
+      }
+      
+      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Request Not Found&message=${encodeURIComponent(errorMessage)}&details=${encodeURIComponent(errorDetails)}`
       return NextResponse.redirect(errorUrl, 302)
     }
 
