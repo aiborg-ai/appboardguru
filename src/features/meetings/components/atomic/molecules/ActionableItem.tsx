@@ -4,10 +4,10 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import { ActionableItemProps } from '../types'
 import { StatusBadge, ProgressBar, PriorityIndicator } from '../atoms'
-import { Card, CardContent } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Button } from '@/features/shared/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
   Calendar, 
   Clock, 

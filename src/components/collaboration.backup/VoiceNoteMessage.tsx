@@ -21,7 +21,7 @@ import { Button } from '@/components/atoms/Button'
 import { Card, CardContent } from '@/components/molecules/cards/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/avatar'
 import { Badge } from '@/components/atoms/display/badge'
-import { Slider } from '@/features/shared/ui/slider'
+import { Slider } from '@/components/ui/slider'
 import { formatDistanceToNow, format } from 'date-fns'
 
 interface VoiceNoteMessageProps {

@@ -17,8 +17,8 @@ import {
   X,
   ExternalLink
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Avatar } from '@/features/shared/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Avatar } from '@/components/ui/avatar'
 import { useUploadCollaborationStore, selectNotifications } from '@/lib/stores/upload-collaboration.store'
 import { cn } from '@/lib/utils'
 

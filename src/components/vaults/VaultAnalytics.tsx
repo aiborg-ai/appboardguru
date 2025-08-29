@@ -15,9 +15,9 @@ import {
   ArrowDown,
   Minus
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Progress } from '@/features/shared/ui/progress'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 
 interface VaultAnalyticsProps {

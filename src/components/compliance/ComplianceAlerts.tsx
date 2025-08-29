@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Badge } from '@/features/shared/ui/badge'
-import { Button } from '@/features/shared/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { AlertTriangle, Clock, Bell, X } from 'lucide-react'
 import { ComplianceAlert, CompliancePriority } from '@/types/compliance'
 

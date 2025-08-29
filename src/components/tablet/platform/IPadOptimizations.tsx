@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/features/shared/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlatformWrapper, useDeviceDetection } from './PlatformDetection';
 import { 
   Maximize2,

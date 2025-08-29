@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/features/shared/ui/button';
+import { Button } from '@/components/ui/button';
 import { X, Scale } from 'lucide-react';
 import { MeetingResolution } from '@/types/meetings';
 

@@ -25,15 +25,15 @@ import {
   Shield,
   Zap
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import ViewToggle, { useViewPreferences } from '@/features/shared/components/views/ViewToggle'
 import ItemCard from '@/features/shared/components/views/ItemCard'
 import ItemList from '@/features/shared/components/views/ItemList'

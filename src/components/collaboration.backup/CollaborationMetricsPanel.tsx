@@ -35,14 +35,14 @@ import {
   Timer
 } from 'lucide-react'
 
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Progress } from '@/features/shared/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select'
-import { Separator } from '@/features/shared/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 
 import { UserPresenceIndicator } from './UserPresenceIndicator'
 import { useUser } from '../../lib/stores'

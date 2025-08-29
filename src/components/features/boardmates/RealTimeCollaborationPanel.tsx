@@ -12,10 +12,10 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle 
-} from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
   Users, 
   Wifi, 

@@ -7,8 +7,8 @@ import React from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 import { InfoTooltipEnhanced, InfoBadge } from '@/components/atoms/feedback/info-tooltip-enhanced'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Target, Shield, Users, TrendingUp, FileText, Upload, Plus, Brain,
   BarChart3, Search, Settings, Calendar, MessageSquare, Vault, Building2,

@@ -10,9 +10,9 @@ import { Button } from '@/components/atoms/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/molecules/cards/card';
 import { Badge } from '@/components/atoms/display/badge';
 import { Alert, AlertDescription } from '@/components/atoms/feedback/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/atoms/display/progress';
-import { ScrollArea } from '@/features/shared/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Mic, 
   MicOff, 

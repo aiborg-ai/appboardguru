@@ -50,7 +50,7 @@ import {
   FileText,
   X
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
+import { Button } from '@/components/ui/button'
 
 export default function OrganizationsPage() {
   const [showSettings, setShowSettings] = useState(false)

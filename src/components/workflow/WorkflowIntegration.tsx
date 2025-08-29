@@ -18,17 +18,17 @@ import {
   Filter,
   MoreHorizontal
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Input } from '@/features/shared/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { useIntegrationActions } from '@/lib/stores/integration-store'
 

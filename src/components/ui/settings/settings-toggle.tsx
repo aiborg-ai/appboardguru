@@ -2,8 +2,8 @@
 
 import React, { memo, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { Switch } from '@/features/shared/ui/switch'
-import { Label } from '@/features/shared/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import type { SettingsToggleProps } from './types'
 

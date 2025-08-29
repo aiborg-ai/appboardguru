@@ -7,11 +7,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import PDFAnnotationViewer from '@/features/assets/annotations/PDFAnnotationViewer';
 import AnnotationComments from '@/features/assets/annotations/AnnotationComments';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Badge } from '@/features/shared/ui/badge';
-import { Skeleton } from '@/features/shared/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   ArrowLeft, 
   Users, 
@@ -23,7 +23,7 @@ import {
   WifiOff
 } from 'lucide-react';
 import { useAnnotationSync } from '@/hooks/useAnnotationSync';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
 interface Asset {

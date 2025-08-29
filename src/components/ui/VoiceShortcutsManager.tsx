@@ -23,7 +23,7 @@ import {
   Copy,
   Check
 } from 'lucide-react';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
 export interface VoiceShortcut {

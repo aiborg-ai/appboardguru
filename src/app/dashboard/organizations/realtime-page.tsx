@@ -57,8 +57,8 @@ import {
   Bell,
   RefreshCw
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { useToast } from '@/features/shared/ui/use-toast'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 

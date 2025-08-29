@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, Clock, TrendingUp, MessageSquare } from 'lucide-react';
 import { MeetingAnalytics, MeetingDetailsFull } from '@/types/meeting-details';
 

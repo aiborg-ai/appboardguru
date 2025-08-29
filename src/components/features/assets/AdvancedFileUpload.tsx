@@ -24,15 +24,15 @@ import { Button } from '@/components/atoms/Button'
 import { Card } from '@/components/molecules/cards/card'
 import { Input } from '@/components/atoms/form/input'
 import { Textarea } from '@/components/atoms/form/textarea'
-import { Progress } from '@/features/shared/ui/progress'
-import { Badge } from '@/features/shared/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/features/shared/ui/select'
+} from '@/components/ui/select'
 
 export interface ChunkedUploadFile {
   id: string

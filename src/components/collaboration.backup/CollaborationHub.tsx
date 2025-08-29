@@ -19,12 +19,12 @@ import { LiveBoardChat } from './LiveBoardChat'
 import { useRealTimeNotifications } from '@/lib/notifications/real-time-notifications'
 import { useWebSocketCollaboration } from '@/lib/websocket/websocket-client'
 import { useAuthStore } from '@/lib/stores/auth-store'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Separator } from '@/features/shared/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/features/shared/ui/resizable'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Users,
   MessageSquare,

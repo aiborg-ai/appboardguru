@@ -10,14 +10,14 @@ import { MeetingCard } from '../molecules/MeetingCard'
 import type { MeetingStatus } from '../atoms/MeetingStatusBadge'
 
 // Mock the UI components
-jest.mock('@/features/shared/ui/card', () => ({
+jest.mock('@/components/ui/card', () => ({
   Card: ({ children, className }: any) => <div className={className} data-testid="card">{children}</div>,
   CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
   CardHeader: ({ children }: any) => <div data-testid="card-header">{children}</div>,
   CardTitle: ({ children }: any) => <h3 data-testid="card-title">{children}</h3>,
 }))
 
-jest.mock('@/features/shared/ui/button', () => ({
+jest.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, className, ...props }: any) => (
     <button onClick={onClick} className={className} {...props} data-testid="button">
       {children}
@@ -25,7 +25,7 @@ jest.mock('@/features/shared/ui/button', () => ({
   )
 }))
 
-jest.mock('@/features/shared/ui/badge', () => ({
+jest.mock('@/components/ui/badge', () => ({
   Badge: ({ children, variant, className }: any) => (
     <span data-testid="badge" data-variant={variant} className={className}>
       {children}

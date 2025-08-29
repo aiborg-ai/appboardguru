@@ -5,9 +5,9 @@ import { cn } from '@/lib/utils'
 import { ProgressTrackerProps } from '../types'
 import { ProgressUpdate, AssignmentBadge } from '../molecules'
 import { ProgressBar, StatusBadge, PriorityIndicator } from '../atoms'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
   Target, 
   Calendar, 

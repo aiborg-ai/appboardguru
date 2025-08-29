@@ -2,14 +2,14 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Badge } from '@/features/shared/ui/badge';
-import { Switch } from '@/features/shared/ui/switch';
-import { Checkbox } from '@/features/shared/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar';
-import { Separator } from '@/features/shared/ui/separator';
-import { Label } from '@/features/shared/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { 
   Send, 
   User,

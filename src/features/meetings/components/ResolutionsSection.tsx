@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { ResolutionList } from './atomic/organisms'
 import { CreateResolutionModal } from './CreateResolutionModal'
 import { ResolutionDetailsModal } from './ResolutionDetailsModal'
-import { Card, CardContent } from '@/features/shared/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { 
   MeetingResolution, 
   ResolutionStatus, 

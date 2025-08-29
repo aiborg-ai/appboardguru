@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/features/shared/ui/button';
-import { Card, CardContent } from '@/features/shared/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { TabletGestureHandler, useTabletGestures } from './TabletGestureHandler';
 import { 
   ChevronDown,

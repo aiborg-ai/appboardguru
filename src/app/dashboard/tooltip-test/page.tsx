@@ -7,7 +7,7 @@ import React from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 import { InfoTooltipEnhanced, InfoBadge } from '@/components/atoms/feedback/info-tooltip-enhanced'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Info, HelpCircle, Settings, Users, Shield } from 'lucide-react'
 
 export default function TooltipTestPage() {

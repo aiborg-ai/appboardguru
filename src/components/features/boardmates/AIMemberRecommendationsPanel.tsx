@@ -12,12 +12,12 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle 
-} from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
-import { Progress } from '@/features/shared/ui/progress'
-import { Separator } from '@/features/shared/ui/separator'
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
 import { 
   Brain, 
   TrendingUp, 

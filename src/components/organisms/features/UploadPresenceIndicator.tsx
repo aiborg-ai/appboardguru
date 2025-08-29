@@ -7,9 +7,9 @@
 
 import React from 'react'
 import { Users, Upload, Clock, Wifi, WifiOff } from 'lucide-react'
-import { Card } from '@/features/shared/ui/card'
-import { Avatar } from '@/features/shared/ui/avatar'
-import { Badge } from '@/features/shared/ui/badge'
+import { Card } from '@/components/ui/card'
+import { Avatar } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/atoms/feedback/tooltip'
 import { useUploadCollaborationStore, selectPresence, selectConnectionState } from '@/lib/stores/upload-collaboration.store'
 import { formatFileSize } from '@/types/upload'

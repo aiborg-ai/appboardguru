@@ -20,10 +20,10 @@ import {
   PieChart,
   Target
 } from 'lucide-react'
-import { Card } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Button } from '@/features/shared/ui/button'
-import { Progress } from '@/features/shared/ui/progress'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { useUploadCollaborationStore } from '@/lib/stores/upload-collaboration.store'
 import { SmartSharingService } from '@/lib/services/smart-sharing.service'
 import { formatFileSize } from '@/types/upload'

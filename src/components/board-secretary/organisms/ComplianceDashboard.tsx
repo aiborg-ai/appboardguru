@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Badge } from '@/features/shared/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { ComplianceAlertCard, type ComplianceAlertType } from '../molecules/ComplianceAlertCard'
 import { ComplianceAlertBadge, type ComplianceAlertSeverity } from '../atoms/ComplianceAlertBadge'
 import { cn } from '@/lib/utils'
@@ -30,15 +30,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/features/shared/ui/select'
+} from '@/components/ui/select'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/features/shared/ui/tabs'
-import { Progress } from '@/features/shared/ui/progress'
-import { Skeleton } from '@/features/shared/ui/skeleton'
+} from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface ComplianceRequirement {
   id: string

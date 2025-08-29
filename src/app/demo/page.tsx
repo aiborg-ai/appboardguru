@@ -28,6 +28,7 @@ export default function DemoEntryPage() {
     
     // Set demo mode in localStorage
     localStorage.setItem('boardguru_demo_mode', 'true')
+    console.log('[Demo] Demo mode set in localStorage')
     
     // Start countdown
     const timer = setInterval(() => {
@@ -35,6 +36,7 @@ export default function DemoEntryPage() {
         if (prev <= 1) {
           clearInterval(timer)
           // Redirect to actual dashboard with demo mode active
+          console.log('[Demo] Redirecting to dashboard with demo mode')
           router.push('/dashboard?demo=true&tour=true')
           return 0
         }

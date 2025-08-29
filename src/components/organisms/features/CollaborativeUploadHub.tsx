@@ -18,10 +18,10 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react'
-import { Card } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/atoms/feedback/tooltip'
 import { useUploadCollaborationStore, selectUIState, selectUnreadCount } from '@/lib/stores/upload-collaboration.store'
 import { UploadCollaborationConfig } from '@/types/collaboration'

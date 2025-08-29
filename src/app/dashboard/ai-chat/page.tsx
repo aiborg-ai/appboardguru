@@ -23,9 +23,9 @@ import {
   Calendar,
   Building2
 } from 'lucide-react'
-import { Card } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Alert, AlertDescription } from '@/features/shared/ui/alert'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 const defaultScope: ChatScope = {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // Type-safe annotation content based on annotation type

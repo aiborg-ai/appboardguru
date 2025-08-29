@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChatIcon } from './ChatIcon'
 
 type ConversationType = 'direct' | 'vault_group' | 'group'

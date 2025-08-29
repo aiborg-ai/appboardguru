@@ -8,8 +8,8 @@ import { useRouter, useParams } from 'next/navigation';
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout';
 import InstrumentPlayWizard, { InstrumentPlayWizardData } from '@/features/instruments/InstrumentPlayWizard';
 import { getInstrumentConfig } from '@/lib/instruments/instrument-configs';
-import { Card, CardContent } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function InstrumentPlayPage() {

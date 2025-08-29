@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Card } from '@/features/shared/ui/card'
+import { Card } from '@/components/ui/card'
 
 interface ComplianceMetricsChartProps {
   frameworkScores: Record<string, number>

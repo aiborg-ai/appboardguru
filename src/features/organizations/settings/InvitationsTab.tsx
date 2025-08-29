@@ -17,9 +17,9 @@ import {
   useResendInvitation,
   useRevokeInvitation,
 } from "@/hooks/useInvitations"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
-import { Button } from "@/features/shared/ui/button"
-import { Badge } from "@/features/shared/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +27,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/features/shared/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -35,8 +35,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/features/shared/ui/dialog"
-import { useToast } from "@/features/shared/ui/use-toast"
+} from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 // Import the invite modal component we'll create next
 import { InviteMemberModal } from "@/features/organizations/invitations/InviteMemberModal"

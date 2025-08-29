@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, ApiError } from '@/lib/api/client'
-import { useToast } from '@/features/shared/ui/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 import { Database } from '@/types/database'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 

@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { Input } from '@/features/shared/ui/input'
+import { Input } from '@/components/ui/input'
 import { Search, X, Loader2 } from 'lucide-react'
 import type { SettingsSearchProps } from './types'
 

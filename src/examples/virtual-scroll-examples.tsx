@@ -1,23 +1,23 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Badge } from '@/features/shared/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/atoms/form/switch'
-import { Label } from '@/features/shared/ui/label'
+import { Label } from '@/components/ui/label'
 
 // Import virtual list components
-import VirtualScrollList, { VirtualScrollListRef } from '@/features/shared/ui/virtual-scroll-list'
-import AssetVirtualList from '@/features/shared/ui/asset-virtual-list'
-import NotificationVirtualList from '@/features/shared/ui/notification-virtual-list'
-import BoardMateVirtualList from '@/features/shared/ui/boardmate-virtual-list'
-import SearchResultsVirtualList from '@/features/shared/ui/search-results-virtual-list'
-import CalendarEventsVirtualList from '@/features/shared/ui/calendar-events-virtual-list'
-import AnnotationVirtualList from '@/features/shared/ui/annotation-virtual-list'
-import VirtualListPerformanceMonitor, { useVirtualListPerformance } from '@/features/shared/ui/virtual-list-performance-monitor'
+import VirtualScrollList, { VirtualScrollListRef } from '@/components/ui/virtual-scroll-list'
+import AssetVirtualList from '@/components/ui/asset-virtual-list'
+import NotificationVirtualList from '@/components/ui/notification-virtual-list'
+import BoardMateVirtualList from '@/components/ui/boardmate-virtual-list'
+import SearchResultsVirtualList from '@/components/ui/search-results-virtual-list'
+import CalendarEventsVirtualList from '@/components/ui/calendar-events-virtual-list'
+import AnnotationVirtualList from '@/components/ui/annotation-virtual-list'
+import VirtualListPerformanceMonitor, { useVirtualListPerformance } from '@/components/ui/virtual-list-performance-monitor'
 
 import { 
   BarChart3, 

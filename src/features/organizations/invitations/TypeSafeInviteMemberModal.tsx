@@ -30,13 +30,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/features/shared/ui/dialog"
-import { Button } from "@/features/shared/ui/button"
-import { Input } from "@/features/shared/ui/input"
-import { Label } from "@/features/shared/ui/label"
-import { Badge } from "@/features/shared/ui/badge"
-import { Separator } from "@/features/shared/ui/separator"
-import { useToast } from "@/features/shared/ui/use-toast"
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { 
   useLightweightForm, 

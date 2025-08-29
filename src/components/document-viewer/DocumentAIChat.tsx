@@ -24,7 +24,7 @@ import { Button } from '@/components/atoms/Button'
 import { Card } from '@/components/molecules/cards/card'
 import { Badge } from '@/components/atoms/display/badge'
 import { Textarea } from '@/components/atoms/form/textarea'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/atoms/display/avatar'
 import { Separator } from '@/components/atoms/display/separator'
 import {
@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { VoiceInputButton } from '@/components/ui/VoiceInputButton'
 import { 
   useDocumentContext, 

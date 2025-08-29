@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { ProgressUpdateProps } from '../types'
 import { ProgressBar } from '../atoms'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Textarea } from '@/features/shared/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { 
   Save, 
   Edit, 

@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/features/shared/ui/button';
-import { Progress } from '@/features/shared/ui/progress';
-import { Badge } from '@/features/shared/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { X, CheckSquare, Clock, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MeetingActionable } from '@/types/meetings';

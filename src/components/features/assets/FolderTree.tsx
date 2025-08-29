@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 
 export interface FolderNode {
   id: string

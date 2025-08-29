@@ -10,9 +10,9 @@ import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { OrganizationSettings } from '@/features/organizations/OrganizationSettings'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/features/shared/components/views'
 import { 
   Building2, 

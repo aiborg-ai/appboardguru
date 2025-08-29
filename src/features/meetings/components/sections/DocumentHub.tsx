@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Badge } from '@/features/shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Eye } from 'lucide-react';
 import { MeetingDocument, MeetingId } from '@/types/meeting-details';
-import { Button } from '@/features/shared/ui/button';
+import { Button } from '@/components/ui/button';
 
 interface DocumentHubProps {
   documents: MeetingDocument[];

@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Input } from '@/features/shared/ui/input';
-import { Badge } from '@/features/shared/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { VoiceInputButton } from '@/components/ui/VoiceInputButton';
 import { 
   Search,
@@ -24,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/features/shared/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 export interface FilterOption {

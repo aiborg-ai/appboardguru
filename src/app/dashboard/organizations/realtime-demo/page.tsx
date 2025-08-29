@@ -24,7 +24,7 @@ import {
   StatusBar
 } from '@/components/organizations/RefreshIndicator'
 import { useUser } from '@/lib/stores'
-import { useToast } from '@/features/shared/ui/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 import { 
   Building2, 
   Wifi, 
@@ -45,12 +45,12 @@ import {
   Timer,
   BarChart3
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Progress } from '@/features/shared/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
-import { Alert, AlertDescription, AlertTitle } from '@/features/shared/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 

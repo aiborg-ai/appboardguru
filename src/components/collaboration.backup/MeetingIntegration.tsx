@@ -40,9 +40,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/atoms/display/
 import { Badge } from '@/components/atoms/display/badge'
 import { Input } from '@/components/atoms/form/input'
 import { Textarea } from '@/components/atoms/form/textarea'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/atoms/display/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { format, formatDistanceToNow } from 'date-fns'
 
 interface MeetingIntegrationProps {

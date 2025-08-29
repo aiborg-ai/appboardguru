@@ -3,7 +3,7 @@
 import React, { memo, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { CheckCircle2 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
+import { Button } from '@/components/ui/button'
 import type { SettingsSuccessStateProps } from './types'
 
 export const SettingsSuccessState = memo<SettingsSuccessStateProps>(({

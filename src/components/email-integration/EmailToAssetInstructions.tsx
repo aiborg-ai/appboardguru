@@ -5,10 +5,10 @@
 
 import React, { useState } from 'react'
 import { Mail, Copy, CheckCircle, FileText, Shield, AlertCircle, Clock } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Alert, AlertDescription } from '@/features/shared/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export const EmailToAssetInstructions = React.memo(function EmailToAssetInstructions() {
   const [copiedEmail, setCopiedEmail] = useState(false)

@@ -39,9 +39,9 @@ import {
   Copy,
   Trash2
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/atoms/form/checkbox'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'

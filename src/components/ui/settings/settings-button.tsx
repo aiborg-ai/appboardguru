@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/features/shared/ui/button'
+import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import type { SettingsButtonProps } from './types'
 

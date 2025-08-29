@@ -1,10 +1,10 @@
 'use client'
 
 import React from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Button } from '@/features/shared/ui/button'
-import { Separator } from '@/features/shared/ui/separator'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { 
   TrendingUp, 
   TrendingDown, 

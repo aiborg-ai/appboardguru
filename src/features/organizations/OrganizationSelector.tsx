@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Check, ChevronsUpDown, Plus, Building2 } from "lucide-react"
 import { useUserOrganizations } from "@/hooks/useOrganizations"
-import { Button } from "@/features/shared/ui/button"
+import { Button } from "@/components/ui/button"
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -11,9 +11,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from "@/features/shared/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/features/shared/ui/avatar"
-import { Badge } from "@/features/shared/ui/badge"
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { Database } from "@/types/database"

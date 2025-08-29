@@ -11,7 +11,7 @@ import { Card } from '@/components/molecules/cards/card'
 import { Button } from '@/components/atoms/Button'
 import { Badge } from '@/components/atoms/display/badge'
 import { Separator } from '@/components/atoms/display/separator'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   MessageSquare, 
   Plus, 

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { 
   PushDevice, 
   NotificationCategory, 

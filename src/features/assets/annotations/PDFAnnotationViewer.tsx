@@ -18,11 +18,11 @@ interface NewHighlight {
   position: ScaledPosition;
 }
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Textarea } from '@/features/shared/ui/textarea';
-import { Badge } from '@/features/shared/ui/badge';
-import { Avatar } from '@/features/shared/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Avatar } from '@/components/ui/avatar';
 import { 
   MessageSquare, 
   Plus, 
@@ -35,7 +35,7 @@ import {
   Filter,
   FileText
 } from 'lucide-react';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 // Types
 interface AnnotationData extends Highlight {

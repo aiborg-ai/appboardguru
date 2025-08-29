@@ -2,9 +2,9 @@
 
 import React, { useState, useCallback, useMemo, forwardRef } from 'react'
 import { VirtualScrollList, VirtualScrollListRef, VirtualScrollListItem } from './virtual-scroll-list'
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   FileText,
   Image,

@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Textarea } from '@/features/shared/ui/textarea';
-import { Label } from '@/features/shared/ui/label';
-import { Badge } from '@/features/shared/ui/badge';
-import { Switch } from '@/features/shared/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { 
   Calendar,
   Users,

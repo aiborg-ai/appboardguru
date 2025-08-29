@@ -7,8 +7,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CreateBoardMatesWizard from '@/features/boardmates/CreateBoardMatesWizard';
 import { CreateBoardMateRequest, BoardMateCreationResponse } from '@/features/boardmates/types';
-import { Card, CardContent } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle2, Users, Mail, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 

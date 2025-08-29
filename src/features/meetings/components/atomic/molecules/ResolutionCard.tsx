@@ -4,9 +4,9 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import { ResolutionCardProps } from '../types'
 import { StatusBadge, VoteIndicator, PriorityIndicator } from '../atoms'
-import { Card, CardContent } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Button } from '@/features/shared/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { 
   Calendar, 
   Vote, 

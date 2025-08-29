@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { VotingControlsProps } from '../types'
 import { StatusBadge, QuorumMeter } from '../atoms'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
   Vote, 
   Check, 

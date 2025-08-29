@@ -21,14 +21,14 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/atoms/Button'
 import { Card } from '@/components/molecules/cards/card'
-import { Checkbox } from '@/features/shared/ui/checkbox'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 
 export interface VirtualizedAsset {
   id: string

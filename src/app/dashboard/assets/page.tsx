@@ -12,7 +12,7 @@ import { AssetShareModal } from '@/features/assets/AssetShareModal'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { FileUploadItem } from '@/types/upload'
 import { Loader2, Building2 } from 'lucide-react'
-import { Alert, AlertDescription } from '@/features/shared/ui/alert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Folder,
   Upload,
@@ -38,9 +38,9 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Card } from '@/features/shared/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
 import { EmailToAssetInstructions } from '@/components/email-integration/EmailToAssetInstructions'
 import { SearchInput } from '@/components/molecules/forms/SearchInput/SearchInput'

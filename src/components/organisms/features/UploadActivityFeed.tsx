@@ -18,10 +18,10 @@ import {
   TrendingUp,
   AlertTriangle
 } from 'lucide-react'
-import { Card } from '@/features/shared/ui/card'
-import { Avatar } from '@/features/shared/ui/avatar'
-import { Badge } from '@/features/shared/ui/badge'
-import { Button } from '@/features/shared/ui/button'
+import { Card } from '@/components/ui/card'
+import { Avatar } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/atoms/feedback/tooltip'
 import { useUploadCollaborationStore } from '@/lib/stores/upload-collaboration.store'
 import { CollaborationEvent } from '@/types/collaboration'

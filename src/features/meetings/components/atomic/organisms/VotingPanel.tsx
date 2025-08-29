@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 import { VotingPanelProps } from '../types'
 import { VotingControls } from '../molecules'
 import { VoteIndicator, StatusBadge, QuorumMeter } from '../atoms'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { 
   Vote, 
   Clock, 

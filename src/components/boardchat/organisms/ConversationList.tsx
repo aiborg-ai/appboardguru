@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { MessageCircle } from 'lucide-react'
 import { ConversationListItem } from '../molecules/ConversationListItem'
 import type { ChatConversation } from '@/hooks/useBoardChat'

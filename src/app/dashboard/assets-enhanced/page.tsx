@@ -19,11 +19,11 @@ import {
   Filter,
   Building2
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
-import { Alert, AlertDescription } from '@/features/shared/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 
 // Import our new enhanced components

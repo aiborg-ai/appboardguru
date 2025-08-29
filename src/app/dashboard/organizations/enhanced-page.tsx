@@ -47,9 +47,9 @@ import {
   TrendingUp,
   Zap
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 // Custom presets for this organization page

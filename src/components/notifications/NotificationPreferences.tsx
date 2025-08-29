@@ -13,20 +13,20 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Label } from '@/features/shared/ui/label';
-import { Switch } from '@/features/shared/ui/switch';
-import { Slider } from '@/features/shared/ui/slider';
-import { Badge } from '@/features/shared/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select';
-import { Input } from '@/features/shared/ui/input';
-import { Textarea } from '@/features/shared/ui/textarea';
-import { ScrollArea } from '@/features/shared/ui/scroll-area';
-import { Separator } from '@/features/shared/ui/separator';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/features/shared/ui/alert-dialog';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import {
   Bell,

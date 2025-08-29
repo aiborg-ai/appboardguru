@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback, ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Input } from '@/features/shared/ui/input';
-import { Badge } from '@/features/shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { SearchInput } from '@/components/molecules/forms/SearchInput/SearchInput';
 import { 
   Plus,
@@ -39,7 +39,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/features/shared/ui/select';
+} from '@/components/ui/select';
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
 
 // Remove interface definition as it's now imported from types

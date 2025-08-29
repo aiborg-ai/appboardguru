@@ -40,7 +40,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         localStorage.getItem('boardguru_demo_mode') === 'true' ||
                         window.location.pathname.startsWith('/demo')
       
+      console.log('[DashboardLayout] Demo mode check:', {
+        urlParam: urlParams.get('demo'),
+        localStorage: localStorage.getItem('boardguru_demo_mode'),
+        pathname: window.location.pathname,
+        isDemoMode
+      })
+      
       if (isDemoMode) {
+        console.log('[DashboardLayout] Demo mode activated, creating demo user')
         // Create a mock demo user for demo mode
         const demoUser = {
           id: 'demo-user-001',
@@ -74,10 +82,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
       
       // Normal authentication check for non-demo users
+      console.log('[DashboardLayout] Not in demo mode, checking authentication')
       const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
+        console.log('[DashboardLayout] No authenticated user, redirecting to signin')
         // Prevent redirect if already on signin page to avoid loops
         if (!window.location.pathname.includes('/auth/signin')) {
           router.push('/auth/signin')

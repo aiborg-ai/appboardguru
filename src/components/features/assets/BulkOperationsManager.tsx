@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/atoms/Button'
 import { Card } from '@/components/molecules/cards/card'
-import { Progress } from '@/features/shared/ui/progress'
+import { Progress } from '@/components/ui/progress'
 import {
   Dialog,
   DialogContent,
@@ -27,16 +27,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/features/shared/ui/dialog'
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/features/shared/ui/select'
+} from '@/components/ui/select'
 import { Input } from '@/components/atoms/form/input'
-import { Badge } from '@/features/shared/ui/badge'
+import { Badge } from '@/components/ui/badge'
 
 export interface BulkOperationItem {
   id: string

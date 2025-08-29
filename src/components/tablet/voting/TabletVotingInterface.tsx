@@ -2,11 +2,11 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/features/shared/ui/button';
-import { Badge } from '@/features/shared/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Progress } from '@/features/shared/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Check,
   X,

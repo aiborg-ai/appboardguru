@@ -48,9 +48,9 @@ import {
   X,
   CheckSquare
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/atoms/form/checkbox'
 
 export default function OrganizationsWithBulkPage() {

@@ -11,7 +11,7 @@ import {
   ChevronDown,
   Loader2
 } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/atoms/Button'
 import { Badge } from '@/components/atoms/display/badge'
 import { Separator } from '@/components/atoms/display/separator'

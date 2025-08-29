@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { History, RotateCcw, Trash2, User, Clock } from 'lucide-react'
 import { SettingsCard } from './settings-card'
 import { SettingsButton } from './settings-button'
-import { Avatar } from '@/features/shared/ui/avatar'
+import { Avatar } from '@/components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns'
 import type { SettingsHistoryProps, SettingsHistoryEntry } from './types'
 

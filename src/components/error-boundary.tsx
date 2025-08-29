@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Alert, AlertDescription } from '@/features/shared/ui/alert'
-import { Button } from '@/features/shared/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { RefreshCw, AlertCircle } from 'lucide-react'
 
 interface ErrorBoundaryProps {

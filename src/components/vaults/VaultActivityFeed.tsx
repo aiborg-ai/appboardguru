@@ -24,18 +24,18 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
-import { Separator } from '@/features/shared/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/features/shared/ui/select'
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase-client'
 

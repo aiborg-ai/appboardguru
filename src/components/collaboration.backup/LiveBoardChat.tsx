@@ -27,23 +27,23 @@ import { useWebSocketCollaboration, ChatMessage } from '@/lib/websocket/websocke
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { useDebounce } from '@/hooks/useDebounce'
 import { formatDistanceToNow, format } from 'date-fns'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Badge } from '@/features/shared/ui/badge'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
-import { Separator } from '@/features/shared/ui/separator'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/features/shared/ui/popover'
+} from '@/components/ui/popover'
 import {
   Send,
   Paperclip,

@@ -33,7 +33,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger
-} from '@/features/shared/ui/collapsible'
+} from '@/components/ui/collapsible'
 
 interface MenuItem {
   id: string

@@ -39,7 +39,7 @@ import {
   SettingsExportImport,
   SettingsHistory,
   SettingsReset
-} from '@/features/shared/ui/settings'
+} from '@/components/ui/settings'
 import { useOptimizedCallback, useOptimizedMemo, usePerformanceMonitor } from '@/components/hooks'
 
 type ExportBackupTab = 

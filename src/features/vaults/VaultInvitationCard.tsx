@@ -14,10 +14,10 @@ import {
   Star,
   ChevronRight
 } from 'lucide-react'
-import { Card, CardContent, CardFooter, CardHeader } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useOrganization } from '@/contexts/OrganizationContext'
 

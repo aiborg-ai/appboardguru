@@ -4,10 +4,10 @@ import React, { useState, useMemo } from 'react'
 import { ActionableBoard } from './atomic/organisms'
 import { CreateActionableModal } from './CreateActionableModal'
 import { ActionableDetailsModal } from './ActionableDetailsModal'
-import { Card, CardContent } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   MeetingActionable, 
   ActionableStatus, 

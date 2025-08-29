@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from './badge';
 import { Card, CardContent } from './card';
 import { Loader2, CheckCircle, XCircle, AlertCircle, Lightbulb, ArrowRight } from 'lucide-react';
-import { useToast } from '@/features/shared/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
 export interface VoiceCommandResponse {

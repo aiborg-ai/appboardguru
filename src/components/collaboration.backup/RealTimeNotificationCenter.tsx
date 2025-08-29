@@ -1,15 +1,15 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
-import { Input } from '@/features/shared/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
-import { Separator } from '@/features/shared/ui/separator'
-import { Switch } from '@/features/shared/ui/switch'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import {
   Bell,
   BellRing,
@@ -41,7 +41,7 @@ import {
 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWebSocket } from '@/hooks/useWebSocket'
-import { toast } from '@/features/shared/ui/use-toast'
+import { toast } from '@/components/ui/use-toast'
 import type { UserId, OrganizationId } from '@/types/branded'
 
 interface RealTimeNotificationCenterProps {

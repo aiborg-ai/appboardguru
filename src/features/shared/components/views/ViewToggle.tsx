@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/features/shared/ui/button';
-import { Card } from '@/features/shared/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { 
   Grid3X3, 
   List, 

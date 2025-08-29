@@ -21,25 +21,25 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Input } from '@/features/shared/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/features/shared/ui/select'
+} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/features/shared/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar'
-import { useToast } from '@/features/shared/ui/use-toast'
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useToast } from '@/components/ui/use-toast'
 import { formatDistanceToNow } from 'date-fns'
 
 interface AnnotationData {

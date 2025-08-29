@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/atoms/Button'
 import { Card } from '@/components/molecules/cards/card'
 import { Badge } from '@/components/atoms/display/badge'
-import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   useDocumentContext, 
   useDocumentActions, 

@@ -20,10 +20,10 @@ import {
   useRejectInvitation,
   useValidateInvitation
 } from "@/hooks/useInvitations"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
-import { Button } from "@/features/shared/ui/button"
-import { Badge } from "@/features/shared/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/features/shared/ui/avatar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Dialog,
   DialogContent,
@@ -31,11 +31,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/features/shared/ui/dialog"
-import { Textarea } from "@/features/shared/ui/textarea"
-import { Label } from "@/features/shared/ui/label"
-import { Separator } from "@/features/shared/ui/separator"
-import { useToast } from "@/features/shared/ui/use-toast"
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 
 interface InvitationCardProps {

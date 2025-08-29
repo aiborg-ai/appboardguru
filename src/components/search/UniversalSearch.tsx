@@ -20,10 +20,10 @@ import {
   Grid,
   List
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Badge } from '@/features/shared/ui/badge'
-import { Card } from '@/features/shared/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -31,7 +31,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 
 interface SearchResult {
   id: string

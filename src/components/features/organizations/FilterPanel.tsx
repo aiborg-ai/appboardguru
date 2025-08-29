@@ -2,12 +2,12 @@
 
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card'
-import { Button } from '@/features/shared/ui/button'
-import { Badge } from '@/features/shared/ui/badge'
-import { Separator } from '@/features/shared/ui/separator'
-import { Input } from '@/features/shared/ui/input'
-import { Label } from '@/features/shared/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { 
   Filter,
   X,
@@ -30,12 +30,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/features/shared/ui/collapsible'
+} from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { Organization } from '@/types/entities/organization.types'
 import { INDUSTRIES, ORGANIZATION_SIZES } from '@/features/organizations/types'

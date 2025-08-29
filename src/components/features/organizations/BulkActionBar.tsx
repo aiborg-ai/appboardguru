@@ -18,7 +18,7 @@ import {
   Eye,
   Copy
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { BulkOperation, BulkSelectionItem } from '@/hooks/useBulkSelection'
 

@@ -21,10 +21,10 @@ import {
   ExternalLink,
   MoreHorizontal
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar } from '@/features/shared/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/avatar'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -32,7 +32,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem
-} from '@/features/shared/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { useActivities, useIntegrationActions } from '@/lib/stores/integration-store'
 import { useOrganization } from '@/contexts/OrganizationContext'
 

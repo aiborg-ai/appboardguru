@@ -2,10 +2,10 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/features/shared/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Badge } from '@/features/shared/ui/badge';
-import { Textarea } from '@/features/shared/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   MessageSquare,
   Reply,

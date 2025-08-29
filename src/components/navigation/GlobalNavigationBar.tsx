@@ -23,16 +23,16 @@ import {
   ArrowLeft,
   ChevronRight
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from '@/features/shared/ui/dropdown-menu'
-import { Badge } from '@/features/shared/ui/badge'
+} from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/stores'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { useGlobalKeyboardShortcuts } from '@/hooks/useGlobalKeyboardShortcuts'

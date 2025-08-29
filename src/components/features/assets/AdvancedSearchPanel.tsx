@@ -28,21 +28,21 @@ import {
 import { Button } from '@/components/atoms/Button'
 import { Input } from '@/components/atoms/form/input'
 import { Card } from '@/components/molecules/cards/card'
-import { Badge } from '@/features/shared/ui/badge'
-import { Checkbox } from '@/features/shared/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/features/shared/ui/select'
+} from '@/components/ui/select'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from '@/features/shared/ui/popover'
-import { Calendar as CalendarComponent } from '@/features/shared/ui/calendar'
+} from '@/components/ui/popover'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { format } from 'date-fns'
 
 export interface SearchFilters {

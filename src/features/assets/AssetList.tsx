@@ -18,8 +18,8 @@ import {
   ChevronDown,
   ChevronRight
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Card } from '@/features/shared/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 interface Asset {
   id: string

@@ -4,10 +4,10 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
-import { Button } from '@/features/shared/ui/button';
-import { Input } from '@/features/shared/ui/input';
-import { Badge } from '@/features/shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { SearchInput } from '@/components/molecules/forms/SearchInput/SearchInput';
 import { 
   Plus,
@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRouter } from 'next/navigation';
-import { ViewToggle, type ViewMode } from '@/features/shared/ui/view-toggle';
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle';
 import { MeetingCardsView } from '@/features/meetings/components/views/MeetingCardsView';
 import { MeetingListView } from '@/features/meetings/components/views/MeetingListView';
 import { MeetingDetailsView } from '@/features/meetings/components/views/MeetingDetailsView';

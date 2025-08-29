@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/features/shared/ui/button';
+import { Button } from '@/components/ui/button';
 import { MessageSquare, FileText, Info, Zap, ChevronUp, ChevronDown, Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

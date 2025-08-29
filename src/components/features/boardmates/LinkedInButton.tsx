@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/features/shared/ui/button';
+import { Button } from '@/components/ui/button';
 import { Linkedin, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

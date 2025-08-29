@@ -25,10 +25,10 @@ import {
   availableRoles,
   type MemberWithUser
 } from "@/hooks/useMembers"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/features/shared/ui/card"
-import { Button } from "@/features/shared/ui/button"
-import { Badge } from "@/features/shared/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/features/shared/ui/avatar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/features/shared/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -45,15 +45,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/features/shared/ui/dialog"
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/features/shared/ui/select"
-import { useToast } from "@/features/shared/ui/use-toast"
+} from "@/components/ui/select"
+import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 
 interface MembersTabProps {

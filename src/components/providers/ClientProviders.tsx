@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { QueryProvider } from '@/lib/providers/query-provider'
 import { OrganizationProvider } from '@/contexts/OrganizationContext'
-import { Toaster } from '@/features/shared/ui/toaster'
+import { Toaster } from '@/components/ui/toaster'
 import { ErrorBoundary } from '@/components/error-boundary'
 
 interface ClientProvidersProps {

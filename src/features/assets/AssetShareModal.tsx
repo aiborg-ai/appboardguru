@@ -18,10 +18,10 @@ import {
   Copy,
   Check
 } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
-import { Input } from '@/features/shared/ui/input'
-import { Textarea } from '@/features/shared/ui/textarea'
-import { Card } from '@/features/shared/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Card } from '@/components/ui/card'
 
 interface BoardMate {
   id: string

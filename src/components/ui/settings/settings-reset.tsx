@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 import { RotateCcw, AlertTriangle } from 'lucide-react'
 import { SettingsCard } from './settings-card'
 import { SettingsButton } from './settings-button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/features/shared/ui/dialog'
-import { Checkbox } from '@/features/shared/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { SettingsResetProps } from './types'
 
 export const SettingsReset = memo<SettingsResetProps>(({

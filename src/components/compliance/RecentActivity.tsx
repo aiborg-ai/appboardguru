@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Badge } from '@/features/shared/ui/badge'
-import { Avatar, AvatarFallback, AvatarInitials } from '@/features/shared/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarInitials } from '@/components/ui/avatar'
 import { 
   FileText, 
   AlertTriangle, 

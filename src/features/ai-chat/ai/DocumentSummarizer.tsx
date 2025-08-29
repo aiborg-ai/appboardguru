@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { FileText, Loader, CheckCircle, AlertCircle, Volume2, Download } from 'lucide-react'
-import { Button } from '@/features/shared/ui/button'
+import { Button } from '@/components/ui/button'
 import { summarizeDocumentAPI } from '@/lib/api/openrouter-client'
 import type { DocumentSummaryRequest, DocumentSummaryResponse } from '@/types/openrouter'
 

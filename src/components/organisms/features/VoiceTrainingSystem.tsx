@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/molecules/cards/card';
 import { Button } from '@/components/atoms/Button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/atoms/display/progress';
 import { Badge } from '@/components/atoms/display/badge';
 import { Separator } from '@/components/atoms/display/separator';
