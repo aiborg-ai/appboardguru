@@ -91,6 +91,7 @@ export function SmartLink({
 }
 
 // Preloader configurations for different page types
+// NOTE: This must be defined before useRoutePreloadConfig to avoid "Cannot access before initialization" error
 export const preloadConfigs = {
   dashboard: {
     routes: [
