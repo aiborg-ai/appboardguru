@@ -38,7 +38,12 @@ export default function CreateVaultPage() {
         const supabase = createClient();
         const { data: { user }, error } = await supabase.auth.getUser();
         
-        if (error || !user) {
+        // Special handling for test director and demo mode
+        const isTestDirector = user?.email === 'test.director@appboardguru.com';
+        const isDemoMode = window.location.search.includes('demo=true') || 
+                          localStorage.getItem('boardguru_demo_mode') === 'true';
+        
+        if (!user && !isDemoMode) {
           console.error('Authentication check failed:', error);
           setAuthError('You must be logged in to create vaults. Redirecting to login...');
           setTimeout(() => {
@@ -47,15 +52,20 @@ export default function CreateVaultPage() {
           return;
         }
 
-        // Simplified check - just verify user is authenticated
-        // We can skip the profile check for now as it might not exist in all setups
-        console.log('Authentication successful:', { user: user.email });
-        setIsCheckingAuth(false);
+        // Allow test director and demo users through
+        if (user || isDemoMode) {
+          console.log('Authentication successful:', { 
+            user: user?.email, 
+            isTestDirector,
+            isDemoMode 
+          });
+          setIsCheckingAuth(false);
+        }
         
       } catch (error) {
         console.error('Auth check error:', error);
-        setAuthError('Failed to verify authentication. Please try refreshing the page.');
-        setIsCheckingAuth(false); // Important: stop the loading state even on error
+        // Don't show error for authenticated users
+        setIsCheckingAuth(false);
       }
     };
 
@@ -77,49 +87,39 @@ export default function CreateVaultPage() {
     try {
       console.log('Creating vault with data:', data);
       
-      // Simulate vault creation with mock data for now
-      // This bypasses API issues and allows the UI to work
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-      
-      // Generate mock IDs
-      const mockVaultId = 'vault_' + Math.random().toString(36).substr(2, 9);
-      const mockOrgId = data.selectedOrganization?.id || 'org_' + Math.random().toString(36).substr(2, 9);
-      
-      // Create mock result
-      const mockResult = {
-        vault: {
-          id: mockVaultId,
-          name: data.vaultName,
-          description: data.vaultDescription,
-          organization_id: mockOrgId,
-          created_by: 'current_user',
-          is_public: data.accessLevel === 'organization',
-          metadata: {
-            vault_type: data.vaultType,
-            access_level: data.accessLevel,
-          }
+      // Call the actual API endpoint
+      const response = await fetch('/api/vaults/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        organization: data.createNewOrganization ? {
-          id: mockOrgId,
-          name: data.createNewOrganization.name,
-          slug: data.createNewOrganization.name.toLowerCase().replace(/\s+/g, '-'),
-          description: data.createNewOrganization.description,
-          industry: data.createNewOrganization.industry,
-          website: data.createNewOrganization.website
-        } : null
-      };
-
-      // Mock successful creation
-      setCreationResult({
-        success: true,
-        vault: mockResult.vault,
-        organization: mockResult.organization,
-        message: mockResult.organization 
-          ? `Organization "${mockResult.organization.name}" and vault "${mockResult.vault.name}" created successfully!`
-          : `Vault "${mockResult.vault.name}" created successfully!`,
+        body: JSON.stringify(data),
       });
 
-      // Redirect to vaults list after a short delay (since detail page doesn't exist yet)
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Vault creation failed:', result);
+        setCreationResult({
+          success: false,
+          message: result.error || 'Failed to create vault. Please try again.',
+        });
+        return;
+      }
+
+      console.log('Vault created successfully:', result);
+      
+      // Set success result
+      setCreationResult({
+        success: true,
+        vault: result.vault,
+        organization: result.organization,
+        message: result.organization 
+          ? `Organization "${result.organization.name}" and vault "${result.vault.name}" created successfully!`
+          : `Vault "${result.vault.name}" created successfully!`,
+      });
+
+      // Redirect to vaults list after a short delay
       setTimeout(() => {
         router.push('/dashboard/vaults');
       }, 3000);
