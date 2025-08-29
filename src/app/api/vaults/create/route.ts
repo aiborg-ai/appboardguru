@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { z } from 'zod';
 
 // Validation schema for vault creation
@@ -52,7 +52,7 @@ const createVaultSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
     
     // Get current user with detailed logging
     console.log('Attempting to get authenticated user...');
