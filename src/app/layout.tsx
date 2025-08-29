@@ -147,3 +147,4 @@ export default function RootLayout({
     </html>
   )
 }// Force rebuild Fri 29 Aug 11:22:34 BST 2025
+// Force Vercel rebuild - Demo mode implementation Fri 29 Aug 11:34:21 BST 2025
