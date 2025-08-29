@@ -1,564 +1,259 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Badge } from '@/features/shared/ui/badge';
 import { Checkbox } from '@/features/shared/ui/checkbox';
-import { Label } from '@/features/shared/ui/label';
 import { 
   FileText, 
   Search, 
-  Upload,
-  Check,
-  Filter,
-  Calendar,
-  User,
-  HardDrive,
-  X,
+  Loader2, 
   File,
   Image,
-  Video,
   FileSpreadsheet,
-  Presentation
+  FileCode,
+  Filter,
+  Upload
 } from 'lucide-react';
-import { cn, formatBytes, formatDate } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
-import { FileUploadDropzone } from '@/features/assets/FileUploadDropzone';
-import { FileUploadItem } from '@/types/upload';
-
-interface Asset {
-  id: string;
-  name: string;
-  file_type: string;
-  file_size: number;
-  created_at: string;
-  updated_at: string;
-  upload_status: 'pending' | 'processing' | 'completed' | 'failed';
-  processing_status?: 'pending' | 'processing' | 'completed' | 'failed';
-  metadata?: {
-    page_count?: number;
-    content_type?: string;
-    classification?: string;
-  };
-  owner: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-  };
-  vault?: {
-    id: string;
-    name: string;
-  };
-}
+import { createClient } from '@/lib/supabase-client';
+import { cn } from '@/lib/utils';
 
 interface AssetsStepProps {
   data: VaultWizardData;
   onUpdate: (updates: Partial<VaultWizardData>) => void;
 }
 
-const FILE_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  'pdf': FileText,
-  'doc': FileText,
-  'docx': FileText,
-  'txt': FileText,
-  'xls': FileSpreadsheet,
-  'xlsx': FileSpreadsheet,
-  'csv': FileSpreadsheet,
-  'ppt': Presentation,
-  'pptx': Presentation,
-  'jpg': Image,
-  'jpeg': Image,
-  'png': Image,
-  'gif': Image,
-  'mp4': Video,
-  'avi': Video,
-  'mov': Video,
-  'default': File,
-};
-
-const FILE_TYPE_COLORS: Record<string, string> = {
-  'pdf': 'bg-red-100 text-red-600',
-  'doc': 'bg-blue-100 text-blue-600',
-  'docx': 'bg-blue-100 text-blue-600',
-  'txt': 'bg-gray-100 text-gray-600',
-  'xls': 'bg-green-100 text-green-600',
-  'xlsx': 'bg-green-100 text-green-600',
-  'csv': 'bg-green-100 text-green-600',
-  'ppt': 'bg-orange-100 text-orange-600',
-  'pptx': 'bg-orange-100 text-orange-600',
-  'jpg': 'bg-purple-100 text-purple-600',
-  'jpeg': 'bg-purple-100 text-purple-600',
-  'png': 'bg-purple-100 text-purple-600',
-  'gif': 'bg-purple-100 text-purple-600',
-  'mp4': 'bg-indigo-100 text-indigo-600',
-  'avi': 'bg-indigo-100 text-indigo-600',
-  'mov': 'bg-indigo-100 text-indigo-600',
-  'default': 'bg-gray-100 text-gray-600',
-};
-
 export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'mine' | 'shared'>('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
 
-  // Load user's assets
   useEffect(() => {
     loadAssets();
   }, []);
 
   const loadAssets = async () => {
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/assets');
-      if (response.ok) {
-        const result = await response.json();
-        setAssets(result.assets || []);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      const { data: userAssets } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('uploaded_by', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (userAssets) {
+        setAssets(userAssets);
       }
     } catch (error) {
-      console.error('Failed to load assets:', error);
+      console.error('Error loading assets:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Filter assets based on search and filter
+  const getFileIcon = (fileType?: string) => {
+    if (!fileType) return <File className="h-5 w-5 text-gray-400" />;
+    
+    if (fileType.includes('image')) return <Image className="h-5 w-5 text-green-500" />;
+    if (fileType.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />;
+    if (fileType.includes('spreadsheet') || fileType.includes('excel')) 
+      return <FileSpreadsheet className="h-5 w-5 text-green-600" />;
+    if (fileType.includes('code') || fileType.includes('json')) 
+      return <FileCode className="h-5 w-5 text-blue-500" />;
+    
+    return <File className="h-5 w-5 text-gray-400" />;
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return 'Unknown size';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unitIndex = 0;
+    
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+  };
+
+  const handleSelectAsset = (asset: any) => {
+    const isSelected = data.selectedAssets.some(a => a.id === asset.id);
+    
+    if (isSelected) {
+      onUpdate({
+        selectedAssets: data.selectedAssets.filter(a => a.id !== asset.id)
+      });
+    } else {
+      onUpdate({
+        selectedAssets: [...data.selectedAssets, asset]
+      });
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (data.selectedAssets.length === filteredAssets.length) {
+      onUpdate({ selectedAssets: [] });
+    } else {
+      onUpdate({ selectedAssets: filteredAssets });
+    }
+  };
+
   const filteredAssets = assets.filter(asset => {
-    const matchesSearch = asset.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || 
-      (selectedFilter === 'mine' && asset.owner.id === 'current-user-id') ||
-      (selectedFilter === 'shared' && asset.vault !== null);
-    return matchesSearch && matchesFilter && asset.upload_status === 'completed';
+    const matchesSearch = asset.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         asset.original_file_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === 'all' || 
+                       (asset.mime_type && asset.mime_type.includes(filterType));
+    return matchesSearch && matchesType;
   });
 
-  // Handle asset selection
-  const handleAssetSelect = useCallback((asset: Asset, selected: boolean) => {
-    const currentSelected = data.selectedAssets;
-    const newSelected = selected
-      ? [...currentSelected, {
-          id: asset.id,
-          name: asset.name,
-          file_type: asset.file_type,
-          file_size: asset.file_size,
-          created_at: asset.created_at,
-        }]
-      : currentSelected.filter(a => a.id !== asset.id);
-    
-    onUpdate({ selectedAssets: newSelected });
-  }, [data.selectedAssets, onUpdate]);
-
-  // Handle select all in filtered results
-  const handleSelectAll = useCallback((selectAll: boolean) => {
-    if (selectAll) {
-      const allFilteredAssets = filteredAssets.map(asset => ({
-        id: asset.id,
-        name: asset.name,
-        file_type: asset.file_type,
-        file_size: asset.file_size,
-        created_at: asset.created_at,
-      }));
-      onUpdate({ selectedAssets: allFilteredAssets });
-    } else {
-      onUpdate({ selectedAssets: [] });
-    }
-  }, [filteredAssets, onUpdate]);
-
-  const isAssetSelected = useCallback((assetId: string) => {
-    return data.selectedAssets.some(a => a.id === assetId);
-  }, [data.selectedAssets]);
-
-  const getFileIcon = (fileType: string) => {
-    const IconComponent = FILE_TYPE_ICONS[fileType.toLowerCase()] || FILE_TYPE_ICONS.default || File;
-    return IconComponent;
-  };
-
-  const getFileTypeColor = (fileType: string) => {
-    return FILE_TYPE_COLORS[fileType.toLowerCase()] || FILE_TYPE_COLORS.default;
-  };
-
-  // Handle upload completion
-  const handleUploadComplete = useCallback((uploadedFiles: FileUploadItem[]) => {
-    // Convert uploaded files to the Asset format expected by the wizard
-    const newAssets = uploadedFiles.map(file => ({
-      id: file.id,
-      name: file.title,
-      file_type: file.file.type.split('/')[1] || 'unknown',
-      file_size: file.file.size,
-      created_at: new Date().toISOString(),
-    }));
-
-    // Add to selected assets
-    onUpdate({ 
-      selectedAssets: [...data.selectedAssets, ...newAssets]
-    });
-
-    // Close modal and refresh assets list
-    setShowUploadModal(false);
-    loadAssets();
-  }, [data.selectedAssets, onUpdate]);
-
-  const selectedCount = data.selectedAssets.length;
-  const allFilteredSelected = filteredAssets.length > 0 && 
-    filteredAssets.every(asset => isAssetSelected(asset.id));
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FileText className="w-8 h-8 text-green-600" />
-        </div>
-        <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Include Assets
         </h3>
-        <p className="text-gray-600 max-w-md mx-auto">
+        <p className="text-sm text-gray-600">
           Select documents and files to include in your vault
         </p>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-          {/* Search */}
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search assets..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Filter */}
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value as any)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Assets</option>
-              <option value="mine">My Assets</option>
-              <option value="shared">Shared with Me</option>
-            </select>
-          </div>
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search assets..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-
-        {/* Upload Button */}
+        
         <Button
           variant="outline"
-          onClick={() => setShowUploadModal(true)}
-          className="flex items-center space-x-2 whitespace-nowrap"
+          size="sm"
+          onClick={() => setFilterType(filterType === 'all' ? 'pdf' : 'all')}
         >
-          <Upload className="w-4 h-4" />
-          <span>Upload New</span>
+          <Filter className="h-4 w-4 mr-2" />
+          {filterType === 'all' ? 'All Types' : 'PDFs Only'}
         </Button>
       </div>
 
-      {/* Selection Summary */}
-      {selectedCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg"
-        >
-          <div className="flex items-center space-x-2">
-            <Check className="w-5 h-5 text-blue-600" />
-            <span className="font-medium text-blue-800">
-              {selectedCount} asset{selectedCount !== 1 ? 's' : ''} selected
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onUpdate({ selectedAssets: [] })}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Clear all
-          </Button>
-        </motion.div>
-      )}
-
-      {/* Select All Checkbox */}
       {filteredAssets.length > 0 && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Checkbox
-              id="select-all"
-              checked={allFilteredSelected}
-              onCheckedChange={handleSelectAll}
-            />
-            <Label htmlFor="select-all" className="text-sm font-medium">
-              Select all {filteredAssets.length} assets
-            </Label>
-          </div>
-          <div className="text-sm text-gray-500">
-            {selectedCount} of {assets.length} assets selected
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSelectAll}
+          >
+            {data.selectedAssets.length === filteredAssets.length ? 'Deselect All' : 'Select All'}
+          </Button>
+          <p className="text-sm text-gray-600">
+            {data.selectedAssets.length} of {filteredAssets.length} selected
+          </p>
         </div>
       )}
 
-      {/* Assets List */}
-      <AnimatePresence>
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
+      {filteredAssets.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="p-12 text-center">
+            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-gray-900 mb-2">
+              No Assets Found
+            </h4>
+            <p className="text-sm text-gray-600 mb-4">
+              You haven't uploaded any assets yet. Upload some files first or skip this step.
+            </p>
+            <Button variant="outline">
+              Upload Files
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+          {filteredAssets.map((asset) => {
+            const isSelected = data.selectedAssets.some(a => a.id === asset.id);
+            
+            return (
+              <Card
+                key={asset.id}
+                className={cn(
+                  "cursor-pointer transition-all",
+                  isSelected && "ring-2 ring-blue-500 bg-blue-50"
+                )}
+                onClick={() => handleSelectAsset(asset)}
+              >
                 <CardContent className="p-4">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredAssets.length > 0 ? (
-          <motion.div
-            layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          >
-            {filteredAssets.map((asset) => {
-              const FileIconComponent = getFileIcon(asset.file_type);
-              const selected = isAssetSelected(asset.id);
-              
-              return (
-                <motion.div
-                  key={asset.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                >
-                  <Card 
-                    className={cn(
-                      "cursor-pointer transition-all duration-200 hover:shadow-md relative",
-                      selected && "ring-2 ring-blue-500 bg-blue-50"
-                    )}
-                    onClick={() => handleAssetSelect(asset, !selected)}
-                  >
-                    {/* Selection Checkbox */}
-                    <div className="absolute top-3 right-3">
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={(checked) => handleAssetSelect(asset, !!checked)}
-                        className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                      />
-                    </div>
-
-                    <CardContent className="p-4 pr-12">
-                      {/* File Icon and Type */}
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center",
-                          getFileTypeColor(asset.file_type)
-                        )}>
-                          {FileIconComponent && <FileIconComponent className="w-5 h-5" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {asset.name}
-                          </h4>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="secondary" className="text-xs uppercase">
-                              {asset.file_type}
-                            </Badge>
-                            <span className="text-xs text-gray-500">
-                              {formatBytes(asset.file_size)}
-                            </span>
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => handleSelectAsset(asset)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-2">
+                          {getFileIcon(asset.mime_type)}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 line-clamp-1">
+                              {asset.file_name || asset.original_file_name || 'Untitled'}
+                            </h4>
+                            <p className="text-xs text-gray-600">
+                              {formatFileSize(asset.file_size)} • {new Date(asset.created_at).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                       </div>
-
-                      {/* Metadata */}
-                      {asset.metadata && (
-                        <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
-                          {asset.metadata.page_count && (
-                            <span>{asset.metadata.page_count} pages</span>
-                          )}
-                          {asset.metadata.classification && (
-                            <Badge variant="outline" className="text-xs">
-                              {asset.metadata.classification}
+                      {asset.tags && asset.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {asset.tags.slice(0, 3).map((tag: string) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
                             </Badge>
-                          )}
+                          ))}
                         </div>
                       )}
-
-                      {/* Owner and Date */}
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center space-x-2">
-                          <User className="w-3 h-3" />
-                          <span className="truncate">{asset.owner.full_name}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>{formatDate(asset.created_at)}</span>
-                        </div>
-                      </div>
-
-                      {/* Vault info if shared */}
-                      {asset.vault && (
-                        <div className="mt-2 text-xs text-blue-600">
-                          From vault: {asset.vault.name}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        ) : (
-          <div className="text-center py-12">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-600 mb-2">
-              {searchTerm ? 'No assets found' : 'No assets yet'}
-            </h4>
-            <p className="text-gray-500 mb-4">
-              {searchTerm 
-                ? `No assets match "${searchTerm}"`
-                : 'Upload your first document to get started'
-              }
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => setShowUploadModal(true)}
-              className="flex items-center space-x-2"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Upload Asset</span>
-            </Button>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Selected Assets Preview */}
-      {selectedCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 p-6 bg-gray-50 rounded-lg"
-        >
-          <h4 className="font-medium text-gray-900 mb-4">
-            Selected Assets ({selectedCount})
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.selectedAssets.map((asset) => {
-              const FileIconComponent = getFileIcon(asset.file_type);
-              return (
-                <div 
-                  key={asset.id}
-                  className="flex items-center space-x-3 p-3 bg-white rounded-lg border"
-                >
-                  <div className={cn(
-                    "w-8 h-8 rounded flex items-center justify-center",
-                    getFileTypeColor(asset.file_type)
-                  )}>
-                    {FileIconComponent && <FileIconComponent className="w-4 h-4" />}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {asset.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatBytes(asset.file_size)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleAssetSelect(asset as Asset, false)}
-                    className="p-1 h-auto text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">
-                Total size: {formatBytes(
-                  data.selectedAssets.reduce((sum, asset) => sum + asset.file_size, 0)
-                )}
-              </span>
-              <span className="text-blue-600 font-medium">
-                {selectedCount} asset{selectedCount !== 1 ? 's' : ''} ready for vault
-              </span>
-            </div>
-          </div>
-        </motion.div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
-      {/* Upload Modal */}
-      <AnimatePresence>
-        {showUploadModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
-          >
-            {/* Modal Header */}
-            <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Upload Assets to Vault
-                </h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowUploadModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                Upload documents and files to include in your new vault
-              </p>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {data.selectedOrganization?.id ? (
-                <FileUploadDropzone 
-                  onUploadComplete={handleUploadComplete}
-                  organizationId={data.selectedOrganization.id}
-                  currentUser={{
-                    id: 'current-user-id', // TODO: Get from auth context
-                    name: 'Current User',
-                    email: 'user@example.com'
-                  }}
-                  showCollaborationHub={false}
-                  className="min-h-[300px]"
-                />
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-orange-600 mb-4">
-                    <Upload className="w-12 h-12 mx-auto mb-2" />
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">
-                    Organization Required
-                  </h4>
-                  <p className="text-gray-600">
-                    Please select an organization first before uploading assets.
-                  </p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+      {data.selectedAssets.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900 font-medium mb-2">
+            Selected Assets ({data.selectedAssets.length}):
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {data.selectedAssets.map(asset => (
+              <Badge key={asset.id} variant="outline" className="text-xs">
+                {asset.file_name || asset.original_file_name || 'Untitled'}
+              </Badge>
+            ))}
+          </div>
         </div>
-        )}
-      </AnimatePresence>
+      )}
     </div>
   );
 }

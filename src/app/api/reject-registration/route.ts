@@ -1,26 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import nodemailer from 'nodemailer'
 import { getAppUrl } from '@/utils/url'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const token = searchParams.get('token')
 
+    // Debug logging for troubleshooting
+    console.log('🔍 Rejection Request Debug:', {
+      id,
+      tokenReceived: !!token,
+      tokenLength: token?.length,
+      timestamp: new Date().toISOString()
+    })
+
     if (!id || !token) {
+      console.error('❌ Missing required parameters:', { id: !!id, token: !!token })
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Invalid Request&message=Missing registration ID or security token&details=The rejection link appears to be malformed or incomplete`
       return NextResponse.redirect(errorUrl, 302)
     }
 
+    // Validate ID format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      console.error('❌ Invalid ID format:', id)
+      const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Invalid Request&message=Invalid registration ID format&details=The registration ID in the link appears to be malformed`
+      return NextResponse.redirect(errorUrl, 302)
+    }
+
+    console.log('📊 Attempting to query registration_requests with ID:', id)
     // Get the registration request with token verification
-    const { data: registrationRequest, error: fetchError } = await supabase
+    // Use supabaseAdmin (service role) to bypass RLS and read registration request
+    const { data: registrationRequest, error: fetchError } = await supabaseAdmin
       .from('registration_requests')
       .select('*')
       .eq('id', id)
       .single()
+    
+    console.log('📊 Database query result:', {
+      found: !!registrationRequest,
+      hasError: !!fetchError,
+      errorCode: fetchError?.code,
+      errorMessage: fetchError?.message
+    })
 
     if (fetchError || !registrationRequest) {
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Request Not Found&message=Registration request not found&details=The request may have already been processed or the link has expired.`
@@ -46,7 +71,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Reject the registration request and clear the token (one-time use)
-    const { error: updateError } = await supabase
+    // Use supabaseAdmin to ensure we can update the registration
+    const { error: updateError } = await supabaseAdmin
       .from('registration_requests')
       .update({
         status: 'rejected',
@@ -62,7 +88,6 @@ export async function GET(request: NextRequest) {
 
     // Send rejection email to the user
     try {
-    const supabase = await createSupabaseServerClient()
       const transporter = nodemailer.createTransport({
         host: process.env['SMTP_HOST'] || 'smtp.gmail.com',
         port: parseInt(process.env['SMTP_PORT'] || '587'),

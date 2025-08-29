@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Badge } from '@/features/shared/ui/badge';
@@ -14,9 +13,16 @@ import {
   Users, 
   FileText,
   Rocket,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Import step components
+import OrganizationStep from './steps/OrganizationStep';
+import AssetsStep from './steps/AssetsStep';
+import BoardMatesStep from './steps/BoardMatesStep';
+import ReviewStep from './steps/ReviewStep';
 
 // Step definitions
 const STEPS = [
@@ -99,13 +105,14 @@ interface CreateVaultWizardProps {
   className?: string;
 }
 
-export default function CreateVaultWizard({ 
-  isOpen, 
-  onClose, 
+export default function CreateVaultWizard({
+  isOpen,
+  onClose,
   onComplete,
-  className 
+  className
 }: CreateVaultWizardProps) {
-  const [currentStep, setCurrentStep] = useState<VaultWizardStep>('organization');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [wizardData, setWizardData] = useState<VaultWizardData>({
     selectedOrganization: null,
     createNewOrganization: null,
@@ -117,253 +124,185 @@ export default function CreateVaultWizard({
     accessLevel: 'organization',
     vaultType: 'board_pack',
   });
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Get current step index
-  const currentStepIndex = STEPS.findIndex(step => step.id === currentStep);
-  const progress = ((currentStepIndex + 1) / STEPS.length) * 100;
+  const currentStepData = STEPS[currentStep];
+  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === STEPS.length - 1;
+  const progress = ((currentStep + 1) / STEPS.length) * 100;
 
-  // Update wizard data
+  const handleNext = useCallback(() => {
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  }, [currentStep]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
+  const handleStepClick = useCallback((index: number) => {
+    setCurrentStep(index);
+  }, []);
+
   const updateWizardData = useCallback((updates: Partial<VaultWizardData>) => {
     setWizardData(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Navigation handlers
-  const goToNextStep = useCallback(() => {
-    const nextIndex = currentStepIndex + 1;
-    if (nextIndex < STEPS.length) {
-      setCurrentStep(STEPS[nextIndex]?.id || STEPS[0]?.id || 'organization');
-    }
-  }, [currentStepIndex]);
-
-  const goToPreviousStep = useCallback(() => {
-    const prevIndex = currentStepIndex - 1;
-    if (prevIndex >= 0) {
-      setCurrentStep(STEPS[prevIndex]?.id || STEPS[0]?.id || 'organization');
-    }
-  }, [currentStepIndex]);
-
-  // Submit handler
-  const handleComplete = useCallback(async () => {
-    setIsLoading(true);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
       await onComplete(wizardData);
       onClose();
     } catch (error) {
-      console.error('Failed to create vault:', error);
+      console.error('Error creating vault:', error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  }, [wizardData, onComplete, onClose]);
-
-  // Validation for each step
-  const isStepValid = useCallback((step: VaultWizardStep) => {
-    switch (step) {
-      case 'organization':
-        return wizardData.selectedOrganization || 
-               (wizardData.createNewOrganization?.name && wizardData.createNewOrganization?.industry);
-      case 'assets':
-        return true; // Assets are optional
-      case 'boardmates':
-        return true; // BoardMates are optional
-      case 'review':
-        return wizardData.vaultName.trim().length > 0;
-      default:
-        return false;
-    }
-  }, [wizardData]);
-
-  const canProceed = isStepValid(currentStep);
-  const isLastStep = currentStepIndex === STEPS.length - 1;
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className={cn(
-          "bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col",
-          className
-        )}
-      >
-        {/* Header */}
-        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 flex-shrink-0">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Create New Vault
-            </h2>
-            <Button 
-              variant="ghost" 
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className={cn("w-full max-w-4xl max-h-[90vh] overflow-hidden", className)}>
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">Create New Vault</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Follow the steps to set up your secure vault
+              </p>
+            </div>
+            <Button
+              variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="rounded-full"
             >
-              ✕
+              <X className="h-5 w-5" />
             </Button>
           </div>
-          
+
           {/* Progress bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Step {currentStepIndex + 1} of {STEPS.length}</span>
-              <span>{Math.round(progress)}% complete</span>
-            </div>
+          <div className="mt-6">
             <Progress value={progress} className="h-2" />
           </div>
-        </div>
 
-        {/* Step indicators */}
-        <div className="px-6 py-4 border-b bg-gray-50 flex-shrink-0">
-          <div className="flex items-center justify-between">
+          {/* Steps indicator */}
+          <div className="flex items-center justify-between mt-4">
             {STEPS.map((step, index) => {
-              const isActive = step.id === currentStep;
-              const isCompleted = index < currentStepIndex;
               const StepIcon = step.icon;
+              const isActive = index === currentStep;
+              const isCompleted = index < currentStep;
               
               return (
-                <div 
+                <button
                   key={step.id}
+                  onClick={() => handleStepClick(index)}
                   className={cn(
-                    "flex items-center space-x-2",
-                    index < STEPS.length - 1 && "flex-1"
+                    "flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors",
+                    isActive && "bg-blue-50 text-blue-600",
+                    isCompleted && "text-green-600 hover:bg-green-50",
+                    !isActive && !isCompleted && "text-gray-400 hover:bg-gray-50"
                   )}
                 >
-                  <div className="flex flex-col items-center">
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200",
-                      isActive && "border-blue-500 bg-blue-500 text-white",
-                      isCompleted && "border-green-500 bg-green-500 text-white",
-                      !isActive && !isCompleted && "border-gray-300 bg-white text-gray-400"
-                    )}>
-                      {isCompleted ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        <StepIcon className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <div className={cn(
-                        "text-sm font-medium",
-                        isActive && "text-blue-600",
-                        isCompleted && "text-green-600",
-                        !isActive && !isCompleted && "text-gray-500"
-                      )}>
-                        {step.title}
-                      </div>
-                      <div className="text-xs text-gray-400 max-w-24 leading-tight">
-                        {step.description}
-                      </div>
-                    </div>
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center",
+                    isActive && "bg-blue-600 text-white",
+                    isCompleted && "bg-green-600 text-white",
+                    !isActive && !isCompleted && "bg-gray-200"
+                  )}>
+                    {isCompleted ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <StepIcon className="h-4 w-4" />
+                    )}
                   </div>
-                  
-                  {/* Connector line */}
-                  {index < STEPS.length - 1 && (
-                    <div className={cn(
-                      "flex-1 h-px mx-4 transition-colors duration-200",
-                      index < currentStepIndex ? "bg-green-500" : "bg-gray-300"
-                    )} />
-                  )}
-                </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-sm font-medium">{step.title}</p>
+                    <p className="text-xs opacity-75">{step.description}</p>
+                  </div>
+                </button>
               );
             })}
           </div>
-        </div>
+        </CardHeader>
 
-        {/* Step content */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="p-6"
-            >
-              {/* Step content will be rendered here */}
-              <StepContent 
-                step={currentStep}
+        <CardContent className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 250px)' }}>
+          {/* Step content */}
+          <div className="min-h-[400px]">
+            {currentStep === 0 && (
+              <OrganizationStep
                 data={wizardData}
                 onUpdate={updateWizardData}
               />
-            </motion.div>
-          </AnimatePresence>
-        </div>
+            )}
+            {currentStep === 1 && (
+              <AssetsStep
+                data={wizardData}
+                onUpdate={updateWizardData}
+              />
+            )}
+            {currentStep === 2 && (
+              <BoardMatesStep
+                data={wizardData}
+                onUpdate={updateWizardData}
+              />
+            )}
+            {currentStep === 3 && (
+              <ReviewStep
+                data={wizardData}
+                onUpdate={updateWizardData}
+              />
+            )}
+          </div>
+        </CardContent>
 
-        {/* Footer */}
-        <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
+        {/* Footer with navigation */}
+        <div className="border-t p-6">
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
-              onClick={goToPreviousStep}
-              disabled={currentStepIndex === 0}
+              onClick={handlePrevious}
+              disabled={isFirstStep}
               className="flex items-center space-x-2"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="h-4 w-4" />
               <span>Previous</span>
             </Button>
 
             <div className="flex items-center space-x-2">
-              {!isLastStep ? (
+              <Button
+                variant="outline"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              
+              {isLastStep ? (
                 <Button
-                  onClick={goToNextStep}
-                  disabled={!canProceed}
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="flex items-center space-x-2"
                 >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <Rocket className="h-4 w-4" />
+                  <span>{isSubmitting ? 'Creating...' : 'Create Vault'}</span>
                 </Button>
               ) : (
                 <Button
-                  onClick={handleComplete}
-                  disabled={!canProceed || isLoading}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+                  onClick={handleNext}
+                  className="flex items-center space-x-2"
                 >
-                  {isLoading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Rocket className="w-4 h-4" />
-                  )}
-                  <span>{isLoading ? 'Creating...' : 'Create Vault'}</span>
+                  <span>Next</span>
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               )}
             </div>
           </div>
         </div>
-      </motion.div>
+      </Card>
     </div>
   );
-}
-
-// Import step components
-import OrganizationStep from './steps/OrganizationStep';
-import AssetsStep from './steps/AssetsStep';
-import BoardMatesStep from './steps/BoardMatesStep';
-import ReviewStep from './steps/ReviewStep';
-
-// Step content component
-function StepContent({ 
-  step, 
-  data, 
-  onUpdate 
-}: { 
-  step: VaultWizardStep; 
-  data: VaultWizardData; 
-  onUpdate: (updates: Partial<VaultWizardData>) => void;
-}) {
-  switch (step) {
-    case 'organization':
-      return <OrganizationStep data={data} onUpdate={onUpdate} />;
-    case 'assets':
-      return <AssetsStep data={data} onUpdate={onUpdate} />;
-    case 'boardmates':
-      return <BoardMatesStep data={data} onUpdate={onUpdate} />;
-    case 'review':
-      return <ReviewStep data={data} onUpdate={onUpdate} />;
-    default:
-      return <div>Step not implemented</div>;
-  }
 }

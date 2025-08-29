@@ -5,13 +5,25 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { env, getAppUrl } from '@/config/environment'
+import type { Database } from '@/types/database'
 
+// Check for service role key and provide helpful error message
 if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not set in environment variables!')
+  console.error('   This is required for admin operations like registration approval.')
+  console.error('   Please add SUPABASE_SERVICE_ROLE_KEY to your .env.local file')
   throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations')
 }
 
+// Log initialization for debugging
+console.log('🔐 Initializing supabaseAdmin with:', {
+  url: env.NEXT_PUBLIC_SUPABASE_URL,
+  hasServiceKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
+  keyLength: env.SUPABASE_SERVICE_ROLE_KEY?.length
+})
+
 // Admin client with service role key for server-side operations
-export const supabaseAdmin = createClient(
+export const supabaseAdmin = createClient<Database>(
   env.NEXT_PUBLIC_SUPABASE_URL,
   env.SUPABASE_SERVICE_ROLE_KEY,
   {

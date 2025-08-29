@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { createUserForApprovedRegistration, generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
+import { createUserForApprovedRegistration, generatePasswordSetupMagicLink, supabaseAdmin } from '@/lib/supabase-admin'
 import { createOtpCode } from '@/lib/otp'
 import nodemailer from 'nodemailer'
 import { getAppUrl } from '@/config/environment'
@@ -21,25 +21,61 @@ async function handleApprovalRequest(request: NextRequest) {
   const id = searchParams.get('id')
   const token = searchParams.get('token')
 
+  // Debug logging for troubleshooting
+  console.log('🔍 Approval Request Debug:', {
+    id,
+    tokenReceived: !!token,
+    tokenLength: token?.length,
+    hasServiceKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
+    supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+    timestamp: new Date().toISOString()
+  })
+
   if (!id || !token) {
+    console.error('❌ Missing required parameters:', { id: !!id, token: !!token })
     const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Invalid Request&message=Missing registration ID or security token&details=The approval link appears to be malformed or incomplete`
     return NextResponse.redirect(errorUrl, 302)
   }
 
+  // Validate ID format (UUID)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(id)) {
+    console.error('❌ Invalid ID format:', id)
+    const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Invalid Request&message=Invalid registration ID format&details=The registration ID in the link appears to be malformed`
+    return NextResponse.redirect(errorUrl, 302)
+  }
+
   try {
-    const supabase = await createSupabaseServerClient()
-    // Get the registration request with token verification
-    const { data: registrationRequest, error: fetchError } = await supabase
+    console.log('📊 Attempting to query registration_requests with ID:', id)
+    // Use supabaseAdmin (service role) to bypass RLS and read registration request
+    // This is necessary because the approval link is accessed without user authentication
+    const { data: registrationRequest, error: fetchError } = await supabaseAdmin
       .from('registration_requests')
       .select('*')
       .eq('id', id)
       .single()
 
+    console.log('📊 Database query result:', {
+      found: !!registrationRequest,
+      hasError: !!fetchError,
+      errorCode: fetchError?.code,
+      errorMessage: fetchError?.message,
+      dataId: registrationRequest?.id,
+      dataStatus: registrationRequest?.status
+    })
+
     if (fetchError || !registrationRequest) {
-      console.error('Registration request fetch error:', fetchError)
+      console.error('❌ Registration request fetch error:', {
+        error: fetchError,
+        id,
+        queryAttempted: 'registration_requests.eq(id)',
+        supabaseConfigured: !!supabaseAdmin
+      })
       const errorUrl = `${getAppUrl()}/approval-result?type=error&title=Request Not Found&message=Registration request not found&details=The request may have already been processed or the link has expired.`
       return NextResponse.redirect(errorUrl, 302)
     }
+
+    console.log('✅ Registration found, verifying token...')
 
     // Verify the security token from database
     if (!(registrationRequest as any).approval_token || (registrationRequest as any).approval_token !== token) {
@@ -60,7 +96,8 @@ async function handleApprovalRequest(request: NextRequest) {
     }
 
     // Approve the registration request and clear the token (one-time use)
-    const { error: updateError } = await supabase
+    // Use supabaseAdmin to ensure we can update the registration
+    const { error: updateError } = await supabaseAdmin
       .from('registration_requests')
       .update({
         status: 'approved',
@@ -82,7 +119,6 @@ async function handleApprovalRequest(request: NextRequest) {
     let userRecord: any = null
     
     try {
-    const supabase = await createSupabaseServerClient()
       // Import debug logger
       const { debugLogger } = await import('@/lib/debug-logger')
       
@@ -170,7 +206,6 @@ async function handleApprovalRequest(request: NextRequest) {
 
     // Send approval email to the user
     try {
-    const supabase = await createSupabaseServerClient()
       const transporter = nodemailer.createTransport(getSmtpConfig())
 
       const approvalEmailHTML = `

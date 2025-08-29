@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import CreateVaultWizard, { VaultWizardData } from '@/features/vaults/CreateVaultWizard';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { createTypedSupabaseClient } from '@/lib/supabase-typed';
+import { createClient } from '@/lib/supabase-client';
 import { 
   Vault,
   Plus,
@@ -34,7 +35,7 @@ export default function CreateVaultPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const supabase = await createTypedSupabaseClient();
+        const supabase = createClient();
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
@@ -91,7 +92,7 @@ export default function CreateVaultPage() {
       console.log('Creating vault with data:', data);
       
       // Get fresh auth token before making request
-      const supabase = await createTypedSupabaseClient();
+      const supabase = createClient();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -156,22 +157,25 @@ export default function CreateVaultPage() {
   // Show loading screen while checking authentication
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <Card className="max-w-md w-full text-center">
-          <CardContent className="p-8">
-            <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Authentication</h2>
-            <p className="text-gray-600">Verifying your access permissions...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <Card className="max-w-md w-full text-center">
+            <CardContent className="p-8">
+              <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Authentication</h2>
+              <p className="text-gray-600">Verifying your access permissions...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
     );
   }
 
   // Show auth error if authentication failed
   if (authError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
         <Card className="max-w-md w-full text-center">
           <CardContent className="p-8">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -190,12 +194,14 @@ export default function CreateVaultPage() {
           </CardContent>
         </Card>
       </div>
+      </DashboardLayout>
     );
   }
 
   if (creationResult?.success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-lg w-full text-center">
           <CardContent className="p-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -255,12 +261,14 @@ export default function CreateVaultPage() {
           </CardContent>
         </Card>
       </div>
+      </DashboardLayout>
     );
   }
 
   if (creationResult?.success === false) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardContent className="p-8">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -299,11 +307,13 @@ export default function CreateVaultPage() {
           </CardContent>
         </Card>
       </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <DashboardLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -440,6 +450,7 @@ export default function CreateVaultPage() {
         onClose={handleWizardClose}
         onComplete={handleVaultCreate}
       />
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

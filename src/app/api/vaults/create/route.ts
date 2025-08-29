@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // Validation schema for vault creation
@@ -52,7 +52,7 @@ const createVaultSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createClient();
     
     // Get current user with detailed logging
     console.log('Attempting to get authenticated user...');
@@ -188,10 +188,11 @@ export async function POST(request: NextRequest) {
           organization_id: organizationId,
           name: data.vaultName,
           description: data.vaultDescription || null,
-          owner_id: user.id,
-          vault_type: data.vaultType,
-          access_level: data.accessLevel,
-          settings: {
+          created_by: user.id,
+          is_public: data.accessLevel === 'organization',
+          metadata: {
+            vault_type: data.vaultType,
+            access_level: data.accessLevel,
             auto_expire_days: data.accessLevel === 'private' ? 30 : 90,
             watermark_enabled: true,
             download_enabled: data.accessLevel !== 'restricted',
@@ -204,6 +205,22 @@ export async function POST(request: NextRequest) {
 
       if (vaultError) {
         throw new Error(`Failed to create vault: ${vaultError.message}`);
+      }
+
+      // Step 2.5: Add creator as vault owner
+      const { error: memberError } = await supabase
+        .from('vault_members')
+        .insert({
+          vault_id: (vault as any)?.id,
+          user_id: user.id,
+          organization_id: organizationId,
+          role: 'owner',
+          status: 'active',
+          joined_at: new Date().toISOString(),
+        } as any);
+
+      if (memberError) {
+        console.warn(`Failed to add creator as vault owner: ${memberError.message}`);
       }
 
       // Step 3: Add assets to vault
@@ -234,7 +251,7 @@ export async function POST(request: NextRequest) {
       // Step 4: Handle BoardMates
       const boardMateErrors = [];
       
-      // Add existing board mates to organization if needed
+      // Add existing board mates to organization and vault
       for (const mate of data.selectedBoardMates) {
         // Check if user is already in the organization
         const { data: existingMembership } = await supabase
@@ -259,6 +276,22 @@ export async function POST(request: NextRequest) {
           if (memberError) {
             boardMateErrors.push(`Failed to add ${mate.full_name} to organization`);
           }
+        }
+
+        // Add board mate to vault_members
+        const { error: vaultMemberError } = await supabase
+          .from('vault_members')
+          .insert({
+            vault_id: (vault as any)?.id,
+            user_id: mate.id,
+            organization_id: organizationId,
+            role: 'member',
+            status: 'active',
+            joined_at: new Date().toISOString(),
+          } as any);
+
+        if (vaultMemberError) {
+          boardMateErrors.push(`Failed to add ${mate.full_name} to vault`);
         }
       }
 
@@ -303,41 +336,49 @@ export async function POST(request: NextRequest) {
         console.log(`${invitationResults.length} invitation emails need to be sent`);
       }
 
-      // Step 7: Log activities using comprehensive logging system
-      const { logVaultActivity, logOrganizationActivity, getRequestContext } = await import('@/lib/services/activity-logger')
-      const requestContext = getRequestContext(request)
-
-      // Log vault creation
-      await logVaultActivity(
-        user.id,
-        organizationId,
-        'created',
-        (vault as any)?.id,
-        (vault as any)?.name,
-        {
-          ...requestContext,
-          vault_type: (vault as any)?.vault_type,
-          access_level: (vault as any)?.access_level,
-          assets_count: data.selectedAssets.length,
-          boardmates_count: data.selectedBoardMates.length,
-          invitations_count: data.newBoardMates.length
-        }
-      )
+      // Step 7: Log activities in audit_logs table
+      await supabase
+        .from('audit_logs')
+        .insert({
+          organization_id: organizationId,
+          user_id: user.id,
+          event_type: 'user_action',
+          event_category: 'vaults',
+          action: 'create_vault',
+          resource_type: 'vault',
+          resource_id: (vault as any)?.id,
+          event_description: `Created vault "${(vault as any)?.name}"`,
+          outcome: 'success',
+          details: {
+            vault_name: (vault as any)?.name,
+            vault_type: data.vaultType,
+            access_level: data.accessLevel,
+            assets_count: data.selectedAssets.length,
+            boardmates_count: data.selectedBoardMates.length,
+            invitations_count: data.newBoardMates.length
+          }
+        } as any);
 
       // Log organization creation if applicable
       if (createdOrganization) {
-        await logOrganizationActivity(
-          user.id,
-          organizationId,
-          'created',
-          (createdOrganization as any)?.name,
-          {
-            ...requestContext,
-            slug: (createdOrganization as any)?.slug,
-            industry: (createdOrganization as any)?.industry,
-            website: (createdOrganization as any)?.website
-          }
-        )
+        await supabase
+          .from('audit_logs')
+          .insert({
+            organization_id: organizationId,
+            user_id: user.id,
+            event_type: 'user_action',
+            event_category: 'organizations',
+            action: 'create_organization',
+            resource_type: 'organization',
+            resource_id: organizationId,
+            event_description: `Created organization "${(createdOrganization as any)?.name}"`,
+            outcome: 'success',
+            details: {
+              slug: (createdOrganization as any)?.slug,
+              industry: (createdOrganization as any)?.industry,
+              website: (createdOrganization as any)?.website
+            }
+          } as any);
       }
 
       // Return success response

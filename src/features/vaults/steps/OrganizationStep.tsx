@@ -1,400 +1,280 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Label } from '@/features/shared/ui/label';
 import { Textarea } from '@/features/shared/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select';
 import { Badge } from '@/features/shared/ui/badge';
-import { Separator } from '@/features/shared/ui/separator';
-import { 
-  Building2, 
-  Plus, 
-  Search, 
-  Check,
-  Users,
-  Globe,
-  Calendar,
-  AlertCircle
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Building2, Plus, Check, Search, Loader2 } from 'lucide-react';
 import { VaultWizardData } from '../CreateVaultWizard';
-import { useOrganization } from '@/contexts/OrganizationContext';
-
-// Define the organization type from context 
-type Organization = {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  industry?: string | null;
-  website?: string | null;
-  userRole: 'owner' | 'admin' | 'member' | 'viewer';
-  membershipStatus: 'active' | 'suspended' | 'pending_activation';
-};
+import { createClient } from '@/lib/supabase-client';
+import { cn } from '@/lib/utils';
 
 interface OrganizationStepProps {
   data: VaultWizardData;
   onUpdate: (updates: Partial<VaultWizardData>) => void;
 }
 
-const INDUSTRIES = [
-  'Technology',
-  'Finance',
-  'Healthcare',
-  'Education',
-  'Manufacturing',
-  'Retail',
-  'Real Estate',
-  'Legal',
-  'Consulting',
-  'Non-Profit',
-  'Government',
-  'Other'
-];
-
 export default function OrganizationStep({ data, onUpdate }: OrganizationStepProps) {
-  const { organizations, isLoadingOrganizations } = useOrganization();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [createFormData, setCreateFormData] = useState({
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [newOrgData, setNewOrgData] = useState({
     name: '',
     description: '',
     industry: '',
-    website: '',
+    website: ''
   });
 
-  // Filter organizations based on search
-  const filteredOrganizations = (organizations as Organization[]).filter(org =>
-    org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    loadOrganizations();
+  }, []);
 
-  // Handle organization selection
-  const handleSelectOrganization = (org: Organization) => {
+  const loadOrganizations = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      const { data: orgMembers } = await supabase
+        .from('organization_members')
+        .select(`
+          organization:organizations(*)
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      if (orgMembers) {
+        const orgs = orgMembers
+          .map(m => m.organization)
+          .filter(Boolean);
+        setOrganizations(orgs);
+      }
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectOrganization = (org: any) => {
     onUpdate({
       selectedOrganization: {
         id: org.id,
         name: org.name,
-        slug: org.slug,
+        slug: org.slug
       },
-      createNewOrganization: null,
+      createNewOrganization: null
     });
   };
 
-  // Handle create new organization toggle
-  const handleToggleCreateForm = () => {
-    setShowCreateForm(!showCreateForm);
-    if (!showCreateForm) {
-      // Clear selected organization when starting to create new one
-      onUpdate({
-        selectedOrganization: null,
-        createNewOrganization: createFormData.name ? createFormData : null,
-      });
-    } else {
-      // Clear new organization data when canceling
-      onUpdate({
-        createNewOrganization: null,
-      });
-      setCreateFormData({ name: '', description: '', industry: '', website: '' });
-    }
-  };
-
-  // Handle create form changes
-  const handleCreateFormChange = (field: string, value: string) => {
-    const newFormData = { ...createFormData, [field]: value };
-    setCreateFormData(newFormData);
+  const handleCreateNewOrganization = () => {
+    if (!newOrgData.name.trim()) return;
     
-    // Update wizard data if form has required fields
-    if (newFormData.name && newFormData.industry) {
-      onUpdate({
-        createNewOrganization: newFormData,
-        selectedOrganization: null,
-      });
-    }
+    onUpdate({
+      selectedOrganization: null,
+      createNewOrganization: newOrgData
+    });
+    setShowCreateForm(false);
   };
 
-  const selectedOrg = data.selectedOrganization;
-  const hasNewOrgData = data.createNewOrganization;
+  const filteredOrganizations = organizations.filter(org =>
+    org.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Building2 className="w-8 h-8 text-blue-600" />
-        </div>
-        <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-          Choose Your Organization
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Select or Create Organization
         </h3>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Select an existing organization or create a new one for your vault
+        <p className="text-sm text-gray-600">
+          Choose an existing organization or create a new one for your vault
         </p>
       </div>
 
-      {/* Search and Create Toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search organizations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button
-          variant={showCreateForm ? "default" : "outline"}
-          onClick={handleToggleCreateForm}
-          className="flex items-center space-x-2 whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{showCreateForm ? "Cancel" : "Create New"}</span>
-        </Button>
-      </div>
+      {!showCreateForm ? (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search organizations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-      <AnimatePresence mode="wait">
-        {showCreateForm ? (
-          // Create New Organization Form
-          <motion.div
-            key="create-form"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <Card className="border-2 border-dashed border-blue-300 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Plus className="w-5 h-5" />
-                  <span>Create New Organization</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="org-name">Organization Name *</Label>
-                    <Input
-                      id="org-name"
-                      placeholder="Enter organization name"
-                      value={createFormData.name}
-                      onChange={(e) => handleCreateFormChange('name', e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="org-industry">Industry *</Label>
-                    <Select 
-                      value={createFormData.industry} 
-                      onValueChange={(value) => handleCreateFormChange('industry', value)}
-                    >
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Select industry" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {INDUSTRIES.map(industry => (
-                          <SelectItem key={industry} value={industry.toLowerCase()}>
-                            {industry}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="org-description">Description</Label>
-                  <Textarea
-                    id="org-description"
-                    placeholder="Brief description of your organization"
-                    value={createFormData.description}
-                    onChange={(e) => handleCreateFormChange('description', e.target.value)}
-                    className="bg-white"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="org-website">Website</Label>
-                  <Input
-                    id="org-website"
-                    type="url"
-                    placeholder="https://example.com"
-                    value={createFormData.website}
-                    onChange={(e) => handleCreateFormChange('website', e.target.value)}
-                    className="bg-white"
-                  />
-                </div>
-
-                {hasNewOrgData && (
-                  <div className="flex items-start space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <Check className="w-5 h-5 text-green-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-green-800">
-                        Ready to create "{createFormData.name}"
-                      </p>
-                      <p className="text-sm text-green-600">
-                        This organization will be created when you complete the vault setup.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        ) : (
-          // Existing Organizations List
-          <motion.div
-            key="organizations-list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            {isLoadingOrganizations ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-4">
-                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : !isLoadingOrganizations && organizations.length === 0 ? (
-              <div className="text-center py-12">
-                <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-600 mb-2">
-                  No Organizations Available
-                </h4>
-                <p className="text-gray-500 mb-4">
-                  You need to create an organization first to proceed with vault creation.
-                </p>
-                <Button
-                  variant="default"
-                  onClick={handleToggleCreateForm}
-                  className="flex items-center space-x-2"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredOrganizations.map((org) => {
+              const isSelected = data.selectedOrganization?.id === org.id;
+              
+              return (
+                <Card
+                  key={org.id}
+                  className={cn(
+                    "cursor-pointer transition-all",
+                    isSelected && "ring-2 ring-blue-500 bg-blue-50"
+                  )}
+                  onClick={() => handleSelectOrganization(org)}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Organization</span>
-                </Button>
-              </div>
-            ) : filteredOrganizations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredOrganizations.map((org) => (
-                  <motion.div
-                    key={org.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <Card 
-                      className={cn(
-                        "cursor-pointer transition-all duration-200 hover:shadow-md",
-                        selectedOrg?.id === org.id && "ring-2 ring-blue-500 bg-blue-50"
-                      )}
-                      onClick={() => handleSelectOrganization(org)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 mb-1">
-                              {org.name}
-                            </h4>
-                            {org.description && (
-                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                                {org.description}
-                              </p>
-                            )}
-                          </div>
-                          {selectedOrg?.id === org.id && (
-                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center ml-2">
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-gray-600" />
                         </div>
-                        
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-1">
-                              <Users className="w-3 h-3" />
-                              <span>Organization</span>
-                            </div>
-                          </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{org.name}</h4>
+                          {org.description && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {org.description}
+                            </p>
+                          )}
                           {org.industry && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="mt-2">
                               {org.industry}
                             </Badge>
                           )}
                         </div>
+                      </div>
+                      {isSelected && (
+                        <Check className="h-5 w-5 text-blue-600" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
 
-                        {org.website && (
-                          <div className="flex items-center space-x-1 mt-2">
-                            <Globe className="w-3 h-3 text-gray-400" />
-                            <a 
-                              href={org.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {org.website.replace(/^https?:\/\//, '')}
-                            </a>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
+            <Card
+              className="cursor-pointer border-dashed hover:bg-gray-50 transition-colors"
+              onClick={() => setShowCreateForm(true)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-center h-full min-h-[100px]">
+                  <div className="text-center">
+                    <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-gray-900">
+                      Create New Organization
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Set up a new organization for your board
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-medium text-gray-900 mb-4">
+              Create New Organization
+            </h4>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="org-name">Organization Name *</Label>
+                <Input
+                  id="org-name"
+                  placeholder="Enter organization name"
+                  value={newOrgData.name}
+                  onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
+                />
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-600 mb-2">
-                  {searchTerm ? 'No organizations found' : 'No organizations yet'}
-                </h4>
-                <p className="text-gray-500 mb-4">
-                  {searchTerm 
-                    ? `No organizations match "${searchTerm}"`
-                    : 'Get started by creating your first organization'
-                  }
-                </p>
+
+              <div>
+                <Label htmlFor="org-description">Description</Label>
+                <Textarea
+                  id="org-description"
+                  placeholder="Brief description of the organization"
+                  value={newOrgData.description}
+                  onChange={(e) => setNewOrgData({ ...newOrgData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="org-industry">Industry</Label>
+                <Select
+                  value={newOrgData.industry}
+                  onValueChange={(value) => setNewOrgData({ ...newOrgData, industry: value })}
+                >
+                  <SelectTrigger id="org-industry">
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="technology">Technology</SelectItem>
+                    <SelectItem value="finance">Finance</SelectItem>
+                    <SelectItem value="healthcare">Healthcare</SelectItem>
+                    <SelectItem value="education">Education</SelectItem>
+                    <SelectItem value="nonprofit">Non-Profit</SelectItem>
+                    <SelectItem value="government">Government</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="org-website">Website</Label>
+                <Input
+                  id="org-website"
+                  type="url"
+                  placeholder="https://example.com"
+                  value={newOrgData.website}
+                  onChange={(e) => setNewOrgData({ ...newOrgData, website: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
                 <Button
                   variant="outline"
-                  onClick={handleToggleCreateForm}
-                  className="flex items-center space-x-2"
+                  onClick={() => setShowCreateForm(false)}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Organization</span>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateNewOrganization}
+                  disabled={!newOrgData.name.trim()}
+                >
+                  Create Organization
                 </Button>
               </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Selected Organization Summary */}
-      {selectedOrg && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg"
-        >
-          <div className="flex items-center space-x-2 mb-2">
-            <Check className="w-5 h-5 text-green-600" />
-            <span className="font-medium text-green-800">Selected Organization</span>
-          </div>
-          <p className="text-green-700">
-            Your vault will be created under <strong>{selectedOrg.name}</strong>
+      {data.selectedOrganization && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900">
+            <strong>Selected:</strong> {data.selectedOrganization.name}
           </p>
-        </motion.div>
+        </div>
+      )}
+
+      {data.createNewOrganization && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-900">
+            <strong>Will create:</strong> {data.createNewOrganization.name}
+          </p>
+        </div>
       )}
     </div>
   );

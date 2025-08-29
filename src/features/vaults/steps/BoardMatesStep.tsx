@@ -1,823 +1,345 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/features/shared/ui/card';
 import { Button } from '@/features/shared/ui/button';
 import { Input } from '@/features/shared/ui/input';
 import { Label } from '@/features/shared/ui/label';
 import { Badge } from '@/features/shared/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/features/shared/ui/avatar';
 import { Checkbox } from '@/features/shared/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/ui/select';
-import { Separator } from '@/features/shared/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/ui/tabs';
 import { 
   Users, 
   Search, 
+  Loader2, 
   UserPlus,
-  Check,
-  X,
   Mail,
   Shield,
-  Eye,
-  Edit,
-  Crown,
-  AlertCircle,
-  Plus,
-  BarChart3,
-  Brain,
-  Mic,
-  MicOff,
-  Network
+  X
 } from 'lucide-react';
-import { ExecutiveAnalyticsDashboard } from '@/components/features/boardmates/ExecutiveAnalyticsDashboard';
-import { VoiceCommandPanel } from '@/components/features/boardmates/VoiceCommandPanel';
-import { NetworkVisualization3D } from '@/components/features/boardmates/NetworkVisualization3D';
-import { EnhancedBoardMate } from '@/types/boardmates';
-import { cn } from '@/lib/utils';
 import { VaultWizardData } from '../CreateVaultWizard';
-
-interface BoardMate {
-  id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  role: 'owner' | 'admin' | 'member' | 'viewer';
-  status: 'active' | 'pending' | 'inactive';
-  organization?: {
-    id: string;
-    name: string;
-  };
-  last_active?: string;
-  joined_at: string;
-}
-
-interface NewBoardMate {
-  email: string;
-  full_name: string;
-  role: 'viewer' | 'member' | 'admin';
-}
+import { createClient } from '@/lib/supabase-client';
+import { cn } from '@/lib/utils';
 
 interface BoardMatesStepProps {
   data: VaultWizardData;
   onUpdate: (updates: Partial<VaultWizardData>) => void;
 }
 
-const ROLE_CONFIG = {
-  owner: {
-    label: 'Owner',
-    icon: Crown,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
-    description: 'Full access and management rights'
-  },
-  admin: {
-    label: 'Admin',
-    icon: Shield,
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
-    description: 'Can manage vault and invite members'
-  },
-  member: {
-    label: 'Member',
-    icon: Edit,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-    description: 'Can view, comment, and collaborate'
-  },
-  viewer: {
-    label: 'Viewer',
-    icon: Eye,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-    description: 'Can view and comment only'
-  }
-};
-
 export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) {
-  const [boardMates, setBoardMates] = useState<BoardMate[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('members');
-  const [showVoicePanel, setShowVoicePanel] = useState(false);
-  const [newMateForm, setNewMateForm] = useState<NewBoardMate>({
+  const [existingMembers, setExistingMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  
+  const [newMember, setNewMember] = useState({
     email: '',
     full_name: '',
-    role: 'member'
+    role: 'viewer' as 'viewer' | 'member' | 'admin'
   });
-  const [emailValidation, setEmailValidation] = useState<{
-    isValid: boolean;
-    message?: string;
-  }>({ isValid: true });
 
-  // Load board mates
   useEffect(() => {
-    loadBoardMates();
-  }, []);
+    if (data.selectedOrganization) {
+      loadOrganizationMembers();
+    } else {
+      setLoading(false);
+    }
+  }, [data.selectedOrganization]);
 
-  const loadBoardMates = async () => {
-    setIsLoading(true);
+  const loadOrganizationMembers = async () => {
     try {
-      // This would fetch from your API
-      const response = await fetch('/api/boardmates');
-      if (response.ok) {
-        const result = await response.json();
-        setBoardMates(result.boardmates || []);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user || !data.selectedOrganization) return;
+
+      const { data: members } = await supabase
+        .from('organization_members')
+        .select(`
+          *,
+          user:users(*)
+        `)
+        .eq('organization_id', data.selectedOrganization.id)
+        .eq('status', 'active')
+        .neq('user_id', user.id);
+
+      if (members) {
+        setExistingMembers(members);
       }
     } catch (error) {
-      console.error('Failed to load board mates:', error);
-      // Mock data for development
-      setBoardMates([
-        {
-          id: '1',
-          email: 'john@techflow.com',
-          full_name: 'John Smith',
-          avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
-          role: 'admin',
-          status: 'active',
-          organization: { id: 'org1', name: 'TechFlow Innovations' },
-          joined_at: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: '2',
-          email: 'sarah@techflow.com',
-          full_name: 'Sarah Johnson',
-          avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah',
-          role: 'member',
-          status: 'active',
-          organization: { id: 'org1', name: 'TechFlow Innovations' },
-          joined_at: '2024-01-20T14:30:00Z'
-        },
-      ]);
+      console.error('Error loading members:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Filter board mates
-  const filteredBoardMates = boardMates.filter(mate =>
-    mate.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    mate.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin': return 'bg-purple-100 text-purple-700';
+      case 'member': return 'bg-blue-100 text-blue-700';
+      case 'viewer': return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const handleSelectMember = (member: any) => {
+    const isSelected = data.selectedBoardMates.some(m => m.id === member.user?.id);
+    
+    if (isSelected) {
+      onUpdate({
+        selectedBoardMates: data.selectedBoardMates.filter(m => m.id !== member.user?.id)
+      });
+    } else {
+      onUpdate({
+        selectedBoardMates: [...data.selectedBoardMates, {
+          id: member.user?.id,
+          email: member.user?.email,
+          full_name: member.user?.full_name || member.user?.email,
+          role: member.role
+        }]
+      });
+    }
+  };
+
+  const handleAddNewMember = () => {
+    if (!newMember.email || !newMember.full_name) return;
+    
+    const exists = data.newBoardMates.some(m => m.email === newMember.email);
+    if (!exists) {
+      onUpdate({
+        newBoardMates: [...data.newBoardMates, newMember]
+      });
+    }
+    
+    setNewMember({ email: '', full_name: '', role: 'viewer' });
+    setShowAddForm(false);
+  };
+
+  const handleRemoveNewMember = (email: string) => {
+    onUpdate({
+      newBoardMates: data.newBoardMates.filter(m => m.email !== email)
+    });
+  };
+
+  const filteredMembers = existingMembers.filter(member =>
+    member.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Handle board mate selection
-  const handleBoardMateSelect = useCallback((mate: BoardMate, selected: boolean) => {
-    const currentSelected = data.selectedBoardMates;
-    const newSelected = selected
-      ? [...currentSelected, {
-          id: mate.id,
-          email: mate.email,
-          full_name: mate.full_name,
-          role: mate.role,
-        }]
-      : currentSelected.filter(m => m.id !== mate.id);
-    
-    onUpdate({ selectedBoardMates: newSelected });
-  }, [data.selectedBoardMates, onUpdate]);
-
-  // Handle new board mate form
-  const handleNewMateFormChange = (field: keyof NewBoardMate, value: string) => {
-    const newForm = { ...newMateForm, [field]: value };
-    setNewMateForm(newForm);
-
-    // Email validation
-    if (field === 'email') {
-      const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      const isDuplicate = [...data.selectedBoardMates, ...data.newBoardMates]
-        .some(mate => mate.email.toLowerCase() === value.toLowerCase());
-      
-      if (!value) {
-        setEmailValidation({ isValid: true });
-      } else if (!isValidEmail) {
-        setEmailValidation({ isValid: false, message: 'Please enter a valid email address' });
-      } else if (isDuplicate) {
-        setEmailValidation({ isValid: false, message: 'This person is already added' });
-      } else {
-        setEmailValidation({ isValid: true });
-      }
-    }
-  };
-
-  const handleAddNewMate = () => {
-    if (newMateForm.email && newMateForm.full_name && emailValidation.isValid) {
-      const newBoardMates = [...data.newBoardMates, newMateForm];
-      onUpdate({ newBoardMates });
-      setNewMateForm({ email: '', full_name: '', role: 'member' });
-      setShowInviteForm(false);
-      setEmailValidation({ isValid: true });
-    }
-  };
-
-  const handleRemoveNewMate = (index: number) => {
-    const newBoardMates = data.newBoardMates.filter((_, i) => i !== index);
-    onUpdate({ newBoardMates });
-  };
-
-  const isBoardMateSelected = useCallback((mateId: string) => {
-    return data.selectedBoardMates.some(m => m.id === mateId);
-  }, [data.selectedBoardMates]);
-
-  const selectedCount = data.selectedBoardMates.length + data.newBoardMates.length;
-  const canAddNewMate = newMateForm.email && newMateForm.full_name && emailValidation.isValid;
-
-  // Convert BoardMate data to EnhancedBoardMate for analytics
-  const enhancedBoardMates: EnhancedBoardMate[] = useMemo(() => {
-    return boardMates.map(mate => ({
-      ...mate,
-      ai_score: {
-        overall_match: Math.random() * 0.3 + 0.7, // 70-100%
-        skill_alignment: Math.random() * 0.3 + 0.7,
-        cultural_fit: Math.random() * 0.3 + 0.7,
-        risk_factor: Math.random() * 0.3,
-        growth_potential: Math.random() * 0.4 + 0.6,
-        leadership_capacity: Math.random() * 0.4 + 0.6
-      },
-      expertise_profile: {
-        core_competencies: ['Leadership', 'Strategy', 'Finance', 'Technology'].slice(0, Math.floor(Math.random() * 3) + 2),
-        industry_experience: ['Technology', 'Healthcare', 'Finance'][Math.floor(Math.random() * 3)],
-        years_experience: Math.floor(Math.random() * 20) + 10,
-        innovation_index: Math.random() * 0.4 + 0.6,
-        collaboration_style: ['Collaborative', 'Direct', 'Consensus-driven'][Math.floor(Math.random() * 3)] as any
-      },
-      performance_metrics: {
-        overall_score: Math.random() * 0.3 + 0.7,
-        decision_quality: Math.random() * 0.3 + 0.7,
-        strategic_impact: Math.random() * 0.3 + 0.7,
-        team_effectiveness: Math.random() * 0.3 + 0.7,
-        stakeholder_satisfaction: Math.random() * 0.3 + 0.7
-      },
-      risk_assessment: {
-        overall_risk_level: Math.random() * 0.3,
-        compliance_risk: Math.random() * 0.2,
-        reputation_risk: Math.random() * 0.2,
-        performance_risk: Math.random() * 0.2
-      },
-      network_position: {
-        influence_score: Math.random() * 0.4 + 0.6,
-        centrality_measure: Math.random() * 0.4 + 0.5,
-        connection_strength: Math.random() * 0.3 + 0.7
-      }
-    }))
-  }, [boardMates]);
-
-  // Handle voice command callbacks
-  const handleVoiceAddMember = useCallback((memberData: { memberName: string; email?: string; role: string }) => {
-    const newMember: NewBoardMate = {
-      full_name: memberData.memberName,
-      email: memberData.email || '',
-      role: memberData.role as 'viewer' | 'member' | 'admin'
-    }
-    
-    // Add to new board mates list
-    const newBoardMates = [...data.newBoardMates, newMember]
-    onUpdate({ newBoardMates })
-    
-    // Show success feedback
-    console.log('Voice command: Added member', memberData)
-  }, [data.newBoardMates, onUpdate])
-
-  const handleVoiceSearch = useCallback((searchTerm: string) => {
-    setSearchTerm(searchTerm)
-    console.log('Voice command: Search', searchTerm)
-  }, [])
-
-  const handleVoiceAnalytics = useCallback((query: string) => {
-    // Switch to analytics tab if analytics query
-    if (query.toLowerCase().includes('analytics') || query.toLowerCase().includes('performance')) {
-      setActiveTab('analytics')
-    }
-    console.log('Voice command: Analytics query', query)
-  }, [])
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-          <Users className="w-8 h-8 text-purple-600" />
-        </div>
-        <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-          BoardMates Management
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Invite BoardMates
         </h3>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Manage team members and access advanced board analytics
+        <p className="text-sm text-gray-600">
+          Add team members who will have access to this vault
         </p>
       </div>
 
-      {/* Main Tabs with Voice Control */}
-      <div className="flex items-center justify-between mb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="members" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Board Members
-            </TabsTrigger>
-            <TabsTrigger value="network" className="flex items-center gap-2">
-              <Network className="w-4 h-4" />
-              3D Network
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Executive Analytics
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        
-        {/* Voice Command Toggle */}
-        <div className="ml-4">
-          <Button
-            variant={showVoicePanel ? "default" : "outline"}
-            onClick={() => setShowVoicePanel(!showVoicePanel)}
-            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-          >
-            {showVoicePanel ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            <span className="hidden sm:inline">
-              {showVoicePanel ? "Close Voice" : "Voice Commands"}
-            </span>
-          </Button>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-
-        {/* Board Members Tab */}
-        <TabsContent value="members" className="space-y-6">
-          {/* Voice Command Panel */}
-          <AnimatePresence>
-            {showVoicePanel && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, y: -20 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <VoiceCommandPanel
-                  userId="current-user" // In real app, get from auth context
-                  onMemberAdd={handleVoiceAddMember}
-                  onSearch={handleVoiceSearch}
-                  onAnalyticsQuery={handleVoiceAnalytics}
-                  className="mb-6"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search board mates..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-          />
-        </div>
-        <Button
-          variant={showInviteForm ? "default" : "outline"}
-          onClick={() => setShowInviteForm(!showInviteForm)}
-          className="flex items-center space-x-2 whitespace-nowrap bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>{showInviteForm ? "Cancel" : "Invite New"}</span>
-        </Button>
-      </div>
-
-      {/* Selection Summary - Fixed */}
-      {selectedCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg mb-6 flex-shrink-0 shadow-sm"
-        >
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-              <Check className="w-4 h-4 text-purple-600" />
-            </div>
-            <span className="font-medium text-purple-800">
-              {selectedCount} board mate{selectedCount !== 1 ? 's' : ''} selected
-            </span>
+      {data.selectedOrganization && (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search existing members..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onUpdate({ selectedBoardMates: [], newBoardMates: [] })}
-            className="text-purple-600 hover:text-purple-800 hover:bg-purple-100 transition-colors"
-          >
-            Clear all
-          </Button>
-        </motion.div>
+
+          {filteredMembers.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Existing Organization Members</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+                {filteredMembers.map((member) => {
+                  const isSelected = data.selectedBoardMates.some(m => m.id === member.user?.id);
+                  
+                  return (
+                    <Card
+                      key={member.id}
+                      className={cn(
+                        "cursor-pointer transition-all",
+                        isSelected && "ring-2 ring-blue-500 bg-blue-50"
+                      )}
+                      onClick={() => handleSelectMember(member)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleSelectMember(member)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {member.user?.full_name || member.user?.email}
+                            </p>
+                            <p className="text-xs text-gray-600">{member.user?.email}</p>
+                          </div>
+                          <Badge className={cn("text-xs", getRoleBadgeColor(member.role))}>
+                            {member.role}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Content Area */}
-      <div className="space-y-6">
-        {/* Invite New BoardMate Form */}
-        <AnimatePresence>
-          {showInviteForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
+      <div className="border-t pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-medium text-gray-900">Invite New Members</h4>
+          {!showAddForm && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddForm(true)}
             >
-              <Card className="border-2 border-dashed border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <UserPlus className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <span>Invite New BoardMate</span>
-                  </CardTitle>
-                </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mate-email">Email Address *</Label>
-                    <Input
-                      id="mate-email"
-                      type="email"
-                      placeholder="Enter email address"
-                      value={newMateForm.email}
-                      onChange={(e) => handleNewMateFormChange('email', e.target.value)}
-                      className={cn(
-                        "bg-white",
-                        !emailValidation.isValid && "border-red-300 focus:ring-red-500"
-                      )}
-                    />
-                    {!emailValidation.isValid && (
-                      <div className="flex items-center space-x-1 text-red-600 text-sm">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>{emailValidation.message}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mate-name">Full Name *</Label>
-                    <Input
-                      id="mate-name"
-                      placeholder="Enter full name"
-                      value={newMateForm.full_name}
-                      onChange={(e) => handleNewMateFormChange('full_name', e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Member
+            </Button>
+          )}
+        </div>
+
+        {showAddForm && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="member-email">Email Address *</Label>
+                  <Input
+                    id="member-email"
+                    type="email"
+                    placeholder="member@example.com"
+                    value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                  />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="mate-role">Role</Label>
-                  <Select 
-                    value={newMateForm.role} 
+
+                <div>
+                  <Label htmlFor="member-name">Full Name *</Label>
+                  <Input
+                    id="member-name"
+                    placeholder="John Doe"
+                    value={newMember.full_name}
+                    onChange={(e) => setNewMember({ ...newMember, full_name: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="member-role">Role</Label>
+                  <Select
+                    value={newMember.role}
                     onValueChange={(value: 'viewer' | 'member' | 'admin') => 
-                      handleNewMateFormChange('role', value)
+                      setNewMember({ ...newMember, role: value })
                     }
                   >
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger id="member-role">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="viewer">
                         <div className="flex items-center space-x-2">
-                          <Eye className="w-4 h-4 text-green-600" />
-                          <div>
-                            <div>Viewer</div>
-                            <div className="text-xs text-gray-500">Can view and comment only</div>
-                          </div>
+                          <Shield className="h-4 w-4" />
+                          <span>Viewer (Read-only)</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="member">
                         <div className="flex items-center space-x-2">
-                          <Edit className="w-4 h-4 text-blue-600" />
-                          <div>
-                            <div>Member</div>
-                            <div className="text-xs text-gray-500">Can view, comment, and collaborate</div>
-                          </div>
+                          <Users className="h-4 w-4" />
+                          <span>Member (Edit access)</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="admin">
                         <div className="flex items-center space-x-2">
-                          <Shield className="w-4 h-4 text-red-600" />
-                          <div>
-                            <div>Admin</div>
-                            <div className="text-xs text-gray-500">Can manage vault and invite members</div>
-                          </div>
+                          <Shield className="h-4 w-4" />
+                          <span>Admin (Full control)</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-3">
                   <Button
                     variant="outline"
-                    onClick={() => setShowInviteForm(false)}
+                    onClick={() => setShowAddForm(false)}
                   >
                     Cancel
                   </Button>
-                    <Button
-                      onClick={handleAddNewMate}
-                      disabled={!canAddNewMate}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                    >
-                      Add to List
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Existing BoardMates */}
-        {!showInviteForm && (
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900 flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-600" />
-              <span>Your BoardMates</span>
-            </h4>
-          
-          {isLoading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded mb-1"></div>
-                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredBoardMates.length > 0 ? (
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-              {filteredBoardMates.map((mate) => {
-                const selected = isBoardMateSelected(mate.id);
-                const roleConfig = ROLE_CONFIG[mate.role];
-                const RoleIcon = roleConfig.icon;
-                
-                return (
-                  <motion.div
-                    key={mate.id}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
+                  <Button
+                    onClick={handleAddNewMember}
+                    disabled={!newMember.email || !newMember.full_name}
                   >
-                    <Card 
-                      className={cn(
-                        "cursor-pointer transition-all duration-200 hover:shadow-md border-gray-200 hover:border-purple-300",
-                        selected && "ring-2 ring-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300"
-                      )}
-                      onClick={() => handleBoardMateSelect(mate, !selected)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={selected}
-                            onCheckedChange={(checked) => handleBoardMateSelect(mate, !!checked)}
-                            className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                          />
-                          
-                          <Avatar className="w-10 h-10 ring-2 ring-gray-100">
-                            <AvatarImage src={mate.avatar_url} alt={mate.full_name} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-semibold">{mate.full_name.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h5 className="font-medium text-gray-900 truncate">
-                                {mate.full_name}
-                              </h5>
-                              <div className={cn(
-                                "flex items-center space-x-1 px-2 py-1 rounded-full text-xs shadow-sm",
-                                roleConfig.bgColor
-                              )}>
-                                <RoleIcon className={cn("w-3 h-3", roleConfig.color)} />
-                                <span className={roleConfig.color}>{roleConfig.label}</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-500 truncate">{mate.email}</p>
-                            {mate.organization && (
-                              <p className="text-xs text-gray-400 mt-1">
-                                {mate.organization.name}
-                              </p>
-                            )}
-                          </div>
-                          
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            mate.status === 'active' ? "bg-green-400" : "bg-gray-300"
-                          )} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-gray-400" />
+                    Add Member
+                  </Button>
+                </div>
               </div>
-              <h4 className="text-lg font-medium text-gray-600 mb-2">
-                {searchTerm ? 'No board mates found' : 'No board mates yet'}
-              </h4>
-              <p className="text-gray-500 mb-4">
-                {searchTerm 
-                  ? `No board mates match "${searchTerm}"`
-                  : 'Invite your first team member to get started'
-                }
-              </p>
-              {!searchTerm && (
-                <Button
-                  onClick={() => setShowInviteForm(true)}
-                  variant="outline"
-                  className="border-gray-300 hover:bg-gray-50 hover:border-purple-300 transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Invite First Member
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-        {/* New BoardMates List */}
         {data.newBoardMates.length > 0 && (
-          <div className="space-y-4">
-            <Separator />
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-gray-900 flex items-center space-x-2">
-                <Mail className="w-5 h-5 text-gray-600" />
-                <span>New Invitations ({data.newBoardMates.length})</span>
-              </h4>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800 shadow-sm">
-                Will be invited
-              </Badge>
-            </div>
-            
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-            {data.newBoardMates.map((mate, index) => {
-              const roleConfig = ROLE_CONFIG[mate.role];
-              const RoleIcon = roleConfig.icon;
-              
-              return (
-                <motion.div
-                  key={`${mate.email}-${index}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+          <div className="space-y-2 mt-4">
+            {data.newBoardMates.map((member) => (
+              <div
+                key={member.email}
+                className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+              >
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
+                    <p className="text-xs text-gray-600">{member.email}</p>
+                  </div>
+                  <Badge className={cn("text-xs", getRoleBadgeColor(member.role))}>
+                    {member.role}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveNewMember(member.email)}
                 >
-                  <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-300 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-orange-600" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h5 className="font-medium text-gray-900 truncate">
-                              {mate.full_name}
-                            </h5>
-                            <div className={cn(
-                              "flex items-center space-x-1 px-2 py-1 rounded-full text-xs shadow-sm",
-                              roleConfig.bgColor
-                            )}>
-                              <RoleIcon className={cn("w-3 h-3", roleConfig.color)} />
-                              <span className={roleConfig.color}>{roleConfig.label}</span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-500 truncate">{mate.email}</p>
-                          <p className="text-xs text-orange-600 mt-1">
-                            Will receive invitation email
-                          </p>
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveNewMate(index)}
-                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
       </div>
 
-      {/* Selection Summary - Fixed at bottom */}
-      {selectedCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg flex-shrink-0 shadow-sm"
-        >
-          <div className="flex items-center space-x-2 mb-2">
-            <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-              <Check className="w-4 h-4 text-green-600" />
-            </div>
-            <span className="font-medium text-green-800">BoardMates Ready</span>
-          </div>
-          <p className="text-green-700">
-            {data.selectedBoardMates.length} existing members and {data.newBoardMates.length} new invitations will be added to your vault.
+      {(data.selectedBoardMates.length > 0 || data.newBoardMates.length > 0) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900 font-medium mb-2">
+            Total Members to Add: {data.selectedBoardMates.length + data.newBoardMates.length}
           </p>
-        </motion.div>
+          {data.selectedBoardMates.length > 0 && (
+            <p className="text-xs text-blue-700">
+              {data.selectedBoardMates.length} existing member(s)
+            </p>
+          )}
+          {data.newBoardMates.length > 0 && (
+            <p className="text-xs text-blue-700">
+              {data.newBoardMates.length} new member(s) to invite
+            </p>
+          )}
+        </div>
       )}
-        </TabsContent>
-
-        {/* 3D Network Visualization Tab */}
-        <TabsContent value="network">
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <Network className="w-8 h-8 text-blue-600" />
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                3D Network Visualization
-              </h4>
-              <p className="text-gray-600 max-w-md mx-auto">
-                Explore board relationships and influence patterns in an interactive 3D space
-              </p>
-            </div>
-
-            <div className="h-[600px] bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-              <NetworkVisualization3D
-                boardMembers={enhancedBoardMates}
-                onMemberSelect={(member) => {
-                  // Find the corresponding BoardMate and select it
-                  const boardMate = boardMates.find(bm => bm.id === member.id)
-                  if (boardMate) {
-                    handleBoardMateSelect(boardMate, true)
-                  }
-                }}
-                onRelationshipCreate={(sourceId, targetId) => {
-                  console.log('Create relationship:', sourceId, targetId)
-                  // Future: Handle relationship creation
-                }}
-                className="h-full"
-              />
-            </div>
-
-            {/* Network Insights */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                <CardContent className="p-4 text-center">
-                  <Brain className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <h5 className="font-semibold text-blue-900 mb-1">AI Insights</h5>
-                  <p className="text-sm text-blue-700">
-                    Discover hidden patterns in your board network
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                <CardContent className="p-4 text-center">
-                  <Network className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <h5 className="font-semibold text-green-900 mb-1">Relationship Mapping</h5>
-                  <p className="text-sm text-green-700">
-                    Visualize connections and collaboration patterns
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
-                <CardContent className="p-4 text-center">
-                  <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <h5 className="font-semibold text-purple-900 mb-1">Influence Analysis</h5>
-                  <p className="text-sm text-purple-700">
-                    Identify key stakeholders and decision makers
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Executive Analytics Tab */}
-        <TabsContent value="analytics">
-          <ExecutiveAnalyticsDashboard 
-            boardMembers={enhancedBoardMates}
-            organizationId={data.selectedBoardMates[0]?.organization?.id || 'default-org'}
-            onExportReport={() => console.log('Export report')}
-            onScheduleUpdate={() => console.log('Schedule update')}
-          />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

@@ -1,0 +1,280 @@
+name: Playwright MCP E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test-suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - auth
+          - board
+          - assets
+          - smoke
+          - regression
+
+jobs:
+  test:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+        
+      - name: Setup test environment
+        run: |
+          cp .env.example .env.test
+          echo "NEXT_PUBLIC_APP_URL=http://localhost:3000" >> .env.test
+          echo "DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}" >> .env.test
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.TEST_SUPABASE_URL }}" >> .env.test
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.TEST_SUPABASE_ANON_KEY }}" >> .env.test
+          
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: test
+          
+      - name: Start test server
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+          
+      - name: Run Playwright MCP tests
+        run: |
+          cd __tests__/e2e/playwright-mcp
+          if [ "${{ github.event.inputs.test-suite }}" = "all" ] || [ -z "${{ github.event.inputs.test-suite }}" ]; then
+            npm test -- --project=${{ matrix.browser }}
+          else
+            npm run test:${{ github.event.inputs.test-suite }} -- --project=${{ matrix.browser }}
+          fi
+        env:
+          CI: true
+          BROWSER: ${{ matrix.browser }}
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: __tests__/e2e/playwright-mcp/reports/
+          retention-days: 30
+          
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-videos-${{ matrix.browser }}
+          path: __tests__/e2e/playwright-mcp/test-results/
+          retention-days: 7
+          
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-screenshots-${{ matrix.browser }}
+          path: __tests__/e2e/playwright-mcp/screenshots/
+          retention-days: 7
+
+  analyze:
+    name: Analyze Test Results with MCP
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-*
+          path: test-results/
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Analyze results with MCP
+        run: |
+          cd __tests__/e2e/playwright-mcp
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Aggregate all test results
+          const resultsDir = '../../../test-results';
+          const allResults = [];
+          
+          // Read all result files
+          const browsers = fs.readdirSync(resultsDir);
+          browsers.forEach(browser => {
+            const resultFile = path.join(resultsDir, browser, 'mcp-results.json');
+            if (fs.existsSync(resultFile)) {
+              const data = JSON.parse(fs.readFileSync(resultFile, 'utf-8'));
+              allResults.push({ browser: browser.replace('playwright-report-', ''), ...data });
+            }
+          });
+          
+          // Generate summary
+          const summary = {
+            totalBrowsers: allResults.length,
+            totalTests: allResults.reduce((sum, r) => sum + r.totalTests, 0),
+            totalPassed: allResults.reduce((sum, r) => sum + r.passed, 0),
+            totalFailed: allResults.reduce((sum, r) => sum + r.failed, 0),
+            browsers: allResults.map(r => ({
+              name: r.browser,
+              passed: r.passed,
+              failed: r.failed,
+              duration: r.duration
+            })),
+            suggestions: [],
+            timestamp: new Date().toISOString()
+          };
+          
+          // Generate suggestions based on patterns
+          if (summary.totalFailed > 0) {
+            const failureRate = (summary.totalFailed / summary.totalTests) * 100;
+            if (failureRate > 20) {
+              summary.suggestions.push('High failure rate detected. Consider reviewing test stability.');
+            }
+            
+            // Check for browser-specific failures
+            allResults.forEach(result => {
+              if (result.failed > 0 && result.mcp?.patterns?.failureTypes) {
+                const types = Object.entries(result.mcp.patterns.failureTypes);
+                types.forEach(([type, count]) => {
+                  if (count > 2) {
+                    summary.suggestions.push(\`Multiple \${type} failures in \${result.browser}\`);
+                  }
+                });
+              }
+            });
+          }
+          
+          // Output summary
+          console.log('📊 MCP Test Analysis Summary');
+          console.log('============================');
+          console.log(\`Total Tests: \${summary.totalTests}\`);
+          console.log(\`✅ Passed: \${summary.totalPassed}\`);
+          console.log(\`❌ Failed: \${summary.totalFailed}\`);
+          console.log(\`Success Rate: \${((summary.totalPassed / summary.totalTests) * 100).toFixed(1)}%\`);
+          console.log('');
+          console.log('Browser Results:');
+          summary.browsers.forEach(b => {
+            console.log(\`  \${b.name}: \${b.passed}/\${b.passed + b.failed} passed (\${(b.duration/1000).toFixed(1)}s)\`);
+          });
+          
+          if (summary.suggestions.length > 0) {
+            console.log('');
+            console.log('💡 MCP Suggestions:');
+            summary.suggestions.forEach(s => console.log(\`  • \${s}\`));
+          }
+          
+          // Save summary
+          fs.writeFileSync('test-summary.json', JSON.stringify(summary, null, 2));
+          
+          // Set job status
+          if (summary.totalFailed > 0) {
+            process.exit(1);
+          }
+          "
+          
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = JSON.parse(fs.readFileSync('__tests__/e2e/playwright-mcp/test-summary.json', 'utf-8'));
+            
+            const comment = `## 🎭 Playwright MCP E2E Test Results
+            
+            **Overall:** ${summary.totalPassed}/${summary.totalTests} tests passed (${((summary.totalPassed/summary.totalTests)*100).toFixed(1)}%)
+            
+            ### Browser Results
+            ${summary.browsers.map(b => 
+              `- **${b.name}**: ${b.passed}/${b.passed + b.failed} passed`
+            ).join('\n')}
+            
+            ${summary.suggestions.length > 0 ? `### 💡 MCP Suggestions\n${summary.suggestions.map(s => `- ${s}`).join('\n')}` : ''}
+            
+            [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  performance:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright
+        run: npx playwright install chromium
+        
+      - name: Run performance tests
+        run: |
+          cd __tests__/e2e/playwright-mcp
+          npm test -- --grep="performance" --project=chromium
+          
+      - name: Analyze performance metrics
+        run: |
+          echo "📊 Performance metrics collected and analyzed"
+          # Add performance regression detection here
+          
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-metrics
+          path: __tests__/e2e/playwright-mcp/reports/performance/
+          retention-days: 90
