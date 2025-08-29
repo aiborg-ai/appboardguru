@@ -40,10 +40,19 @@ export const supabaseAdmin = createClient<Database>(
  * Create a new user account without password for first-time setup
  */
 export async function createUserForApprovedRegistration(email: string, fullName: string) {
-  const { debugLogger, createOperationTracker } = await import('@/lib/debug-logger')
-  const tracker = createOperationTracker('CREATE_USER_FOR_APPROVED_REGISTRATION', { email })
+  // Use conditional debug logging that won't break in production
+  let debugLogger: any = null
+  let tracker: any = null
   
-  debugLogger.authUserCreateStart(email, fullName)
+  try {
+    const debugModule = await import('@/lib/debug-logger')
+    debugLogger = debugModule.debugLogger
+    tracker = debugModule.createOperationTracker('CREATE_USER_FOR_APPROVED_REGISTRATION', { email })
+    debugLogger.authUserCreateStart(email, fullName)
+  } catch (e) {
+    // Debug logger not available, use console
+    console.log('Creating user for:', email)
+  }
 
   try {
     // Create auth user without password
@@ -57,26 +66,32 @@ export async function createUserForApprovedRegistration(email: string, fullName:
     })
 
     if (authError) {
-      debugLogger.authUserCreateResult(email, false, { error: authError })
+      if (debugLogger) debugLogger.authUserCreateResult(email, false, { error: authError })
+      else console.error('Auth user creation failed:', authError)
       throw authError
     }
 
     if (!authUser.user) {
       const error = 'Failed to create user - no user returned'
-      debugLogger.authUserCreateResult(email, false, { error })
+      if (debugLogger) debugLogger.authUserCreateResult(email, false, { error })
+      else console.error(error)
       throw new Error(error)
     }
 
-    debugLogger.authUserCreateResult(email, true, { 
-      userId: authUser.user.id,
-      userEmail: authUser.user.email 
-    })
+    if (debugLogger) {
+      debugLogger.authUserCreateResult(email, true, { 
+        userId: authUser.user.id,
+        userEmail: authUser.user.email 
+      })
+    } else {
+      console.log('Auth user created:', authUser.user.id)
+    }
 
     // Wait a moment for trigger to fire
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     // Check if user record was created by trigger
-    debugLogger.usersTableInsertStart(email, authUser.user.id)
+    if (debugLogger) debugLogger.usersTableInsertStart(email, authUser.user.id)
     
     const { data: existingUser } = await supabaseAdmin
       .from('users')

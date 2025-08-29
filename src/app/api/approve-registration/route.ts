@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { createUserForApprovedRegistration, generatePasswordSetupMagicLink, supabaseAdmin } from '@/lib/supabase-admin'
+import { generatePasswordSetupMagicLink, supabaseAdmin } from '@/lib/supabase-admin'
+import { createUserSimple } from '@/lib/create-user-simple'
 import { createOtpCode } from '@/lib/otp'
 import nodemailer from 'nodemailer'
 import { getAppUrl } from '@/config/environment'
@@ -161,19 +162,16 @@ async function handleApprovalRequest(request: NextRequest) {
     let userRecord: any = null
     
     try {
-      // Import debug logger
-      const { debugLogger } = await import('@/lib/debug-logger')
-      
-      debugLogger.approvalStart((registrationRequest as any).email, (registrationRequest as any).id)
+      console.log('Creating user for approved registration:', (registrationRequest as any).email)
       
       // Create auth user without password - THIS IS MANDATORY
-      const { success: userCreateSuccess, error: userCreateError, userRecord: createdUserRecord } = await createUserForApprovedRegistration(
+      const { success: userCreateSuccess, error: userCreateError, userRecord: createdUserRecord } = await createUserSimple(
         (registrationRequest as any).email,
         (registrationRequest as any).full_name
       )
 
       if (!userCreateSuccess) {
-        debugLogger.error('USER_CREATION_MANDATORY_FAILED', (registrationRequest as any).email, { 
+        console.error('USER_CREATION_MANDATORY_FAILED', (registrationRequest as any).email, { 
           error: userCreateError,
           registrationId: (registrationRequest as any).id 
         })
@@ -184,7 +182,7 @@ async function handleApprovalRequest(request: NextRequest) {
       }
       
       userRecord = createdUserRecord
-      debugLogger.info('USER_CREATION_SUCCESS', (registrationRequest as any).email, {
+      console.log('USER_CREATION_SUCCESS', (registrationRequest as any).email, {
         userId: userRecord?.id,
         passwordSet: userRecord?.password_set
       })
