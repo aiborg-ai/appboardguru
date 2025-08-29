@@ -39,57 +39,54 @@ export function createStore<T extends object>(
     }
   }
 
-  // Base middleware chain
-  let middlewares = []
+  // Create the store function with metadata
+  const enhancedStoreFunction = (set: any, get: any, api: any) => ({
+    ...storeFunction(set, get, api),
+    _meta: {
+      version,
+      lastUpdated: Date.now(),
+      hydrated: false,
+      performance: {
+        storeSize: 0,
+        lastActionTime: 0,
+        actionCounts: {},
+        renderCounts: {}
+      } as PerformanceMetrics
+    }
+  })
+
+  // Build middleware chain properly
+  let storeCreator = enhancedStoreFunction
 
   // Add immer for immutable updates
-  middlewares.push(immer)
+  storeCreator = immer(storeCreator)
 
-  // Add persistence if storage is specified
-  if (storage !== 'memory') {
-    middlewares.push(
-      persist(
-        (set, get, api) => storeFunction(set, get, api),
-        {
-          name: `appboardguru-${name}`,
-          version,
-          storage: createJSONStorage(() => getStorage()!),
-          migrate,
-          partialize,
-          skipHydration,
-          onRehydrateStorage
-        }
-      )
-    )
-  }
+  // Add subscription middleware for fine-grained subscriptions
+  storeCreator = subscribeWithSelector(storeCreator)
 
   // Add dev tools in development
   if (process.env['NODE_ENV'] === 'development') {
-    middlewares.push(devtools)
+    storeCreator = devtools(storeCreator)
   }
 
-  // Add subscription middleware for fine-grained subscriptions
-  middlewares.push(subscribeWithSelector)
-
-  // Create the store with middleware
-  return create<T>()(
-    // @ts-ignore - Zustand middleware typing is complex
-    ...middlewares,
-    (set, get, api) => ({
-      ...storeFunction(set, get, api),
-      _meta: {
+  // Add persistence if storage is specified
+  if (storage !== 'memory') {
+    storeCreator = persist(
+      storeCreator,
+      {
+        name: `appboardguru-${name}`,
         version,
-        lastUpdated: Date.now(),
-        hydrated: false,
-        performance: {
-          storeSize: 0,
-          lastActionTime: 0,
-          actionCounts: {},
-          renderCounts: {}
-        } as PerformanceMetrics
+        storage: createJSONStorage(() => getStorage()!),
+        migrate,
+        partialize,
+        skipHydration,
+        onRehydrateStorage
       }
-    })
-  )
+    )
+  }
+
+  // Create the store with properly composed middleware
+  return create<T>()(storeCreator as any)
 }
 
 // Utility for creating selectors

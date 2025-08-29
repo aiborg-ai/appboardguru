@@ -3,14 +3,15 @@
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Test Account Access](#test-account-access)
-3. [Getting Started](#getting-started)
-4. [Core Features](#core-features)
-5. [Dashboard Navigation](#dashboard-navigation)
-6. [Key Functionality](#key-functionality)
-7. [Advanced Features](#advanced-features)
-8. [Tips and Best Practices](#tips-and-best-practices)
-9. [Troubleshooting](#troubleshooting)
-10. [Support](#support)
+3. [User Roles & Permissions](#user-roles--permissions)
+4. [Getting Started](#getting-started)
+5. [Core Features](#core-features)
+6. [Dashboard Navigation](#dashboard-navigation)
+7. [Key Functionality](#key-functionality)
+8. [Advanced Features](#advanced-features)
+9. [Tips and Best Practices](#tips-and-best-practices)
+10. [Troubleshooting](#troubleshooting)
+11. [Support](#support)
 
 ---
 
@@ -42,6 +43,266 @@
 - 10+ Board Members
 - Sample meeting schedules and action items
 - Activity logs and analytics data
+
+### Additional Test Accounts (Role Hierarchy)
+- **Admin**: `admin@appboardguru.com` - Full system access
+- **SuperUser**: `superuser@appboardguru.com` - Board administrator
+- **User**: `user@appboardguru.com` - Standard board member
+- **Viewer**: `viewer@appboardguru.com` - Read-only access
+- **Reviewer**: `reviewer@appboardguru.com` - QA tester access
+
+---
+
+## User Roles & Permissions
+
+### Role Hierarchy System
+
+AppBoardGuru implements a comprehensive 5-level role hierarchy to ensure proper access control and security. Each role has specific permissions and capabilities designed for different user types.
+
+#### 1. **Admin** (System Administrator)
+**Highest Level - Full System Control**
+
+**Capabilities:**
+- Complete system configuration and management
+- User account creation, modification, and deletion
+- Organization settings and billing management
+- Access to all boards and committees across the system
+- System-wide configuration and integration settings
+- View comprehensive analytics and audit logs
+- Manage compliance and regulatory settings
+- Configure third-party integrations
+
+**Typical Users:** IT administrators, system managers, platform owners
+
+**Access Includes:**
+- All system settings and configurations
+- User management console
+- Billing and subscription management
+- System-wide analytics dashboard
+- Security and compliance settings
+- API configuration and management
+- Database administration tools
+
+#### 2. **SuperUser** (Board Administrator)
+**Board-Level Administration**
+
+**Capabilities:**
+- Manage boards and committees within their organization
+- Create and configure board meetings
+- Full document access and management rights
+- Approve critical board decisions
+- Configure board-specific settings
+- View board analytics and performance metrics
+- Manage board member permissions
+- Set up voting parameters and workflows
+
+**Typical Users:** Board secretaries, governance officers, board chairs
+
+**Access Includes:**
+- Board creation and configuration
+- Committee management
+- Meeting scheduling and management
+- Document vault administration
+- Board member invitation and management
+- Board-level analytics
+- Voting system configuration
+- Board settings and preferences
+
+**Restrictions:**
+- Cannot modify system-level settings
+- Cannot access other organizations' boards
+- Cannot manage billing or subscriptions
+
+#### 3. **User** (Board Member)
+**Standard Board Participation**
+
+**Capabilities:**
+- Access assigned boards and committees
+- Participate in meetings and discussions
+- Cast votes on board decisions
+- Upload and share documents
+- Collaborate on board materials
+- Use AI assistants for document analysis
+- Access personal dashboard and notifications
+- Participate in board chat and communications
+
+**Typical Users:** Board directors, committee members, executives
+
+**Access Includes:**
+- Assigned boards and committees
+- Meeting participation and voting
+- Document upload and collaboration
+- BoardChat messaging
+- Personal dashboard
+- AI-powered tools
+- Calendar and scheduling
+- Notification preferences
+
+**Restrictions:**
+- Cannot modify board structure or settings
+- Cannot invite new board members
+- Cannot access unassigned boards
+- Cannot configure system settings
+
+#### 4. **Viewer** (Observer/Guest)
+**Read-Only Access**
+
+**Capabilities:**
+- View permitted boards and committees
+- Access meeting recordings and minutes
+- View shared documents (without download rights)
+- Access basic analytics and reports
+- Receive limited notifications
+- Time-limited access options available
+
+**Typical Users:** External advisors, auditors, guests, stakeholders
+
+**Access Includes:**
+- Read-only board content
+- Meeting recordings and minutes
+- Shared document viewing
+- Basic analytics dashboards
+- Limited notification system
+- Public board information
+
+**Restrictions:**
+- Cannot vote or participate in decisions
+- Cannot upload or modify documents
+- Cannot comment or use chat features
+- Cannot download protected documents
+- Time-limited access (configurable)
+- No access to confidential materials
+
+#### 5. **Reviewer** (QA Tester)
+**Quality Assurance and Testing**
+
+**Capabilities:**
+- All Viewer permissions
+- Submit bug reports with screenshots
+- Screen recording for issue documentation
+- Create test data in staging environment
+- View performance metrics and system health
+- Flag UI/UX issues for improvement
+- Direct integration with issue tracking systems
+- Access to staging/test environments
+
+**Typical Users:** QA testers, beta testers, quality assurance team
+
+**Access Includes:**
+- Bug reporting interface
+- Screen recording tools
+- Test data creation tools
+- Performance metrics dashboard
+- Staging environment access
+- Issue tracking integration
+- Testing documentation tools
+- QA-specific dashboards
+
+**Special Features:**
+- Bug severity classification (Critical, High, Medium, Low)
+- Screenshot and video attachment capabilities
+- Reproduction steps documentation
+- Direct link to development issue trackers
+- Performance monitoring tools
+- Test scenario management
+
+### Permission Matrix
+
+| Feature | Admin | SuperUser | User | Viewer | Reviewer |
+|---------|-------|-----------|------|--------|----------|
+| **System Configuration** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **User Management** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Billing Management** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Board Creation** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Board Configuration** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Member Management** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Meeting Scheduling** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Document Upload** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Document Viewing** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Document Download** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Voting** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Chat/Messaging** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **AI Tools** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Analytics (Full)** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Analytics (Basic)** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Bug Reporting** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Test Data Creation** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Performance Metrics** | ✅ | ❌ | ❌ | ❌ | ✅ |
+
+### Role Assignment & Management
+
+#### How Roles are Assigned
+1. **Initial Assignment**: Set during user account creation
+2. **Role Changes**: Must be performed by a higher-level role
+3. **Approval Process**: Admin and SuperUser roles require admin approval
+4. **Audit Trail**: All role changes are logged with timestamp and reason
+
+#### Role Change Hierarchy Rules
+- Users can only modify roles below their level
+- Admins can modify any role
+- SuperUsers can modify User, Viewer, and Reviewer roles
+- Role changes are logged in the audit trail
+- Email notifications sent for role changes
+
+#### Temporary Permissions
+- Custom permissions can be granted temporarily
+- Expiration dates can be set for special access
+- Override permissions for specific scenarios
+- Automatic revocation after expiry
+
+### Security Considerations
+
+#### Role-Based Security Features
+1. **Two-Factor Authentication**
+   - Required for Admin and SuperUser roles
+   - Optional but recommended for User role
+   - Available for all roles
+
+2. **Session Management**
+   - Shorter session timeouts for higher roles
+   - Admin: 2 hours
+   - SuperUser: 4 hours
+   - User: 8 hours
+   - Viewer: 24 hours
+   - Reviewer: 8 hours
+
+3. **Audit Logging**
+   - All actions logged for Admin and SuperUser
+   - Critical actions logged for all roles
+   - Role change history maintained
+   - Access logs retained for compliance
+
+4. **Permission Validation**
+   - Real-time permission checking
+   - Cached permissions with 5-minute TTL
+   - Immediate revocation capability
+   - Cross-organization isolation
+
+### Best Practices for Role Management
+
+1. **Principle of Least Privilege**
+   - Assign the minimum role necessary
+   - Use temporary permissions for special cases
+   - Regular review of user roles
+   - Remove unnecessary elevated permissions
+
+2. **Regular Audits**
+   - Monthly review of Admin and SuperUser accounts
+   - Quarterly review of all user roles
+   - Annual compliance audit
+   - Immediate review after employee changes
+
+3. **Documentation**
+   - Document reason for role assignments
+   - Maintain approval records
+   - Track temporary permission grants
+   - Review audit logs regularly
+
+4. **Training**
+   - Role-specific training for new users
+   - Security awareness for elevated roles
+   - Regular refresher training
+   - Documentation of capabilities and restrictions
 
 ---
 
@@ -554,6 +815,7 @@ Send documents via email:
 ---
 
 *Last Updated: August 2025*
-*Version: 1.0.3*
+*Version: 1.0.4*
+*Role Hierarchy System Added: 5-level permission structure implemented*
 
 For the latest updates and documentation, visit our [Help Center](https://appboardguru.com/help) or contact support@appboardguru.com.
