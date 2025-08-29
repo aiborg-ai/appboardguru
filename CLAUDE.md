@@ -4,6 +4,41 @@
 
 AppBoardGuru is an enterprise-grade board governance platform that has undergone comprehensive refactoring by 5 specialized teams to implement Domain-Driven Design (DDD) architecture with advanced TypeScript patterns, achieving 95%+ type safety and enterprise-ready scalability.
 
+## 🤖 AI Agent System (20 Specialized Agents)
+
+The platform includes a sophisticated AI agent system with 20 specialized agents for collaborative development. Each agent has exclusive ownership of specific areas:
+
+### Quick Agent Reference
+- **DBA-01** (Database Architect): Database schema, migrations, RLS policies
+- **REPO-02** (Repository Guardian): Repository pattern, data access layer
+- **API-03** (API Conductor): REST endpoints, controllers, OpenAPI docs
+- **TYPE-04** (Type Guardian): TypeScript types, interfaces, Zod schemas
+- **INFRA-05** (Infrastructure): DevOps, CI/CD, deployment
+- **BIZ-03** (Business Logic): Service layer, business rules, workflows
+- **STATE-07** (State Manager): Zustand stores, client state
+- **UI-08** (UI Components): React components, Atomic Design
+- **TEST-14** (Test Commander): Testing strategies, coverage
+- **SEC-15** (Security): Authentication, authorization, security
+- **And 10 more specialized agents...**
+
+**Agent Communication**: Use `@agent [ID] "task"` format. Agents hand off tasks following strict boundaries.
+**Agent System Location**: `src/lib/agents/`
+
+## 🔐 User Role Hierarchy (5 Levels)
+
+The platform implements a comprehensive role-based access control system:
+
+1. **Admin**: Full system control, user management, billing
+2. **SuperUser**: Board administration, cannot modify system settings  
+3. **User**: Standard board member with full participation rights
+4. **Viewer**: Read-only access with time limits
+5. **Reviewer**: QA tester with bug reporting and staging access
+
+**Implementation**: 
+- Database: `database/migrations/025-enhanced-role-hierarchy-fixed.sql`
+- Repository: `src/lib/repositories/role-permissions.repository.ts`
+- Service: `src/lib/services/role-management.service.ts`
+
 ## Architecture Overview
 
 ### Core Principles
@@ -82,7 +117,8 @@ src/
 
 **Key Files**:
 - `base.repository.ts` - Base repository with CRUD, transactions, audit logging
-- `user.repository.ts` - User management and authentication  
+- `user.repository.ts` - User management and authentication (enhanced with role methods)
+- `role-permissions.repository.ts` - NEW: Role hierarchy and permissions management
 - `organization.repository.ts` - Organization and membership management
 - `asset.repository.enhanced.ts` - File and asset management
 - `vault.repository.enhanced.ts` - Vault and permission management
@@ -126,6 +162,7 @@ src/
 **Key Files**:
 - `base.service.ts` - Base service with Result pattern and recovery strategies
 - `user.service.ts` - User business operations and profile management
+- `role-management.service.ts` - NEW: Role assignment, validation, and permission checking
 - `organization.service.ts` - Organization management and membership
 - `asset.service.ts` - File processing and management (enhanced)
 - `vault.service.ts` - Secure document vaults (enhanced)
@@ -410,6 +447,19 @@ Run these SQL scripts in Supabase SQL Editor in order:
 - **Real-time feedback** - visual and audio cues for recording state and transcription progress
 
 ## Development Guidelines - Updated for Refactored Architecture
+
+### Agent Collaboration for New Features
+
+When implementing new features, agents should collaborate:
+
+1. **@agent TYPE-04**: Define interfaces and types
+2. **@agent DBA-01**: Design database schema if needed
+3. **@agent REPO-02**: Implement repository methods
+4. **@agent BIZ-03**: Create service layer logic
+5. **@agent API-03**: Expose REST endpoints
+6. **@agent UI-08**: Build UI components
+7. **@agent TEST-14**: Write comprehensive tests
+8. **@agent DOC-20**: Update documentation
 
 ### Adding New Features (Enhanced Process)
 
