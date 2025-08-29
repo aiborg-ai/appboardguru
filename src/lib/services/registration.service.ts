@@ -10,7 +10,7 @@ import { EventEmitter } from 'events';
 import nodemailer from 'nodemailer';
 import { env, getSmtpConfig, getAppUrl } from '@/config/environment';
 import { generateApprovalUrls } from '@/utils/url';
-import { createUserForApprovedRegistration, generatePasswordSetupMagicLink } from '@/lib/supabase-admin';
+import { createUserForApprovedRegistration, generatePasswordSetupMagicLink, supabaseAdmin } from '@/lib/supabase-admin';
 import { createOtpCode } from '@/lib/otp';
 import crypto from 'crypto';
 
@@ -34,7 +34,8 @@ export class RegistrationService extends EventEmitter {
 
   constructor() {
     super();
-    this.registrationRepo = new RegistrationRepository();
+    // Initialize repository with Supabase admin client for service role access
+    this.registrationRepo = new RegistrationRepository(supabaseAdmin);
     this.initializeEmailTransporter();
   }
 

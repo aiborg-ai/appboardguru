@@ -605,6 +605,67 @@ export function withRateLimit(
   }
 }
 
+/**
+ * Simple RateLimiter class for backward compatibility
+ * Wraps the createRateLimiter function with a simpler API
+ */
+export class RateLimiter {
+  private limiter: ReturnType<typeof createRateLimiter>
+  private prefix: string
+  private config: { requests: number; windowMs: number; burst: number }
+  private counters = new Map<string, { count: number; resetTime: number }>()
+
+  constructor(requests: number, burst: number = requests, windowMs: number = 60 * 1000) {
+    this.config = { requests, windowMs, burst }
+    this.limiter = createRateLimiter({
+      requests,
+      windowMs,
+      algorithm: 'token_bucket',
+      burst
+    })
+    this.prefix = `limiter_${requests}_${windowMs}`
+  }
+
+  isAllowed(identifier: string): boolean {
+    // Synchronous check - we'll use a simple in-memory check
+    // Since checkRateLimit is async, we need a sync version
+    // For now, we'll use a simple counter approach
+    return this.checkSync(identifier)
+  }
+
+  private checkSync(identifier: string): boolean {
+    const now = Date.now()
+    const key = `${this.prefix}:${identifier}`
+    const counter = this.counters.get(key)
+
+    if (!counter || now > counter.resetTime) {
+      // Reset or initialize counter
+      this.counters.set(key, {
+        count: 1,
+        resetTime: now + this.config.windowMs
+      })
+      return true
+    }
+
+    if (counter.count >= this.config.requests) {
+      return false
+    }
+
+    counter.count++
+    return true
+  }
+
+  // Clean up old counters periodically
+  cleanup(): void {
+    const now = Date.now()
+    for (const [key, counter] of this.counters.entries()) {
+      if (now > counter.resetTime) {
+        this.counters.delete(key)
+      }
+    }
+  }
+}
+
 // Setup automatic cleanup
 if (typeof setInterval !== 'undefined') {
   setInterval(cleanupRateLimits, 5 * 60 * 1000) // Every 5 minutes

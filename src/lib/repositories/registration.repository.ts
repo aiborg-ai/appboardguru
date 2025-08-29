@@ -8,6 +8,8 @@ import { BaseRepository } from './base.repository';
 import { Result } from './result';
 import { RepositoryError } from './document-errors';
 import type { Database } from '@/types/database';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 // Define the registration request type based on the database schema
 export interface RegistrationRequest {
@@ -45,6 +47,10 @@ export interface UpdateRegistrationStatus {
 
 export class RegistrationRepository extends BaseRepository {
   protected tableName = 'registration_requests';
+
+  constructor(supabase: SupabaseClient<Database>) {
+    super(supabase);
+  }
 
   /**
    * Create a new registration request
@@ -417,5 +423,18 @@ export class RegistrationRepository extends BaseRepository {
         )
       };
     }
+  }
+
+  // Abstract methods implementation
+  protected getEntityName(): string {
+    return 'RegistrationRequest';
+  }
+
+  protected getSearchFields(): string[] {
+    return ['email', 'full_name', 'company', 'position'];
+  }
+
+  protected getTableName(): string {
+    return this.tableName;
   }
 }
