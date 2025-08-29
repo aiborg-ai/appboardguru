@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { useUserOrganizations } from '@/hooks/useOrganizations'
 import { demoOrganizations } from '@/lib/demo/demo-data-provider'
+import { useDemoMode } from '@/contexts/DemoContext'
 
 // Types
 export interface Organization {
@@ -118,8 +119,8 @@ export const useOrganization = () => {
 export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
-  // Check for demo mode
-  const [isDemoMode, setIsDemoMode] = useState(false)
+  // Get demo mode status from DemoContext
+  const isDemoMode = useDemoMode()
   
   // State
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null)
@@ -133,17 +134,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   
   // User and organizations
   const [userId, setUserId] = useState<string>('')
-  
-  // Check for demo mode
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const demoModeActive = urlParams.get('demo') === 'true' || 
-                          localStorage.getItem('boardguru_demo_mode') === 'true' ||
-                          window.location.pathname.startsWith('/demo')
-    setIsDemoMode(demoModeActive)
-  }, [])
+  const [isTestDirector, setIsTestDirector] = useState(false)
   
   // Use demo organizations or real organizations based on mode
+  // Skip the hook entirely in demo mode to prevent API calls
   const { 
     data: realOrganizations = [], 
     isLoading: isLoadingRealOrganizations,
@@ -164,12 +158,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     
   const isLoadingOrganizations = (isDemoMode || isTestDirector) ? false : isLoadingRealOrganizations
 
-  // Supabase client
-  const supabase = createSupabaseBrowserClient()
-
   // Get current user
-  const [isTestDirector, setIsTestDirector] = useState(false)
-  
   useEffect(() => {
     const getUser = async () => {
       // In demo mode, use a demo user ID
@@ -178,7 +167,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
         return
       }
       
-      // Normal user authentication for non-demo mode
+      // Normal user authentication for non-demo mode - only create client if not in demo mode
+      const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
@@ -189,7 +179,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
     getUser()
-  }, [supabase, isDemoMode])
+  }, [isDemoMode])
 
   // Load user's default organization from localStorage or set first available
   useEffect(() => {

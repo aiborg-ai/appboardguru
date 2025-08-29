@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
+import { useDemoMode, useDemo } from '@/contexts/DemoContext'
 import EnhancedSidebar from './EnhancedSidebar'
 import RightPanel from '@/features/shared/components/RightPanel'
 import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'
@@ -21,6 +22,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   
+  // Get demo mode status from context
+  const isDemoMode = useDemoMode()
+  const { demoUser } = useDemo()
+  
   // Right panel state - ensure panel is closed by default
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'ai-chat' | 'logs' | 'fyi'>('ai-chat')
@@ -30,34 +35,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     checkUser()
-  }, [])
+  }, [isDemoMode])
 
   const checkUser = async () => {
     try {
-      // Check if we're in demo mode first
-      const urlParams = new URLSearchParams(window.location.search)
-      const isDemoMode = urlParams.get('demo') === 'true' || 
-                        localStorage.getItem('boardguru_demo_mode') === 'true' ||
-                        window.location.pathname.startsWith('/demo')
-      
       console.log('[DashboardLayout] Demo mode check:', {
-        urlParam: urlParams.get('demo'),
-        localStorage: localStorage.getItem('boardguru_demo_mode'),
-        pathname: window.location.pathname,
-        isDemoMode
+        isDemoMode,
+        demoUser,
+        pathname: window.location.pathname
       })
       
-      if (isDemoMode) {
-        console.log('[DashboardLayout] Demo mode activated, creating demo user')
-        // Create a mock demo user for demo mode
-        const demoUser = {
-          id: 'demo-user-001',
-          email: 'demo@boardguru.ai',
+      if (isDemoMode && demoUser) {
+        console.log('[DashboardLayout] Demo mode activated, using demo user from context')
+        // Use the demo user from context
+        const mockUser = {
+          id: demoUser.id,
+          email: demoUser.email,
           user_metadata: {
-            name: 'Alex Thompson',
-            role: 'Board Director',
-            organization: 'TechCorp Solutions',
-            avatar: '/demo-avatar.png'
+            name: demoUser.name,
+            role: demoUser.role,
+            organization: demoUser.organization,
+            avatar: demoUser.avatar
           },
           app_metadata: {
             provider: 'demo',
@@ -69,15 +67,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           role: 'authenticated'
         }
         
-        setUser(demoUser)
+        setUser(mockUser)
         setIsLoading(false)
-        
-        // Start tour if specified in URL
-        if (urlParams.get('tour') === 'true') {
-          // Tour will be handled by demo tour component
-          console.log('Demo mode activated with tour')
-        }
-        
         return
       }
       
