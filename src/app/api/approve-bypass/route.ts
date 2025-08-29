@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getAppUrl } from '@/config/environment'
+import { getAppUrl, env, getSmtpConfig, isEmailServiceConfigured } from '@/config/environment'
+import nodemailer from 'nodemailer'
+import { createOtpCode } from '@/lib/otp'
+import { generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
 
 /**
  * Bypass approval route that approves without creating user

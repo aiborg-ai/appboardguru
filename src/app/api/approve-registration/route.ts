@@ -10,6 +10,7 @@ import {
   addSecurityHeaders,
   validateRequestMethod
 } from '@/lib/api-response'
+import { debugLogger } from '@/lib/debug-logger'
 
 async function handleApprovalRequest(request: NextRequest) {
   // Validate request method
@@ -229,9 +230,6 @@ async function handleApprovalRequest(request: NextRequest) {
       }
       
     } catch (authError) {
-      // Import debug logger in catch block too
-      const { debugLogger } = await import('@/lib/debug-logger')
-      
       debugLogger.error('AUTH_USER_CREATION_EXCEPTION', (registrationRequest as any).email, {
         error: authError instanceof Error ? authError.message : authError,
         registrationId: (registrationRequest as any).id
@@ -246,7 +244,15 @@ async function handleApprovalRequest(request: NextRequest) {
 
     // Send approval email to the user
     try {
-      const transporter = nodemailer.createTransport(getSmtpConfig())
+      const smtpConfig = getSmtpConfig()
+      if (!smtpConfig) {
+        console.error('❌ Email service not configured - approval email will not be sent')
+        console.log('📧 User should be notified manually about approval')
+        console.log(`   Email: ${(registrationRequest as any).email}`)
+        console.log(`   OTP Code: ${otpCode || 'Not generated'}`)
+        // Continue without sending email - user can still login
+      } else {
+        const transporter = nodemailer.createTransport(smtpConfig)
 
       const approvalEmailHTML = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
@@ -355,14 +361,15 @@ async function handleApprovalRequest(request: NextRequest) {
         </div>
       `
 
-      await transporter.sendMail({
-        from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
-        to: (registrationRequest as any).email,
-        subject: '🎉 BoardGuru Registration Approved - Welcome!',
-        html: approvalEmailHTML,
-      })
+        await transporter.sendMail({
+          from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
+          to: (registrationRequest as any).email,
+          subject: '🎉 BoardGuru Registration Approved - Welcome!',
+          html: approvalEmailHTML,
+        })
 
-      console.log(`✅ Approval email sent to ${(registrationRequest as any).email}`)
+        console.log(`✅ Approval email sent to ${(registrationRequest as any).email}`)
+      }
     } catch (emailError) {
       console.error('Failed to send approval email:', emailError)
       // Don't fail the approval process if email fails

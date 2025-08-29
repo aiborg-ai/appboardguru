@@ -113,18 +113,37 @@ export function isDevelopment(): boolean {
 }
 
 /**
- * Get SMTP configuration
+ * Get SMTP configuration with validation
  */
 export function getSmtpConfig() {
+  // Validate required SMTP configuration
+  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
+    console.error('⚠️  SMTP configuration incomplete:', {
+      SMTP_HOST: env.SMTP_HOST ? '✅' : '❌ Missing',
+      SMTP_USER: env.SMTP_USER ? '✅' : '❌ Missing',
+      SMTP_PASS: env.SMTP_PASS ? '✅' : '❌ Missing',
+      SMTP_PORT: env.SMTP_PORT || '587 (default)'
+    })
+    // Return null to indicate email service is not available
+    return null
+  }
+  
   return {
     host: env.SMTP_HOST,
-    port: parseInt(env.SMTP_PORT),
+    port: parseInt(env.SMTP_PORT || '587'),
     secure: env.SMTP_PORT === '465', // true for 465, false for other ports
     auth: {
       user: env.SMTP_USER,
       pass: env.SMTP_PASS,
     },
   }
+}
+
+/**
+ * Check if email service is configured
+ */
+export function isEmailServiceConfigured(): boolean {
+  return !!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS)
 }
 
 /**
