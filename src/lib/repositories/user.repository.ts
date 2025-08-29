@@ -1,9 +1,12 @@
 import { BaseRepository } from './base.repository'
+import { Result } from './result'
+import { RepositoryError } from './document-errors'
 import type { Database } from '../../types/database'
 
 type User = Database['public']['Tables']['users']['Row']
 type UserInsert = Database['public']['Tables']['users']['Insert']
 type UserUpdate = Database['public']['Tables']['users']['Update']
+type UserRole = 'admin' | 'superuser' | 'user' | 'viewer' | 'reviewer' | 'pending'
 
 export class UserRepository extends BaseRepository {
   async findById(id: string): Promise<User | null> {
