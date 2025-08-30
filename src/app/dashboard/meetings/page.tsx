@@ -3,7 +3,7 @@
 // Force dynamic rendering to prevent static generation issues
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,8 @@ import {
   Eye,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip';
@@ -35,8 +36,9 @@ import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle';
 import { MeetingCardsView } from '@/features/meetings/components/views/MeetingCardsView';
 import { MeetingListView } from '@/features/meetings/components/views/MeetingListView';
 import { MeetingDetailsView } from '@/features/meetings/components/views/MeetingDetailsView';
+import { useMeetings } from '@/hooks/useMeetings';
 
-// Mock meeting data
+// Mock meeting data (keeping as fallback)
 const MOCK_MEETINGS = [
   {
     id: '1',
@@ -141,13 +143,44 @@ export default function MeetingsPage() {
   const { currentOrganization } = useOrganization();
   const router = useRouter();
 
-  const filteredMeetings = MOCK_MEETINGS.filter(meeting => {
+  // Fetch meetings using the hook
+  const { data: meetingsResponse, isLoading, error } = useMeetings({
+    organizationId: currentOrganization?.id,
+    status: filterStatus !== 'all' ? filterStatus : undefined,
+    type: filterType !== 'all' ? filterType : undefined,
+  });
+
+  // Use real data if available, otherwise fall back to mock data
+  const meetings = meetingsResponse?.data || [];
+  
+  // Transform data to match the expected format for components
+  const transformedMeetings = meetings.map(meeting => ({
+    id: meeting.id,
+    title: meeting.title,
+    description: meeting.description || '',
+    meetingType: meeting.meeting_type,
+    status: meeting.status,
+    scheduledStart: meeting.scheduled_start,
+    scheduledEnd: meeting.scheduled_end,
+    location: meeting.location,
+    virtualMeetingUrl: meeting.virtual_meeting_url,
+    attendeeCount: meeting.attendee_count,
+    rsvpCount: meeting.rsvp_count,
+    agendaItemCount: meeting.agenda_item_count,
+    documentCount: meeting.document_count,
+    organizer: meeting.organizer ? {
+      name: meeting.organizer.email?.split('@')[0] || 'Unknown',
+      email: meeting.organizer.email || ''
+    } : {
+      name: 'Unknown',
+      email: ''
+    }
+  }));
+
+  const filteredMeetings = transformedMeetings.filter(meeting => {
     const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          meeting.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || meeting.status === filterStatus;
-    const matchesType = filterType === 'all' || meeting.meetingType === filterType;
-    
-    return matchesSearch && matchesStatus && matchesType;
+    return matchesSearch;
   });
 
   const handleCreateMeeting = () => {
@@ -245,7 +278,11 @@ export default function MeetingsPage() {
               <div>
                 <p className="text-sm text-gray-600">Scheduled</p>
                 <p className="text-2xl font-bold">
-                  {MOCK_MEETINGS.filter(m => m.status === 'scheduled').length}
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    transformedMeetings.filter(m => m.status === 'scheduled').length
+                  )}
                 </p>
               </div>
             </div>
@@ -259,7 +296,11 @@ export default function MeetingsPage() {
               <div>
                 <p className="text-sm text-gray-600">Total Attendees</p>
                 <p className="text-2xl font-bold">
-                  {MOCK_MEETINGS.reduce((sum, m) => sum + m.attendeeCount, 0)}
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    transformedMeetings.reduce((sum, m) => sum + m.attendeeCount, 0)
+                  )}
                 </p>
               </div>
             </div>
@@ -273,7 +314,11 @@ export default function MeetingsPage() {
               <div>
                 <p className="text-sm text-gray-600">Completed</p>
                 <p className="text-2xl font-bold">
-                  {MOCK_MEETINGS.filter(m => m.status === 'completed').length}
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    transformedMeetings.filter(m => m.status === 'completed').length
+                  )}
                 </p>
               </div>
             </div>
@@ -286,7 +331,17 @@ export default function MeetingsPage() {
               <Clock className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600">This Month</p>
-                <p className="text-2xl font-bold">6</p>
+                <p className="text-2xl font-bold">
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    transformedMeetings.filter(m => {
+                      const meetingMonth = new Date(m.scheduledStart).getMonth();
+                      const currentMonth = new Date().getMonth();
+                      return meetingMonth === currentMonth;
+                    }).length
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>

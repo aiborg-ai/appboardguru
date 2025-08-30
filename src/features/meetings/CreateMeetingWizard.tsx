@@ -64,6 +64,8 @@ export interface MeetingWizardData {
   meetingType: MeetingType;
   title: string;
   description: string;
+  boardId?: string;
+  committeeId?: string;
 
   // Step 2: Agenda & Documents
   agendaItems: Array<{
@@ -98,10 +100,12 @@ export interface MeetingWizardData {
   invitees: Array<{
     userId?: string;
     email: string;
-    fullName: string;
+    name: string;
+    fullName?: string; // Keeping for backward compatibility
     role: AttendeeRole;
     isRequired: boolean;
-    isOrganizer: boolean;
+    isOrganizer?: boolean;
+    canVote?: boolean;
   }>;
 
   // Step 5: Review & Broadcast
