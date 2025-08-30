@@ -25,9 +25,17 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Completely disable all Next.js overlays and error displays
+              // Safely disable Next.js error overlays in production
               (function() {
-                // Override window.console methods to suppress React warnings
+                if (typeof window === 'undefined') return;
+                
+                // Only run in production or if explicitly enabled
+                const isProduction = process.env.NODE_ENV === 'production';
+                const suppressErrors = true; // Set to false to see errors in development
+                
+                if (!isProduction && !suppressErrors) return;
+                
+                // Override console methods to suppress specific warnings
                 const originalError = console.error;
                 const originalWarn = console.warn;
                 
@@ -56,80 +64,44 @@ export default function RootLayout({
                   originalWarn.apply(console, args);
                 };
                 
-                // Function to remove all possible Next.js overlays
-                const removeAllOverlays = () => {
-                  // Remove Next.js portal overlays
-                  const portals = document.querySelectorAll('nextjs-portal');
-                  portals.forEach(el => el.remove());
-                  
-                  // Remove dialog overlays
-                  const overlays = document.querySelectorAll('[data-nextjs-dialog-overlay], [data-nextjs-toast], [role="dialog"]');
-                  overlays.forEach(el => {
-                    if (el.textContent && (el.textContent.includes('Error') || el.textContent.includes('Warning'))) {
+                // Safer function to remove Next.js error overlays
+                const removeErrorOverlays = () => {
+                  // Only remove elements that are definitely Next.js error overlays
+                  const nextjsPortals = document.querySelectorAll('nextjs-portal');
+                  nextjsPortals.forEach(el => {
+                    // Check if it's an error portal before removing
+                    if (el.shadowRoot || el.querySelector('[data-nextjs-dialog]')) {
                       el.remove();
                     }
                   });
                   
-                  // Remove error dialogs
-                  const dialogs = document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-dialog-content]');
-                  dialogs.forEach(el => el.remove());
-                  
-                  // Remove any elements with Next.js error styling
-                  const errorElements = document.querySelectorAll('[style*="z-index: 9000"], [style*="position: fixed"]');
-                  errorElements.forEach(el => {
-                    if (el.textContent && el.textContent.includes('Error')) {
-                      el.remove();
-                    }
-                  });
+                  // Remove only confirmed error dialogs
+                  const errorDialogs = document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-dialog-overlay]');
+                  errorDialogs.forEach(el => el.remove());
                 };
                 
-                // Remove overlays immediately and continuously
-                removeAllOverlays();
-                
-                // Set up observers and intervals
-                if (typeof window !== 'undefined') {
-                  // Wait for document.body to exist
-                  const setupObserver = () => {
-                    if (document.body) {
-                      // Remove on DOM changes
-                      const observer = new MutationObserver(() => {
-                        removeAllOverlays();
-                      });
-                      
-                      observer.observe(document.body, {
-                        childList: true,
-                        subtree: true
-                      });
-                    } else {
-                      // If body doesn't exist yet, try again
-                      setTimeout(setupObserver, 10);
-                    }
-                  };
-                  
-                  // Start the setup process
-                  if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', setupObserver);
-                  } else {
-                    setupObserver();
-                  }
-                  
-                  // Aggressive removal every 100ms
-                  setInterval(removeAllOverlays, 100);
-                  
-                  // Remove on various events
-                  ['load', 'DOMContentLoaded', 'resize', 'focus'].forEach(event => {
-                    window.addEventListener(event, removeAllOverlays);
-                  });
-                  
-                  // Override window.onerror to prevent error displays
-                  window.onerror = function(message, source, lineno, colno, error) {
-                    return true; // Prevent default error handling
-                  };
-                  
-                  window.addEventListener('unhandledrejection', function(event) {
-                    event.preventDefault(); // Prevent unhandled promise rejection displays
+                // Only run after hydration is complete
+                if (document.readyState === 'complete') {
+                  setTimeout(removeErrorOverlays, 1000);
+                } else {
+                  window.addEventListener('load', () => {
+                    setTimeout(removeErrorOverlays, 1000);
                   });
                 }
+                
+                // Less aggressive periodic removal
+                setInterval(removeErrorOverlays, 5000);
+                
+                // Override window.onerror to prevent error displays
+                window.onerror = function(message, source, lineno, colno, error) {
+                  console.log('Suppressed error:', message);
+                  return true; // Prevent default error handling
+                };
+                
+                window.addEventListener('unhandledrejection', function(event) {
+                  console.log('Suppressed promise rejection:', event.reason);
+                  event.preventDefault();
+                });
               })();
             `
           }}

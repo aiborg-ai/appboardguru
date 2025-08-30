@@ -42,6 +42,8 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
       
       if (!user) return;
 
+      console.log('Loading organizations for user:', user.id, user.email);
+
       const { data: orgMembers } = await supabase
         .from('organization_members')
         .select(`
@@ -50,6 +52,12 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
         .eq('user_id', user.id)
         .eq('status', 'active');
 
+      console.log('Organization members query result:', {
+        orgMembers,
+        count: orgMembers?.length,
+        raw: JSON.stringify(orgMembers, null, 2)
+      });
+
       if (orgMembers) {
         const orgs = orgMembers
           .map(m => m.organization)
@@ -57,7 +65,11 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
         setOrganizations(orgs);
       }
     } catch (error) {
-      console.error('Error loading organizations:', error);
+      console.error('Error loading organizations:', {
+        error,
+        userId: user?.id,
+        userEmail: user?.email
+      });
     } finally {
       setLoading(false);
     }
@@ -106,6 +118,28 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
           Choose an existing organization or create a new one for your vault
         </p>
       </div>
+
+      {process.env.NODE_ENV === 'development' && organizations.length === 0 && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800 mb-2">
+            No organizations found. This might be because the test data hasn't been seeded.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const response = await fetch('/api/seed-organizations', {
+                method: 'POST'
+              });
+              const data = await response.json();
+              console.log('Seed result:', data);
+              loadOrganizations(); // Refresh the list
+            }}
+          >
+            Seed Test Organizations
+          </Button>
+        </div>
+      )}
 
       {!showCreateForm ? (
         <>

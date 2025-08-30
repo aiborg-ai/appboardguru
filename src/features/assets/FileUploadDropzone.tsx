@@ -971,6 +971,15 @@ export function FileUploadDropzone({
     }
   }
 
+  // Handle drop with announcements
+  const handleDropWithAnnouncement = useCallback((e: React.DragEvent) => {
+    handleDrop(e)
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    if (droppedFiles.length > 0) {
+      announce(`Dropped ${droppedFiles.length} file${droppedFiles.length > 1 ? 's' : ''} for upload`)
+    }
+  }, [handleDrop, announce])
+
   // Handle upload with announcements
   const handleUploadWithAnnouncement = async () => {
     const pendingCount = files.filter(f => f.status === 'pending').length
@@ -1220,7 +1229,7 @@ export function FileUploadDropzone({
             Use arrow keys to navigate files, Enter or Space to preview images, Delete to remove files, Escape to return to upload area
           </p>
           
-          {files.map((fileItem) => {
+          {files.map((fileItem, index) => {
             const FileIcon = getFileIcon(fileItem.file.type)
             
             return (

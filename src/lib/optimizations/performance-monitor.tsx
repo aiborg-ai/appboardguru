@@ -3,6 +3,7 @@
  * Comprehensive performance tracking based on Web Vitals and custom metrics
  */
 
+import React, { useEffect } from 'react';
 import { Metric } from 'next/dist/compiled/web-vitals';
 
 export interface PerformanceMetrics {

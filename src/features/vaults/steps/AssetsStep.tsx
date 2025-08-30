@@ -20,6 +20,8 @@ import {
 import { VaultWizardData } from '../CreateVaultWizard';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
+import { FileUploadDropzone } from '@/features/assets/FileUploadDropzone';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AssetsStepProps {
   data: VaultWizardData;
@@ -31,6 +33,8 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAssets();
@@ -42,6 +46,11 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) return;
+
+      // Get organization ID from selected organization
+      if (data.selectedOrganization) {
+        setOrganizationId(data.selectedOrganization.id);
+      }
 
       const { data: userAssets } = await supabase
         .from('assets')
@@ -58,6 +67,12 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUploadComplete = (uploadedFiles: any[]) => {
+    // Reload assets after successful upload
+    loadAssets();
+    setShowUploadDialog(false);
   };
 
   const getFileIcon = (fileType?: string) => {
@@ -159,13 +174,23 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
 
       {filteredAssets.length > 0 && (
         <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectAll}
-          >
-            {data.selectedAssets.length === filteredAssets.length ? 'Deselect All' : 'Select All'}
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSelectAll}
+            >
+              {data.selectedAssets.length === filteredAssets.length ? 'Deselect All' : 'Select All'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowUploadDialog(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload More
+            </Button>
+          </div>
           <p className="text-sm text-gray-600">
             {data.selectedAssets.length} of {filteredAssets.length} selected
           </p>
@@ -182,7 +207,10 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
             <p className="text-sm text-gray-600 mb-4">
               You haven't uploaded any assets yet. Upload some files first or skip this step.
             </p>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => setShowUploadDialog(true)}
+            >
               Upload Files
             </Button>
           </CardContent>
@@ -254,6 +282,23 @@ export default function AssetsStep({ data, onUpdate }: AssetsStepProps) {
           </div>
         </div>
       )}
+
+      {/* File Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Upload Files</DialogTitle>
+          </DialogHeader>
+          <FileUploadDropzone
+            onUploadComplete={handleUploadComplete}
+            organizationId={organizationId || undefined}
+            vaultId={undefined} // Not creating vault yet
+            showCollaborationHub={false}
+            maxFiles={10}
+            className="mt-4"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

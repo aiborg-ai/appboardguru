@@ -50,10 +50,14 @@ function generateReferenceId(): string {
 
 
 export async function POST(request: NextRequest) {
+  console.log('[Feedback API] Starting feedback submission')
+  
   try {
     const supabase = await createSupabaseServerClient()
-    // Parse request body
+    
+    // Parse request body first (before auth check for better error messages)
     const body = await request.json()
+    console.log('[Feedback API] Received feedback type:', body.type)
     
     // Validate input
     const validation = feedbackSchema.safeParse(body)
@@ -66,17 +70,59 @@ export async function POST(request: NextRequest) {
 
     const { type, title, description, screenshot } = validation.data
 
-    // Get authenticated user from session
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+    // Get authenticated user from session with proper error handling
+    let user = null
+    let userEmail = ''
+    let userName = ''
+    
+    try {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError) {
+        console.error('[Feedback API] Auth error:', authError.message)
+        
+        // Check if we're in demo mode or development
+        if (process.env['NODE_ENV'] === 'development' || process.env['NEXT_PUBLIC_DEMO_MODE'] === 'true') {
+          console.log('[Feedback API] Using demo fallback for feedback submission')
+          // Allow submission with mock user in demo/dev mode
+          userEmail = 'demo.user@appboardguru.com'
+          userName = 'Demo User'
+          user = { id: 'demo-user-id', email: userEmail } as any
+        } else {
+          return NextResponse.json(
+            { error: 'Session expired. Please refresh the page and try again.' },
+            { status: 401 }
+          )
+        }
+      } else if (!authUser) {
+        console.log('[Feedback API] No authenticated user found')
+        return NextResponse.json(
+          { error: 'Please sign in to submit feedback.' },
+          { status: 401 }
+        )
+      } else {
+        user = authUser
+        userEmail = user.email || ''
+        userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+        console.log('[Feedback API] Authenticated user:', userEmail)
+      }
+    } catch (authCheckError) {
+      console.error('[Feedback API] Error checking authentication:', authCheckError)
+      // Continue with demo user in development
+      if (process.env['NODE_ENV'] === 'development') {
+        userEmail = 'demo.user@appboardguru.com'
+        userName = 'Demo User'
+        user = { id: 'demo-user-id', email: userEmail } as any
+      } else {
+        return NextResponse.json(
+          { error: 'Authentication service unavailable. Please try again later.' },
+          { status: 503 }
+        )
+      }
     }
 
     // Check rate limiting
-    if (!checkRateLimit(user.email!)) {
+    if (!checkRateLimit(userEmail)) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please wait before submitting more feedback.' },
         { status: 429 }
@@ -109,16 +155,22 @@ export async function POST(request: NextRequest) {
       type,
       title,
       description,
-      userEmail: user.email!,
-      userName: user.user_metadata?.full_name || user.email!.split('@')[0],
+      userEmail,
+      userName,
       screenshot: screenshot ?? '',
       timestamp,
       userAgent: userAgent ?? '',
       url: referer ?? ''
     }
 
-    // Initialize notification service
-    const notificationService = new NotificationService(supabase)
+    // Initialize notification service with error handling
+    let notificationService: NotificationService | null = null
+    try {
+      notificationService = new NotificationService(supabase)
+    } catch (serviceError) {
+      console.error('[Feedback API] Failed to initialize notification service:', serviceError)
+      // Continue without email notifications
+    }
 
     // Create admin email
     const adminTemplate = createAdminFeedbackTemplate(feedbackData)
@@ -144,83 +196,228 @@ export async function POST(request: NextRequest) {
       referenceId
     })
 
-    // Send emails
-    const adminEmailPromise = notificationService.sendEmail(
-      'hirendra.vikram@boardguru.ai',
-      {
-        subject: adminTemplate.subject,
-        html: adminTemplate.html,
-        text: adminTextFallback
-      },
-      'feedback'
-    )
-
-    const userEmailPromise = notificationService.sendEmail(
-      user.email!,
-      {
-        subject: confirmationTemplate.subject,
-        html: confirmationTemplate.html,
-        text: confirmationTextFallback
-      },
-      'feedback_confirmation'
-    )
-
-    // Send both emails in parallel
-    const [adminEmailSent, userEmailSent] = await Promise.all([
-      adminEmailPromise,
-      userEmailPromise
-    ])
-
-    // Log the feedback submission (optional - store in database for tracking)
-    try {
-      await supabase
-        .from('feedback_submissions')
-        .insert({
-          reference_id: referenceId,
-          user_id: user.id,
-          user_email: user.email,
-          type,
-          title,
-          description,
-          screenshot_included: !!screenshot,
-          user_agent: userAgent,
-          page_url: referer,
-          admin_email_sent: adminEmailSent,
-          user_email_sent: userEmailSent,
-          created_at: timestamp
-        })
-    } catch (dbError) {
-      console.warn('Failed to log feedback to database:', dbError)
-      // Continue anyway - email sending is the critical part
+    // Send emails with fallback handling
+    let adminEmailSent = false
+    let userEmailSent = false
+    
+    if (notificationService) {
+      try {
+        // Try to send emails but don't fail if they don't work
+        const emailPromises = []
+        
+        // Admin email
+        emailPromises.push(
+          notificationService.sendEmail(
+            'hirendra.vikram@boardguru.ai',
+            {
+              subject: adminTemplate.subject,
+              html: adminTemplate.html,
+              text: adminTextFallback
+            },
+            'feedback'
+          ).catch(err => {
+            console.error('[Feedback API] Admin email failed:', err)
+            return false
+          })
+        )
+        
+        // User confirmation email
+        if (userEmail && userEmail !== 'demo.user@appboardguru.com') {
+          emailPromises.push(
+            notificationService.sendEmail(
+              userEmail,
+              {
+                subject: confirmationTemplate.subject,
+                html: confirmationTemplate.html,
+                text: confirmationTextFallback
+              },
+              'feedback_confirmation'
+            ).catch(err => {
+              console.error('[Feedback API] User email failed:', err)
+              return false
+            })
+          )
+        } else {
+          emailPromises.push(Promise.resolve(false))
+        }
+        
+        const results = await Promise.all(emailPromises)
+        adminEmailSent = results[0]
+        userEmailSent = results[1]
+        
+        console.log('[Feedback API] Email status - Admin:', adminEmailSent, 'User:', userEmailSent)
+      } catch (emailError) {
+        console.error('[Feedback API] Email sending error:', emailError)
+        // Continue without emails
+      }
     }
 
-    // Create response
-    const response = {
+    // Store feedback in database with comprehensive error handling
+    let dbSaveSuccess = false
+    let dbError: any = null
+    
+    try {
+      // First check if table exists
+      const { error: tableCheckError } = await supabase
+        .from('feedback_submissions')
+        .select('id')
+        .limit(1)
+      
+      if (tableCheckError && tableCheckError.code === '42P01') {
+        console.error('[Feedback API] Table feedback_submissions does not exist')
+        dbError = 'Database table not configured'
+      } else {
+        // Try to insert the feedback
+        const { error: insertError } = await supabase
+          .from('feedback_submissions')
+          .insert({
+            reference_id: referenceId,
+            user_id: user?.id === 'demo-user-id' ? null : user?.id,
+            user_email: userEmail,
+            type,
+            title,
+            description,
+            screenshot_included: !!screenshot,
+            user_agent: userAgent,
+            page_url: referer,
+            admin_email_sent: adminEmailSent,
+            user_email_sent: userEmailSent,
+            created_at: timestamp
+          })
+        
+        if (insertError) {
+          console.error('[Feedback API] Database insert error:', insertError)
+          dbError = insertError.message
+          
+          // If it's a permissions error, try without user_id
+          if (insertError.code === '42501' || insertError.message?.includes('permission')) {
+            console.log('[Feedback API] Retrying without user_id due to permission error')
+            const { error: retryError } = await supabase
+              .from('feedback_submissions')
+              .insert({
+                reference_id: referenceId,
+                user_id: null,
+                user_email: userEmail,
+                type,
+                title,
+                description,
+                screenshot_included: !!screenshot,
+                user_agent: userAgent,
+                page_url: referer,
+                admin_email_sent: adminEmailSent,
+                user_email_sent: userEmailSent,
+                created_at: timestamp
+              })
+            
+            if (retryError) {
+              console.error('[Feedback API] Retry also failed:', retryError)
+            } else {
+              dbSaveSuccess = true
+              dbError = null
+            }
+          }
+        } else {
+          dbSaveSuccess = true
+          console.log('[Feedback API] Feedback saved to database successfully')
+        }
+      }
+    } catch (dbException) {
+      console.error('[Feedback API] Database operation failed:', dbException)
+      dbError = dbException instanceof Error ? dbException.message : 'Database error'
+    }
+    
+    // Store feedback locally as backup if database fails
+    if (!dbSaveSuccess) {
+      try {
+        // In production, you might want to store this in Redis or a queue
+        console.log('[Feedback API] Storing feedback in fallback storage')
+        // For now, just log the complete feedback for manual recovery
+        console.log('[Feedback API] Fallback storage:', JSON.stringify({
+          referenceId,
+          feedbackData,
+          dbError
+        }))
+      } catch (fallbackError) {
+        console.error('[Feedback API] Fallback storage also failed:', fallbackError)
+      }
+    }
+
+    // Determine overall success
+    // Consider it successful if we at least stored the feedback somewhere
+    const overallSuccess = dbSaveSuccess || adminEmailSent
+    
+    if (!overallSuccess) {
+      // If nothing worked, return an error but with the reference ID
+      return NextResponse.json(
+        {
+          success: false,
+          referenceId,
+          error: 'Failed to submit feedback. Please try again or contact support with reference: ' + referenceId,
+          details: process.env['NODE_ENV'] === 'development' ? {
+            dbError,
+            emailStatus: { admin: adminEmailSent, user: userEmailSent }
+          } : undefined
+        },
+        { status: 500 }
+      )
+    }
+    
+    // Create response with appropriate warnings
+    const response: any = {
       success: true,
       referenceId,
-      message: 'Feedback submitted successfully',
+      message: 'Feedback received successfully',
       emailsSent: {
         admin: adminEmailSent,
         user: userEmailSent
       }
     }
-
-    // Add warnings if emails failed
-    if (!adminEmailSent || !userEmailSent) {
-      response.message += '. Note: Some email notifications may have failed to send.'
+    
+    // Add specific status messages
+    if (!dbSaveSuccess) {
+      response.message = 'Feedback received and will be processed. Reference: ' + referenceId
+      response.warning = 'Some features may be limited. Your feedback has been logged for review.'
+    } else if (!adminEmailSent && !userEmailSent) {
+      response.message = 'Feedback saved successfully. Reference: ' + referenceId
+      response.warning = 'Email notifications are currently unavailable.'
+    } else if (!userEmailSent) {
+      response.message = 'Feedback submitted successfully. Reference: ' + referenceId
+      response.warning = 'Confirmation email could not be sent.'
     }
-
+    
+    console.log('[Feedback API] Final response:', response)
     return NextResponse.json(response, { status: 200 })
 
   } catch (error) {
-    console.error('Feedback submission error:', error)
+    console.error('[Feedback API] Unexpected error:', error)
+    
+    // Try to provide a more helpful error message
+    let errorMessage = 'An error occurred while submitting your feedback.'
+    let statusCode = 500
+    
+    if (error instanceof Error) {
+      if (error.message.includes('auth') || error.message.includes('session')) {
+        errorMessage = 'Session expired. Please refresh the page and try again.'
+        statusCode = 401
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = 'Too many requests. Please wait a moment and try again.'
+        statusCode = 429
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.'
+        statusCode = 503
+      }
+    }
     
     return NextResponse.json(
       { 
-        error: 'Internal server error. Please try again later.',
-        details: process.env['NODE_ENV'] === 'development' ? error instanceof Error ? error.message : String(error) : undefined
+        error: errorMessage,
+        details: process.env['NODE_ENV'] === 'development' ? {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        } : undefined,
+        timestamp: new Date().toISOString()
       },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }
