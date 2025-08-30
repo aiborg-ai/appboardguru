@@ -4,17 +4,22 @@
 
 The meeting creation system requires database tables to be created in Supabase. Please follow these steps:
 
-## ⚠️ ERROR ENCOUNTERED: Type Already Exists
+## ⚠️ ERRORS ENCOUNTERED
 
-If you see the error `type "meeting_type" already exists`, use the fixed migration instead:
+### Error 1: "type 'meeting_type' already exists"
+### Error 2: "relation 'boards' does not exist"
 
-## Step 1: Apply the Fixed Migration
+**Solution: Use the complete migration with all dependencies**
+
+## Step 1: Apply the Complete Migration
 
 1. Go to your Supabase Dashboard: https://supabase.com/dashboard/project/pgeuvjihhfmzqymoygwb
 2. Navigate to the **SQL Editor** section
-3. Open the **FIXED** migration file: `/home/vik/appboardguru2/supabase/migrations/20250830_fix_meetings_migration.sql`
-   - This version handles existing types and tables safely
-   - It will drop and recreate tables if they exist (be careful in production!)
+3. Open the **COMPLETE** migration file: `/home/vik/appboardguru2/supabase/migrations/20250830_complete_meetings_with_dependencies.sql`
+   - This version creates ALL necessary tables including organizations, boards, committees
+   - It handles existing types and tables safely
+   - It includes sample data for testing
+   - It will drop and recreate meeting tables if they exist (be careful in production!)
 4. Copy the entire SQL content
 5. Paste it into the Supabase SQL Editor
 6. Click **Run** to execute the migration
