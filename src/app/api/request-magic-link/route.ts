@@ -64,7 +64,31 @@ async function handleMagicLinkRequest(request: NextRequest) {
 
     // Send magic link email
     try {
-      const transporter = nodemailer.createTransport(getSmtpConfig())
+      // Validate SMTP configuration before proceeding
+      const smtpConfig = getSmtpConfig()
+      if (!smtpConfig) {
+        console.error('❌ SMTP configuration not available - cannot send magic link email')
+        return createErrorResponse('Email service is not available. Please contact support.', 500)
+      }
+
+      console.log('🔧 Creating email transporter with config:', {
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.secure,
+        auth: { user: smtpConfig.auth.user, hasPassword: !!smtpConfig.auth.pass }
+      })
+
+      const transporter = nodemailer.createTransport(smtpConfig)
+
+      // Verify SMTP connection before sending
+      console.log('🔌 Verifying SMTP connection...')
+      try {
+        await transporter.verify()
+        console.log('✅ SMTP connection verified successfully')
+      } catch (verifyError) {
+        console.error('❌ SMTP connection verification failed:', verifyError)
+        return createErrorResponse('Email service connection failed. Please try again later or contact support.', 500)
+      }
 
       const magicLinkEmailHTML = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
@@ -117,23 +141,57 @@ async function handleMagicLinkRequest(request: NextRequest) {
         </div>
       `
 
-      await transporter.sendMail({
+      console.log(`📧 Sending magic link email to ${normalizedEmail}...`)
+      const mailOptions = {
         from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
         to: normalizedEmail,
         subject: '🔐 BoardGuru - Set Up Your Password',
         html: magicLinkEmailHTML,
+      }
+
+      const emailResult = await transporter.sendMail(mailOptions)
+      
+      console.log('✅ Magic link email sent successfully:', {
+        messageId: emailResult.messageId,
+        accepted: emailResult.accepted,
+        rejected: emailResult.rejected,
+        response: emailResult.response,
+        to: normalizedEmail
       })
 
-      console.log(`✅ Magic link email sent to ${normalizedEmail}`)
-
       return createSuccessResponse(
-        { emailSent: true },
-        'Secure access link sent to your email address. Please check your inbox.'
+        { 
+          emailSent: true, 
+          messageId: emailResult.messageId,
+          emailAddress: normalizedEmail 
+        },
+        'Secure access link sent to your email address. Please check your inbox and spam folder.'
       )
 
     } catch (emailError) {
-      console.error('Failed to send magic link email:', emailError)
-      return createErrorResponse('Failed to send email. Please try again or contact support.', 500)
+      // Enhanced error logging for better troubleshooting
+      console.error('❌ Magic link email delivery failed:', {
+        error: emailError,
+        email: normalizedEmail,
+        errorMessage: emailError instanceof Error ? emailError.message : 'Unknown error',
+        errorCode: (emailError as any)?.code,
+        errorResponse: (emailError as any)?.response,
+        errorCommand: (emailError as any)?.command,
+      })
+      
+      // Provide specific error messages based on error type
+      let userMessage = 'Failed to send email. Please try again or contact support.'
+      if (emailError instanceof Error) {
+        if (emailError.message.includes('authentication') || emailError.message.includes('auth')) {
+          userMessage = 'Email service authentication failed. Please contact support.'
+        } else if (emailError.message.includes('network') || emailError.message.includes('timeout')) {
+          userMessage = 'Network error occurred. Please try again in a few minutes.'
+        } else if (emailError.message.includes('recipient') || emailError.message.includes('address')) {
+          userMessage = 'Invalid email address. Please check the email and try again.'
+        }
+      }
+      
+      return createErrorResponse(userMessage, 500)
     }
 
   } catch (error) {
