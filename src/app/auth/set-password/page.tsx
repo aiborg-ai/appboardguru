@@ -72,6 +72,40 @@ function SetPasswordPageContent() {
 
           if (userError) {
             console.error('User data error:', userError)
+            
+            // If user record doesn't exist, create it from auth session
+            if (userError.code === 'PGRST116') { // No rows found
+              console.log('User record not found, creating from auth session...')
+              
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                  id: data.session.user.id,
+                  email: data.session.user.email || '',
+                  full_name: data.session.user.user_metadata?.full_name || data.session.user.email?.split('@')[0] || 'User',
+                  password_set: false,
+                  status: 'approved',
+                  role: 'director',
+                  created_at: data.session.user.created_at || new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+              
+              if (insertError) {
+                console.error('Failed to create user record:', insertError)
+                setError('Unable to setup user account. Please contact support.')
+                setIsVerifyingLink(false)
+                return
+              }
+              
+              // Set user info from session data
+              setUserInfo({
+                name: data.session.user.user_metadata?.full_name || data.session.user.email?.split('@')[0] || 'User',
+                email: data.session.user.email || ''
+              })
+              setIsVerifyingLink(false)
+              return
+            }
+            
             setError('Unable to verify user account. Please contact support.')
             setIsVerifyingLink(false)
             return

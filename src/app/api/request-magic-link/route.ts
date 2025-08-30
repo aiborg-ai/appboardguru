@@ -40,18 +40,85 @@ async function handleMagicLinkRequest(request: NextRequest) {
       .single()
 
     if (regError || !registrationData) {
-      return createErrorResponse('No approved registration found for this email address', 404)
+      // Check if an auth user exists without registration (orphaned user)
+      console.log(`⚠️  No registration found for ${normalizedEmail}, checking for orphaned auth user...`)
+      
+      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers()
+      
+      if (authError) {
+        console.error('Failed to list auth users:', authError)
+        return createErrorResponse('Failed to verify user status', 500)
+      }
+      
+      const authUser = authUsers.users.find(u => u.email?.toLowerCase() === normalizedEmail)
+      
+      if (!authUser) {
+        return createErrorResponse('No approved registration found for this email address', 404)
+      }
+      
+      console.log(`✅ Found orphaned auth user: ${authUser.id}, auto-creating missing records...`)
+      
+      // Auto-create registration request for orphaned auth user
+      const { error: insertRegError } = await supabaseAdmin
+        .from('registration_requests')
+        .insert({
+          email: normalizedEmail,
+          full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Unknown',
+          company: 'Unknown',
+          position: 'Director',
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: null,
+          created_at: authUser.created_at || new Date().toISOString()
+        })
+      
+      if (insertRegError) {
+        console.error('Failed to create registration:', insertRegError)
+        return createErrorResponse('Failed to process user registration', 500)
+      }
+      
+      // Auto-create users table entry if missing
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', authUser.id)
+        .single()
+      
+      if (!existingUser) {
+        const { error: insertUserError } = await supabaseAdmin
+          .from('users')
+          .insert({
+            id: authUser.id,
+            email: normalizedEmail,
+            full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Unknown',
+            password_set: false,
+            status: 'approved',
+            role: 'director',
+            created_at: authUser.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        
+        if (insertUserError) {
+          console.error('Failed to create user record:', insertUserError)
+        }
+      }
+      
+      console.log(`✅ Auto-created missing records for ${normalizedEmail}`)
+      // Continue with magic link generation
     }
 
     // Check if user has already set password - use admin client for consistency
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('password_set')
-      .eq('email', normalizedEmail)
-      .single()
+    // Skip this check if we just created the user record (it will have password_set: false)
+    if (registrationData) {
+      const { data: userData, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('password_set')
+        .eq('email', normalizedEmail)
+        .single()
 
-    if ((userData as any)?.password_set) {
-      return createErrorResponse('Password has already been set for this account. Please use the regular sign-in process.', 400)
+      if ((userData as any)?.password_set) {
+        return createErrorResponse('Password has already been set for this account. Please use the regular sign-in process.', 400)
+      }
     }
 
     // Generate magic link for password setup - use normalized email
