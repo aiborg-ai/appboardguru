@@ -99,9 +99,26 @@ user.addDomainEvent('UserCreated', { userId, email });
 await user.publishDomainEvents();
 ```
 
+## 🔧 Known Issues & Solutions
+
+### Authentication Session Persistence (FIXED - Aug 30, 2025)
+**Problem**: Users were being redirected back to login page after successful authentication.
+
+**Root Cause**: Sign-in page used localStorage while dashboard used cookies for session storage, making sessions invisible between pages.
+
+**Solution**: Unified all Supabase clients to use cookie-based storage with proper implementation:
+- All clients now use `createBrowserClient` from `@supabase/ssr`
+- Implemented proper cookie parsing, setting, and removal functions
+- Fixed cookie chunking support for large auth tokens
+- Singleton pattern ensures consistent session management
+
+**Files Modified**:
+- `/src/lib/supabase-client.ts` - Complete rewrite for cookie-based storage
+- `/src/contexts/AuthContext.tsx` - Added centralized auth state management
+
 ## Important Notes
 
-- **Test User**: `test.director@appboardguru.com`
+- **Test User**: `test.director@appboardguru.com` / Password: `TestDirector123!`
 - **Architecture Docs**: See `ARCHITECTURE.md` for full details
 - **Migration Guide**: See `MIGRATION_GUIDE.md` for step-by-step instructions
 - **Refactor Plan**: See `REFACTOR_PLAN.md` for 12-week roadmap
