@@ -15,6 +15,7 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   VERCEL_URL: z.string().optional(),
+  MAGIC_LINK_BASE_URL: z.string().url().default('https://appboardguru.vercel.app'),
   
   // Database Configuration
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
@@ -96,6 +97,17 @@ export function getAppUrl(): string {
   
   console.log('🔗 Using localhost fallback')
   return 'http://localhost:3000'
+}
+
+/**
+ * Get the base URL for magic links (always production)
+ * This ensures magic links always redirect to the production URL,
+ * regardless of where the code is running
+ */
+export function getMagicLinkUrl(): string {
+  // Always use production URL for magic links
+  // This prevents localhost URLs from being sent in emails
+  return env.MAGIC_LINK_BASE_URL || 'https://appboardguru.vercel.app'
 }
 
 /**

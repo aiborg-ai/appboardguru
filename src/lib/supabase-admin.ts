@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { env, getAppUrl } from '@/config/environment'
+import { env, getAppUrl, getMagicLinkUrl } from '@/config/environment'
 import type { Database } from '@/types/database'
 
 // Check for service role key and provide helpful error message
@@ -213,14 +213,17 @@ export async function createUserForApprovedRegistration(email: string, fullName:
 
 /**
  * Generate a secure magic link for password setup
+ * Always uses production URL to ensure links work regardless of where code is running
  */
-export async function generatePasswordSetupMagicLink(email: string) {
+export async function generatePasswordSetupMagicLink(email: string, overrideBaseUrl?: string) {
   try {
-    const appUrl = getAppUrl()
-    const redirectUrl = `${appUrl}/auth/set-password`
+    // Always use production URL for magic links to avoid localhost issues
+    const baseUrl = overrideBaseUrl || getMagicLinkUrl()
+    const redirectUrl = `${baseUrl}/auth/set-password`
     
     console.log(`🔗 Generating magic link for ${email} with redirect: ${redirectUrl}`)
     
+    // First, try to generate the link with the admin API
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
@@ -239,7 +242,19 @@ export async function generatePasswordSetupMagicLink(email: string) {
       throw new Error('Magic link generation failed - no action_link returned')
     }
 
-    const magicLink = data.properties.action_link
+    let magicLink = data.properties.action_link
+    
+    // Parse the URL and manually fix the redirect_to parameter if it contains localhost
+    const url = new URL(magicLink)
+    const currentRedirect = url.searchParams.get('redirect_to')
+    
+    if (currentRedirect && currentRedirect.includes('localhost')) {
+      console.log('⚠️  Fixing localhost redirect URL in magic link')
+      url.searchParams.set('redirect_to', redirectUrl)
+      magicLink = url.toString()
+      console.log(`✅ Updated redirect URL to: ${redirectUrl}`)
+    }
+    
     console.log(`✅ Generated magic link for ${email}`)
     console.log(`🔗 Magic link URL: ${magicLink.substring(0, 100)}...`)
     
