@@ -55,35 +55,34 @@ const STATUS_CONFIG = {
 const mockBoardmates: BoardMateProfile[] = [
   {
     id: 'demo-1',
-    user_id: 'user-1',
-    organization_id: 'demo-org',
     email: 'sarah.johnson@techcorp.com',
     full_name: 'Sarah Johnson',
-    first_name: 'Sarah',
-    last_name: 'Johnson',
-    avatar_url: null,
+    avatar_url: undefined,
     designation: 'Chief Executive Officer',
     company: 'TechCorp Industries',
+    position: 'CEO',
     bio: 'Seasoned executive with 20+ years of experience in technology and business transformation.',
-    location: 'San Francisco, CA',
-    phone: '+1 (555) 123-4567',
     linkedin_url: 'https://linkedin.com/in/sarahjohnson',
-    twitter_handle: '@sarahjtech',
-    expertise: ['Strategic Planning', 'Digital Transformation', 'M&A', 'Corporate Governance'],
     user_status: 'approved',
-    org_status: 'active',
+    organization_name: 'Demo Organization',
+    organization_logo: undefined,
     org_role: 'admin',
+    org_status: 'active',
     org_joined_at: '2023-01-15',
-    created_at: '2023-01-15',
-    updated_at: '2024-01-15',
+    org_last_accessed: '2024-01-15',
     board_memberships: [
       {
         board_id: 'board-1',
         board_name: 'Main Board',
-        board_type: 'board_of_directors',
-        member_role: 'chair',
+        board_type: 'main_board',
+        board_status: 'active',
+        member_role: 'chairman',
         member_status: 'active',
-        joined_at: '2023-01-15'
+        appointed_date: '2023-01-15',
+        term_start_date: '2023-01-15',
+        term_end_date: '2025-01-15',
+        is_voting_member: true,
+        attendance_rate: 95
       }
     ],
     committee_memberships: [
@@ -91,51 +90,60 @@ const mockBoardmates: BoardMateProfile[] = [
         committee_id: 'comm-1',
         committee_name: 'Audit Committee',
         committee_type: 'audit',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'member',
         member_status: 'active',
-        joined_at: '2023-02-01'
+        appointed_date: '2023-02-01',
+        term_start_date: '2023-02-01',
+        term_end_date: '2025-02-01',
+        is_voting_member: true,
+        attendance_rate: 92
       }
     ],
-    vault_access: [
+    vault_memberships: [
       {
         vault_id: 'vault-1',
         vault_name: 'Board Documents',
-        vault_type: 'board_docs',
-        access_level: 'admin',
-        granted_at: '2023-01-15'
+        vault_status: 'active',
+        member_role: 'admin',
+        member_status: 'active',
+        joined_at: '2023-01-15',
+        last_accessed_at: '2024-01-14',
+        access_count: 156
       }
     ]
   },
   {
     id: 'demo-2',
-    user_id: 'user-2',
-    organization_id: 'demo-org',
     email: 'michael.chen@financeplus.com',
     full_name: 'Michael Chen',
-    first_name: 'Michael',
-    last_name: 'Chen',
-    avatar_url: null,
+    avatar_url: undefined,
     designation: 'Chief Financial Officer',
     company: 'FinancePlus Holdings',
+    position: 'CFO',
     bio: 'CPA with extensive experience in financial management and risk assessment.',
-    location: 'New York, NY',
-    phone: '+1 (555) 234-5678',
     linkedin_url: 'https://linkedin.com/in/michaelchen',
-    expertise: ['Financial Planning', 'Risk Management', 'Compliance', 'Investor Relations'],
     user_status: 'approved',
-    org_status: 'active',
+    organization_name: 'Demo Organization',
+    organization_logo: undefined,
     org_role: 'member',
+    org_status: 'active',
     org_joined_at: '2023-02-01',
-    created_at: '2023-02-01',
-    updated_at: '2024-01-15',
+    org_last_accessed: '2024-01-15',
     board_memberships: [
       {
         board_id: 'board-1',
         board_name: 'Main Board',
-        board_type: 'board_of_directors',
-        member_role: 'treasurer',
+        board_type: 'main_board',
+        board_status: 'active',
+        member_role: 'cfo',
         member_status: 'active',
-        joined_at: '2023-02-01'
+        appointed_date: '2023-02-01',
+        term_start_date: '2023-02-01',
+        term_end_date: '2025-02-01',
+        is_voting_member: true,
+        attendance_rate: 98
       }
     ],
     committee_memberships: [
@@ -143,66 +151,84 @@ const mockBoardmates: BoardMateProfile[] = [
         committee_id: 'comm-1',
         committee_name: 'Audit Committee',
         committee_type: 'audit',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'chair',
         member_status: 'active',
-        joined_at: '2023-02-01'
+        appointed_date: '2023-02-01',
+        term_start_date: '2023-02-01',
+        term_end_date: '2025-02-01',
+        is_voting_member: true,
+        attendance_rate: 100
       },
       {
         committee_id: 'comm-2',
         committee_name: 'Finance Committee',
-        committee_type: 'finance',
+        committee_type: 'compensation',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'chair',
         member_status: 'active',
-        joined_at: '2023-02-15'
+        appointed_date: '2023-02-15',
+        term_start_date: '2023-02-15',
+        term_end_date: '2025-02-15',
+        is_voting_member: true,
+        attendance_rate: 96
       }
     ],
-    vault_access: [
+    vault_memberships: [
       {
         vault_id: 'vault-1',
         vault_name: 'Board Documents',
-        vault_type: 'board_docs',
-        access_level: 'write',
-        granted_at: '2023-02-01'
+        vault_status: 'active',
+        member_role: 'contributor',
+        member_status: 'active',
+        joined_at: '2023-02-01',
+        last_accessed_at: '2024-01-13',
+        access_count: 234
       },
       {
         vault_id: 'vault-2',
         vault_name: 'Financial Reports',
-        vault_type: 'financial',
-        access_level: 'admin',
-        granted_at: '2023-02-01'
+        vault_status: 'active',
+        member_role: 'admin',
+        member_status: 'active',
+        joined_at: '2023-02-01',
+        last_accessed_at: '2024-01-15',
+        access_count: 412
       }
     ]
   },
   {
     id: 'demo-3',
-    user_id: 'user-3',
-    organization_id: 'demo-org',
     email: 'emily.rodriguez@legaladvisors.com',
     full_name: 'Emily Rodriguez',
-    first_name: 'Emily',
-    last_name: 'Rodriguez',
-    avatar_url: null,
+    avatar_url: undefined,
     designation: 'General Counsel',
     company: 'Legal Advisors LLP',
+    position: 'General Counsel',
     bio: 'Corporate attorney specializing in governance, compliance, and regulatory matters.',
-    location: 'Chicago, IL',
-    phone: '+1 (555) 345-6789',
     linkedin_url: 'https://linkedin.com/in/emilyrodriguez',
-    expertise: ['Corporate Law', 'Regulatory Compliance', 'Contract Negotiation', 'Risk Mitigation'],
     user_status: 'approved',
-    org_status: 'active',
+    organization_name: 'Demo Organization',
+    organization_logo: undefined,
     org_role: 'member',
+    org_status: 'active',
     org_joined_at: '2023-03-01',
-    created_at: '2023-03-01',
-    updated_at: '2024-01-15',
+    org_last_accessed: '2024-01-14',
     board_memberships: [
       {
         board_id: 'board-1',
         board_name: 'Main Board',
-        board_type: 'board_of_directors',
-        member_role: 'secretary',
+        board_type: 'main_board',
+        board_status: 'active',
+        member_role: 'board_member',
         member_status: 'active',
-        joined_at: '2023-03-01'
+        appointed_date: '2023-03-01',
+        term_start_date: '2023-03-01',
+        term_end_date: '2025-03-01',
+        is_voting_member: true,
+        attendance_rate: 94
       }
     ],
     committee_memberships: [
@@ -210,66 +236,84 @@ const mockBoardmates: BoardMateProfile[] = [
         committee_id: 'comm-3',
         committee_name: 'Governance Committee',
         committee_type: 'governance',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'chair',
         member_status: 'active',
-        joined_at: '2023-03-15'
+        appointed_date: '2023-03-15',
+        term_start_date: '2023-03-15',
+        term_end_date: '2025-03-15',
+        is_voting_member: true,
+        attendance_rate: 97
       },
       {
         committee_id: 'comm-4',
         committee_name: 'Risk Committee',
         committee_type: 'risk',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'member',
         member_status: 'active',
-        joined_at: '2023-04-01'
+        appointed_date: '2023-04-01',
+        term_start_date: '2023-04-01',
+        term_end_date: '2025-04-01',
+        is_voting_member: true,
+        attendance_rate: 91
       }
     ],
-    vault_access: [
+    vault_memberships: [
       {
         vault_id: 'vault-1',
         vault_name: 'Board Documents',
-        vault_type: 'board_docs',
-        access_level: 'write',
-        granted_at: '2023-03-01'
+        vault_status: 'active',
+        member_role: 'contributor',
+        member_status: 'active',
+        joined_at: '2023-03-01',
+        last_accessed_at: '2024-01-12',
+        access_count: 189
       },
       {
         vault_id: 'vault-3',
         vault_name: 'Legal Documents',
-        vault_type: 'legal',
-        access_level: 'admin',
-        granted_at: '2023-03-01'
+        vault_status: 'active',
+        member_role: 'admin',
+        member_status: 'active',
+        joined_at: '2023-03-01',
+        last_accessed_at: '2024-01-14',
+        access_count: 267
       }
     ]
   },
   {
     id: 'demo-4',
-    user_id: 'user-4',
-    organization_id: 'demo-org',
     email: 'david.thompson@venturegroup.com',
     full_name: 'David Thompson',
-    first_name: 'David',
-    last_name: 'Thompson',
-    avatar_url: null,
+    avatar_url: undefined,
     designation: 'Independent Director',
     company: 'Venture Capital Group',
+    position: 'Managing Partner',
     bio: 'Venture capitalist with expertise in scaling technology companies and strategic growth.',
-    location: 'Austin, TX',
-    phone: '+1 (555) 456-7890',
     linkedin_url: 'https://linkedin.com/in/davidthompson',
-    expertise: ['Venture Capital', 'Strategic Growth', 'Technology Innovation', 'Board Governance'],
     user_status: 'approved',
-    org_status: 'active',
+    organization_name: 'Demo Organization',
+    organization_logo: undefined,
     org_role: 'member',
+    org_status: 'active',
     org_joined_at: '2023-04-01',
-    created_at: '2023-04-01',
-    updated_at: '2024-01-15',
+    org_last_accessed: '2024-01-13',
     board_memberships: [
       {
         board_id: 'board-1',
         board_name: 'Main Board',
-        board_type: 'board_of_directors',
-        member_role: 'member',
+        board_type: 'main_board',
+        board_status: 'active',
+        member_role: 'independent_director',
         member_status: 'active',
-        joined_at: '2023-04-01'
+        appointed_date: '2023-04-01',
+        term_start_date: '2023-04-01',
+        term_end_date: '2025-04-01',
+        is_voting_member: true,
+        attendance_rate: 89
       }
     ],
     committee_memberships: [
@@ -277,51 +321,60 @@ const mockBoardmates: BoardMateProfile[] = [
         committee_id: 'comm-5',
         committee_name: 'Strategy Committee',
         committee_type: 'strategy',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'member',
         member_status: 'active',
-        joined_at: '2023-04-15'
+        appointed_date: '2023-04-15',
+        term_start_date: '2023-04-15',
+        term_end_date: '2025-04-15',
+        is_voting_member: true,
+        attendance_rate: 88
       }
     ],
-    vault_access: [
+    vault_memberships: [
       {
         vault_id: 'vault-1',
         vault_name: 'Board Documents',
-        vault_type: 'board_docs',
-        access_level: 'read',
-        granted_at: '2023-04-01'
+        vault_status: 'active',
+        member_role: 'viewer',
+        member_status: 'active',
+        joined_at: '2023-04-01',
+        last_accessed_at: '2024-01-10',
+        access_count: 78
       }
     ]
   },
   {
     id: 'demo-5',
-    user_id: 'user-5',
-    organization_id: 'demo-org',
     email: 'lisa.patel@hrexperts.com',
     full_name: 'Lisa Patel',
-    first_name: 'Lisa',
-    last_name: 'Patel',
-    avatar_url: null,
+    avatar_url: undefined,
     designation: 'Chief Human Resources Officer',
     company: 'HR Experts International',
+    position: 'CHRO',
     bio: 'HR executive focused on talent management, culture transformation, and organizational development.',
-    location: 'Boston, MA',
-    phone: '+1 (555) 567-8901',
     linkedin_url: 'https://linkedin.com/in/lisapatel',
-    expertise: ['Talent Management', 'Organizational Development', 'Compensation Strategy', 'Culture Building'],
     user_status: 'approved',
-    org_status: 'active',
+    organization_name: 'Demo Organization',
+    organization_logo: undefined,
     org_role: 'member',
+    org_status: 'active',
     org_joined_at: '2023-05-01',
-    created_at: '2023-05-01',
-    updated_at: '2024-01-15',
+    org_last_accessed: '2024-01-15',
     board_memberships: [
       {
         board_id: 'board-2',
         board_name: 'Advisory Board',
-        board_type: 'advisory',
-        member_role: 'member',
+        board_type: 'advisory_board',
+        board_status: 'active',
+        member_role: 'board_member',
         member_status: 'active',
-        joined_at: '2023-05-01'
+        appointed_date: '2023-05-01',
+        term_start_date: '2023-05-01',
+        term_end_date: '2025-05-01',
+        is_voting_member: false,
+        attendance_rate: 93
       }
     ],
     committee_memberships: [
@@ -329,25 +382,37 @@ const mockBoardmates: BoardMateProfile[] = [
         committee_id: 'comm-6',
         committee_name: 'Compensation Committee',
         committee_type: 'compensation',
+        committee_status: 'active',
+        board_name: 'Main Board',
         member_role: 'chair',
         member_status: 'active',
-        joined_at: '2023-05-15'
+        appointed_date: '2023-05-15',
+        term_start_date: '2023-05-15',
+        term_end_date: '2025-05-15',
+        is_voting_member: true,
+        attendance_rate: 95
       }
     ],
-    vault_access: [
+    vault_memberships: [
       {
         vault_id: 'vault-1',
         vault_name: 'Board Documents',
-        vault_type: 'board_docs',
-        access_level: 'read',
-        granted_at: '2023-05-01'
+        vault_status: 'active',
+        member_role: 'viewer',
+        member_status: 'active',
+        joined_at: '2023-05-01',
+        last_accessed_at: '2024-01-11',
+        access_count: 92
       },
       {
         vault_id: 'vault-4',
         vault_name: 'HR Documents',
-        vault_type: 'hr',
-        access_level: 'admin',
-        granted_at: '2023-05-01'
+        vault_status: 'active',
+        member_role: 'admin',
+        member_status: 'active',
+        joined_at: '2023-05-01',
+        last_accessed_at: '2024-01-15',
+        access_count: 324
       }
     ]
   }
