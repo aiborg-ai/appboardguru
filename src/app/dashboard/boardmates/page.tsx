@@ -68,13 +68,6 @@ export default function BoardMatesPage() {
 
   const { currentOrganization } = useOrganization();
 
-  // Load boardmates on mount and organization change
-  useEffect(() => {
-    if (currentOrganization?.id) {
-      loadBoardmates();
-    }
-  }, [currentOrganization?.id]);
-
   const loadBoardmates = useCallback(async () => {
     if (!currentOrganization?.id) return;
     
@@ -98,6 +91,13 @@ export default function BoardMatesPage() {
       setIsLoading(false);
     }
   }, [currentOrganization?.id]);
+
+  // Load boardmates on mount and organization change
+  useEffect(() => {
+    if (currentOrganization?.id) {
+      loadBoardmates();
+    }
+  }, [currentOrganization?.id, loadBoardmates]);
 
   const filteredBoardMates = boardmates.filter(boardmate => {
     const matchesSearch = 
