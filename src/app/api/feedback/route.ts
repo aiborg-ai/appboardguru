@@ -48,25 +48,6 @@ function generateReferenceId(): string {
   return `FB-${timestamp}${random}`.toUpperCase()
 }
 
-// Get user info from request
-async function getUserInfo(request: NextRequest) {
-  try {
-    const supabase = await createSupabaseServerClient()
-    // Try to get user from session/auth
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return null
-    }
-
-    // In a real implementation, you'd validate the auth token here
-    // For now, we'll try to get user from Supabase
-    const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
-    return user
-  } catch (error) {
-    console.error('Error getting user info:', error)
-    return null
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -85,9 +66,9 @@ export async function POST(request: NextRequest) {
 
     const { type, title, description, screenshot } = validation.data
 
-    // Get user information
-    const user = await getUserInfo(request)
-    if (!user) {
+    // Get authenticated user from session
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
