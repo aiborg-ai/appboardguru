@@ -173,7 +173,6 @@ export async function POST(request: NextRequest) {
 
     // Log the feedback submission (optional - store in database for tracking)
     try {
-    const supabase = await createSupabaseServerClient()
       await supabase
         .from('feedback_submissions')
         .insert({
