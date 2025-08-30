@@ -132,11 +132,6 @@ export default function AssetsPage() {
   const [isLoadingAssets, setIsLoadingAssets] = useState(true)
   const [assetsError, setAssetsError] = useState<string | null>(null)
 
-  // Fetch assets for current organization
-  useEffect(() => {
-    fetchAssets()
-  }, [fetchAssets])
-
   // Filter and search logic
   useEffect(() => {
     let filtered = assets
@@ -296,6 +291,11 @@ export default function AssetsPage() {
       setIsLoadingAssets(false)
     }
   }, [currentOrganization])
+
+  // Fetch assets for current organization
+  useEffect(() => {
+    fetchAssets()
+  }, [fetchAssets])
 
   const handleShareAsset = (asset: Asset) => {
     setSelectedAsset(asset)
