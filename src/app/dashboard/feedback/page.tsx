@@ -90,6 +90,13 @@ export default function FeedbackPage() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Store reference ID if provided in error response
+        if (data.referenceId) {
+          console.log('[Feedback] Error reference ID:', data.referenceId)
+          // Store in sessionStorage for potential support contact
+          sessionStorage.setItem('lastFeedbackErrorRef', data.referenceId)
+        }
+        
         // Handle specific error codes
         if (response.status === 401) {
           // Try to refresh session and retry once
@@ -105,6 +112,8 @@ export default function FeedbackPage() {
         } else if (response.status === 503) {
           throw new Error('Service temporarily unavailable. Please try again in a few moments.')
         }
+        
+        // Use the error message from the API, which includes the reference ID
         throw new Error(data.error || 'Failed to submit feedback')
       }
 

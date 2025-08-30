@@ -7,8 +7,9 @@ import type { Database } from '../../types/database'
 export abstract class BaseService {
   protected supabase: SupabaseClient<Database>
 
-  constructor() {
-    this.supabase = createSupabaseClient()
+  constructor(supabaseClient?: SupabaseClient<Database> | any) {
+    // Use provided client or create a new one
+    this.supabase = supabaseClient || createSupabaseClient()
   }
 
   /**

@@ -3,16 +3,41 @@
 // Force dynamic rendering to prevent static generation issues
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import CreateOrganizationWizard from '@/features/organizations/CreateOrganizationWizard';
+import dynamicImport from 'next/dynamic';
 import { CreateOrganizationRequest, OrganizationCreationResponse } from '@/features/organizations/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
-import { useCreateOrganization } from '@/hooks/useOrganizations';
+
+// Lazy load the wizard and hook to prevent SSR issues
+const CreateOrganizationWizard = dynamicImport(
+  () => import('@/features/organizations/CreateOrganizationWizard'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center p-8">
+        <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+);
+
+// Import the hook conditionally to prevent SSR issues
+const useCreateOrganization = () => {
+  const [hook, setHook] = useState<any>(null);
+  
+  useEffect(() => {
+    import('@/hooks/useOrganizations').then(module => {
+      setHook(() => module.useCreateOrganization);
+    });
+  }, []);
+  
+  return hook ? hook() : null;
+};
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
@@ -57,6 +82,12 @@ export default function CreateOrganizationPage() {
         organizationSize: data.organizationDetails.organizationSize,
       });
 
+      // Check if mutation is available
+      if (!createOrganizationMutation) {
+        console.error('Create organization mutation not loaded yet');
+        throw new Error('Organization creation service is initializing. Please try again.');
+      }
+
       // Use the authenticated hook instead of raw fetch
       const result = await createOrganizationMutation.mutateAsync({
         name: data.organizationDetails.name,
@@ -100,14 +131,16 @@ export default function CreateOrganizationPage() {
     }
   };
 
-  // Show loading screen while checking authentication
-  if (isLoadingAuth) {
+  // Show loading screen while checking authentication or mutation not ready
+  if (isLoadingAuth || !CreateOrganizationWizard) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="w-8 h-8 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Checking authentication...</p>
+            <p className="text-gray-600">
+              {isLoadingAuth ? 'Checking authentication...' : 'Loading organization wizard...'}
+            </p>
           </CardContent>
         </Card>
       </div>

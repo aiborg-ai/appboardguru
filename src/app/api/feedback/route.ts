@@ -163,13 +163,17 @@ export async function POST(request: NextRequest) {
       url: referer ?? ''
     }
 
-    // Initialize notification service with error handling
+    // Initialize notification service with proper error handling
     let notificationService: NotificationService | null = null
     try {
+      console.log('[Feedback API] Initializing notification service...')
       notificationService = new NotificationService(supabase)
+      console.log('[Feedback API] Notification service initialized successfully')
     } catch (serviceError) {
       console.error('[Feedback API] Failed to initialize notification service:', serviceError)
-      // Continue without email notifications
+      console.error('[Feedback API] Stack trace:', serviceError instanceof Error ? serviceError.stack : 'N/A')
+      // Continue without email notifications - feedback will still be saved
+      console.log('[Feedback API] Continuing without email notifications')
     }
 
     // Create admin email
@@ -391,11 +395,20 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[Feedback API] Unexpected error:', error)
     
+    // Generate a reference ID even for errors so users can reference it
+    const errorReferenceId = generateReferenceId()
+    
     // Try to provide a more helpful error message
     let errorMessage = 'An error occurred while submitting your feedback.'
     let statusCode = 500
     
     if (error instanceof Error) {
+      console.error('[Feedback API] Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+      
       if (error.message.includes('auth') || error.message.includes('session')) {
         errorMessage = 'Session expired. Please refresh the page and try again.'
         statusCode = 401
@@ -405,12 +418,20 @@ export async function POST(request: NextRequest) {
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         errorMessage = 'Network error. Please check your connection and try again.'
         statusCode = 503
+      } else if (error.message.includes('constructor')) {
+        // This might be our NotificationService issue
+        errorMessage = 'Service configuration error. Your feedback will be recorded.'
+        console.error('[Feedback API] Constructor error detected - likely NotificationService issue')
       }
     }
+    
+    // Always include the reference ID for support purposes
+    errorMessage = `Failed to submit feedback. Please try again or contact support with reference: ${errorReferenceId}`
     
     return NextResponse.json(
       { 
         error: errorMessage,
+        referenceId: errorReferenceId,
         details: process.env['NODE_ENV'] === 'development' ? {
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
