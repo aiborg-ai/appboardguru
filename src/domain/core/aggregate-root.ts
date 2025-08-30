@@ -39,10 +39,21 @@ export abstract class AggregateRoot implements BaseEntity {
 
   async publishDomainEvents(): Promise<void> {
     const events = this.getDomainEvents();
-    this.clearDomainEvents();
-
-    for (const event of events) {
-      await eventBus.publish(event);
+    
+    // Store events in case we need to restore them
+    const eventsCopy = [...events];
+    
+    try {
+      // Publish all events (could be parallel for performance)
+      const publishPromises = events.map(event => eventBus.publish(event));
+      await Promise.all(publishPromises);
+      
+      // Only clear events after successful publishing
+      this.clearDomainEvents();
+    } catch (error) {
+      // Restore events on failure so they can be retried
+      this.domainEvents = eventsCopy;
+      throw new Error(`Failed to publish domain events: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
