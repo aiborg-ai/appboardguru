@@ -329,7 +329,7 @@ export default function SignInPage() {
         setMagicLinkEmail('')
         setShowMagicLinkForm(false)
       } else {
-        setMagicLinkMessage(`❌ ${result.message}`)
+        setMagicLinkMessage(`❌ ${result.error || result.message || 'Failed to send setup link'}`)
       }
     } catch (error) {
       console.error('Magic link request error:', error)
