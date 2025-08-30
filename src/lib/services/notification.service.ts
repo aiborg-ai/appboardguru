@@ -38,7 +38,11 @@ export class NotificationService extends BaseService {
   private transporter?: nodemailer.Transporter
 
   constructor(supabase: any) {
-    super(supabase)
+    super()
+    // Store the passed supabase if needed, or use the one from BaseService
+    if (supabase) {
+      this.supabase = supabase
+    }
     this.initializeTransporter()
   }
 
