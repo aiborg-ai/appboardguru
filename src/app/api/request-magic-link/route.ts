@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { generatePasswordSetupMagicLink } from '@/lib/supabase-admin'
+import { generatePasswordSetupMagicLink, supabaseAdmin } from '@/lib/supabase-admin'
 import nodemailer from 'nodemailer'
 import { getAppUrl, env, getSmtpConfig } from '@/config/environment'
 import { z } from 'zod'
@@ -26,15 +26,16 @@ async function handleMagicLinkRequest(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json()
     const { email } = requestSchema.parse(body)
+    
+    // Normalize email for consistent queries
+    const normalizedEmail = email.toLowerCase().trim()
 
-    // Initialize Supabase client
-    const supabase = await createSupabaseServerClient()
-
+    // Use admin client to bypass RLS policies for registration_requests table
     // Check if user exists and is approved but hasn't set password
-    const { data: registrationData, error: regError } = await supabase
+    const { data: registrationData, error: regError } = await supabaseAdmin
       .from('registration_requests')
       .select('*')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .eq('status', 'approved')
       .single()
 
@@ -42,19 +43,19 @@ async function handleMagicLinkRequest(request: NextRequest) {
       return createErrorResponse('No approved registration found for this email address', 404)
     }
 
-    // Check if user has already set password
-    const { data: userData, error: userError } = await supabase
+    // Check if user has already set password - use admin client for consistency
+    const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('password_set')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .single()
 
     if ((userData as any)?.password_set) {
       return createErrorResponse('Password has already been set for this account. Please use the regular sign-in process.', 400)
     }
 
-    // Generate magic link for password setup
-    const { magicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(email)
+    // Generate magic link for password setup - use normalized email
+    const { magicLink, success: linkSuccess, error: linkError } = await generatePasswordSetupMagicLink(normalizedEmail)
 
     if (!linkSuccess || !magicLink) {
       console.error('Failed to generate magic link:', linkError)
@@ -118,12 +119,12 @@ async function handleMagicLinkRequest(request: NextRequest) {
 
       await transporter.sendMail({
         from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
-        to: email,
+        to: normalizedEmail,
         subject: '🔐 BoardGuru - Set Up Your Password',
         html: magicLinkEmailHTML,
       })
 
-      console.log(`✅ Magic link email sent to ${email}`)
+      console.log(`✅ Magic link email sent to ${normalizedEmail}`)
 
       return createSuccessResponse(
         { emailSent: true },

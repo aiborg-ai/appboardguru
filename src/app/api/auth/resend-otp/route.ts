@@ -7,6 +7,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import nodemailer from 'nodemailer'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createOtpCode, OtpRateLimiter } from '@/lib/otp'
 import { env, getSmtpConfig, getAppUrl } from '@/config/environment'
 import { 
@@ -56,16 +57,19 @@ async function handleResendOtp(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json()
     const { email, purpose } = resendOtpSchema.parse(body)
+    
+    // Normalize email for consistent queries
+    const normalizedEmail = email.toLowerCase().trim()
 
-    console.log(`📧 OTP resend request for ${email} (purpose: ${purpose})`)
+    console.log(`📧 OTP resend request for ${normalizedEmail} (purpose: ${purpose})`)
 
     // For first_login, verify user exists and needs password setup
     if (purpose === 'first_login') {
-      // Check if user exists in registration_requests as approved
-      const { data: registrationData, error: regError } = await supabase
+      // Use admin client to bypass RLS - Check if user exists in registration_requests as approved
+      const { data: registrationData, error: regError } = await supabaseAdmin
         .from('registration_requests')
         .select('*')
-        .eq('email', email)
+        .eq('email', normalizedEmail)
         .eq('status', 'approved')
         .single()
 
@@ -73,11 +77,11 @@ async function handleResendOtp(request: NextRequest) {
         return createErrorResponse('No approved registration found for this email address', 404)
       }
 
-      // Check if user has already set password
-      const { data: userData } = await supabase
+      // Check if user has already set password - use admin client
+      const { data: userData } = await supabaseAdmin
         .from('users')
         .select('password_set')
-        .eq('email', email)
+        .eq('email', normalizedEmail)
         .single()
 
       if ((userData as any)?.password_set) {
@@ -86,7 +90,7 @@ async function handleResendOtp(request: NextRequest) {
 
       // Generate new OTP code (24-hour expiry)
       const { success: otpSuccess, otpCode, error: otpError } = await createOtpCode(
-        email,
+        normalizedEmail,
         'first_login',
         24 // 24 hours
       )
@@ -168,12 +172,12 @@ async function handleResendOtp(request: NextRequest) {
 
         await transporter.sendMail({
           from: `"BoardGuru Platform" <${env.SMTP_USER}>`,
-          to: email,
+          to: normalizedEmail,
           subject: '🔐 BoardGuru - New Sign-In Code',
           html: resendOtpEmailHTML,
         })
 
-        console.log(`✅ Resend OTP email sent to ${email}`)
+        console.log(`✅ Resend OTP email sent to ${normalizedEmail}`)
 
         return createSuccessResponse({
           emailSent: true,

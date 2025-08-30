@@ -108,23 +108,28 @@ export default function SignInPage() {
           return
         }
 
-        // If user not found in users table, check registration_requests as fallback
+        // If user not found in users table, check registration_requests via API
         if (!userData || userError) {
-          const { data: regData, error: regError } = await supabase
-            .from('registration_requests')
-            .select('status, email, full_name')
-            .eq('email', data.email)
-            .single()
-
-          console.log('Registration data check:', { regData, regError })
-
-          if (regData && regData.status === 'approved') {
-            // User has approved registration but no user account yet
-            setError('')
-            setMagicLinkEmail(data.email)
-            setMagicLinkMessage('✨ Your registration is approved! You need to set up your password to access your account.')
-            setShowMagicLinkForm(true)
-            return
+          try {
+            const response = await fetch('/api/auth/check-registration', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: data.email })
+            })
+            
+            const result = await response.json()
+            console.log('Registration check result:', result)
+            
+            if (result.success && result.data?.approved) {
+              // User has approved registration but no user account yet
+              setError('')
+              setMagicLinkEmail(data.email)
+              setMagicLinkMessage('✨ Your registration is approved! You need to set up your password to access your account.')
+              setShowMagicLinkForm(true)
+              return
+            }
+          } catch (checkError) {
+            console.error('Failed to check registration:', checkError)
           }
         }
         
@@ -187,16 +192,22 @@ export default function SignInPage() {
         return true
       }
 
-      // Fallback: check registration_requests for approved status
+      // Fallback: check registration_requests via API for approved status
       if (!userData || userError) {
-        const { data: regData, error: regError } = await supabase
-          .from('registration_requests')
-          .select('status, email')
-          .eq('email', email)
-          .single()
-
-        if (regData && regData.status === 'approved') {
-          return true
+        try {
+          const response = await fetch('/api/auth/check-registration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          })
+          
+          const result = await response.json()
+          
+          if (result.success && result.data?.approved && result.data?.needsPasswordSetup) {
+            return true
+          }
+        } catch (apiError) {
+          console.error('Failed to check registration via API:', apiError)
         }
       }
 
