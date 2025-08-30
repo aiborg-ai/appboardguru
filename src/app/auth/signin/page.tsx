@@ -163,6 +163,22 @@ export default function SignInPage() {
           return
         }
 
+        // Ensure session is properly stored before redirecting
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          console.error('Session not found after successful login')
+          throw new Error('Failed to establish session. Please try again.')
+        }
+        
+        console.log('Login successful, session established:', {
+          userId: authData.user.id,
+          email: authData.user.email,
+          sessionToken: session.access_token ? 'present' : 'missing'
+        })
+
+        // Add a small delay to ensure session is fully persisted
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         // Redirect based on role
         if (userData.role === 'admin') {
           router.push('/admin/dashboard')

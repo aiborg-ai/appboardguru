@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { useDemoSafe } from '@/contexts/DemoContext'
+import { useAuth } from '@/contexts/AuthContext'
 import EnhancedSidebar from './EnhancedSidebar'
 import RightPanel from '@/features/shared/components/RightPanel'
 import QuickAccessFAB from '@/features/shared/components/QuickAccessFAB'
@@ -20,7 +21,18 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [localUser, setLocalUser] = useState<any>(null)
+  
+  // Get auth context - but handle case where it might not be available
+  let authUser = null
+  let authLoading = false
+  try {
+    const auth = useAuth()
+    authUser = auth.user
+    authLoading = auth.loading
+  } catch (e) {
+    // Auth context not available, will fall back to direct check
+  }
   
   // Safely get demo context using the safe hook
   const { isDemoMode, demoUser } = useDemoSafe()
@@ -33,8 +45,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const preloadConfig = useRoutePreloadConfig()
 
   useEffect(() => {
+    // If we have auth context and a user, use that
+    if (authUser) {
+      setLocalUser(authUser)
+      setIsLoading(false)
+      return
+    }
+    
+    // If auth is still loading, wait
+    if (authLoading) {
+      return
+    }
+    
+    // Otherwise do manual check
     checkUser()
-  }, [isDemoMode])
+  }, [isDemoMode, authUser, authLoading])
 
   const checkUser = async () => {
     try {
@@ -73,7 +98,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           role: 'authenticated'
         }
         
-        setUser(mockUser)
+        setLocalUser(mockUser)
         setIsLoading(false)
         return
       }
@@ -81,18 +106,59 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       // Normal authentication check for non-demo users
       console.log('[DashboardLayout] Not in demo mode, checking authentication')
       const supabase = createSupabaseBrowserClient()
-      const { data: { user } } = await supabase.auth.getUser()
       
-      if (!user) {
-        console.log('[DashboardLayout] No authenticated user, redirecting to signin')
-        // Prevent redirect if already on signin page to avoid loops
-        if (!window.location.pathname.includes('/auth/signin')) {
-          router.push('/auth/signin')
-        }
+      // First try to get the session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('[DashboardLayout] Session error:', sessionError)
+      }
+      
+      if (session?.user) {
+        console.log('[DashboardLayout] Session found:', {
+          userId: session.user.id,
+          email: session.user.email,
+          expiresAt: session.expires_at
+        })
+        setLocalUser(session.user)
+        setIsLoading(false)
         return
       }
-
-      setUser(user)
+      
+      // If no session, try getUser as fallback
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        console.error('[DashboardLayout] User error:', userError)
+      }
+      
+      if (user) {
+        console.log('[DashboardLayout] User found via getUser:', {
+          userId: user.id,
+          email: user.email
+        })
+        setLocalUser(user)
+        setIsLoading(false)
+        return
+      }
+      
+      // No user found, wait a bit and retry once (in case of race condition)
+      console.log('[DashboardLayout] No user found, retrying in 500ms...')
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      const { data: { session: retrySession } } = await supabase.auth.getSession()
+      if (retrySession?.user) {
+        console.log('[DashboardLayout] User found on retry')
+        setLocalUser(retrySession.user)
+        setIsLoading(false)
+        return
+      }
+      
+      console.log('[DashboardLayout] No authenticated user after retry, redirecting to signin')
+      // Prevent redirect if already on signin page to avoid loops
+      if (!window.location.pathname.includes('/auth/signin')) {
+        router.push('/auth/signin')
+      }
     } catch (error) {
       console.error('Error checking user:', error)
       // Prevent redirect if already on signin page to avoid loops
@@ -133,7 +199,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   ])
 
-  if (isLoading) {
+  // Use combined loading state
+  const user = authUser || localUser
+  const loading = isLoading || authLoading
+  
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
