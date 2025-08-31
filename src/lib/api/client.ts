@@ -43,6 +43,12 @@ export const apiClient = {
       const data = await response.json()
 
       if (!response.ok) {
+        console.error('API request failed:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          responseData: data
+        });
         throw new ApiError(
           data.message || data.error || 'Request failed',
           response.status,

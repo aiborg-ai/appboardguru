@@ -65,11 +65,19 @@ async function fetchOrganization(id: string, userId: string): Promise<Organizati
 }
 
 async function createOrganization(data: CreateOrganizationPayload): Promise<Organization> {
+  console.log('Sending organization creation request:', data);
   const response = await apiClient.post<{
     success: boolean
     organization: Organization
     message: string
   }>('/api/organizations/create', data)
+  
+  console.log('Organization creation response:', response);
+  
+  if (!response.organization) {
+    console.error('Invalid response structure:', response);
+    throw new Error('Invalid response from server - missing organization data');
+  }
   
   return response.organization
 }
@@ -160,6 +168,12 @@ export function useCreateOrganization() {
       })
     },
     onError: (error: ApiError) => {
+      console.error('Organization creation error details:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        data: error.data
+      });
       toast({
         title: 'Failed to create organization',
         description: error.message || 'There was an error creating the organization.',
