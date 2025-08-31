@@ -1,0 +1,44 @@
+# Vercel ignore file
+# Files and directories to exclude from deployment
+
+# Development files
+.env.local
+.env.development
+
+# Test files
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+scripts/test-*.ts
+scripts/test-*.sh
+
+# Documentation
+*.md
+docs/
+
+# Git
+.git
+.gitignore
+
+# Dependencies (will be installed during build)
+node_modules/
+
+# Build outputs (will be generated during build)
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+temp/
+tmp/
