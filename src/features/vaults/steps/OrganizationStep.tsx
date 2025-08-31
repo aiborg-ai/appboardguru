@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Plus, Check, Search, Loader2 } from 'lucide-react';
+import { Building2, Plus, Check, Search, Loader2, CheckCircle2 } from 'lucide-react';
 import { VaultWizardData } from '../CreateVaultWizard';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,9 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [creationError, setCreationError] = useState<string | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   const [newOrgData, setNewOrgData] = useState({
     name: '',
@@ -86,14 +89,69 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
     });
   };
 
-  const handleCreateNewOrganization = () => {
+  const handleCreateNewOrganization = async () => {
     if (!newOrgData.name.trim()) return;
     
-    onUpdate({
-      selectedOrganization: null,
-      createNewOrganization: newOrgData
-    });
-    setShowCreateForm(false);
+    setIsCreatingOrg(true);
+    setCreationError(null);
+    
+    try {
+      // Call API to create organization immediately
+      const response = await fetch('/api/organizations/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newOrgData.name,
+          description: newOrgData.description,
+          industry: newOrgData.industry,
+          website: newOrgData.website,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create organization');
+      }
+      
+      // Organization created successfully
+      console.log('Organization created:', result.organization);
+      
+      // Update wizard data with the newly created organization
+      onUpdate({
+        selectedOrganization: {
+          id: result.organization.id,
+          name: result.organization.name,
+          slug: result.organization.slug,
+        },
+        createNewOrganization: null, // Clear this since org is now created
+        organizationCreatedInWizard: true, // Mark that org was created in wizard
+      });
+      
+      // Add the new organization to the list
+      setOrganizations(prev => [result.organization, ...prev]);
+      
+      // Reset form and close
+      setNewOrgData({
+        name: '',
+        description: '',
+        industry: '',
+        website: ''
+      });
+      setShowCreateForm(false);
+      
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+      
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      setCreationError(error instanceof Error ? error.message : 'Failed to create organization');
+    } finally {
+      setIsCreatingOrg(false);
+    }
   };
 
   const filteredOrganizations = organizations.filter(org =>
@@ -118,6 +176,21 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
           Choose an existing organization or create a new one for your vault
         </p>
       </div>
+
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
+          <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-green-900">
+              Organization created successfully!
+            </p>
+            <p className="text-xs text-green-700 mt-1">
+              Your new organization is ready. You can now proceed to the next step.
+            </p>
+          </div>
+        </div>
+      )}
 
       {process.env.NODE_ENV === 'development' && organizations.length === 0 && (
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -285,11 +358,26 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
                 </Button>
                 <Button
                   onClick={handleCreateNewOrganization}
-                  disabled={!newOrgData.name.trim()}
+                  disabled={!newOrgData.name.trim() || isCreatingOrg}
                 >
-                  Create Organization
+                  {isCreatingOrg ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Organization'
+                  )}
                 </Button>
               </div>
+              
+              {creationError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">
+                    <strong>Error:</strong> {creationError}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -297,17 +385,20 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
 
       {data.selectedOrganization && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900">
-            <strong>Selected:</strong> {data.selectedOrganization.name}
-          </p>
-        </div>
-      )}
-
-      {data.createNewOrganization && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-900">
-            <strong>Will create:</strong> {data.createNewOrganization.name}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-900">
+                <strong>Selected Organization:</strong> {data.selectedOrganization.name}
+              </p>
+              {organizations.find(org => org.id === data.selectedOrganization?.id)?.created_at && 
+               new Date(organizations.find(org => org.id === data.selectedOrganization?.id)?.created_at).getTime() > Date.now() - 60000 && (
+                <p className="text-xs text-blue-700 mt-1">
+                  ✅ Organization created successfully and ready to use!
+                </p>
+              )}
+            </div>
+            <Check className="h-5 w-5 text-blue-600" />
+          </div>
         </div>
       )}
     </div>

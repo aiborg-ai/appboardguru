@@ -137,8 +137,32 @@ export async function POST(request: NextRequest) {
     // Begin transaction-like operations
     try {
       // Step 1: Handle organization creation/selection
-      if (data.createNewOrganization) {
-        // Create new organization
+      // Note: Organization creation is now handled in the OrganizationStep component
+      // This API should only receive a selectedOrganization
+      if (data.selectedOrganization) {
+        organizationId = data.selectedOrganization.id;
+        
+        // Verify user has access to this organization
+        const { data: membership, error: membershipError } = await supabase
+          .from('organization_members')
+          .select('role, status')
+          .eq('organization_id', organizationId)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single();
+
+        if (membershipError || !membership) {
+          return NextResponse.json(
+            { error: 'You do not have access to this organization' },
+            { status: 403 }
+          );
+        }
+      } else if (data.createNewOrganization) {
+        // This is a fallback for backward compatibility
+        // New flow should create organization separately
+        console.warn('Using legacy organization creation in vault API');
+        
+        // Create new organization (legacy path)
         const orgSlug = data.createNewOrganization.name
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
@@ -153,7 +177,7 @@ export async function POST(request: NextRequest) {
             industry: data.createNewOrganization.industry,
             website: data.createNewOrganization.website || null,
             created_by: user.id,
-            organization_size: 'startup', // Default size
+            organization_size: 'startup',
             settings: {
               board_pack_auto_archive_days: 365,
               invitation_expires_hours: 72,
@@ -183,28 +207,9 @@ export async function POST(request: NextRequest) {
             status: 'active',
             is_primary: true,
           } as any);
-
-      } else if (data.selectedOrganization) {
-        organizationId = data.selectedOrganization.id;
-        
-        // Verify user has access to this organization
-        const { data: membership, error: membershipError } = await supabase
-          .from('organization_members')
-          .select('role, status')
-          .eq('organization_id', organizationId)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single();
-
-        if (membershipError || !membership) {
-          return NextResponse.json(
-            { error: 'You do not have access to this organization' },
-            { status: 403 }
-          );
-        }
       } else {
         return NextResponse.json(
-          { error: 'Either select an organization or provide new organization data' },
+          { error: 'No organization selected. Please select or create an organization.' },
           { status: 400 }
         );
       }

@@ -68,6 +68,7 @@ export interface VaultWizardData {
     industry: string;
     website: string;
   } | null;
+  organizationCreatedInWizard: boolean; // Track if org was created during wizard
 
   // Step 2: Assets
   selectedAssets: Array<{
@@ -116,6 +117,7 @@ export default function CreateVaultWizard({
   const [wizardData, setWizardData] = useState<VaultWizardData>({
     selectedOrganization: null,
     createNewOrganization: null,
+    organizationCreatedInWizard: false,
     selectedAssets: [],
     selectedBoardMates: [],
     newBoardMates: [],
