@@ -20,7 +20,7 @@ import {
   Filter
 } from 'lucide-react'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
-import CreateEventModal from '@/features/calendar/CreateEventModal'
+import CreateEventWizard from '@/features/calendar/CreateEventWizard'
 
 interface CalendarEvent {
   id: string
@@ -547,8 +547,8 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Create Event Modal */}
-      <CreateEventModal
+      {/* Create Event Wizard */}
+      <CreateEventWizard
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={loadEvents}

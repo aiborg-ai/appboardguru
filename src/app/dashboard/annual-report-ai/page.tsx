@@ -59,12 +59,16 @@ import {
   ChevronRight,
   AlertTriangle,
   TrendingDown,
-  BookOpen
+  BookOpen,
+  SplitSquareHorizontal
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useOrganization } from '@/contexts/OrganizationContext'
+import { DocumentViewer } from '@/features/annual-report-ai/DocumentViewer'
+import { EvidenceCard } from '@/features/annual-report-ai/EvidenceCard'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface ReportSection {
   id: string
@@ -172,6 +176,8 @@ export default function AnnualReportAI() {
   const [selectedAssetId, setSelectedAssetId] = useState<string>('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [activeEvidenceId, setActiveEvidenceId] = useState<string | undefined>()
+  const [splitView, setSplitView] = useState(true)
   const [analysisType, setAnalysisType] = useState<'upload' | 'asset'>('upload')
 
   const handleTemplateSelect = (template: ReportTemplate) => {
@@ -331,22 +337,91 @@ ${section.content}
         },
         insights: [
           {
+            id: 'insight-1',
             type: 'positive',
             title: 'Revenue Growth',
             description: 'Company achieved 23% YoY revenue growth, exceeding industry average of 15%',
-            confidence: 0.92
+            confidence: 0.92,
+            impact: 'high',
+            category: 'Financial Performance',
+            evidences: [
+              {
+                id: 'ev-1-1',
+                quote: 'Total revenue for fiscal year 2024 reached $2.3 billion, representing a 23% increase from the prior year',
+                pageNumber: 12,
+                startChar: 450,
+                endChar: 550,
+                confidence: 0.95,
+                reasoning: 'Direct statement of revenue growth from official financial statements'
+              },
+              {
+                id: 'ev-1-2',
+                quote: 'This growth significantly outpaced the industry average of 15%, positioning us as a market leader',
+                pageNumber: 14,
+                startChar: 200,
+                endChar: 300,
+                confidence: 0.88,
+                reasoning: 'Comparative analysis showing above-average performance'
+              }
+            ]
           },
           {
+            id: 'insight-2',
             type: 'positive',
             title: 'Market Expansion',
             description: 'Successfully entered 3 new geographic markets with positive initial traction',
-            confidence: 0.88
+            confidence: 0.88,
+            impact: 'high',
+            category: 'Strategic Growth',
+            evidences: [
+              {
+                id: 'ev-2-1',
+                quote: 'We successfully launched operations in Singapore, Thailand, and Vietnam during Q3 2024',
+                pageNumber: 28,
+                startChar: 100,
+                endChar: 200,
+                confidence: 0.92,
+                reasoning: 'Specific markets identified with launch timeline'
+              },
+              {
+                id: 'ev-2-2',
+                quote: 'Initial market response has exceeded expectations with $45M in new contracts signed',
+                pageNumber: 29,
+                startChar: 350,
+                endChar: 450,
+                confidence: 0.85,
+                reasoning: 'Quantifiable evidence of market traction'
+              }
+            ]
           },
           {
+            id: 'insight-3',
             type: 'warning',
             title: 'Operating Costs',
             description: 'Operating expenses increased by 18%, requiring attention to cost optimization',
-            confidence: 0.85
+            confidence: 0.85,
+            impact: 'medium',
+            category: 'Financial Performance',
+            evidences: [
+              {
+                id: 'ev-3-1',
+                quote: 'Operating expenses rose to $1.8 billion, an 18% increase year-over-year',
+                pageNumber: 35,
+                startChar: 50,
+                endChar: 150,
+                confidence: 0.90,
+                reasoning: 'Direct statement showing cost increase trend'
+              },
+              {
+                id: 'ev-3-2',
+                quote: 'Management has identified several areas for cost optimization in the coming fiscal year',
+                pageNumber: 36,
+                startChar: 200,
+                endChar: 300,
+                confidence: 0.70,
+                reasoning: 'Acknowledgment of need for cost control measures'
+              }
+            ]
           },
           {
             type: 'negative',
@@ -551,6 +626,16 @@ ${section.content}
                     <BookOpen className="w-5 h-5" />
                     Report Summary
                   </CardTitle>
+                  <div className="ml-auto">
+                    <Button
+                      variant={splitView ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSplitView(!splitView)}
+                    >
+                      <SplitSquareHorizontal className="w-4 h-4 mr-2" />
+                      {splitView ? 'Split View' : 'Full Width'}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -578,48 +663,72 @@ ${section.content}
                 </CardContent>
               </Card>
 
-              {/* Key Insights */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="w-5 h-5" />
-                    AI Insights
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {analysisResults.insights.map((insight: any, index: number) => (
-                      <div
-                        key={index}
-                        className={`p-4 rounded-lg border ${
-                          insight.type === 'positive' ? 'border-green-200 bg-green-50' :
-                          insight.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
-                          'border-red-200 bg-red-50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          {insight.type === 'positive' ? (
-                            <TrendingUp className="w-5 h-5 text-green-600 mt-0.5" />
-                          ) : insight.type === 'warning' ? (
-                            <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                          ) : (
-                            <TrendingDown className="w-5 h-5 text-red-600 mt-0.5" />
-                          )}
-                          <div className="flex-1">
-                            <h4 className="font-semibold mb-1">{insight.title}</h4>
-                            <p className="text-sm text-gray-600">{insight.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-gray-500">Confidence:</span>
-                              <Progress value={insight.confidence * 100} className="w-20 h-2" />
-                              <span className="text-xs font-medium">{Math.round(insight.confidence * 100)}%</span>
-                            </div>
+              {/* Split View or Full Width Layout */}
+              {splitView ? (
+                // Split View Layout
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[800px]">
+                  {/* Left Panel - Analysis Results (40%) */}
+                  <div className="lg:col-span-2 h-full">
+                    <Card className="h-full flex flex-col">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2">
+                          <Brain className="w-5 h-5" />
+                          AI Insights with Evidence
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1 p-0">
+                        <ScrollArea className="h-full p-4">
+                          <div className="space-y-4">
+                            {analysisResults.insights.map((insight: any) => (
+                              <EvidenceCard
+                                key={insight.id}
+                                insight={insight}
+                                isActive={activeEvidenceId && insight.evidences.some((e: any) => e.id === activeEvidenceId)}
+                                onEvidenceClick={(evidenceId) => setActiveEvidenceId(evidenceId)}
+                                onViewInDocument={(evidenceId) => setActiveEvidenceId(evidenceId)}
+                              />
+                            ))}
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Right Panel - Document Viewer (60%) */}
+                  <div className="lg:col-span-3 h-full">
+                    <DocumentViewer
+                      documentContent={selectedFile?.name || 'Annual Report 2024'}
+                      evidences={analysisResults.insights.flatMap((i: any) => i.evidences)}
+                      activeEvidenceId={activeEvidenceId}
+                      onEvidenceClick={(evidenceId) => setActiveEvidenceId(evidenceId)}
+                      className="h-full"
+                    />
+                  </div>
+                </div>
+              ) : (
+                // Full Width Layout (Original)
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="w-5 h-5" />
+                      AI Insights with Evidence
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {analysisResults.insights.map((insight: any) => (
+                        <EvidenceCard
+                          key={insight.id}
+                          insight={insight}
+                          isActive={activeEvidenceId && insight.evidences.some((e: any) => e.id === activeEvidenceId)}
+                          onEvidenceClick={(evidenceId) => setActiveEvidenceId(evidenceId)}
+                          onViewInDocument={(evidenceId) => setActiveEvidenceId(evidenceId)}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Key Findings & Recommendations */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
