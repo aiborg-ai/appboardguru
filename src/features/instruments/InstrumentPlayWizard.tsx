@@ -271,12 +271,12 @@ export default function InstrumentPlayWizard({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
-          "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden",
+          "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col",
           className
         )}
       >
         {/* Header */}
-        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <instrumentConfig.icon className="w-8 h-8 text-blue-600" />
@@ -308,7 +308,7 @@ export default function InstrumentPlayWizard({
         </div>
 
         {/* Step indicators */}
-        <div className="px-6 py-4 border-b bg-gray-50">
+        <div className="px-6 py-4 border-b bg-gray-50 flex-shrink-0">
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => {
               const isActive = step.id === currentStep;
@@ -364,8 +364,8 @@ export default function InstrumentPlayWizard({
           </div>
         </div>
 
-        {/* Step content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Step content - This is the scrollable area */}
+        <div className="flex-1 overflow-y-auto min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -396,7 +396,7 @@ export default function InstrumentPlayWizard({
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-gray-50 px-6 py-4">
+        <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
