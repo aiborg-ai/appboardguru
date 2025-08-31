@@ -402,72 +402,10 @@ export const GET = EnhancedHandlers.get(
         filters: req.validatedQuery
       })
       
-      // Check if this is the test director account
-      const isTestDirector = req.user!.email === 'test.director@appboardguru.com'
-      
       if (organizationId) {
         // Validate UUID format
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(organizationId)) {
           throw new ValidationError('Invalid organization ID format', 'id', organizationId)
-        }
-        
-        // For test director, return demo organization if requested
-        if (isTestDirector) {
-          const demoOrgs = [
-            {
-              id: 'org-001',
-              name: 'TechCorp Solutions',
-              slug: 'techcorp',
-              industry: 'Technology',
-              organization_size: 'enterprise',
-              logo_url: '/demo/logos/techcorp.png',
-              description: 'Leading technology solutions provider',
-              created_at: '2024-01-15T10:00:00Z',
-              userRole: 'owner',
-              membershipStatus: 'active',
-              status: 'active',
-              memberCount: 25
-            },
-            {
-              id: 'org-002',
-              name: 'Global Finance Group',
-              slug: 'global-finance',
-              industry: 'Financial Services',
-              organization_size: 'enterprise',
-              logo_url: '/demo/logos/finance.png',
-              description: 'International financial services corporation',
-              created_at: '2024-01-10T10:00:00Z',
-              userRole: 'owner',
-              membershipStatus: 'active',
-              status: 'active',
-              memberCount: 18
-            },
-            {
-              id: 'org-003',
-              name: 'HealthCare Innovations',
-              slug: 'healthcare-inn',
-              industry: 'Healthcare',
-              organization_size: 'large',
-              logo_url: '/demo/logos/healthcare.png',
-              description: 'Pioneering healthcare technology and services',
-              created_at: '2024-01-05T10:00:00Z',
-              userRole: 'owner',
-              membershipStatus: 'active',
-              status: 'active',
-              memberCount: 12
-            }
-          ]
-          
-          const demoOrg = demoOrgs.find(org => org.id === organizationId)
-          if (demoOrg) {
-            logger.info('Demo organization fetched for test director', {
-              correlationId,
-              organizationId,
-              userId: req.user!.id,
-              duration: Date.now() - startTime
-            })
-            return demoOrg
-          }
         }
         
         // Get single organization
@@ -482,79 +420,7 @@ export const GET = EnhancedHandlers.get(
         
         return organization
       } else {
-        // For test director, return demo organizations
-        if (isTestDirector) {
-          const demoOrganizations = [
-            {
-              id: 'org-001',
-              name: 'TechCorp Solutions',
-              slug: 'techcorp',
-              industry: 'Technology',
-              organization_size: 'enterprise',
-              logo_url: '/demo/logos/techcorp.png',
-              description: 'Leading technology solutions provider',
-              created_at: '2024-01-15T10:00:00Z',
-              updated_at: '2024-12-01T10:00:00Z',
-              created_by: req.user!.id,
-              is_active: true,
-              userRole: 'owner',
-              membershipStatus: 'active',
-              status: 'active',
-              memberCount: 25,
-              website: 'https://techcorp.example.com'
-            },
-            {
-              id: 'org-002',
-              name: 'Global Finance Group',
-              slug: 'global-finance',
-              industry: 'Financial Services',
-              organization_size: 'enterprise',
-              logo_url: '/demo/logos/finance.png',
-              description: 'International financial services corporation',
-              created_at: '2024-01-10T10:00:00Z',
-              updated_at: '2024-11-25T10:00:00Z',
-              created_by: req.user!.id,
-              is_active: true,
-              userRole: 'owner',
-              membershipStatus: 'active',
-              status: 'active',
-              memberCount: 18,
-              website: 'https://globalfinance.example.com'
-            },
-            {
-              id: 'org-003',
-              name: 'HealthCare Innovations',
-              slug: 'healthcare-inn',
-              industry: 'Healthcare',
-              organization_size: 'large',
-              logo_url: '/demo/logos/healthcare.png',
-              description: 'Pioneering healthcare technology and services',
-              created_at: '2024-01-05T10:00:00Z',
-              updated_at: '2024-11-20T10:00:00Z',
-              created_by: req.user!.id,
-              is_active: true,
-              userRole: 'owner',
-              membershipStatus: 'active',
-              status: 'active',
-              memberCount: 12,
-              website: 'https://healthcare-inn.example.com'
-            }
-          ]
-          
-          logger.info('Demo organizations returned for test director', {
-            correlationId,
-            userId: req.user!.id,
-            count: demoOrganizations.length,
-            duration: Date.now() - startTime
-          })
-          
-          return {
-            organizations: demoOrganizations,
-            total: demoOrganizations.length,
-            message: `Found ${demoOrganizations.length} demo organizations for test director`
-          }
-        }
-        
+        // Remove demo organizations for test director - use real organizations
         // List user's organizations with filters
         const organizations = await organizationService.listForUser(req.user!.id)
         
@@ -570,6 +436,7 @@ export const GET = EnhancedHandlers.get(
           total: organizations.length,
           message: `Found ${organizations.length} organization${organizations.length === 1 ? '' : 's'}`
         }
+        
       }
       
     } catch (error: any) {

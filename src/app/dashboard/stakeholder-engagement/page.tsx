@@ -4,6 +4,8 @@
 export const dynamic = 'force-dynamic'
 
 import React, { useState, useEffect } from 'react'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -365,14 +367,16 @@ export default function StakeholderEngagementDashboard() {
   const chartColors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Stakeholder Engagement Portal</h1>
-          <p className="text-gray-600 mt-1">Real-time monitoring and management of all stakeholder relationships</p>
-        </div>
-        <div className="flex items-center space-x-4">
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <PageHeader
+            icon={Users}
+            title="Stakeholder Engagement Portal"
+            description="Manage relationships and communication with shareholders, investors, and board members"
+          />
+          <div className="flex items-center space-x-4">
           <select
             value={selectedTimeRange}
             onChange={(e) => setSelectedTimeRange(e.target.value)}
@@ -979,6 +983,7 @@ export default function StakeholderEngagementDashboard() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }

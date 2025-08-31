@@ -4,6 +4,8 @@
 export const dynamic = 'force-dynamic'
 
 import React, { useState, useEffect } from 'react'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -310,14 +312,16 @@ ${section.content}
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Annual Report AI</h1>
-          <p className="text-gray-600 mt-1">Generate comprehensive AI-powered annual reports from your organizational data</p>
-        </div>
-        <div className="flex items-center gap-3">
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <PageHeader
+            icon={Brain}
+            title="Annual Report AI"
+            description="Generate comprehensive annual reports using AI-powered insights and your board data"
+          />
+          <div className="flex items-center gap-3">
           <Button variant="outline" size="sm">
             <Settings className="w-4 h-4 mr-2" />
             Settings
@@ -757,6 +761,7 @@ ${section.content}
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
