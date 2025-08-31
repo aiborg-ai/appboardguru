@@ -49,22 +49,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch organizations' }, { status: 500 });
     }
     
-    // Transform the data to the expected format
-    const formattedOrganizations = organizations?.map(item => ({
-      id: item.organizations.id,
-      name: item.organizations.name,
-      slug: item.organizations.slug,
-      description: item.organizations.description,
-      logo_url: item.organizations.logo_url,
-      website: item.organizations.website,
-      userRole: item.role,
-      membershipStatus: item.status,
-      isPrimary: item.is_primary
-    })) || [];
+    // Transform the data to the expected format, filtering out null organizations
+    const formattedOrganizations = organizations
+      ?.filter(item => item.organizations !== null)
+      ?.map(item => ({
+        id: item.organizations.id,
+        name: item.organizations.name,
+        slug: item.organizations.slug,
+        description: item.organizations.description,
+        logo_url: item.organizations.logo_url,
+        website: item.organizations.website,
+        userRole: item.role,
+        membershipStatus: item.status,
+        isPrimary: item.is_primary
+      })) || [];
     
     return NextResponse.json(formattedOrganizations);
   } catch (error) {
     console.error('Organizations API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch organizations',
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
+      { status: 500 }
+    );
   }
 }

@@ -128,3 +128,4 @@ await user.publishDomainEvents();
 *Last Updated: August 2025*
 *Architecture: Hexagonal (DDD) + CQRS + Event-Driven*
 *Status: Production Ready for 500+ Features*
+- but i checked that these values are already same in Vercel, i didnt have to change anything, can yo0u diagnose thge error once more
