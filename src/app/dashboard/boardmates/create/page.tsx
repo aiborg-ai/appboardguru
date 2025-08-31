@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import CreateBoardMatesWizard from '@/features/boardmates/CreateBoardMatesWizard';
+import ModernCreateBoardMateWizard from '@/features/boardmates/ModernCreateBoardMateWizard';
 import { CreateBoardMateRequest, BoardMateCreationResponse } from '@/features/boardmates/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -169,33 +169,11 @@ export default function CreateBoardMatePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with back button */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link 
-              href="/dashboard/boardmates"
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to BoardMates</span>
-            </Link>
-            
-            <h1 className="text-xl font-semibold text-gray-900">
-              Add New BoardMate
-            </h1>
-            
-            <div className="w-32"></div> {/* Spacer for center alignment */}
-          </div>
-        </div>
-      </div>
-
-      {/* Wizard Content */}
-      <CreateBoardMatesWizard
+      {/* The modern wizard is a modal that covers the entire screen */}
+      <ModernCreateBoardMateWizard
         isOpen={true}
         onClose={() => router.push('/dashboard/boardmates')}
         onComplete={handleCreateBoardMate}
-        className="border-none shadow-none bg-transparent max-w-none max-h-none overflow-visible"
       />
     </div>
   );
