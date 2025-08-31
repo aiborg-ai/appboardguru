@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         role,
         status,
         is_primary,
-        organizations!inner (
+        organizations (
           id,
           name,
           slug,
@@ -43,8 +43,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', user.id)
-      .eq('status', 'active')
-      .not('organizations', 'is', null);
+      .eq('status', 'active');
     
     if (error) {
       console.error('Error fetching organizations:', error);
@@ -67,26 +66,29 @@ export async function GET(request: NextRequest) {
     // Transform the data to the expected format, filtering out null organizations
     const formattedOrganizations = organizations
       ?.filter(item => {
-        if (!item.organizations) {
-          console.warn('Skipping null organization for membership:', item.organization_id);
+        if (!item || !item.organizations) {
+          console.warn('Skipping null organization for membership:', item?.organization_id);
           return false;
         }
         return true;
       })
-      ?.map(item => ({
-        id: item.organizations.id,
-        name: item.organizations.name,
-        slug: item.organizations.slug,
-        description: item.organizations.description,
-        logo_url: item.organizations.logo_url,
-        website: item.organizations.website,
-        industry: item.organizations.industry,
-        organization_size: item.organizations.organization_size,
-        is_active: item.organizations.is_active,
-        userRole: item.role,
-        membershipStatus: item.status,
-        isPrimary: item.is_primary
-      })) || [];
+      ?.map(item => {
+        const org = item.organizations;
+        return {
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+          description: org.description,
+          logo_url: org.logo_url,
+          website: org.website,
+          industry: org.industry,
+          organization_size: org.organization_size,
+          is_active: org.is_active,
+          userRole: item.role,
+          membershipStatus: item.status,
+          isPrimary: item.is_primary
+        };
+      }) || [];
     
     console.log('Formatted organizations:', formattedOrganizations.length, 'records');
     return NextResponse.json(formattedOrganizations);

@@ -49,8 +49,20 @@ async function fetchUserOrganizations(userId: string): Promise<OrganizationWithR
   } catch (error) {
     // Fallback to simple API if enhanced fails
     console.log('Falling back to simple organizations API');
-    const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/simple')
-    return response
+    try {
+      const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/simple')
+      return response
+    } catch (simpleError) {
+      // If simple API also fails, use the fallback that returns empty array
+      console.log('Both APIs failed, using fallback');
+      try {
+        const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/fallback')
+        return response
+      } catch (fallbackError) {
+        console.error('All organization APIs failed, returning empty array');
+        return []
+      }
+    }
   }
 }
 
