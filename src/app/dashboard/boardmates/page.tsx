@@ -995,9 +995,10 @@ export default function BoardMatesPage() {
               )}
             </>
           )}
+        </div>
 
-      {/* Association Manager Modal */}
-      {selectedBoardmate && (
+        {/* Association Manager Modal */}
+        {selectedBoardmate && (
         <AssociationManager
           boardmate={selectedBoardmate}
           isOpen={isAssociationManagerOpen}
@@ -1008,7 +1009,6 @@ export default function BoardMatesPage() {
           onUpdate={handleAssociationUpdate}
         />
       )}
-        </div>
       </div>
     </DashboardLayout>
   );

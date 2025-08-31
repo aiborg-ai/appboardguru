@@ -428,8 +428,6 @@ export default function MeetingsPage() {
           </>
         )}
       </div>
-
-      </div>
     </DashboardLayout>
   );
 }
