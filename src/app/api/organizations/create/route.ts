@@ -44,6 +44,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Request body:', body);
     
+    // Normalize industry value (replace spaces with underscores)
+    if (body.industry && typeof body.industry === 'string') {
+      body.industry = body.industry.replace(/\s+/g, '_');
+      console.log('Normalized industry:', body.industry);
+    }
+    
     // Validate request body
     const validationResult = createOrganizationSchema.safeParse(body);
     if (!validationResult.success) {
@@ -74,6 +80,7 @@ export async function POST(request: NextRequest) {
       const uniqueSlug = `${slug}-${Math.random().toString(36).substr(2, 5)}`;
       
       // Create organization with unique slug
+      // Try to create organization with minimal fields first
       const { data: organization, error: createError } = await supabase
         .from('organizations')
         .insert({
@@ -85,22 +92,26 @@ export async function POST(request: NextRequest) {
           organization_size: data.organizationSize || 'startup',
           created_by: user.id,
           is_active: true,
-          settings: {
-            board_pack_auto_archive_days: 365,
-            invitation_expires_hours: 72,
-            max_members: 100,
-            enable_audit_logs: true,
-            require_2fa: false,
-            allowed_file_types: ['pdf', 'docx', 'pptx', 'xlsx'],
-          },
         })
         .select()
         .single();
       
       if (createError) {
-        console.error('Error creating organization:', createError);
+        console.error('Detailed error creating organization:', {
+          error: createError,
+          code: createError.code,
+          message: createError.message,
+          details: createError.details,
+          hint: createError.hint,
+          data: {
+            name: data.name,
+            slug: uniqueSlug,
+            industry: data.industry,
+            organization_size: data.organizationSize
+          }
+        });
         return NextResponse.json(
-          { error: 'Failed to create organization', details: createError.message },
+          { error: 'Failed to create organization', details: createError.message, code: createError.code },
           { status: 500 }
         );
       }
@@ -156,6 +167,7 @@ export async function POST(request: NextRequest) {
       
     } else {
       // Create organization with original slug
+      // Try to create organization with minimal fields first
       const { data: organization, error: createError } = await supabase
         .from('organizations')
         .insert({
@@ -167,22 +179,26 @@ export async function POST(request: NextRequest) {
           organization_size: data.organizationSize || 'startup',
           created_by: user.id,
           is_active: true,
-          settings: {
-            board_pack_auto_archive_days: 365,
-            invitation_expires_hours: 72,
-            max_members: 100,
-            enable_audit_logs: true,
-            require_2fa: false,
-            allowed_file_types: ['pdf', 'docx', 'pptx', 'xlsx'],
-          },
         })
         .select()
         .single();
       
       if (createError) {
-        console.error('Error creating organization:', createError);
+        console.error('Detailed error creating organization:', {
+          error: createError,
+          code: createError.code,
+          message: createError.message,
+          details: createError.details,
+          hint: createError.hint,
+          data: {
+            name: data.name,
+            slug: slug,
+            industry: data.industry,
+            organization_size: data.organizationSize
+          }
+        });
         return NextResponse.json(
-          { error: 'Failed to create organization', details: createError.message },
+          { error: 'Failed to create organization', details: createError.message, code: createError.code },
           { status: 500 }
         );
       }
