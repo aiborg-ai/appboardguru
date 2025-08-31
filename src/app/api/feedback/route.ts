@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         console.error('[Feedback API] Auth error:', authError.message)
         
         // Check if we're in demo mode or development
-        if (process.env['NODE_ENV'] === 'development' || process.env['NEXT_PUBLIC_DEMO_MODE'] === 'true') {
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
           console.log('[Feedback API] Using demo fallback for feedback submission')
           // Allow submission with mock user in demo/dev mode
           userEmail = 'demo.user@appboardguru.com'
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     } catch (authCheckError) {
       console.error('[Feedback API] Error checking authentication:', authCheckError)
       // Continue with demo user in development
-      if (process.env['NODE_ENV'] === 'development') {
+      if (process.env.NODE_ENV === 'development') {
         userEmail = 'demo.user@appboardguru.com'
         userName = 'Demo User'
         user = { id: 'demo-user-id', email: userEmail } as any

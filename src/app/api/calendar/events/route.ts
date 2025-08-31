@@ -19,7 +19,7 @@ const createEventSchema = z.object({
   category: z.string().optional(),
   tags: z.array(z.string()).default([]),
   location: z.string().optional(),
-  virtual_meeting_url: z.string().url().optional(),
+  virtual_meeting_url: z.union([z.string().url(), z.literal(''), z.undefined()]).optional(),
   is_recurring: z.boolean().default(false),
   recurrence_rule: z.any().optional(),
   organization_id: z.string().optional(),
@@ -114,6 +114,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Transform empty strings to undefined for optional URL fields
+    if (body.virtual_meeting_url === '') {
+      body.virtual_meeting_url = undefined
+    }
+    
     const validatedData = createEventSchema.parse(body)
 
     // Check for scheduling conflicts
