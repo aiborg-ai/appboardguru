@@ -37,7 +37,7 @@ export default function Error({
             </p>
 
             {/* Error details in development */}
-            {process.env.NODE_ENV === 'development' && (
+            {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
               <div className="w-full mb-6 p-4 bg-gray-100 rounded-lg text-left">
                 <p className="text-xs font-mono text-gray-700 break-all">
                   {error.message}

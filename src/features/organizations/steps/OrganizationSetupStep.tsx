@@ -229,7 +229,7 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                     </SelectTrigger>
                     <SelectContent>
                       {industriesLoading ? (
-                        <SelectItem value="" disabled>Loading...</SelectItem>
+                        <SelectItem value="loading-industries" disabled>Loading...</SelectItem>
                       ) : industryOptions.length > 0 ? (
                         industryOptions.map(industry => (
                           <SelectItem key={industry.value} value={industry.value}>
@@ -259,7 +259,7 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                     </SelectTrigger>
                     <SelectContent>
                       {sizesLoading ? (
-                        <SelectItem value="" disabled>Loading...</SelectItem>
+                        <SelectItem value="loading-sizes" disabled>Loading...</SelectItem>
                       ) : sizeOptions.length > 0 ? (
                         sizeOptions.map(size => (
                           <SelectItem key={size.value} value={size.value}>
