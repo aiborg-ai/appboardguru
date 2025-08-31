@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "rm -rf .next && npm run build",
   "framework": "nextjs",
-  "installCommand": "npm install --force",
+  "installCommand": "npm cache clean --force && npm install --force",
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1"
   },

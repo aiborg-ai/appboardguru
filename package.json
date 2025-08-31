@@ -1,7 +1,7 @@
 {
   "name": "appboardguru",
-  "version": "1.0.3",
-  "_vercel_cache_bust": "2024-08-31-15:33:00",
+  "version": "1.0.4",
+  "_vercel_cache_bust": "2025-08-31-23:00:00",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
