@@ -172,11 +172,7 @@ BEGIN
 END $$;
 
 -- Verify the associations
-RAISE NOTICE '';
-RAISE NOTICE '========================================';
-RAISE NOTICE 'VERIFICATION - Test Director Memberships:';
-RAISE NOTICE '========================================';
-
+-- Note: The verification query below will show all test director's organization memberships
 SELECT 
     o.name as organization_name,
     o.slug,
