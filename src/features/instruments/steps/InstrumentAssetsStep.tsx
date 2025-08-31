@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
   FileText, 
   Search, 
@@ -74,6 +83,11 @@ export default function InstrumentAssetsStep({ data, onUpdate }: InstrumentAsset
   const [isLoading, setIsLoading] = useState(true);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedGoal = data.selectedGoal;
   const instrumentConfig = data.instrumentConfig;
@@ -84,43 +98,172 @@ export default function InstrumentAssetsStep({ data, onUpdate }: InstrumentAsset
   const maximumAssets = instrumentConfig.assetFilters?.maxFiles;
   const supportedTypes = goalConfig?.requiredAssetTypes || instrumentConfig.assetFilters?.supportedTypes;
 
+  // Reload assets after successful upload
+  const loadAssets = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/assets');
+      
+      if (!response.ok) {
+        throw new Error('Failed to load assets');
+      }
+      
+      const result = await response.json();
+      let loadedAssets = result.assets || [];
+      
+      // Add mock assets if database is empty for testing
+      if (loadedAssets.length === 0) {
+        loadedAssets = getMockAssets();
+      }
+      
+      // Filter by supported types if specified
+      if (supportedTypes && supportedTypes.length > 0) {
+        loadedAssets = loadedAssets.filter((asset: Asset) => {
+          const fileExtension = asset.file_name.split('.').pop()?.toLowerCase();
+          return supportedTypes.includes(fileExtension || '');
+        });
+      }
+      
+      setAssets(loadedAssets);
+    } catch (err) {
+      console.error('Error loading assets:', err);
+      setError('Failed to load assets. Please try again.');
+      setAssets(getMockAssets()); // Use mock assets as fallback
+    } finally {
+      setIsLoading(false);
+    }
+  }, [supportedTypes]);
+
+  // Mock assets for testing when database is empty
+  const getMockAssets = (): Asset[] => {
+    const now = new Date().toISOString();
+    return [
+      {
+        id: 'mock-1',
+        title: 'Q4 2024 Board Pack - SAMPLE',
+        file_name: 'Q4_2024_Board_Pack.pdf',
+        file_type: 'application/pdf',
+        file_size: 2456789,
+        created_at: now,
+        updated_at: now,
+        status: 'ready',
+        summary: 'Quarterly board pack containing financial reports, strategic updates, and risk assessments',
+        uploaded_by: 'Demo User',
+        organization_id: 'demo-org'
+      },
+      {
+        id: 'mock-2',
+        title: 'Strategic Plan 2024-2026 - SAMPLE',
+        file_name: 'Strategic_Plan_2024_2026.docx',
+        file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_size: 1234567,
+        created_at: now,
+        updated_at: now,
+        status: 'ready',
+        summary: 'Three-year strategic plan outlining growth initiatives and market expansion',
+        uploaded_by: 'Demo User',
+        organization_id: 'demo-org'
+      },
+      {
+        id: 'mock-3',
+        title: 'Board Meeting Presentation Dec 2024 - SAMPLE',
+        file_name: 'Board_Meeting_Dec_2024.pptx',
+        file_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        file_size: 3456789,
+        created_at: now,
+        updated_at: now,
+        status: 'ready',
+        summary: 'Board meeting presentation with performance metrics and strategic initiatives',
+        uploaded_by: 'Demo User',
+        organization_id: 'demo-org'
+      },
+      {
+        id: 'mock-4',
+        title: 'Financial Report FY2024 - SAMPLE',
+        file_name: 'Financial_Report_FY2024.xlsx',
+        file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        file_size: 987654,
+        created_at: now,
+        updated_at: now,
+        status: 'ready',
+        summary: 'Comprehensive financial report with revenue, expenses, and cash flow analysis',
+        uploaded_by: 'Demo User',
+        organization_id: 'demo-org'
+      }
+    ];
+  };
+
+  // Handle file upload
+  const handleFileUpload = useCallback(async () => {
+    if (uploadedFiles.length === 0) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
+        formData.append('category', 'board-documents');
+
+        const response = await fetch('/api/assets/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${file.name}`);
+        }
+
+        setUploadProgress(((i + 1) / uploadedFiles.length) * 100);
+      }
+
+      // Reload assets after successful upload
+      await loadAssets();
+      setUploadDialogOpen(false);
+      setUploadedFiles([]);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError('Failed to upload files. Please try again.');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [uploadedFiles, loadAssets]);
+
+  // Handle file selection
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      return supportedTypes?.includes(extension || '') ?? true;
+    });
+    setUploadedFiles(validFiles);
+  }, [supportedTypes]);
+
+  // Handle drag and drop
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    const validFiles = files.filter(file => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      return supportedTypes?.includes(extension || '') ?? true;
+    });
+    setUploadedFiles(validFiles);
+  }, [supportedTypes]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
   // Load assets from the organization
   useEffect(() => {
-    const loadAssets = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // In a real implementation, this would fetch from your organization's assets
-        const response = await fetch('/api/assets');
-        
-        if (!response.ok) {
-          throw new Error('Failed to load assets');
-        }
-        
-        const result = await response.json();
-        let loadedAssets = result.data || [];
-        
-        // Filter by supported types if specified
-        if (supportedTypes && supportedTypes.length > 0) {
-          loadedAssets = loadedAssets.filter((asset: Asset) => {
-            const fileExtension = asset.file_name.split('.').pop()?.toLowerCase();
-            return supportedTypes.includes(fileExtension || '');
-          });
-        }
-        
-        setAssets(loadedAssets);
-      } catch (err) {
-        console.error('Error loading assets:', err);
-        setError('Failed to load assets. Please try again.');
-        setAssets([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadAssets();
-  }, [supportedTypes]);
+  }, [loadAssets]);
 
   // Filter assets based on search and type filter
   const filteredAssets = assets.filter(asset => {
@@ -203,6 +346,7 @@ export default function InstrumentAssetsStep({ data, onUpdate }: InstrumentAsset
   const totalFilteredAssets = filteredAssets.length;
   const meetsMinimum = selectedCount >= minimumAssets;
   const atMaximum = maximumAssets ? selectedCount >= maximumAssets : false;
+  const isShowingSampleData = assets.some(asset => asset.id.startsWith('mock-'));
 
   return (
     <div className="space-y-6">
@@ -218,6 +362,23 @@ export default function InstrumentAssetsStep({ data, onUpdate }: InstrumentAsset
           Choose the documents you want to analyze with {selectedGoal?.title}
         </p>
       </div>
+
+      {/* Sample Data Notice */}
+      {isShowingSampleData && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start space-x-3">
+            <Info className="w-5 h-5 text-amber-600 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-medium text-amber-900 mb-1">
+                Using Sample Data for Demonstration
+              </h4>
+              <p className="text-sm text-amber-700">
+                These are sample board documents for testing. Upload your own documents to analyze real data.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Goal Requirements */}
       {selectedGoal && (
@@ -368,10 +529,86 @@ export default function InstrumentAssetsStep({ data, onUpdate }: InstrumentAsset
                 : 'Upload some documents to your organization first.'
               }
             </p>
-            <Button variant="outline" className="flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Upload Assets</span>
-            </Button>
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Assets</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Upload Board Documents</DialogTitle>
+                  <DialogDescription>
+                    Upload PDF, DOCX, PPTX, or XLSX files for analysis.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-sm text-gray-600 mb-2">
+                      Drag and drop files here, or click to browse
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Supported: {supportedTypes?.join(', ').toUpperCase()}
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept={supportedTypes?.map(t => `.${t}`).join(',')}
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Selected Files ({uploadedFiles.length})</Label>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {uploadedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <span className="text-sm truncate">{file.name}</span>
+                            <Badge variant="secondary">{formatBytes(file.size)}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {isUploading && (
+                    <div className="space-y-2">
+                      <Label>Uploading...</Label>
+                      <Progress value={uploadProgress} className="h-2" />
+                    </div>
+                  )}
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setUploadDialogOpen(false);
+                        setUploadedFiles([]);
+                      }}
+                      disabled={isUploading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleFileUpload}
+                      disabled={uploadedFiles.length === 0 || isUploading}
+                    >
+                      {isUploading ? 'Uploading...' : `Upload ${uploadedFiles.length} file${uploadedFiles.length !== 1 ? 's' : ''}`}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         ) : filteredAssets.length === 0 ? (
           <div className="text-center py-12">
@@ -458,9 +695,16 @@ export default function InstrumentAssetsStep({ data, onUpdate }: InstrumentAsset
                           
                           {/* File Info */}
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 truncate">
-                              {asset.title}
-                            </h4>
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-medium text-gray-900 truncate">
+                                {asset.title}
+                              </h4>
+                              {asset.id.startsWith('mock-') && (
+                                <Badge variant="secondary" className="text-xs">
+                                  SAMPLE
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-600 truncate">
                               {asset.file_name}
                             </p>

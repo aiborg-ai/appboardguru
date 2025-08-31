@@ -31,7 +31,8 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
     name: '',
     description: '',
     industry: '',
-    website: ''
+    website: '',
+    organizationSize: 'startup'
   });
 
   useEffect(() => {
@@ -329,11 +330,37 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
                   <SelectContent>
                     <SelectItem value="technology">Technology</SelectItem>
                     <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="healthcare">Healthcare</SelectItem>
+                    <SelectItem value="healthcare_and_life_sciences">Healthcare & Life Sciences</SelectItem>
                     <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="nonprofit">Non-Profit</SelectItem>
+                    <SelectItem value="non_profit">Non-Profit</SelectItem>
                     <SelectItem value="government">Government</SelectItem>
+                    <SelectItem value="retail_and_consumer_goods">Retail & Consumer Goods</SelectItem>
+                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                    <SelectItem value="energy_and_utilities">Energy & Utilities</SelectItem>
+                    <SelectItem value="real_estate">Real Estate</SelectItem>
+                    <SelectItem value="transportation_and_logistics">Transportation & Logistics</SelectItem>
+                    <SelectItem value="media_and_entertainment">Media & Entertainment</SelectItem>
+                    <SelectItem value="professional_services">Professional Services</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="org-size">Organization Size</Label>
+                <Select
+                  value={newOrgData.organizationSize}
+                  onValueChange={(value) => setNewOrgData({ ...newOrgData, organizationSize: value })}
+                >
+                  <SelectTrigger id="org-size">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="startup">Startup (1-10 employees)</SelectItem>
+                    <SelectItem value="small">Small (11-50 employees)</SelectItem>
+                    <SelectItem value="medium">Medium (51-250 employees)</SelectItem>
+                    <SelectItem value="large">Large (251-1000 employees)</SelectItem>
+                    <SelectItem value="enterprise">Enterprise (1000+ employees)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

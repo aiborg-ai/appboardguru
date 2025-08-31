@@ -313,12 +313,27 @@ ${section.content}
     const file = e.target.files?.[0]
     if (file) {
       setSelectedFile(file)
+      setSelectedAssetId('') // Clear asset selection when file is uploaded
       setAnalysisResults(null)
     }
   }
 
+  // Helper function to collect all evidences from insights
+  const getAllEvidences = () => {
+    if (!analysisResults?.insights) return []
+    return analysisResults.insights.flatMap((insight: any) => 
+      insight.evidences?.map((evidence: any) => ({
+        ...evidence,
+        type: insight.type // Pass insight type to evidence for coloring
+      })) || []
+    )
+  }
+
   const handleAnalyzeReport = async () => {
+    console.log('handleAnalyzeReport called', { selectedFile, selectedAssetId })
+    
     if (!selectedFile && !selectedAssetId) {
+      console.log('No file or asset selected, returning')
       return
     }
 
@@ -581,7 +596,15 @@ ${section.content}
               {/* Asset Selection Option */}
               {analysisType === 'asset' && (
                 <div className="space-y-4">
-                  <Select value={selectedAssetId} onValueChange={setSelectedAssetId}>
+                  <Select 
+                    value={selectedAssetId} 
+                    onValueChange={(value) => {
+                      console.log('Asset selected:', value)
+                      setSelectedAssetId(value)
+                      setSelectedFile(null) // Clear file selection when asset is selected
+                      setAnalysisResults(null)
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select an annual report from your assets" />
                     </SelectTrigger>
@@ -598,7 +621,10 @@ ${section.content}
               {/* Analyze Button */}
               <Button
                 className="w-full"
-                onClick={handleAnalyzeReport}
+                onClick={() => {
+                  console.log('Button clicked!')
+                  handleAnalyzeReport()
+                }}
                 disabled={(!selectedFile && !selectedAssetId) || isAnalyzing}
               >
                 {isAnalyzing ? (
@@ -613,6 +639,14 @@ ${section.content}
                   </>
                 )}
               </Button>
+              
+              {/* Debug Info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500 mt-2">
+                  Debug: File: {selectedFile?.name || 'none'}, Asset: {selectedAssetId || 'none'}, 
+                  Button disabled: {((!selectedFile && !selectedAssetId) || isAnalyzing).toString()}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -698,7 +732,7 @@ ${section.content}
                   <div className="lg:col-span-3 h-full">
                     <DocumentViewer
                       documentContent={selectedFile?.name || 'Annual Report 2024'}
-                      evidences={analysisResults.insights.flatMap((i: any) => i.evidences)}
+                      evidences={getAllEvidences()}
                       activeEvidenceId={activeEvidenceId}
                       onEvidenceClick={(evidenceId) => setActiveEvidenceId(evidenceId)}
                       className="h-full"
