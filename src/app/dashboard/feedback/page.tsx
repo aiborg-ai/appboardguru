@@ -82,6 +82,7 @@ export default function FeedbackPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(form),
         // Add timeout
         signal: AbortSignal.timeout(30000) // 30 second timeout

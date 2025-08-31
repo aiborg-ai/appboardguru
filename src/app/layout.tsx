@@ -2,6 +2,7 @@ import './globals.css'
 import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 import { Providers } from './providers'
+import { EnvProvider } from './env-provider'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <EnvProvider />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -30,7 +32,7 @@ export default function RootLayout({
                 if (typeof window === 'undefined') return;
                 
                 // Only run in production or if explicitly enabled
-                const isProduction = process.env.NODE_ENV === 'production';
+                const isProduction = window.location.hostname !== 'localhost';
                 const suppressErrors = true; // Set to false to see errors in development
                 
                 if (!isProduction && !suppressErrors) return;
