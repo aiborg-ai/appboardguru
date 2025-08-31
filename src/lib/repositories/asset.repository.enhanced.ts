@@ -23,7 +23,7 @@ type AssetShare = Database['public']['Tables']['asset_shares']['Row']
 type AssetAnnotation = Database['public']['Tables']['asset_annotations']['Row']
 
 export interface AssetWithDetails extends Asset {
-  uploaded_by_user?: {
+  owner?: {  // Changed from uploaded_by_user to owner to match database schema
     id: string
     full_name: string | null
     email: string
@@ -161,7 +161,7 @@ export class AssetRepository extends BaseRepository {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(
+        owner:users!owner_id(
           id, full_name, email, avatar_url
         ),
         vault:vaults(
@@ -194,13 +194,13 @@ export class AssetRepository extends BaseRepository {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(
+        owner:users!owner_id(
           id, full_name, email, avatar_url
         ),
         vault:vaults(id, name, organization_id),
         organization:organizations(id, name, slug)
       `, { count: 'exact' })
-      .eq('uploaded_by', userId)
+      .eq('owner_id', userId)
 
     query = this.applyFilters(query, filters)
     query = this.applyQueryOptions(query, options)
@@ -226,7 +226,7 @@ export class AssetRepository extends BaseRepository {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(
+        owner:users!owner_id(
           id, full_name, email, avatar_url
         ),
         vault:vaults(id, name, organization_id),
@@ -254,7 +254,7 @@ export class AssetRepository extends BaseRepository {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(
+        owner:users!owner_id(
           id, full_name, email, avatar_url
         ),
         vault:vaults(id, name, organization_id),
@@ -284,7 +284,7 @@ export class AssetRepository extends BaseRepository {
 
     const insertData: AssetInsert = {
       ...assetData,
-      uploaded_by: uploadedBy,
+      owner_id: uploadedBy,  // Using owner_id to match database schema
       status: 'processing',
       upload_progress: 0,
       created_at: new Date().toISOString(),
@@ -433,7 +433,7 @@ export class AssetRepository extends BaseRepository {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(
+        owner:users!owner_id(
           id, full_name, email, avatar_url
         ),
         vault:vaults(id, name, organization_id),
@@ -463,14 +463,14 @@ export class AssetRepository extends BaseRepository {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(
+        owner:users!owner_id(
           id, full_name, email, avatar_url
         ),
         vault:vaults(id, name, organization_id),
         organization:organizations(id, name, slug)
       `, { count: 'exact' })
       .or(`title.ilike.%${searchTerm}%,file_name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
-      .or(`uploaded_by.eq.${userId}` + 
+      .or(`owner_id.eq.${userId}` + 
            (organizationId ? `,organization_id.eq.${organizationId}` : ''))
 
     query = this.applyQueryOptions(query, options)
@@ -489,7 +489,7 @@ export class AssetRepository extends BaseRepository {
       .select('id, file_size, file_type, category, status, created_at')
 
     if (userId) {
-      query = query.eq('uploaded_by', userId)
+      query = query.eq('owner_id', userId)
     }
     if (organizationId) {
       query = query.eq('organization_id', organizationId)
@@ -617,7 +617,7 @@ export class AssetRepository extends BaseRepository {
       query = query.eq('status', filters.status)
     }
     if (filters.uploadedBy) {
-      query = query.eq('uploaded_by', filters.uploadedBy)
+      query = query.eq('owner_id', filters.uploadedBy)
     }
     if (filters.organizationId) {
       query = query.eq('organization_id', filters.organizationId)
@@ -730,7 +730,7 @@ export class AssetRepository extends BaseRepository {
           organization_id: uploadData.organizationId,
           vault_id: uploadData.vaultId,
           folder_path: uploadData.folderPath,
-          uploaded_by: uploadData.uploadedBy,
+          owner_id: uploadData.uploadedBy, // Changed from uploaded_by to owner_id to match database schema
           storage_bucket: 'assets',
           is_processed: false,
           processing_status: 'pending',
@@ -744,7 +744,7 @@ export class AssetRepository extends BaseRepository {
           .insert(assetData)
           .select(`
             *,
-            uploaded_by_user:users!uploaded_by(
+            owner:users!owner_id(
               id, full_name, email, avatar_url
             ),
             vault:vaults(id, name, organization_id),

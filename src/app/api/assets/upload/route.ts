@@ -315,10 +315,10 @@ export async function POST(request: NextRequest) {
       thumbnailUrl: asset.thumbnail_url,
       createdAt: asset.created_at,
       updatedAt: asset.updated_at,
-      owner: asset.uploaded_by_user ? {
-        id: asset.uploaded_by_user.id,
-        name: asset.uploaded_by_user.full_name || 'Unknown',
-        email: asset.uploaded_by_user.email
+      owner: asset.owner ? {
+        id: asset.owner.id,
+        name: asset.owner.full_name || 'Unknown',
+        email: asset.owner.email
       } : null,
       organization: asset.organization,
       vault: asset.vault,
