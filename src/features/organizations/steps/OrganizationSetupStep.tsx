@@ -232,7 +232,7 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                         <SelectItem value="loading-industries" disabled>Loading...</SelectItem>
                       ) : industryOptions.length > 0 ? (
                         industryOptions.map(industry => (
-                          <SelectItem key={industry.value} value={industry.value}>
+                          <SelectItem key={industry.value} value={industry.value.replace(/\s+/g, '_')}>
                             {industry.label}
                           </SelectItem>
                         ))

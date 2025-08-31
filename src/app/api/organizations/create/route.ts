@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validationResult = createOrganizationSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('Validation failed:', {
+        errors: validationResult.error.issues,
+        receivedData: body
+      });
       return NextResponse.json(
         { error: 'Invalid request data', details: validationResult.error.issues },
         { status: 400 }
