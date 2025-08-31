@@ -199,13 +199,13 @@ export default function CreateOrganizationWizard({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="h-full flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
-          "bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden",
+          "bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[calc(100vh-8rem)] flex flex-col",
           className
         )}
       >
@@ -293,7 +293,7 @@ export default function CreateOrganizationWizard({
         </div>
 
         {/* Step content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -313,7 +313,7 @@ export default function CreateOrganizationWizard({
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-gray-50 px-6 py-4">
+        <div className="flex-shrink-0 border-t bg-gray-50 px-6 py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
