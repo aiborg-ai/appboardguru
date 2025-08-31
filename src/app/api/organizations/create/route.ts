@@ -19,6 +19,18 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Organization creation API called');
     
+    // Check if environment variables are set
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Supabase environment variables not configured:', {
+        hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      });
+      return NextResponse.json(
+        { error: 'Server configuration error - Supabase not configured' },
+        { status: 500 }
+      );
+    }
+    
     const supabase = await createSupabaseServerClient();
     
     // Get authenticated user
@@ -259,8 +271,15 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Error in POST /api/organizations/create:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Failed to create organization',
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }

@@ -3,6 +3,15 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if environment variables are set
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Supabase environment variables not configured');
+      return NextResponse.json(
+        { error: 'Server configuration error - Supabase not configured' },
+        { status: 500 }
+      );
+    }
+    
     const supabase = await createSupabaseServerClient();
     
     // Get authenticated user
