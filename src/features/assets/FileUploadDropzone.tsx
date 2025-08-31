@@ -713,6 +713,9 @@ export function FileUploadDropzone({
       // Add organization context
       if (organizationId) {
         formData.append('organizationId', organizationId)
+        console.log('Regular upload - organizationId:', organizationId)
+      } else {
+        console.warn('No organizationId provided for regular upload')
       }
       
       if (vaultId) {
@@ -741,6 +744,8 @@ export function FileUploadDropzone({
         // Fetch presigned URL in an async IIFE
         ;(async () => {
           try {
+            console.log('Requesting presigned URL with organizationId:', organizationId)
+            
             // First, get a presigned upload URL
             const urlResponse = await fetch('/api/assets/upload-url', {
               method: 'POST',
@@ -751,7 +756,7 @@ export function FileUploadDropzone({
                 fileName: fileItem.file.name,
                 fileType: fileItem.file.type,
                 fileSize: fileItem.file.size,
-                organizationId
+                organizationId: organizationId || undefined
               })
             })
             
@@ -935,6 +940,11 @@ export function FileUploadDropzone({
   const handleUpload = async () => {
     if (!organizationId) {
       console.error('Organization ID is required for upload')
+      // Update all pending files with error
+      files.filter(file => file.status === 'pending').forEach(file => {
+        updateFileProperty(file.id, 'status', 'error')
+        updateFileProperty(file.id, 'error', 'Please select an organization before uploading')
+      })
       return
     }
 

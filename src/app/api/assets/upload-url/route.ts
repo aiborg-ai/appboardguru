@@ -40,22 +40,57 @@ export async function POST(request: NextRequest) {
 
     // Resolve organization ID if needed
     let finalOrgId = organizationId
+    
+    console.log('Upload URL request - Organization resolution:', {
+      providedOrgId: organizationId,
+      userId: user.id,
+      userEmail: user.email
+    })
+    
     if (!finalOrgId || finalOrgId.startsWith('org-')) {
       // Get user's first organization
-      const { data: userOrg } = await supabase
+      const { data: userOrgs, error: orgError } = await supabase
         .from('organization_members')
-        .select('organization_id')
+        .select('organization_id, organizations(id, name)')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single()
       
-      if (userOrg) {
-        finalOrgId = userOrg.organization_id
+      console.log('User organizations query result:', {
+        found: userOrgs?.length || 0,
+        error: orgError?.message,
+        orgs: userOrgs
+      })
+      
+      if (userOrgs && userOrgs.length > 0) {
+        finalOrgId = userOrgs[0].organization_id
+        console.log('Using organization:', finalOrgId)
       } else {
-        return NextResponse.json({ 
-          error: 'No organization found for user',
-          code: 'NO_ORGANIZATION'
-        }, { status: 400 })
+        // Try to get any organization the user created
+        const { data: createdOrg } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .eq('created_by', user.id)
+          .single()
+        
+        if (createdOrg) {
+          finalOrgId = createdOrg.id
+          console.log('Using created organization:', finalOrgId)
+        } else {
+          console.error('No organization found for user:', {
+            userId: user.id,
+            email: user.email,
+            providedOrgId: organizationId
+          })
+          
+          return NextResponse.json({ 
+            error: 'No organization found for user. Please ensure you are a member of an organization.',
+            code: 'NO_ORGANIZATION',
+            details: {
+              userId: user.id,
+              providedOrgId: organizationId
+            }
+          }, { status: 400 })
+        }
       }
     }
 
