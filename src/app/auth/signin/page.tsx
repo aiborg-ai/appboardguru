@@ -41,25 +41,27 @@ export default function SignInPage() {
   
   const router = useRouter()
   
-  // Check for demo mode on mount and redirect if active
+  // Clear demo mode when user explicitly navigates to sign-in
   useEffect(() => {
-    const checkDemoMode = () => {
+    const clearDemoAndCheckAuth = () => {
       // Check URL params
       const urlParams = new URLSearchParams(window.location.search)
       const isDemoParam = urlParams.get('demo') === 'true'
       
-      // Check localStorage
-      const storedDemoMode = localStorage.getItem('boardguru_demo_mode') === 'true'
-      
-      // If demo mode is active, redirect to dashboard
-      if (isDemoParam || storedDemoMode) {
-        console.log('[SignIn] Demo mode detected, redirecting to dashboard')
-        // Preserve the demo parameter in the redirect
+      // If demo parameter is not explicitly in URL, clear demo mode
+      // This means user clicked "Login" button and wants to sign in
+      if (!isDemoParam) {
+        console.log('[SignIn] Clearing demo mode - user wants to sign in')
+        localStorage.removeItem('boardguru_demo_mode')
+        localStorage.removeItem('boardguru_demo_features_explored')
+      } else {
+        // If demo=true is in URL, redirect to dashboard
+        console.log('[SignIn] Demo mode explicitly requested, redirecting to dashboard')
         router.push('/dashboard?demo=true&tour=true')
       }
     }
     
-    checkDemoMode()
+    clearDemoAndCheckAuth()
   }, [router])
 
   const {
