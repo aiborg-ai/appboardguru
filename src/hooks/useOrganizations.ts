@@ -127,10 +127,10 @@ export function useOrganization(id?: string, userId?: string) {
 export function useCreateOrganization() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const supabase = createSupabaseBrowserClient()
 
   return useMutation({
     mutationFn: async (data: CreateOrganizationPayload) => {
+      const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
       
@@ -175,10 +175,10 @@ export function useCreateOrganization() {
 export function useUpdateOrganization() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const supabase = createSupabaseBrowserClient()
 
   return useMutation({
     mutationFn: async (data: UpdateOrganizationPayload) => {
+      const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
       
@@ -234,10 +234,10 @@ export function useUpdateOrganization() {
 export function useDeleteOrganization() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const supabase = createSupabaseBrowserClient()
 
   return useMutation({
     mutationFn: async ({ organizationId, immediate = false }: { organizationId: string; immediate?: boolean }) => {
+      const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
       

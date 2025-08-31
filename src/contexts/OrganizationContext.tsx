@@ -136,18 +136,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userId, setUserId] = useState<string>('')
   const [isTestDirector, setIsTestDirector] = useState(false)
   
+  // Test director ALWAYS uses real organizations, never demo data
+  // This ensures consistent behavior and proper database access
+  const shouldUseDemoData = isDemoMode && !isTestDirector
+  
   // Use demo organizations or real organizations based on mode
   // Skip the hook entirely in demo mode to prevent API calls
-  // Note: Test director now uses real organizations to enable uploads
+  // IMPORTANT: Test director always uses real data regardless of demo mode
   const { 
     data: realOrganizations = [], 
     isLoading: isLoadingRealOrganizations,
     refetch: refetchOrganizations
-  } = useUserOrganizations(isDemoMode ? '' : userId)
+  } = useUserOrganizations(shouldUseDemoData ? '' : userId)
   
-  // Use demo organizations ONLY in demo mode
-  // Test director uses real organizations to enable actual uploads
-  const organizations = isDemoMode
+  // Use demo organizations ONLY in demo mode AND not test director
+  // Test director ALWAYS uses real organizations from database
+  const organizations = shouldUseDemoData
     ? demoOrganizations.map(org => ({
         ...org,
         userRole: 'owner' as const,
@@ -158,26 +162,29 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       }))
     : realOrganizations
     
-  const isLoadingOrganizations = isDemoMode ? false : isLoadingRealOrganizations
+  const isLoadingOrganizations = shouldUseDemoData ? false : isLoadingRealOrganizations
 
   // Get current user
   useEffect(() => {
     const getUser = async () => {
-      // In demo mode, use a demo user ID
-      if (isDemoMode) {
-        setUserId('demo-user-001')
-        return
-      }
-      
-      // Normal user authentication for non-demo mode - only create client if not in demo mode
+      // Always check for real user first to detect test director
       const supabase = createSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
+      
       if (user) {
         setUserId(user.id)
         // Check if this is the test director account
         if (user.email === 'test.director@appboardguru.com') {
           setIsTestDirector(true)
+          // Test director always uses real data, never demo
+          return
         }
+      }
+      
+      // Only use demo user if in demo mode AND not test director
+      if (isDemoMode && !user) {
+        setUserId('demo-user-001')
+        return
       }
     }
     getUser()
@@ -228,8 +235,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setIsLoadingVaults(true)
     
-    // In demo mode or for test director, provide demo vaults
-    if (isDemoMode || isTestDirector) {
+    // In demo mode ONLY (not for test director), provide demo vaults
+    // Test director should use real vaults from database
+    if (isDemoMode && !isTestDirector) {
       // Create demo vaults for the current organization
       const demoVaults: Vault[] = [
         {
