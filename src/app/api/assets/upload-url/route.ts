@@ -76,20 +76,67 @@ export async function POST(request: NextRequest) {
           finalOrgId = createdOrg.id
           console.log('Using created organization:', finalOrgId)
         } else {
-          console.error('No organization found for user:', {
-            userId: user.id,
-            email: user.email,
-            providedOrgId: organizationId
-          })
-          
-          return NextResponse.json({ 
-            error: 'No organization found for user. Please ensure you are a member of an organization.',
-            code: 'NO_ORGANIZATION',
-            details: {
-              userId: user.id,
-              providedOrgId: organizationId
+          // Special handling for test director - auto-create organization if needed
+          if (user.email === 'test.director@appboardguru.com') {
+            console.log('Test director detected - creating default organization')
+            
+            // Create organization for test director
+            const { data: newOrg, error: createOrgError } = await supabase
+              .from('organizations')
+              .insert({
+                name: 'Test Director Organization',
+                slug: `test-director-org-${Date.now()}`,
+                description: 'Auto-created organization for test director',
+                created_by: user.id,
+                status: 'active',
+                industry: 'Technology',
+                organization_size: 'medium'
+              })
+              .select()
+              .single()
+            
+            if (newOrg && !createOrgError) {
+              // Create membership
+              await supabase
+                .from('organization_members')
+                .insert({
+                  organization_id: newOrg.id,
+                  user_id: user.id,
+                  role: 'owner',
+                  status: 'active',
+                  joined_at: new Date().toISOString()
+                })
+              
+              finalOrgId = newOrg.id
+              console.log('Created organization for test director:', finalOrgId)
+            } else {
+              console.error('Failed to create organization for test director:', createOrgError)
+              return NextResponse.json({ 
+                error: 'Failed to create organization. Please try again.',
+                code: 'ORG_CREATION_FAILED',
+                details: {
+                  userId: user.id,
+                  email: user.email,
+                  error: createOrgError?.message
+                }
+              }, { status: 500 })
             }
-          }, { status: 400 })
+          } else {
+            console.error('No organization found for user:', {
+              userId: user.id,
+              email: user.email,
+              providedOrgId: organizationId
+            })
+            
+            return NextResponse.json({ 
+              error: 'No organization found for user. Please ensure you are a member of an organization.',
+              code: 'NO_ORGANIZATION',
+              details: {
+                userId: user.id,
+                providedOrgId: organizationId
+              }
+            }, { status: 400 })
+          }
         }
       }
     }

@@ -138,14 +138,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   
   // Use demo organizations or real organizations based on mode
   // Skip the hook entirely in demo mode to prevent API calls
+  // Note: Test director now uses real organizations to enable uploads
   const { 
     data: realOrganizations = [], 
     isLoading: isLoadingRealOrganizations,
     refetch: refetchOrganizations
-  } = useUserOrganizations(isDemoMode || isTestDirector ? '' : userId)
+  } = useUserOrganizations(isDemoMode ? '' : userId)
   
-  // Use demo organizations in demo mode or for test director
-  const organizations = (isDemoMode || isTestDirector)
+  // Use demo organizations ONLY in demo mode
+  // Test director uses real organizations to enable actual uploads
+  const organizations = isDemoMode
     ? demoOrganizations.map(org => ({
         ...org,
         userRole: 'owner' as const,
@@ -156,7 +158,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
       }))
     : realOrganizations
     
-  const isLoadingOrganizations = (isDemoMode || isTestDirector) ? false : isLoadingRealOrganizations
+  const isLoadingOrganizations = isDemoMode ? false : isLoadingRealOrganizations
 
   // Get current user
   useEffect(() => {

@@ -274,6 +274,41 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // If still no organization and it's test director, create one
+    if (!finalOrganizationId && user.email === 'test.director@appboardguru.com') {
+      console.log('Test director detected without org - creating default organization')
+      
+      const { data: newOrg, error: createOrgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: 'Test Director Organization',
+          slug: `test-director-org-${Date.now()}`,
+          description: 'Auto-created organization for test director',
+          created_by: user.id,
+          status: 'active',
+          industry: 'Technology',
+          organization_size: 'medium'
+        })
+        .select()
+        .single()
+      
+      if (newOrg && !createOrgError) {
+        // Create membership
+        await supabase
+          .from('organization_members')
+          .insert({
+            organization_id: newOrg.id,
+            user_id: user.id,
+            role: 'owner',
+            status: 'active',
+            joined_at: new Date().toISOString()
+          })
+        
+        finalOrganizationId = newOrg.id
+        console.log('Created organization for test director:', finalOrganizationId)
+      }
+    }
+    
     const organizationIdResult = createOrganizationId(finalOrganizationId)
 
     if (!userIdResult.success) {
