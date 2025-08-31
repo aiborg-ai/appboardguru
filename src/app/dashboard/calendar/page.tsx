@@ -20,6 +20,7 @@ import {
   Filter
 } from 'lucide-react'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
+import CreateEventModal from '@/features/calendar/CreateEventModal'
 
 interface CalendarEvent {
   id: string
@@ -48,6 +49,7 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const calendarService = new CalendarService()
 
@@ -384,7 +386,7 @@ export default function CalendarPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Event
               </Button>
@@ -544,6 +546,13 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Event Modal */}
+      <CreateEventModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={loadEvents}
+      />
     </DashboardLayout>
   )
 }
