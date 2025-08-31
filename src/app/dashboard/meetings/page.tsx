@@ -4,6 +4,8 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -216,44 +218,37 @@ export default function MeetingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            Meetings
-            <InfoTooltip
-              content={
-                <InfoSection
-                  title="Meeting Management & Compliance"
-                  description="Comprehensive meeting management system designed for board governance, regulatory compliance, and executive coordination."
-                  features={[
-                    "AGM, Board, and Committee meeting support",
-                    "Automated compliance tracking and reporting",
-                    "Digital agenda management with approvals",
-                    "Attendee RSVP and presence tracking",
-                    "Meeting minutes with digital signatures",
-                    "Document distribution and version control",
-                    "Action item tracking and follow-up",
-                    "Regulatory reporting and audit trails",
-                    "Hybrid meeting support (in-person + virtual)"
-                  ]}
-                  tips={[
-                    "Use meeting templates for consistent agendas",
-                    "Track attendance for compliance requirements",
-                    "Set up automatic document distribution",
-                    "Enable digital signatures for quick approvals",
-                    "Use action item tracking for accountability"
-                  ]}
-                />
-              }
-              side="right"
+    <DashboardLayout>
+      <div className="p-6">
+        <PageHeader
+          icon={Calendar}
+          title="Meetings"
+          description="Schedule, manage, and track board meetings and committees"
+          tooltip={
+            <InfoSection
+              title="Meeting Management & Compliance"
+              description="Comprehensive meeting management system designed for board governance, regulatory compliance, and executive coordination."
+              features={[
+                "AGM, Board, and Committee meeting support",
+                "Automated compliance tracking and reporting",
+                "Digital agenda management with approvals",
+                "Attendee RSVP and presence tracking",
+                "Meeting minutes with digital signatures",
+                "Document distribution and version control",
+                "Action item tracking and follow-up",
+                "Regulatory reporting and audit trails",
+                "Hybrid meeting support (in-person + virtual)"
+              ]}
+              tips={[
+                "Use meeting templates for consistent agendas",
+                "Track attendance for compliance requirements",
+                "Set up automatic document distribution",
+                "Enable digital signatures for quick approvals",
+                "Use action item tracking for accountability"
+              ]}
             />
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage and organize your board meetings, AGMs, and committee sessions
-          </p>
-        </div>
+          }
+        />
         <div className="flex items-center gap-2">
           <Button
             onClick={handleCreateMeeting}
@@ -434,6 +429,7 @@ export default function MeetingsPage() {
         )}
       </div>
 
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

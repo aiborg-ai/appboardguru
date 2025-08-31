@@ -727,19 +727,94 @@ export function FileUploadDropzone({
         formData.append('tags', fileItem.tags.join(','))
       }
 
-      // Configure and send request
+      // Check file size and use appropriate upload method
+      const DIRECT_UPLOAD_THRESHOLD = 4 * 1024 * 1024 // 4MB
+      
+      if (fileItem.file.size > DIRECT_UPLOAD_THRESHOLD) {
+        // Use direct upload for large files
+        console.log('Using direct upload for large file:', {
+          fileName: fileItem.file.name,
+          fileSize: fileItem.file.size,
+          sizeMB: (fileItem.file.size / (1024 * 1024)).toFixed(2)
+        })
+        
+        // First, get a presigned upload URL
+        const urlResponse = await fetch('/api/assets/upload-url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileName: fileItem.file.name,
+            fileType: fileItem.file.type,
+            fileSize: fileItem.file.size,
+            organizationId
+          })
+        })
+        
+        if (!urlResponse.ok) {
+          const error = await urlResponse.json()
+          throw new Error(error.error || 'Failed to get upload URL')
+        }
+        
+        const { uploadUrl, path, metadata } = await urlResponse.json()
+        
+        // Upload directly to Supabase using the presigned URL
+        xhr.open('PUT', uploadUrl)
+        xhr.setRequestHeader('Content-Type', fileItem.file.type)
+        
+        // Override the load handler for direct upload
+        xhr.addEventListener('load', async () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // After successful upload, create the database record
+            const recordResponse = await fetch('/api/assets', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                filePath: path,
+                fileName: fileItem.file.name,
+                fileSize: fileItem.file.size,
+                fileType: fileItem.file.type,
+                title: fileItem.title,
+                category: fileItem.category,
+                tags: fileItem.tags,
+                organizationId: metadata.organizationId
+              })
+            })
+            
+            if (recordResponse.ok) {
+              updateFileProperty(fileItem.id, 'status', 'success')
+              updateFileProperty(fileItem.id, 'progress', 100)
+              collaboration.broadcastUploadCompleted(fileItem.id, { path }, Date.now() - startTime)
+              resolve({ id: fileItem.id, path } as any)
+            } else {
+              throw new Error('Failed to create asset record')
+            }
+          } else {
+            throw new Error(`Direct upload failed with status ${xhr.status}`)
+          }
+        })
+        
+        xhr.send(fileItem.file)
+      } else {
+        // Use regular upload for small files
+        xhr.open('POST', '/api/assets/upload')
+        
+        // Add debug logging
+        console.log('Starting regular upload:', {
+          fileName: fileItem.file.name,
+          fileSize: fileItem.file.size,
+          organizationId,
+          vaultId
+        })
+        
+        xhr.send(formData)
+      }
+      
+      // Configure timeout
       xhr.timeout = 300000 // 5 minutes timeout
-      xhr.open('POST', '/api/assets/upload')
-      
-      // Add debug logging
-      console.log('Starting upload:', {
-        fileName: fileItem.file.name,
-        fileSize: fileItem.file.size,
-        organizationId,
-        vaultId
-      })
-      
-      xhr.send(formData)
     })
   }
 

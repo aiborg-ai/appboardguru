@@ -9,18 +9,40 @@ export const dynamic = 'force-dynamic'
  */
 
 import { Suspense } from 'react'
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { PerformanceDashboard } from '@/components/performance/PerformanceDashboard'
 import { Card } from '@/components/molecules/cards/card'
+import { BarChart3 } from 'lucide-react'
+import { InfoSection } from '@/components/atoms/feedback/info-tooltip'
 
 export default function PerformanceDashboardPage() {
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Performance Monitoring</h1>
-        <p className="text-gray-600 mt-2">
-          Real-time application performance metrics and optimization recommendations
-        </p>
-      </div>
+    <DashboardLayout>
+      <div className="p-6">
+        <PageHeader
+          icon={BarChart3}
+          title="Performance Monitoring"
+          description="Real-time application performance metrics and optimization recommendations"
+          tooltip={
+            <InfoSection
+              title="Performance Analytics"
+              description="Monitor and optimize your application's performance with real-time metrics and insights."
+              features={[
+                "Real-time performance metrics",
+                "Resource usage monitoring",
+                "API response times tracking",
+                "User activity analytics",
+                "Performance optimization recommendations"
+              ]}
+              tips={[
+                "Set up alerts for performance thresholds",
+                "Review metrics regularly to identify trends",
+                "Use the recommendations to optimize slow areas"
+              ]}
+            />
+          }
+        />
 
       <Suspense fallback={<PerformanceDashboardSkeleton />}>
         <PerformanceDashboard 
@@ -28,8 +50,9 @@ export default function PerformanceDashboardPage() {
           autoRefresh={true}
           refreshInterval={30000}
         />
-      </Suspense>
-    </div>
+        </Suspense>
+      </div>
+    </DashboardLayout>
   )
 }
 

@@ -7,7 +7,12 @@ import { createOrganizationId, createUserId } from '@/types/branded'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+// Configure route segment for larger body size
+export const runtime = 'nodejs' // Use Node.js runtime instead of Edge
+
+// Vercel has a 4.5MB limit for Edge Functions, but Node.js functions can handle up to 50MB
+const MAX_FILE_SIZE = 4.5 * 1024 * 1024 // 4.5MB for Vercel Edge Functions
+// For larger files, we'll need to implement chunked uploads or use direct Supabase uploads
 
 interface UploadFormData {
   file: File
@@ -132,7 +137,7 @@ export async function POST(request: NextRequest) {
       if (file.size > MAX_FILE_SIZE) {
         validationErrors.push({
           field: 'file',
-          message: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit. Please choose a smaller file.`,
+          message: `File size (${(file.size / (1024 * 1024)).toFixed(1)}MB) exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit. Due to Vercel deployment limits, please use files under 4.5MB or contact admin for direct upload link.`,
           code: 'FILE_TOO_LARGE'
         })
       }
@@ -235,7 +240,41 @@ export async function POST(request: NextRequest) {
 
     // Create branded types
     const userIdResult = createUserId(user.id)
-    const organizationIdResult = createOrganizationId(organizationId)
+    
+    // Handle both UUID and legacy org ID formats
+    let finalOrganizationId: any = organizationId
+    
+    // If it's a legacy format like "org-001", we need to look up the actual UUID
+    if (organizationId && organizationId.startsWith('org-')) {
+      console.log('Legacy organization ID detected:', organizationId)
+      
+      // Look up the actual organization UUID
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', organizationId.replace('org-', ''))
+        .single()
+      
+      if (org) {
+        finalOrganizationId = org.id
+        console.log('Resolved to UUID:', finalOrganizationId)
+      } else {
+        // Try to find any organization the user belongs to
+        const { data: userOrg } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single()
+        
+        if (userOrg) {
+          finalOrganizationId = userOrg.organization_id
+          console.log('Using user\'s default organization:', finalOrganizationId)
+        }
+      }
+    }
+    
+    const organizationIdResult = createOrganizationId(finalOrganizationId)
 
     if (!userIdResult.success) {
       return NextResponse.json({ 
@@ -245,9 +284,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!organizationIdResult.success) {
+      console.error('Organization ID validation failed:', finalOrganizationId)
       return NextResponse.json({ 
-        error: 'Invalid organization ID',
-        code: 'INVALID_ORGANIZATION_ID'
+        error: 'Invalid organization ID. Please select an organization.',
+        code: 'INVALID_ORGANIZATION_ID',
+        details: { providedId: organizationId, resolvedId: finalOrganizationId }
       }, { status: 400 })
     }
 
@@ -274,8 +315,8 @@ export async function POST(request: NextRequest) {
       uploadedBy: userIdResult.data
     }
 
-    // Initialize services
-    const assetRepository = new AssetRepository()
+    // Initialize services with authenticated Supabase client
+    const assetRepository = new AssetRepository(supabase)
     const assetService = new AssetService(assetRepository)
 
     // Upload asset using service layer
@@ -284,20 +325,43 @@ export async function POST(request: NextRequest) {
       fileSize: uploadData.fileSize,
       mimeType: uploadData.mimeType,
       organizationId: uploadData.organizationId,
-      vaultId: uploadData.vaultId
+      vaultId: uploadData.vaultId,
+      userId: uploadData.uploadedBy,
+      category: uploadData.category,
+      folderPath: uploadData.folderPath
     })
     
     const uploadResult = await assetService.uploadAsset(uploadData)
 
     if (!uploadResult.success) {
-      console.error('Upload failed:', uploadResult.error)
+      console.error('Upload failed:', {
+        error: uploadResult.error,
+        message: uploadResult.error.message,
+        code: uploadResult.error.code || 'UPLOAD_FAILED',
+        details: uploadResult.error.details
+      })
+      
+      // Return more detailed error information
+      const errorCode = uploadResult.error.code || 'UPLOAD_FAILED'
+      const statusCode = errorCode === 'STORAGE_BUCKET_NOT_FOUND' ? 503 : 
+                        errorCode === 'STORAGE_PERMISSION_DENIED' ? 403 : 500
+      
       return NextResponse.json({ 
         error: uploadResult.error.message,
-        code: 'UPLOAD_FAILED',
-        details: uploadResult.error
-      }, { status: 500 })
+        code: errorCode,
+        details: uploadResult.error.details || uploadResult.error,
+        solution: uploadResult.error.details?.solution
+      }, { status: statusCode })
     }
 
+    // Log successful upload
+    console.log('Upload successful:', {
+      assetId: uploadResult.data.id,
+      fileName: uploadResult.data.file_name,
+      fileSize: uploadResult.data.file_size,
+      storagePath: uploadResult.data.file_path
+    })
+    
     // Transform response data
     const asset = uploadResult.data
     const responseAsset = {

@@ -5,6 +5,8 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback, ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';
+import DashboardLayout from '@/features/dashboard/layout/DashboardLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -589,10 +591,36 @@ export default function BoardMatesPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout>
+      <div className="p-6">
+        <PageHeader
+          icon={Users}
+          title="Board Members"
+          description="Manage and collaborate with your board members"
+          tooltip={
+            <InfoSection
+              title="Board Members Management"
+              description="Add, edit, and manage board member profiles and their associations with boards and committees."
+              features={[
+                "Create member profiles",
+                "Manage board associations",
+                "Track committee memberships",
+                "Monitor member status"
+              ]}
+            />
+          }
+          actions={
+            <Link href="/dashboard/boardmates/create">
+              <Button className="btn-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Board Member
+              </Button>
+            </Link>
+          }
+        />
+
         <div className="space-y-8">
-          {/* Header */}
+          {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -982,6 +1010,6 @@ export default function BoardMatesPage() {
       )}
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

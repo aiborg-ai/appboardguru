@@ -1,5 +1,6 @@
 import { BaseRepository } from './base.repository'
 import { Result, success, failure, RepositoryError } from './result'
+import { SupabaseClient } from '@supabase/supabase-js'
 import { 
   UserId, 
   OrganizationId, 
@@ -138,6 +139,18 @@ export interface AssetStats {
 }
 
 export class AssetRepository extends BaseRepository {
+  constructor(supabase?: SupabaseClient<Database>) {
+    // If no Supabase client is provided, create one
+    // This maintains backward compatibility
+    if (!supabase) {
+      console.warn('AssetRepository: No Supabase client provided, creating server client')
+      // We need to import and use createSupabaseServerClient here
+      // For now, throw an error to make it explicit
+      throw new Error('AssetRepository requires a Supabase client instance')
+    }
+    super(supabase)
+  }
+
   protected getEntityName(): string {
     return 'Asset'
   }
@@ -668,7 +681,36 @@ export class AssetRepository extends BaseRepository {
         const filePath = `${uploadData.uploadedBy}/${uploadData.organizationId}/${sanitizedFolderPath}/${uniqueFileName}`.replace(/\/+/g, '/')
 
         // Upload to Supabase Storage
-        console.log('Uploading to Supabase storage:', { filePath, mimeType: uploadData.mimeType })
+        console.log('Uploading to Supabase storage:', { 
+          filePath, 
+          mimeType: uploadData.mimeType,
+          fileSize: uploadData.fileSize,
+          bucketName: 'assets'
+        })
+        
+        // Check authentication context
+        const { data: { user: currentUser } } = await this.supabase.auth.getUser()
+        console.log('Upload auth context:', {
+          hasUser: !!currentUser,
+          userId: currentUser?.id,
+          uploadingAs: uploadData.uploadedBy,
+          match: currentUser?.id === uploadData.uploadedBy
+        })
+        
+        // Check if bucket exists first
+        const { data: buckets, error: bucketError } = await this.supabase.storage.listBuckets()
+        if (bucketError) {
+          console.error('Error listing buckets:', bucketError)
+        } else {
+          const assetsBucket = buckets?.find(b => b.id === 'assets')
+          if (!assetsBucket) {
+            console.error('CRITICAL: Assets storage bucket does not exist!')
+            console.error('Please run the SQL script at database/fix-assets-storage-bucket.sql')
+          } else {
+            console.log('Assets bucket found:', assetsBucket)
+          }
+        }
+        
         const { data: uploadResult, error: uploadError } = await this.supabase.storage
           .from('assets')
           .upload(filePath, uploadData.file, {
@@ -682,11 +724,41 @@ export class AssetRepository extends BaseRepository {
           })
 
         if (uploadError) {
-          console.error('Supabase storage upload failed:', uploadError)
+          console.error('Supabase storage upload failed:', {
+            message: uploadError.message,
+            error: uploadError,
+            filePath,
+            bucketName: 'assets',
+            fileSize: uploadData.fileSize,
+            mimeType: uploadData.mimeType
+          })
+          
+          // Check if it's a bucket not found error
+          if (uploadError.message?.includes('not found') || uploadError.message?.includes('does not exist')) {
+            console.error('CRITICAL: Storage bucket "assets" not found!')
+            console.error('Solution: Run this SQL in Supabase Dashboard:')
+            console.error("INSERT INTO storage.buckets (id, name, public) VALUES ('assets', 'assets', false);")
+            return failure(new RepositoryError(
+              'Storage bucket "assets" not found. Please contact administrator.',
+              'STORAGE_BUCKET_NOT_FOUND',
+              { error: uploadError.message, filePath, solution: 'Run database/fix-assets-storage-bucket.sql' }
+            ))
+          }
+          
+          // Check if it's a permission error
+          if (uploadError.message?.includes('permission') || uploadError.message?.includes('policy')) {
+            console.error('Storage permission error. User may not have upload rights.')
+            return failure(new RepositoryError(
+              'Permission denied. You may not have rights to upload files.',
+              'STORAGE_PERMISSION_DENIED',
+              { error: uploadError.message, filePath }
+            ))
+          }
+          
           return failure(new RepositoryError(
-            'Failed to upload file to storage',
+            `Failed to upload file to storage: ${uploadError.message}`,
             'STORAGE_UPLOAD_FAILED',
-            { error: uploadError.message, filePath }
+            { error: uploadError.message, filePath, details: uploadError }
           ))
         }
         
