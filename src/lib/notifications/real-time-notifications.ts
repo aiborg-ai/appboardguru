@@ -868,11 +868,12 @@ export class RealTimeNotificationManager extends EventEmitter {
 
 // React Hook for using the notification system
 import { useState, useEffect, useCallback } from 'react'
+import { createSupabaseClient } from '@/lib/supabase-client'
 
 export function useRealTimeNotifications() {
   const { user } = useAuthStore()
   const { client } = useWebSocketCollaboration()
-  const [manager] = useState(() => new RealTimeNotificationManager(new NotificationService()))
+  const [manager] = useState(() => new RealTimeNotificationManager(new NotificationService(createSupabaseClient())))
   const [notifications, setNotifications] = useState<RealTimeNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 

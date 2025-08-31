@@ -9,13 +9,15 @@ import { OrganizationService } from '../../services/organization.service'
 import { UserService } from '../../services/user.service'
 import { VaultService } from '../../services/vault.service'
 import { NotificationService } from '../../services/notification.service'
+import { createSupabaseClient } from '@/lib/supabase-client'
 
 // Initialize services
 const assetService = new AssetService()
 const organizationService = new OrganizationService()
 const userService = new UserService()
 const vaultService = new VaultService()
-const notificationService = new NotificationService()
+// Initialize NotificationService with Supabase client
+const notificationService = new NotificationService(createSupabaseClient())
 
 export interface DataLoaders {
   // User loaders

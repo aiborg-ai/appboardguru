@@ -186,17 +186,34 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Load user's default organization from localStorage or set first available
   useEffect(() => {
     if (organizations.length > 0 && !currentOrganization) {
-      // Try to load saved organization
-      const savedOrgId = localStorage.getItem('boardguru_current_organization')
-      const savedOrg = savedOrgId ? organizations.find(org => org.id === savedOrgId) : null
+      let defaultOrg: Organization | null = null
       
-      // Use saved org if found, otherwise use the first organization
-      const defaultOrg = savedOrg || organizations[0]
+      // For test director, prefer Fortune 500 Companies organization
+      if (isTestDirector) {
+        const fortune500 = organizations.find(org => 
+          org.name === 'Fortune 500 Companies' || 
+          org.slug === 'fortune-500-companies'
+        )
+        if (fortune500) {
+          console.log('Setting Fortune 500 Companies as default for test director')
+          defaultOrg = fortune500
+        }
+      }
+      
+      // If no special org found, try to load saved organization
+      if (!defaultOrg) {
+        const savedOrgId = localStorage.getItem('boardguru_current_organization')
+        const savedOrg = savedOrgId ? organizations.find(org => org.id === savedOrgId) : null
+        defaultOrg = savedOrg || organizations[0]
+      }
+      
       if (defaultOrg) {
         setCurrentOrganization(defaultOrg)
+        // Save to localStorage for persistence
+        localStorage.setItem('boardguru_current_organization', defaultOrg.id)
       }
     }
-  }, [organizations, currentOrganization])
+  }, [organizations, currentOrganization, isTestDirector])
 
   // Save current organization to localStorage
   useEffect(() => {
