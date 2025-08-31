@@ -37,13 +37,21 @@ interface UpdateOrganizationPayload {
 
 // API functions
 async function fetchUserOrganizations(userId: string): Promise<OrganizationWithRole[]> {
-  const response = await apiClient.get<{
-    success: boolean
-    data: { organizations: OrganizationWithRole[] }
-    message: string
-  }>(`/api/organizations?userId=${userId}`)
-  
-  return response.data.organizations
+  try {
+    // Try the enhanced API first
+    const response = await apiClient.get<{
+      success: boolean
+      data: { organizations: OrganizationWithRole[] }
+      message: string
+    }>(`/api/organizations?userId=${userId}`)
+    
+    return response.data.organizations
+  } catch (error) {
+    // Fallback to simple API if enhanced fails
+    console.log('Falling back to simple organizations API');
+    const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/simple')
+    return response
+  }
 }
 
 async function fetchOrganization(id: string, userId: string): Promise<OrganizationWithRole> {

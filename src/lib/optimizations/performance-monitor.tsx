@@ -5,6 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { Metric } from 'next/dist/compiled/web-vitals';
+import { clientEnv, isBrowser, isProduction } from '@/lib/config/client-env';
 
 export interface PerformanceMetrics {
   // Core Web Vitals
@@ -277,8 +278,8 @@ export class PerformanceMonitor {
     }
     
     // Custom analytics endpoint
-    if (process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT) {
-      fetch(process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT, {
+    if (isBrowser && clientEnv.ANALYTICS_ENDPOINT) {
+      fetch(clientEnv.ANALYTICS_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -416,7 +417,8 @@ export function usePerformanceMonitor() {
  */
 export function measureRenderTime(componentName: string) {
   return function<T extends React.ComponentType<any>>(Component: T): T {
-    if (process.env.NODE_ENV === 'production') {
+    // Skip measuring in production for performance
+    if (isProduction) {
       return Component;
     }
     

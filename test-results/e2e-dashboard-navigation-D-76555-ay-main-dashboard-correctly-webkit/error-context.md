@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "oppSpot" [ref=e6]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e12]: oppSpot
+        - generic [ref=e14]:
+          - link "Sign In" [ref=e15]:
+            - /url: /login
+            - button "Sign In" [ref=e16]
+          - link "Get Started" [ref=e17]:
+            - /url: /login
+            - button "Get Started" [ref=e18]
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]: Welcome to oppSpot
+        - generic [ref=e24]: Sign in to discover UK & Ireland business opportunities
+      - generic [ref=e26]:
+        - tablist [ref=e27]:
+          - tab "Sign In" [selected] [ref=e28]
+          - tab "Sign Up" [ref=e29]
+        - tabpanel "Sign In" [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - generic [ref=e33]: Email
+              - textbox "Email" [ref=e34]
+            - generic [ref=e35]:
+              - generic [ref=e36]:
+                - generic [ref=e37]: Password
+                - link "Forgot password?" [ref=e38]:
+                  - /url: /forgot-password
+              - textbox "Password" [ref=e39]
+            - button "Sign In" [ref=e40]
+      - generic [ref=e42]:
+        - generic [ref=e47]: Or continue with
+        - button "Continue with Google" [ref=e48]:
+          - img
+          - text: Continue with Google
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e54] [cursor=pointer]:
+    - img [ref=e55] [cursor=pointer]
+  - alert [ref=e60]
+```
