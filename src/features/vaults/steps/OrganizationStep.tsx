@@ -12,6 +12,7 @@ import { Building2, Plus, Check, Search, Loader2, CheckCircle2 } from 'lucide-re
 import { VaultWizardData } from '../CreateVaultWizard';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
+import { INDUSTRY_OPTIONS } from '@/lib/constants/industries';
 
 interface OrganizationStepProps {
   data: VaultWizardData;
@@ -330,20 +331,11 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="technology">Technology</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="healthcare_and_life_sciences">Healthcare & Life Sciences</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="non_profit">Non-Profit</SelectItem>
-                    <SelectItem value="government">Government</SelectItem>
-                    <SelectItem value="retail_and_consumer_goods">Retail & Consumer Goods</SelectItem>
-                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="energy_and_utilities">Energy & Utilities</SelectItem>
-                    <SelectItem value="real_estate">Real Estate</SelectItem>
-                    <SelectItem value="transportation_and_logistics">Transportation & Logistics</SelectItem>
-                    <SelectItem value="media_and_entertainment">Media & Entertainment</SelectItem>
-                    <SelectItem value="professional_services">Professional Services</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {INDUSTRY_OPTIONS.map(industry => (
+                      <SelectItem key={industry.value} value={industry.value}>
+                        {industry.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

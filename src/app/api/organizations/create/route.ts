@@ -97,18 +97,22 @@ export async function POST(request: NextRequest) {
       
       // Create organization with unique slug
       // Try to create organization with minimal fields first
+      const insertData = {
+        name: data.name,
+        slug: uniqueSlug,
+        description: data.description || null,
+        industry: data.industry,
+        website: data.website || null,
+        organization_size: data.organizationSize || 'startup',
+        created_by: user.id,
+        is_active: true,
+      };
+      
+      console.log('Attempting to create organization with data:', insertData);
+      
       const { data: organization, error: createError } = await supabase
         .from('organizations')
-        .insert({
-          name: data.name,
-          slug: uniqueSlug,
-          description: data.description || null,
-          industry: data.industry,
-          website: data.website || null,
-          organization_size: data.organizationSize || 'startup',
-          created_by: user.id,
-          is_active: true,
-        })
+        .insert(insertData)
         .select()
         .single();
       
@@ -119,15 +123,15 @@ export async function POST(request: NextRequest) {
           message: createError.message,
           details: createError.details,
           hint: createError.hint,
-          data: {
-            name: data.name,
-            slug: uniqueSlug,
-            industry: data.industry,
-            organization_size: data.organizationSize
-          }
+          data: insertData
         });
         return NextResponse.json(
-          { error: 'Failed to create organization', details: createError.message, code: createError.code },
+          { 
+            error: 'Failed to create organization', 
+            details: createError.message, 
+            code: createError.code,
+            hint: createError.hint 
+          },
           { status: 500 }
         );
       }
@@ -184,18 +188,22 @@ export async function POST(request: NextRequest) {
     } else {
       // Create organization with original slug
       // Try to create organization with minimal fields first
+      const insertData = {
+        name: data.name,
+        slug: slug,
+        description: data.description || null,
+        industry: data.industry,
+        website: data.website || null,
+        organization_size: data.organizationSize || 'startup',
+        created_by: user.id,
+        is_active: true,
+      };
+      
+      console.log('Attempting to create organization with data:', insertData);
+      
       const { data: organization, error: createError } = await supabase
         .from('organizations')
-        .insert({
-          name: data.name,
-          slug: slug,
-          description: data.description || null,
-          industry: data.industry,
-          website: data.website || null,
-          organization_size: data.organizationSize || 'startup',
-          created_by: user.id,
-          is_active: true,
-        })
+        .insert(insertData)
         .select()
         .single();
       
@@ -206,15 +214,15 @@ export async function POST(request: NextRequest) {
           message: createError.message,
           details: createError.details,
           hint: createError.hint,
-          data: {
-            name: data.name,
-            slug: slug,
-            industry: data.industry,
-            organization_size: data.organizationSize
-          }
+          data: insertData
         });
         return NextResponse.json(
-          { error: 'Failed to create organization', details: createError.message, code: createError.code },
+          { 
+            error: 'Failed to create organization', 
+            details: createError.message, 
+            code: createError.code,
+            hint: createError.hint 
+          },
           { status: 500 }
         );
       }

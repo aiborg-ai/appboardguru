@@ -28,6 +28,7 @@ import {
   OrganizationSize
 } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { INDUSTRY_OPTIONS, getIndustryLabel } from '@/lib/constants/industries';
 
 interface OrganizationSetupStepProps {
   data: OrganizationWizardData;
@@ -237,9 +238,9 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                           </SelectItem>
                         ))
                       ) : (
-                        INDUSTRIES.map(industry => (
-                          <SelectItem key={industry} value={industry.toLowerCase().replace(/ & /g, '_and_').replace(/ /g, '_')}>
-                            {industry}
+                        INDUSTRY_OPTIONS.map(industry => (
+                          <SelectItem key={industry.value} value={industry.value}>
+                            {industry.label}
                           </SelectItem>
                         ))
                       )}
@@ -352,9 +353,7 @@ export default function OrganizationSetupStep({ data, onUpdate }: OrganizationSe
                     </h4>
                     {data.organizationDetails.industry && (
                       <Badge variant="secondary" className="text-xs mt-1">
-                        {industryOptions.find(i => i.value === data.organizationDetails.industry)?.label || 
-                         INDUSTRIES.find(i => i.toLowerCase().replace(/ & /g, '_and_').replace(/ /g, '_') === data.organizationDetails.industry) || 
-                         data.organizationDetails.industry}
+                        {getIndustryLabel(data.organizationDetails.industry)}
                       </Badge>
                     )}
                     {data.organizationDetails.description && (

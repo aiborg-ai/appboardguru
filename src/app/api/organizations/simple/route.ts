@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get user's organizations
+    console.log('Fetching organizations for user:', user.id);
     const { data: organizations, error } = await supabase
       .from('organization_members')
       .select(`
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
         role,
         status,
         is_primary,
-        organizations (
+        organizations!inner (
           id,
           name,
           slug,
@@ -42,16 +43,36 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', user.id)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .not('organizations', 'is', null);
     
     if (error) {
       console.error('Error fetching organizations:', error);
-      return NextResponse.json({ error: 'Failed to fetch organizations' }, { status: 500 });
+      console.error('Query details:', {
+        userId: user.id,
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDetails: error.details,
+        errorHint: error.hint
+      });
+      return NextResponse.json({ 
+        error: 'Failed to fetch organizations',
+        details: error.message,
+        code: error.code
+      }, { status: 500 });
     }
+    
+    console.log('Raw organizations data:', organizations?.length || 0, 'records');
     
     // Transform the data to the expected format, filtering out null organizations
     const formattedOrganizations = organizations
-      ?.filter(item => item.organizations !== null)
+      ?.filter(item => {
+        if (!item.organizations) {
+          console.warn('Skipping null organization for membership:', item.organization_id);
+          return false;
+        }
+        return true;
+      })
       ?.map(item => ({
         id: item.organizations.id,
         name: item.organizations.name,
@@ -59,11 +80,15 @@ export async function GET(request: NextRequest) {
         description: item.organizations.description,
         logo_url: item.organizations.logo_url,
         website: item.organizations.website,
+        industry: item.organizations.industry,
+        organization_size: item.organizations.organization_size,
+        is_active: item.organizations.is_active,
         userRole: item.role,
         membershipStatus: item.status,
         isPrimary: item.is_primary
       })) || [];
     
+    console.log('Formatted organizations:', formattedOrganizations.length, 'records');
     return NextResponse.json(formattedOrganizations);
   } catch (error) {
     console.error('Organizations API error:', error);
