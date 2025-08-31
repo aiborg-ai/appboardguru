@@ -51,4 +51,39 @@ export abstract class BaseService {
       return failure(`Invalid input: ${message}`)
     }
   }
+
+  /**
+   * Log activity for audit trail (stub implementation)
+   */
+  protected async logActivity(action: string, category: string, resourceId?: string, metadata?: any): Promise<void> {
+    // Log to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Activity] ${category}:${action}`, { resourceId, metadata })
+    }
+    // In production, this would log to a database or monitoring service
+  }
+
+  /**
+   * Handle errors consistently (for NotificationService compatibility)
+   */
+  protected handleError(error: any, operation: string, context?: any): void {
+    console.error(`Error in ${operation}:`, error)
+    if (context) {
+      console.error('Context:', context)
+    }
+  }
+
+  /**
+   * Create pagination metadata
+   */
+  protected createPaginationMeta(total: number, page: number, limit: number) {
+    return {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1
+    }
+  }
 }
