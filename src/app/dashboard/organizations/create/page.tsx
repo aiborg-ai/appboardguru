@@ -26,18 +26,8 @@ const CreateOrganizationWizard = dynamicImport(
   }
 );
 
-// Import the hook conditionally to prevent SSR issues
-const useCreateOrganization = () => {
-  const [hook, setHook] = useState<any>(null);
-  
-  useEffect(() => {
-    import('@/hooks/useOrganizations').then(module => {
-      setHook(() => module.useCreateOrganization);
-    });
-  }, []);
-  
-  return hook ? hook() : null;
-};
+// Import the hook directly - we'll handle SSR with the dynamic component
+import { useCreateOrganization } from '@/hooks/useOrganizations';
 
 export default function CreateOrganizationPage() {
   const router = useRouter();

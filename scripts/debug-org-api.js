@@ -8,7 +8,7 @@
 require('dotenv').config({ path: '.env.local' });
 const fetch = require('node-fetch');
 
-const BASE_URL = 'http://localhost:3000'; // Change to your deployed URL if needed
+const BASE_URL = 'http://localhost:3002'; // Change to your deployed URL if needed
 const TEST_EMAIL = 'test.director@appboardguru.com';
 const TEST_PASSWORD = 'TestDirector123!';
 
