@@ -17,18 +17,32 @@ const createOrganizationSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log('Organization creation API called');
+    
     const supabase = await createSupabaseServerClient();
     
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authError || !user) {
+    if (authError) {
+      console.error('Auth error:', authError);
+      return NextResponse.json({ 
+        error: 'Authentication failed',
+        details: authError.message 
+      }, { status: 401 });
+    }
+    
+    if (!user) {
+      console.error('No user found in session');
       return NextResponse.json({ 
         error: 'Authentication required' 
       }, { status: 401 });
     }
     
+    console.log('Authenticated user:', user.email);
+    
     const body = await request.json();
+    console.log('Request body:', body);
     
     // Validate request body
     const validationResult = createOrganizationSchema.safeParse(body);

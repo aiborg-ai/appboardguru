@@ -64,14 +64,14 @@ async function fetchOrganization(id: string, userId: string): Promise<Organizati
   return response.data
 }
 
-async function createOrganization(data: CreateOrganizationPayload & { createdBy: string }): Promise<Organization> {
+async function createOrganization(data: CreateOrganizationPayload): Promise<Organization> {
   const response = await apiClient.post<{
     success: boolean
-    data: Organization
+    organization: Organization
     message: string
-  }>('/api/organizations', data)
+  }>('/api/organizations/create', data)
   
-  return response.data
+  return response.organization
 }
 
 async function updateOrganization(data: UpdateOrganizationPayload & { userId: string }): Promise<Organization> {
@@ -134,10 +134,7 @@ export function useCreateOrganization() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
       
-      return createOrganization({
-        ...data,
-        createdBy: user.id,
-      })
+      return createOrganization(data)
     },
     onSuccess: (organization, variables) => {
       // Invalidate user organizations list

@@ -52,8 +52,19 @@ import {
   Settings,
   PlayCircle,
   PauseCircle,
-  RotateCcw
+  RotateCcw,
+  Search,
+  FileSearch,
+  Sparkles,
+  ChevronRight,
+  AlertTriangle,
+  TrendingDown,
+  BookOpen
 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useOrganization } from '@/contexts/OrganizationContext'
 
 interface ReportSection {
   id: string
@@ -142,6 +153,7 @@ const departmentData = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
 export default function AnnualReportAI() {
+  const { currentOrganization } = useOrganization()
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null)
   const [reportSections, setReportSections] = useState<ReportSection[]>([])
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress>({
@@ -154,6 +166,13 @@ export default function AnnualReportAI() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedReport, setGeneratedReport] = useState<string>('')
   const [reportDate, setReportDate] = useState(new Date())
+  
+  // Analyze Report state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedAssetId, setSelectedAssetId] = useState<string>('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [analysisType, setAnalysisType] = useState<'upload' | 'asset'>('upload')
 
   const handleTemplateSelect = (template: ReportTemplate) => {
     setSelectedTemplate(template)
@@ -284,6 +303,85 @@ ${section.content}
     URL.revokeObjectURL(url)
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      setAnalysisResults(null)
+    }
+  }
+
+  const handleAnalyzeReport = async () => {
+    if (!selectedFile && !selectedAssetId) {
+      return
+    }
+
+    setIsAnalyzing(true)
+    setAnalysisResults(null)
+
+    // Simulate AI analysis
+    setTimeout(() => {
+      setAnalysisResults({
+        summary: {
+          title: selectedFile?.name || 'Selected Annual Report',
+          year: '2024',
+          totalPages: 148,
+          sections: 12,
+          keyMetrics: 25
+        },
+        insights: [
+          {
+            type: 'positive',
+            title: 'Revenue Growth',
+            description: 'Company achieved 23% YoY revenue growth, exceeding industry average of 15%',
+            confidence: 0.92
+          },
+          {
+            type: 'positive',
+            title: 'Market Expansion',
+            description: 'Successfully entered 3 new geographic markets with positive initial traction',
+            confidence: 0.88
+          },
+          {
+            type: 'warning',
+            title: 'Operating Costs',
+            description: 'Operating expenses increased by 18%, requiring attention to cost optimization',
+            confidence: 0.85
+          },
+          {
+            type: 'negative',
+            title: 'Customer Churn',
+            description: 'Customer retention rate decreased from 92% to 87%, below target of 90%',
+            confidence: 0.79
+          }
+        ],
+        keyFindings: [
+          'Strong financial performance with revenue exceeding $150M',
+          'Digital transformation initiatives showing positive ROI',
+          'ESG scores improved across all major rating agencies',
+          'Board diversity increased to 45% representation'
+        ],
+        recommendations: [
+          'Focus on operational efficiency to improve profit margins',
+          'Invest in customer retention programs to reduce churn',
+          'Accelerate digital product development initiatives',
+          'Enhance sustainability reporting and transparency'
+        ],
+        sections: [
+          { name: 'Executive Summary', pages: '3-8', sentiment: 'positive' },
+          { name: 'Financial Performance', pages: '9-42', sentiment: 'positive' },
+          { name: 'Operations Review', pages: '43-68', sentiment: 'neutral' },
+          { name: 'Market Analysis', pages: '69-88', sentiment: 'positive' },
+          { name: 'Risk Assessment', pages: '89-102', sentiment: 'warning' },
+          { name: 'Governance', pages: '103-120', sentiment: 'positive' },
+          { name: 'Sustainability', pages: '121-140', sentiment: 'positive' },
+          { name: 'Future Outlook', pages: '141-148', sentiment: 'neutral' }
+        ]
+      })
+      setIsAnalyzing(false)
+    }, 5000)
+  }
+
   const getStatusIcon = (status: ReportSection['status']) => {
     switch (status) {
       case 'completed':
@@ -335,13 +433,269 @@ ${section.content}
         </div>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="analyze" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="analyze">Analyze Report</TabsTrigger>
           <TabsTrigger value="generate">Generate Report</TabsTrigger>
           <TabsTrigger value="progress">Generation Progress</TabsTrigger>
           <TabsTrigger value="analytics">Data Analytics</TabsTrigger>
           <TabsTrigger value="history">Report History</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="analyze" className="space-y-6">
+          {/* Analysis Options */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileSearch className="w-5 h-5" />
+                Select Report to Analyze
+              </CardTitle>
+              <CardDescription>
+                Upload a new report or select from your existing assets to analyze with AI
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Analysis Type Selection */}
+              <div className="flex gap-4">
+                <Button
+                  variant={analysisType === 'upload' ? 'default' : 'outline'}
+                  onClick={() => setAnalysisType('upload')}
+                  className="flex-1"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload New Report
+                </Button>
+                <Button
+                  variant={analysisType === 'asset' ? 'default' : 'outline'}
+                  onClick={() => setAnalysisType('asset')}
+                  className="flex-1"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Select from Assets
+                </Button>
+              </div>
+
+              {/* Upload Option */}
+              {analysisType === 'upload' && (
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      id="report-upload"
+                      className="hidden"
+                      accept=".pdf,.docx,.xlsx,.txt"
+                      onChange={handleFileUpload}
+                    />
+                    <label htmlFor="report-upload" className="cursor-pointer">
+                      <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        {selectedFile ? (
+                          <>Selected: {selectedFile.name}</>
+                        ) : (
+                          <>Click to upload or drag and drop</>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PDF, DOCX, XLSX, TXT (Max 50MB)
+                      </p>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Asset Selection Option */}
+              {analysisType === 'asset' && (
+                <div className="space-y-4">
+                  <Select value={selectedAssetId} onValueChange={setSelectedAssetId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an annual report from your assets" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asset-1">2023 Annual Report.pdf</SelectItem>
+                      <SelectItem value="asset-2">Q4 2023 Financial Statement.xlsx</SelectItem>
+                      <SelectItem value="asset-3">Board Report 2023.docx</SelectItem>
+                      <SelectItem value="asset-4">Sustainability Report 2023.pdf</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Analyze Button */}
+              <Button
+                className="w-full"
+                onClick={handleAnalyzeReport}
+                disabled={(!selectedFile && !selectedAssetId) || isAnalyzing}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing Report...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Analyze with AI
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Analysis Results */}
+          {analysisResults && (
+            <>
+              {/* Summary Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    Report Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{analysisResults.summary.year}</p>
+                      <p className="text-sm text-gray-500">Report Year</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{analysisResults.summary.totalPages}</p>
+                      <p className="text-sm text-gray-500">Total Pages</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{analysisResults.summary.sections}</p>
+                      <p className="text-sm text-gray-500">Sections</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{analysisResults.summary.keyMetrics}</p>
+                      <p className="text-sm text-gray-500">Key Metrics</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">85%</p>
+                      <p className="text-sm text-gray-500">Confidence Score</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Key Insights */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    AI Insights
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisResults.insights.map((insight: any, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg border ${
+                          insight.type === 'positive' ? 'border-green-200 bg-green-50' :
+                          insight.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
+                          'border-red-200 bg-red-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {insight.type === 'positive' ? (
+                            <TrendingUp className="w-5 h-5 text-green-600 mt-0.5" />
+                          ) : insight.type === 'warning' ? (
+                            <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                          ) : (
+                            <TrendingDown className="w-5 h-5 text-red-600 mt-0.5" />
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-1">{insight.title}</h4>
+                            <p className="text-sm text-gray-600">{insight.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-xs text-gray-500">Confidence:</span>
+                              <Progress value={insight.confidence * 100} className="w-20 h-2" />
+                              <span className="text-xs font-medium">{Math.round(insight.confidence * 100)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Key Findings & Recommendations */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      Key Findings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {analysisResults.keyFindings.map((finding: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <ChevronRight className="w-4 h-4 text-green-600 mt-0.5" />
+                          <span className="text-sm">{finding}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-blue-600" />
+                      Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {analysisResults.recommendations.map((rec: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <ChevronRight className="w-4 h-4 text-blue-600 mt-0.5" />
+                          <span className="text-sm">{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Document Structure */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Document Structure Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {analysisResults.sections.map((section: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium">{section.name}</span>
+                          <span className="text-xs text-gray-500">Pages {section.pages}</span>
+                        </div>
+                        <Badge
+                          className={
+                            section.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                            section.sentiment === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                            section.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }
+                        >
+                          {section.sentiment}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="generate" className="space-y-6">
           {/* Template Selection */}
