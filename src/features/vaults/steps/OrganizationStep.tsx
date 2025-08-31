@@ -108,6 +108,7 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
           description: newOrgData.description,
           industry: newOrgData.industry,
           website: newOrgData.website,
+          organizationSize: newOrgData.organizationSize,
         }),
       });
       
@@ -139,7 +140,8 @@ export default function OrganizationStep({ data, onUpdate }: OrganizationStepPro
         name: '',
         description: '',
         industry: '',
-        website: ''
+        website: '',
+        organizationSize: 'startup'
       });
       setShowCreateForm(false);
       
