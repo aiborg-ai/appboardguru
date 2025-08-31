@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClientSafe } from '@/lib/supabase-server';
 import { z } from 'zod';
 
 // Validation schema for organization creation
@@ -21,17 +21,25 @@ export async function POST(request: NextRequest) {
     
     // Check if environment variables are set
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.error('Supabase environment variables not configured:', {
+      console.error('[Create API] Supabase environment variables not configured:', {
         hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
         hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       });
       return NextResponse.json(
-        { error: 'Server configuration error - Supabase not configured' },
-        { status: 500 }
+        { error: 'Server configuration error - Database service not available' },
+        { status: 503 }
       );
     }
     
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientSafe();
+    
+    if (!supabase) {
+      console.error('[Create API] Failed to create Supabase client');
+      return NextResponse.json(
+        { error: 'Database connection failed - Please try again later' },
+        { status: 503 }
+      );
+    }
     
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -13,18 +13,20 @@ export function Providers({ children }: { children: ReactNode }) {
   // Render the full provider tree consistently for both SSR and client
   // This prevents hydration mismatches
   return (
-    <ErrorBoundary>
+    <ErrorBoundary level="section" resetOnPropsChange>
       <QueryProvider>
-        <AuthProvider>
-          <DemoProvider>
-            <OrganizationProvider>
-              <TooltipProvider delayDuration={300}>
-                {children}
-                <Toaster />
-              </TooltipProvider>
-            </OrganizationProvider>
-          </DemoProvider>
-        </AuthProvider>
+        <ErrorBoundary level="component">
+          <AuthProvider>
+            <DemoProvider>
+              <OrganizationProvider>
+                <TooltipProvider delayDuration={300}>
+                  {children}
+                  <Toaster />
+                </TooltipProvider>
+              </OrganizationProvider>
+            </DemoProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </QueryProvider>
     </ErrorBoundary>
   )

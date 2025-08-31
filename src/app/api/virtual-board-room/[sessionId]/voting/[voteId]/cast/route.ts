@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { sessionId: string; voteId: string } }
+  { params }: { params: Promise<{ sessionId: string; voteId: string }> }
 ) {
   return NextResponse.json({
     success: true,
@@ -24,7 +24,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string; voteId: string } }
+  { params }: { params: Promise<{ sessionId: string; voteId: string }> }
 ) {
   return NextResponse.json({
     success: true,

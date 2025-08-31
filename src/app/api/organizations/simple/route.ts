@@ -1,18 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClientSafe } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
     // Check if environment variables are set
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.error('Supabase environment variables not configured');
-      return NextResponse.json(
-        { error: 'Server configuration error - Supabase not configured' },
-        { status: 500 }
-      );
+      console.error('[Simple API] Supabase environment variables not configured');
+      // Return empty array if Supabase is not configured
+      return NextResponse.json([], { 
+        status: 200,
+        headers: {
+          'X-Fallback-Reason': 'supabase-not-configured'
+        }
+      });
     }
     
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientSafe();
+    
+    if (!supabase) {
+      console.error('[Simple API] Failed to create Supabase client');
+      // Return empty array if client creation fails
+      return NextResponse.json([], { 
+        status: 200,
+        headers: {
+          'X-Fallback-Reason': 'supabase-client-error'
+        }
+      });
+    }
     
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

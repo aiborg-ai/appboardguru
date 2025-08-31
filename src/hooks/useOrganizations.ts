@@ -5,16 +5,16 @@ import { apiClient, ApiError } from '@/lib/api/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Database } from '@/types/database'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
+import { 
+  organizationOptions, 
+  organizationKeys,
+  type OrganizationWithRole 
+} from '@/lib/query-options/organizations'
 
 // Types
 type Organization = Database['public']['Tables']['organizations']['Row']
 type CreateOrganizationData = Database['public']['Tables']['organizations']['Insert']
 type UpdateOrganizationData = Partial<Pick<Organization, 'name' | 'description' | 'website' | 'industry' | 'organization_size' | 'logo_url'>>
-
-interface OrganizationWithRole extends Organization {
-  userRole: 'owner' | 'admin' | 'member' | 'viewer'
-  membershipStatus: 'active' | 'suspended' | 'pending_activation'
-}
 
 interface CreateOrganizationPayload {
   name: string
@@ -35,60 +35,16 @@ interface UpdateOrganizationPayload {
   logoUrl?: string
 }
 
-// API functions
-async function fetchUserOrganizations(userId: string): Promise<OrganizationWithRole[]> {
-  try {
-    // Try the enhanced API first
-    const response = await apiClient.get<{
-      success: boolean
-      data: { organizations: OrganizationWithRole[] }
-      message: string
-    }>(`/api/organizations?userId=${userId}`)
-    
-    return response.data.organizations
-  } catch (error) {
-    // Fallback to simple API if enhanced fails
-    console.log('Falling back to simple organizations API');
-    try {
-      const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/simple')
-      return response
-    } catch (simpleError) {
-      // If simple API also fails, use the fallback that returns empty array
-      console.log('Both APIs failed, using fallback');
-      try {
-        const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/fallback')
-        return response
-      } catch (fallbackError) {
-        console.error('All organization APIs failed, returning empty array');
-        return []
-      }
-    }
-  }
-}
-
-async function fetchOrganization(id: string, userId: string): Promise<OrganizationWithRole> {
-  const response = await apiClient.get<{
-    success: boolean
-    data: OrganizationWithRole
-    message: string
-  }>(`/api/organizations?id=${id}&userId=${userId}`)
-  
-  return response.data
-}
-
+// API functions for mutations
 async function createOrganization(data: CreateOrganizationPayload): Promise<Organization> {
-  console.log('Sending organization creation request:', data);
   const response = await apiClient.post<{
     success: boolean
     organization: Organization
     message: string
   }>('/api/organizations/create', data)
   
-  console.log('Organization creation response:', response);
-  
   if (!response.organization) {
-    console.error('Invalid response structure:', response);
-    throw new Error('Invalid response from server - missing organization data');
+    throw new Error('Invalid response from server - missing organization data')
   }
   
   return response.organization
@@ -114,34 +70,13 @@ async function deleteOrganization(organizationId: string, userId: string, immedi
   return response.data
 }
 
-// Query keys
-export const organizationKeys = {
-  all: ['organizations'] as const,
-  lists: () => [...organizationKeys.all, 'list'] as const,
-  list: (userId: string) => [...organizationKeys.lists(), userId] as const,
-  details: () => [...organizationKeys.all, 'detail'] as const,
-  detail: (id: string, userId: string) => [...organizationKeys.details(), id, userId] as const,
-}
-
-// Hooks
+// Hooks using queryOptions pattern
 export function useUserOrganizations(userId?: string) {
-  return useQuery({
-    queryKey: organizationKeys.list(userId || ''),
-    queryFn: () => fetchUserOrganizations(userId!),
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  })
+  return useQuery(organizationOptions.list(userId || ''))
 }
 
 export function useOrganization(id?: string, userId?: string) {
-  return useQuery({
-    queryKey: organizationKeys.detail(id || '', userId || ''),
-    queryFn: () => fetchOrganization(id!, userId!),
-    enabled: !!id && !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  })
+  return useQuery(organizationOptions.detail(id || '', userId || ''))
 }
 
 export function useCreateOrganization() {
@@ -180,12 +115,6 @@ export function useCreateOrganization() {
       })
     },
     onError: (error: ApiError) => {
-      console.error('Organization creation error details:', {
-        message: error.message,
-        status: error.status,
-        statusText: error.statusText,
-        data: error.data
-      });
       toast({
         title: 'Failed to create organization',
         description: error.message || 'There was an error creating the organization.',

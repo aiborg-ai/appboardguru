@@ -22,7 +22,7 @@ function getERPService(): ERPIntegrationService {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { connectionId: string } }
+  { params }: { params: Promise<{ connectionId: string }> }
 ) {
   try {
     const { connectionId } = params;
@@ -67,7 +67,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { connectionId: string } }
+  { params }: { params: Promise<{ connectionId: string }> }
 ) {
   try {
     const { connectionId } = params;

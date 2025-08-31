@@ -330,10 +330,7 @@ ${section.content}
   }
 
   const handleAnalyzeReport = async () => {
-    console.log('handleAnalyzeReport called', { selectedFile, selectedAssetId })
-    
     if (!selectedFile && !selectedAssetId) {
-      console.log('No file or asset selected, returning')
       return
     }
 
@@ -599,7 +596,6 @@ ${section.content}
                   <Select 
                     value={selectedAssetId} 
                     onValueChange={(value) => {
-                      console.log('Asset selected:', value)
                       setSelectedAssetId(value)
                       setSelectedFile(null) // Clear file selection when asset is selected
                       setAnalysisResults(null)
@@ -621,10 +617,7 @@ ${section.content}
               {/* Analyze Button */}
               <Button
                 className="w-full"
-                onClick={() => {
-                  console.log('Button clicked!')
-                  handleAnalyzeReport()
-                }}
+                onClick={handleAnalyzeReport}
                 disabled={(!selectedFile && !selectedAssetId) || isAnalyzing}
               >
                 {isAnalyzing ? (
@@ -639,14 +632,6 @@ ${section.content}
                   </>
                 )}
               </Button>
-              
-              {/* Debug Info */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-gray-500 mt-2">
-                  Debug: File: {selectedFile?.name || 'none'}, Asset: {selectedAssetId || 'none'}, 
-                  Button disabled: {((!selectedFile && !selectedAssetId) || isAnalyzing).toString()}
-                </div>
-              )}
             </CardContent>
           </Card>
 

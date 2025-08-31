@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 import { Providers } from './providers'
 import { EnvProvider } from './env-provider'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -110,13 +111,15 @@ export default function RootLayout({
         />
       </head>
       <body className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans antialiased ${inter.variable}`}>
-        <Providers>
-          <div className="relative flex min-h-screen flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
-          </div>
-        </Providers>
+        <ErrorBoundary level="page">
+          <Providers>
+            <div className="relative flex min-h-screen flex-col">
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   )

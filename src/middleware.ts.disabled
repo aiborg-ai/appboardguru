@@ -1,10 +1,25 @@
 /**
- * Next.js 15 Security Middleware
- * Provides comprehensive security features for request processing
+ * Next.js 15 Security & Authentication Middleware
+ * Provides comprehensive security features and Supabase authentication
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getClientIP } from '@/lib/api-response'
+import { createServerClient } from '@supabase/ssr'
+// Temporarily disabled due to Edge runtime issue
+// import { getClientIP } from '@/lib/api-response'
+import type { Database } from './types/database'
+
+// Temporary getClientIP function for Edge runtime
+function getClientIP(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const realIP = request.headers.get('x-real-ip')
+  
+  if (forwarded) {
+    return forwarded.split(',')[0]?.trim() || 'unknown'
+  }
+  
+  return realIP || 'unknown'
+}
 
 /**
  * Rate limiting cache (in production, use Redis or similar)
@@ -278,8 +293,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url)
   const pathname = url.pathname
   
-  // Create response
-  let response = NextResponse.next()
+  // Create response that will be modified for Supabase
+  let response = NextResponse.next({
+    request,
+  })
   
   // Handle preflight OPTIONS requests
   if (request.method === 'OPTIONS') {
@@ -287,6 +304,38 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     setCorsHeaders(request, response)
     return response
   }
+  
+  // Initialize Supabase client with proper cookie handling
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          // Set cookies on the request for downstream usage
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value)
+          })
+          
+          // Create a new response with the request that has updated cookies
+          response = NextResponse.next({
+            request,
+          })
+          
+          // Set cookies on the response to send back to the browser
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+  
+  // IMPORTANT: Refresh the session if expired - crucial for SSR
+  const { data: { user } } = await supabase.auth.getUser()
   
   try {
     // 1. IP Blocking Check
@@ -375,26 +424,59 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       return new NextResponse('Request too large', { status: 413 })
     }
     
-    // 5. Extract Organization Context
+    // 5. Check authentication for protected routes
+    const protectedPaths = [
+      '/dashboard',
+      '/api/organizations',
+      '/api/vaults',
+      '/api/assets',
+      '/api/feedback',
+    ]
+    
+    const authPaths = [
+      '/login',
+      '/signup',
+      '/auth',
+    ]
+    
+    const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
+    const isAuthPath = authPaths.some(path => pathname.startsWith(path))
+    
+    // Redirect unauthenticated users trying to access protected routes
+    if (!user && isProtectedPath) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      redirectUrl.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+    
+    // Redirect authenticated users away from auth pages
+    if (user && isAuthPath) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      return NextResponse.redirect(redirectUrl)
+    }
+    
+    // 6. Extract Organization Context
     const orgContext = extractOrganizationContext(request)
     
-    // 6. Set Security Headers
+    // 7. Set Security Headers
     const securityHeaders = generateSecurityHeaders()
     Object.entries(securityHeaders).forEach(([key, value]) => {
       response.headers.set(key, value)
     })
     
-    // 7. Set CORS Headers for API routes
+    // 8. Set CORS Headers for API routes
     if (pathname.startsWith('/api/')) {
       setCorsHeaders(request, response)
     }
     
-    // 8. Add Rate Limit Headers
+    // 9. Add Rate Limit Headers
     response.headers.set('X-RateLimit-Limit', SECURITY_CONFIG.rateLimit[rateLimitContext as keyof typeof SECURITY_CONFIG.rateLimit]?.requests.toString() || '1000')
     response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString())
     response.headers.set('X-RateLimit-Reset', Math.ceil(rateLimit.resetTime / 1000).toString())
     
-    // 9. Add Organization Context Headers (for downstream middleware/API routes)
+    // 10. Add Organization Context Headers (for downstream middleware/API routes)
     if (orgContext.organizationId) {
       response.headers.set('X-Organization-ID', orgContext.organizationId)
     }
@@ -402,15 +484,15 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       response.headers.set('X-Organization-Slug', orgContext.organizationSlug)
     }
     
-    // 10. Add Request Tracking Headers
+    // 11. Add Request Tracking Headers
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`
     response.headers.set('X-Request-ID', requestId)
     
-    // 11. Performance Monitoring
+    // 12. Performance Monitoring
     const processingTime = Date.now() - startTime
     response.headers.set('X-Response-Time', `${processingTime}ms`)
     
-    // 12. Log Request (for audit purposes)
+    // 13. Log Request (for audit purposes)
     if (pathname.startsWith('/api/') || pathname.includes('/admin/')) {
       await logSecurityEvent('api_request', {
         ip,
@@ -452,12 +534,18 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * Configure middleware to run on specific paths - temporarily disabled
+ * Configure middleware to run on specific paths
  */
 export const config = {
   matcher: [
-    // Temporarily disable middleware to debug the app
-    // '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public files)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'
   ],
 }
 

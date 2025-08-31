@@ -22,7 +22,7 @@ function getMarketplaceService(): APIMarketplaceService {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { extensionId: string } }
+  { params }: { params: Promise<{ extensionId: string }> }
 ) {
   try {
     const { extensionId } = params;
@@ -74,7 +74,7 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { extensionId: string } }
+  { params }: { params: Promise<{ extensionId: string }> }
 ) {
   try {
     const { extensionId } = params;
