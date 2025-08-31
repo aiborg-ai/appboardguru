@@ -299,11 +299,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
     
     // Normal vault fetching for non-demo mode
     try {
-      const response = await fetch(`/api/vaults?organizationId=${currentOrganization.id}`, {
+      // Use the new list endpoint that actually queries the database
+      const response = await fetch(`/api/vaults/list?organizationId=${currentOrganization.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include'
       })
 
       if (response.ok) {
