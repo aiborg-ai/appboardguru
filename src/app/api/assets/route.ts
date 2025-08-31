@@ -46,9 +46,8 @@ export async function GET(request: NextRequest) {
       .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(id, full_name, email),
-        organization:organizations!organization_id(id, name),
-        vault:vaults!vault_id(id, name)
+        owner:users!owner_id(id, full_name, email),
+        organization:organizations!organization_id(id, name)
       `)
 
     // Filter by user's organizations
@@ -149,13 +148,13 @@ export async function GET(request: NextRequest) {
       created_at: asset.created_at, // Support both formats
       updatedAt: asset.updated_at,
       updated_at: asset.updated_at, // Support both formats
-      isOwner: asset.uploaded_by === user.id,
-      owner: asset.uploaded_by_user ? {
-        id: asset.uploaded_by_user.id,
-        name: asset.uploaded_by_user.full_name || asset.uploaded_by_user.email?.split('@')[0] || 'Unknown',
-        email: asset.uploaded_by_user.email
+      isOwner: asset.owner_id === user.id,
+      owner: asset.owner ? {
+        id: asset.owner.id,
+        name: asset.owner.full_name || asset.owner.email?.split('@')[0] || 'Unknown',
+        email: asset.owner.email
       } : null,
-      owner_id: asset.uploaded_by,
+      owner_id: asset.owner_id,
       organization: asset.organization,
       organization_id: asset.organization_id,
       vault: asset.vault,
@@ -226,21 +225,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Create board pack record
+    // Create asset record
     const { data: asset, error } = await supabase
-      .from('board_packs')
+      .from('assets')
       .insert({
-        uploaded_by: user.id,
+        owner_id: user.id,
         title,
         description,
         file_name: fileName,
+        original_file_name: fileName,
         file_path: filePath,
         file_size: fileSize,
         file_type: fileType,
-        category: category || 'other',
+        mime_type: fileType,
+        category: category || 'general',
         tags: tags || [],
-        status: 'ready',
-        watermark_applied: false
+        folder_path: '/',
+        source_type: 'upload',
+        is_processed: true,
+        processing_status: 'completed'
       })
       .select()
       .single()
@@ -259,7 +262,7 @@ export async function POST(request: NextRequest) {
         event_type: 'data_modification',
         event_category: 'asset_management',
         action: 'upload',
-        resource_type: 'board_pack',
+        resource_type: 'asset',
         resource_id: asset.id,
         event_description: `Uploaded new asset: ${title}`,
         outcome: 'success',
