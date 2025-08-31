@@ -41,34 +41,46 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'updated_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     
-    // Build query for user's accessible board packs/assets
+    // Build query for user's accessible assets
     let query = supabase
-      .from('board_packs')
+      .from('assets')
       .select(`
         *,
-        uploaded_by_user:users!uploaded_by(id, full_name, email)
+        uploaded_by_user:users!uploaded_by(id, full_name, email),
+        organization:organizations!organization_id(id, name),
+        vault:vaults!vault_id(id, name)
       `)
 
-    // Filter by user access
-    // Since board_packs doesn't have organization_id column,
-    // we show all board_packs to authenticated users for now.
-    // In production, you might want to:
-    // 1. Add organization_id to board_packs table
-    // 2. Filter by uploaded_by or implement a sharing system
-    // 3. Use vault_assets table to link board_packs to organizations
+    // Filter by user's organizations
+    // Get user's organizations first
+    const { data: userOrgs } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
     
-    // For now, RLS policies on board_packs table will handle access control
+    if (userOrgs && userOrgs.length > 0) {
+      const orgIds = userOrgs.map(org => org.organization_id)
+      query = query.in('organization_id', orgIds)
+    } else {
+      // If user has no organizations, return empty result
+      return NextResponse.json({
+        success: true,
+        assets: [],
+        total: 0,
+        page,
+        limit
+      })
+    }
 
     // Apply filters
-    // Note: board_packs table doesn't have category or folder_path columns
-    // These filters are commented out but kept for future enhancement
-    // if (category && category !== 'all') {
-    //   query = query.eq('category', category)
-    // }
+    if (category && category !== 'all') {
+      query = query.eq('category', category)
+    }
     
-    // if (folder && folder !== 'all') {
-    //   query = query.eq('folder_path', folder)
-    // }
+    if (folder && folder !== 'all') {
+      query = query.eq('folder_path', folder)
+    }
 
     if (search) {
       query = query.or(`title.ilike.%${search}%,file_name.ilike.%${search}%,description.ilike.%${search}%`)
@@ -97,7 +109,7 @@ export async function GET(request: NextRequest) {
     const { data: assets, error, count } = await query
     
     // Log for debugging
-    console.log('Board packs query result:', {
+    console.log('Assets query result:', {
       count,
       assetsLength: assets?.length,
       error: error?.message
@@ -119,10 +131,38 @@ export async function GET(request: NextRequest) {
 
     // Transform data for frontend consumption
     const transformedAssets = (assets || []).map(asset => ({
-      ...asset,
+      id: asset.id,
+      title: asset.title || asset.file_name || 'Untitled',
+      fileName: asset.file_name,
+      file_name: asset.file_name, // Support both formats
+      fileType: asset.file_type,
+      file_type: asset.file_type, // Support both formats
+      fileSize: asset.file_size,
+      file_size: asset.file_size, // Support both formats
+      category: asset.category || 'general',
+      folder: asset.folder_path || '/',
+      tags: asset.tags || [],
+      thumbnail: asset.thumbnail_url,
+      thumbnailUrl: asset.thumbnail_url, // Support both formats
+      thumbnail_url: asset.thumbnail_url, // Support both formats
+      createdAt: asset.created_at,
+      created_at: asset.created_at, // Support both formats
+      updatedAt: asset.updated_at,
+      updated_at: asset.updated_at, // Support both formats
       isOwner: asset.uploaded_by === user.id,
-      owner: asset.uploaded_by_user,
+      owner: asset.uploaded_by_user ? {
+        id: asset.uploaded_by_user.id,
+        name: asset.uploaded_by_user.full_name || asset.uploaded_by_user.email?.split('@')[0] || 'Unknown',
+        email: asset.uploaded_by_user.email
+      } : null,
+      owner_id: asset.uploaded_by,
+      organization: asset.organization,
+      organization_id: asset.organization_id,
+      vault: asset.vault,
+      vault_id: asset.vault_id,
       sharedWith: [], // TODO: Implement sharing system
+      downloadCount: 0,
+      viewCount: 0,
       isShared: false // TODO: Implement sharing system
     }))
 
