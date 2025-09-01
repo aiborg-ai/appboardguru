@@ -662,6 +662,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
             showIndicator={true}
           />
         )}
+        
         {/* Header */}
         <div className="border-b border-gray-200 bg-gray-50">
           {!isMinimized && (
@@ -828,6 +829,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                 >
                   <X className="h-3 w-3" />
                 </Button>
+                </div>
               </div>
             </div>
           )}
