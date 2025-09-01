@@ -225,30 +225,44 @@ export async function POST(request: NextRequest) {
       }
 
       // Step 2: Create the vault
+      console.log('[Vault Create API] Creating vault with organization_id:', organizationId);
+      
+      const vaultData = {
+        organization_id: organizationId,
+        name: data.vaultName,
+        description: data.vaultDescription || null,
+        created_by: user.id,
+        is_public: data.accessLevel === 'organization',
+        metadata: {
+          vault_type: data.vaultType,
+          access_level: data.accessLevel,
+          auto_expire_days: data.accessLevel === 'private' ? 30 : 90,
+          watermark_enabled: true,
+          download_enabled: data.accessLevel !== 'restricted',
+          annotation_enabled: true,
+          collaboration_enabled: true,
+        },
+      };
+      
+      console.log('[Vault Create API] Vault data to insert:', JSON.stringify(vaultData, null, 2));
+      
       const { data: vault, error: vaultError } = await supabase
         .from('vaults')
-        .insert({
-          organization_id: organizationId,
-          name: data.vaultName,
-          description: data.vaultDescription || null,
-          created_by: user.id,
-          is_public: data.accessLevel === 'organization',
-          metadata: {
-            vault_type: data.vaultType,
-            access_level: data.accessLevel,
-            auto_expire_days: data.accessLevel === 'private' ? 30 : 90,
-            watermark_enabled: true,
-            download_enabled: data.accessLevel !== 'restricted',
-            annotation_enabled: true,
-            collaboration_enabled: true,
-          },
-        } as any)
+        .insert(vaultData as any)
         .select()
         .single();
 
       if (vaultError) {
-        throw new Error(`Failed to create vault: ${vaultError.message}`);
+        console.error('[Vault Create API] Database error creating vault:', {
+          code: vaultError.code,
+          message: vaultError.message,
+          details: vaultError.details,
+          hint: vaultError.hint
+        });
+        throw new Error(`Failed to create vault: ${vaultError.message} (Code: ${vaultError.code})`);
       }
+      
+      console.log('[Vault Create API] Vault created successfully:', vault);
 
       // Step 2.5: Add creator as vault owner
       const { error: memberError } = await supabase
@@ -458,8 +472,15 @@ export async function POST(request: NextRequest) {
           } as any);
       }
 
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('[Vault Create API] Final error:', errorMessage);
+      
       return NextResponse.json(
-        { error: 'Failed to create vault. Please try again.' },
+        { 
+          error: 'Failed to create vault. Please try again.',
+          details: errorMessage,
+          code: 'VAULT_CREATE_FAILED'
+        },
         { status: 500 }
       );
     }
