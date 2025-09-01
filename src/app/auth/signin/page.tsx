@@ -67,6 +67,7 @@ export default function SignInPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<SigninFormData>({
     resolver: zodResolver(signinSchema)
@@ -595,6 +596,21 @@ export default function SignInPage() {
                 'Sign In'
               )}
             </button>
+
+            {/* Quick Test Login Button - REMOVE BEFORE PRODUCTION */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Auto-fill test credentials using React Hook Form
+                  setValue('email', 'test.director@appboardguru.com');
+                  setValue('password', 'TestDirector123!');
+                }}
+                className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200 border border-gray-300"
+              >
+                🧪 Quick Test Login (Dev Only)
+              </button>
+            )}
           </form>
           )}
         </div>

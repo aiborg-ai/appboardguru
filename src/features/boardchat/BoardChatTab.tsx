@@ -213,6 +213,8 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'direct' | 'groups' | 'vaults'>('all');
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentOrganization } = useOrganization();
 
@@ -222,12 +224,61 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedConversation]);
+  }, [selectedConversation, messages]);
 
   const handleSendMessage = () => {
-    if (message.trim()) {
-      // Send message logic here
+    if (message.trim() && selectedConversation) {
+      // Create new message object
+      const newMessage: Message = {
+        id: `msg-${Date.now()}`,
+        conversationId: selectedConversation.id,
+        sender: {
+          id: '1',
+          name: 'You',
+          isCurrentUser: true
+        },
+        content: message.trim(),
+        timestamp: new Date(),
+        status: 'sent',
+        reactions: [],
+        attachments: [],
+        edited: false
+      };
+      
+      // Add message to state
+      setMessages(prev => [...prev, newMessage]);
+      
+      // Update conversation's last message
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === selectedConversation.id) {
+          return {
+            ...conv,
+            lastMessage: {
+              content: message.trim(),
+              timestamp: new Date(),
+              sender: 'You'
+            },
+            unreadCount: 0
+          };
+        }
+        return conv;
+      }));
+      
+      // Clear message input
       setMessage('');
+      
+      // Simulate message status updates
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id ? { ...msg, status: 'delivered' } : msg
+        ));
+      }, 500);
+      
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id ? { ...msg, status: 'read' } : msg
+        ));
+      }, 1500);
     }
   };
 
@@ -253,7 +304,7 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
     }
   };
 
-  const filteredConversations = MOCK_CONVERSATIONS.filter(conv => {
+  const filteredConversations = conversations.filter(conv => {
     if (activeTab === 'direct' && conv.type !== 'direct') return false;
     if (activeTab === 'groups' && conv.type !== 'group') return false;
     if (activeTab === 'vaults' && conv.type !== 'vault') return false;
@@ -265,7 +316,7 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
   });
 
   const conversationMessages = selectedConversation 
-    ? MOCK_MESSAGES.filter(msg => msg.conversationId === selectedConversation.id)
+    ? messages.filter(msg => msg.conversationId === selectedConversation.id)
     : [];
 
   return (
