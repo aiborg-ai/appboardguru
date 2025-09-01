@@ -29,6 +29,7 @@ import {
   FileText,
   Crown,
   Shield,
+  FolderOpen,
   Activity,
   TrendingUp,
   Plus
@@ -313,7 +314,29 @@ export default function OrganizationDetailPage({}: OrganizationDetailPageProps) 
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/dashboard/vaults?org=${organization.id}`)}
+          >
+            <CardContent className="p-6 text-center">
+              <Shield className="w-8 h-8 text-indigo-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Vaults</h3>
+              <p className="text-sm text-gray-500">Secure document storage</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/dashboard/assets?org=${organization.id}`)}
+          >
+            <CardContent className="p-6 text-center">
+              <FolderOpen className="w-8 h-8 text-amber-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Assets</h3>
+              <p className="text-sm text-gray-500">Manage all files</p>
+            </CardContent>
+          </Card>
+
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-6 text-center">
               <FileText className="w-8 h-8 text-blue-600 mx-auto mb-3" />
