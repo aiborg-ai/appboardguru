@@ -275,6 +275,14 @@ export async function POST(request: NextRequest) {
       assetData.vault_id = body.vaultId || body.vault_id
     }
     
+    console.log('[Assets API] Attempting to insert asset with data:', {
+      ...assetData,
+      user_id: assetData.user_id ? 'present' : 'missing',
+      owner_id: assetData.owner_id ? 'present' : 'missing',
+      uploaded_by: assetData.uploaded_by ? 'present' : 'missing',
+      organization_id: assetData.organization_id ? 'present' : 'missing'
+    })
+    
     const { data: asset, error } = await supabase
       .from('assets')
       .insert(assetData)
@@ -282,8 +290,24 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to create asset' }, { status: 500 })
+      console.error('[Assets API] Database error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        assetData: {
+          file_name: assetData.file_name,
+          hasUserId: !!assetData.user_id,
+          hasOwnerId: !!assetData.owner_id,
+          hasUploadedBy: !!assetData.uploaded_by,
+          hasOrgId: !!assetData.organization_id
+        }
+      })
+      return NextResponse.json({ 
+        error: 'Failed to create asset',
+        details: error.message,
+        code: error.code
+      }, { status: 500 })
     }
 
     // Try to log activity - this might fail if audit_logs table doesn't exist
