@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   
   // Right panel state - ensure panel is closed by default
   const [isPanelOpen, setIsPanelOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'ai-chat' | 'logs' | 'fyi'>('ai-chat')
+  const [activeTab, setActiveTab] = useState<'ai-chat' | 'boardchat' | 'logs' | 'fyi'>('ai-chat')
   
   // Get route preload configuration
   const preloadConfig = useRoutePreloadConfig()
@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }
 
-  const handleOpenPanel = (tab: 'ai-chat' | 'logs' | 'fyi') => {
+  const handleOpenPanel = (tab: 'ai-chat' | 'boardchat' | 'logs' | 'fyi') => {
     setActiveTab(tab)
     setIsPanelOpen(true)
   }
@@ -180,6 +180,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       ...KEYBOARD_SHORTCUTS.OPEN_AI_CHAT,
       callback: () => handleOpenPanel('ai-chat')
+    },
+    {
+      key: 'b',
+      ctrl: true,
+      description: 'Open BoardChat',
+      callback: () => handleOpenPanel('boardchat')
     },
     {
       ...KEYBOARD_SHORTCUTS.OPEN_FYI,

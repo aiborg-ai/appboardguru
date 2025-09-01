@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Send,
   User,
+  Users,
   Bot,
   Settings,
   MoreVertical,
@@ -51,6 +52,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat, type ContextScopeOption } from '@/features/ai-chat/ai/ScopeSelectorTypes';
 import { EnhancedChatResponse, AssetReference, WebReference, VaultReference, MeetingReference, ReportReference } from '@/types/search';
 import { FYITab } from '@/features/dashboard/settings/FYITab';
+import { BoardChatTab } from '@/features/boardchat/BoardChatTab';
 import { useContextDetection } from '@/hooks/useContextDetection';
 import { useFYIService } from '@/hooks/useFYIService';
 
@@ -64,7 +66,7 @@ interface RightPanelProps {
   };
 }
 
-type PanelTab = 'ai-chat' | 'logs' | 'fyi';
+type PanelTab = 'ai-chat' | 'boardchat' | 'fyi' | 'logs';
 type PanelWidth = 'narrow' | 'wide' | 'full';
 
 type ContextScope = 'general' | 'boardguru' | 'organization' | 'vault' | 'asset';
@@ -268,6 +270,9 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   // Logs state
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOG_ENTRIES);
   const [logFilter, setLogFilter] = useState<string>('all');
+  
+  // BoardChat notifications state
+  const [unreadBoardChatMessages, setUnreadBoardChatMessages] = useState(3); // Mock unread count
 
   // Fetch vaults for a specific organization
   const fetchVaultsForOrganization = useCallback(async (orgId: string) => {
@@ -583,6 +588,26 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                     AI Chat
                   </Button>
                   <Button
+                    variant={activeTab === 'boardchat' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setActiveTab('boardchat');
+                      setUnreadBoardChatMessages(0); // Clear unread on open
+                    }}
+                    className="text-xs px-2 py-1 relative"
+                  >
+                    <Users className="h-3 w-3 mr-1" />
+                    BoardChat
+                    {unreadBoardChatMessages > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
+                      >
+                        {unreadBoardChatMessages}
+                      </Badge>
+                    )}
+                  </Button>
+                  <Button
                     variant={activeTab === 'fyi' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setActiveTab('fyi')}
@@ -684,6 +709,26 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                 title="AI Chat"
               >
                 <MessageSquare className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setActiveTab('boardchat');
+                  setUnreadBoardChatMessages(0);
+                }}
+                className={cn(
+                  "h-8 w-8 p-0 relative",
+                  activeTab === 'boardchat' && "bg-green-100 text-green-600"
+                )}
+                title="BoardChat"
+              >
+                <Users className="h-4 w-4" />
+                {unreadBoardChatMessages > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {unreadBoardChatMessages}
+                  </div>
+                )}
               </Button>
               <Button
                 variant="ghost"
@@ -1299,6 +1344,13 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* BoardChat Tab */}
+            {activeTab === 'boardchat' && (
+              <div className="flex flex-col h-full">
+                <BoardChatTab className="h-full" />
               </div>
             )}
 

@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, FileText, Info, Zap, ChevronUp, ChevronDown, Keyboard } from 'lucide-react';
+import { MessageSquare, FileText, Info, Zap, ChevronUp, ChevronDown, Keyboard, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickAccessFABProps {
-  onOpenPanel: (tab: 'ai-chat' | 'logs' | 'fyi') => void;
+  onOpenPanel: (tab: 'ai-chat' | 'boardchat' | 'logs' | 'fyi') => void;
   className?: string;
 }
 
@@ -21,6 +21,14 @@ export default function QuickAccessFAB({ onOpenPanel, className }: QuickAccessFA
       color: 'bg-blue-600 hover:bg-blue-700',
       description: 'Ask questions, get insights',
       shortcut: 'Ctrl+K'
+    },
+    {
+      id: 'boardchat',
+      label: 'BoardChat',
+      icon: Users,
+      color: 'bg-green-600 hover:bg-green-700',
+      description: 'Chat with BoardMates',
+      shortcut: 'Ctrl+B'
     },
     {
       id: 'fyi',
@@ -64,7 +72,7 @@ export default function QuickAccessFAB({ onOpenPanel, className }: QuickAccessFA
                 </div>
                 <Button
                   onClick={() => {
-                    onOpenPanel(action.id as 'ai-chat' | 'logs' | 'fyi');
+                    onOpenPanel(action.id as 'ai-chat' | 'boardchat' | 'logs' | 'fyi');
                     setIsExpanded(false);
                   }}
                   className={cn(

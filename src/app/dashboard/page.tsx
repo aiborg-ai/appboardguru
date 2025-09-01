@@ -7,7 +7,6 @@ import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { EnhancedAIChat } from '@/features/ai-chat/ai/EnhancedAIChat'
-import BoardChatButton from '@/components/boardchat/BoardChatButton'
 import { 
   Target,
   Shield,
@@ -392,9 +391,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      
-      {/* Floating BoardChat */}
-      <BoardChatButton />
       
       {/* Floating AI Chat */}
       <EnhancedAIChat />

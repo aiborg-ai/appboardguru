@@ -10,7 +10,8 @@ import InstrumentPlayWizard, { InstrumentPlayWizardData } from '@/features/instr
 import { getInstrumentConfig } from '@/lib/instruments/instrument-configs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle, FileText, FolderOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function InstrumentPlayPage() {
   const router = useRouter();
@@ -58,10 +59,7 @@ export default function InstrumentPlayPage() {
           results: result
         });
 
-        // Auto-redirect after showing success
-        setTimeout(() => {
-          router.push('/dashboard/instruments');
-        }, 3000);
+        // Don't auto-redirect, let user choose where to go
       } else {
         setCompletionResult({
           success: false,
@@ -136,8 +134,59 @@ export default function InstrumentPlayPage() {
                 {completionResult.message}
               </p>
               {completionResult.success ? (
-                <div className="text-sm text-gray-500 mb-6">
-                  Redirecting to instruments page...
+                <div className="space-y-4">
+                  {/* Show what was saved */}
+                  {completionResult.results?.saveResults && (
+                    <div className="bg-gray-50 rounded-lg p-4 text-left space-y-2">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Results Saved:</h3>
+                      
+                      {completionResult.results.saveResults.asset && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span>Asset: {completionResult.results.saveResults.asset.name}</span>
+                        </div>
+                      )}
+                      
+                      {completionResult.results.saveResults.vault && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span>Added to Vault: {completionResult.results.saveResults.vault.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="space-y-3">
+                    {completionResult.results?.saveResults?.asset && (
+                      <Button 
+                        onClick={() => router.push(completionResult.results.saveResults.asset.viewUrl || '/dashboard/assets')}
+                        className="w-full"
+                        variant="default"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Created Asset
+                      </Button>
+                    )}
+                    
+                    <Button 
+                      onClick={() => router.push('/dashboard/assets')}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      <FolderOpen className="w-4 h-4 mr-2" />
+                      Go to Assets
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => router.push('/dashboard/instruments')}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Instruments
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">

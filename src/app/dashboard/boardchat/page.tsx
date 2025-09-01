@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 
 import React from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
-import BoardChatButton from '@/components/boardchat/BoardChatButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/molecules/cards/card'
 import { MessageCircle, Users, Hash, Lock } from 'lucide-react'
 import { InfoTooltip, InfoSection } from '@/components/atoms/feedback/info-tooltip'
@@ -132,7 +131,7 @@ export default function BoardChatPage() {
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Getting Started</h3>
                 <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                  <li>Click the BoardChat button in the bottom-right corner</li>
+                  <li>Click the Quick Access button in the bottom-right corner and select BoardChat</li>
                   <li>Browse existing conversations or start a new one</li>
                   <li>Select recipients and begin messaging</li>
                   <li>Use @mentions to notify specific members</li>
@@ -161,12 +160,12 @@ export default function BoardChatPage() {
               <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Conversations</h3>
               <p className="text-gray-600 mb-4">
-                Start your first conversation by clicking the BoardChat button below
+                Start your first conversation using the unified communication hub
               </p>
               <div className="flex items-center justify-center gap-2">
                 <MessageCircle className="h-4 w-4" />
                 <span className="text-sm text-gray-600">
-                  Look for the BoardChat button in the bottom-right corner →
+                  Press Ctrl+B or click the Quick Access button → BoardChat
                 </span>
               </div>
             </div>
@@ -174,8 +173,6 @@ export default function BoardChatPage() {
         </Card>
       </div>
 
-      {/* BoardChat Integration */}
-      <BoardChatButton />
     </DashboardLayout>
   )
 }

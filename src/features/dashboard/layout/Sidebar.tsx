@@ -84,6 +84,25 @@ const menuItems: MenuItem[] = [
     href: '/dashboard/meetings'
   },
   {
+    id: 'boardmates',
+    label: 'BoardMates',
+    icon: Users,
+    children: [
+      {
+        id: 'view-boardmates',
+        label: 'My BoardMates',
+        icon: Users,
+        href: '/dashboard/boardmates'
+      },
+      {
+        id: 'add-boardmate',
+        label: 'Add BoardMate',
+        icon: Plus,
+        href: '/dashboard/boardmates/create'
+      }
+    ]
+  },
+  {
     id: 'instruments',
     label: 'Instruments',
     icon: FileText,
@@ -141,25 +160,6 @@ const menuItems: MenuItem[] = [
         label: 'Peer Benchmarking',
         icon: BarChart3,
         href: '/dashboard/benchmarking'
-      }
-    ]
-  },
-  {
-    id: 'boardmates',
-    label: 'BoardMates',
-    icon: Users,
-    children: [
-      {
-        id: 'view-boardmates',
-        label: 'My BoardMates',
-        icon: Users,
-        href: '/dashboard/boardmates'
-      },
-      {
-        id: 'add-boardmate',
-        label: 'Add BoardMate',
-        icon: Plus,
-        href: '/dashboard/boardmates/create'
       }
     ]
   },
