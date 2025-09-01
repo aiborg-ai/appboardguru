@@ -53,7 +53,11 @@ import { cn } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase-client"
 import { Database } from "@/types/database"
 
-// Import sub-components (we'll create these next)
+// Import sub-components
+import { GeneralTab } from "./settings/GeneralTab"
+import { AssetSettingsTab } from "./settings/AssetSettingsTab"
+import { ComplianceTab } from "./settings/ComplianceTab"
+import { NotificationsTab } from "./settings/NotificationsTab"
 import { MembersTab } from "./settings/MembersTab"
 import { InvitationsTab } from "./settings/InvitationsTab"
 import { FeaturesTab } from "./settings/FeaturesTab"
@@ -245,10 +249,22 @@ export function OrganizationSettings({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-1">
           <TabsTrigger value="general" className="flex items-center space-x-2">
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">General</span>
+            <span className="hidden lg:inline">General</span>
+          </TabsTrigger>
+          <TabsTrigger value="assets" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden lg:inline">Assets</span>
+          </TabsTrigger>
+          <TabsTrigger value="compliance" className="flex items-center space-x-2">
+            <Shield className="h-4 w-4" />
+            <span className="hidden lg:inline">Compliance</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center space-x-2">
+            <Mail className="h-4 w-4" />
+            <span className="hidden lg:inline">Notifications</span>
           </TabsTrigger>
           <TabsTrigger 
             value="members" 
@@ -256,7 +272,7 @@ export function OrganizationSettings({
             disabled={!canManageMembers}
           >
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Members</span>
+            <span className="hidden lg:inline">Members</span>
           </TabsTrigger>
           <TabsTrigger 
             value="invitations" 
@@ -264,11 +280,11 @@ export function OrganizationSettings({
             disabled={!canManageMembers}
           >
             <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Invitations</span>
+            <span className="hidden lg:inline">Invitations</span>
           </TabsTrigger>
           <TabsTrigger value="features" className="flex items-center space-x-2">
             <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Features</span>
+            <span className="hidden lg:inline">Features</span>
           </TabsTrigger>
           <TabsTrigger 
             value="danger" 
@@ -276,7 +292,7 @@ export function OrganizationSettings({
             disabled={!canAccessDangerZone}
           >
             <AlertTriangle className="h-4 w-4" />
-            <span className="hidden sm:inline">Danger</span>
+            <span className="hidden lg:inline">Danger</span>
           </TabsTrigger>
         </TabsList>
 
