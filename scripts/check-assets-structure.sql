@@ -1,36 +1,48 @@
--- Check the structure of the assets table
--- This will show us what columns actually exist
+-- Check the actual structure of the assets table
+-- This will help us understand what columns exist and what's missing
 
--- Get all columns in the assets table
+-- 1. Show all columns in the assets table
 SELECT 
-    column_name, 
-    data_type, 
+    column_name,
+    data_type,
     is_nullable,
     column_default
 FROM information_schema.columns
 WHERE table_name = 'assets'
 ORDER BY ordinal_position;
 
--- Check if there's a vault_id or similar column
-SELECT column_name 
-FROM information_schema.columns
-WHERE table_name = 'assets'
-AND column_name LIKE '%vault%' OR column_name LIKE '%org%';
-
--- Check existing policies on assets
+-- 2. Check if any of the expected columns exist
 SELECT 
-    tablename,
+    'owner_id' as expected_column,
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'owner_id') as exists
+UNION ALL
+SELECT 
+    'user_id',
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'user_id')
+UNION ALL
+SELECT 
+    'uploaded_by',
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'uploaded_by')
+UNION ALL
+SELECT 
+    'organization_id',
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'organization_id')
+UNION ALL
+SELECT 
+    'vault_id',
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'vault_id');
+
+-- 3. Check RLS status
+SELECT 
+    relname as table_name,
+    relrowsecurity as rls_enabled
+FROM pg_class
+WHERE relname = 'assets';
+
+-- 4. Show current policies on assets table
+SELECT 
     policyname,
     cmd,
-    qual,
-    with_check
+    permissive
 FROM pg_policies
 WHERE tablename = 'assets';
-
--- Check if vaults table exists and its structure
-SELECT 
-    column_name
-FROM information_schema.columns
-WHERE table_name = 'vaults'
-AND column_name IN ('id', 'organization_id', 'created_by')
-ORDER BY ordinal_position;

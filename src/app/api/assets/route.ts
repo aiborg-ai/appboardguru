@@ -225,24 +225,55 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Create asset record - using minimal fields that should exist
+    // Get organization_id from request or user's first organization
+    let organizationId = body.organizationId || body.organization_id
+    
+    if (!organizationId) {
+      // Get user's first active organization
+      const { data: membershipData } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .single()
+      
+      organizationId = membershipData?.organization_id
+    }
+    
+    // Create asset record with all proper fields
     const assetData: any = {
+      // File metadata (required)
       file_name: fileName,
       file_path: filePath,
       file_size: fileSize,
-      file_type: fileType
+      file_type: fileType,
+      
+      // User references (all point to the uploader)
+      owner_id: user.id,
+      user_id: user.id,
+      uploaded_by: user.id,
+      
+      // Organization reference (if available)
+      organization_id: organizationId || null,
+      
+      // Optional metadata
+      title: title || fileName,
+      description: description || null,
+      category: category || 'general',
+      tags: tags || [],
+      folder_path: body.folderPath || body.folder_path || '/',
+      thumbnail_url: body.thumbnailUrl || body.thumbnail_url || null,
+      
+      // Timestamps (handled by database defaults but included for clarity)
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
     
-    // Add optional fields if they exist in the table
-    // These might not exist, so we add them conditionally
-    if (title) assetData.title = title
-    if (description) assetData.description = description
-    if (category) assetData.category = category
-    if (tags) assetData.tags = tags
-    
-    // Try to add user reference - column might be named differently
-    // Common variations: owner_id, user_id, created_by, uploaded_by
-    assetData.user_id = user.id // Try user_id first
+    // If vault_id is provided, add it
+    if (body.vaultId || body.vault_id) {
+      assetData.vault_id = body.vaultId || body.vault_id
+    }
     
     const { data: asset, error } = await supabase
       .from('assets')
