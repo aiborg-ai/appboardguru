@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/features/shared/components/views'
 import { VaultShareModal } from '@/features/vaults/VaultShareModal'
+import { VaultSettingsModal } from '@/features/vaults/VaultSettingsModal'
 import { 
   Shield,
   Settings, 
@@ -656,6 +657,36 @@ export default function VaultDashboardPage() {
             setShowShareModal(false)
             // Optionally refresh vault data
             window.location.reload()
+          }}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {vault && (
+        <VaultSettingsModal
+          vault={{
+            id: vault.id,
+            name: vault.name,
+            description: vault.description,
+            meetingDate: vault.meetingDate,
+            location: vault.location,
+            status: vault.status,
+            priority: vault.priority,
+            category: vault.category,
+            tags: vault.tags,
+            isPublic: vault.isPublic,
+            requiresInvitation: vault.requiresInvitation,
+            accessCode: vault.accessCode,
+            expiresAt: vault.expiresAt,
+            settings: vault.settings,
+            organization_id: vault.organization?.id,
+            userRole: vault.userRole
+          }}
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          onUpdate={(updatedVault) => {
+            // Update local vault data
+            setVault({ ...vault, ...updatedVault })
           }}
         />
       )}
