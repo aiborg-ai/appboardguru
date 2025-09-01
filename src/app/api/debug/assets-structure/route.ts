@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
       file_path: '/test/path',
       file_size: 1000,
       file_type: 'application/pdf',
+      original_file_name: 'test.pdf',  // Add this required field
+      mime_type: 'application/pdf',     // Add this field too
       user_id: user.id,
       owner_id: user.id,
       uploaded_by: user.id,
