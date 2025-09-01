@@ -36,19 +36,15 @@ async function fetchUserOrganizations(userId: string): Promise<OrganizationWithR
     
     return response.data.organizations
   } catch (error) {
-    // Fallback to simple API if enhanced fails
+    console.warn('[fetchUserOrganizations] Main endpoint failed, using safe fallback')
+    // Fallback to safe API that always returns an array
     try {
-      const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/simple')
+      const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/safe')
       return response
-    } catch (simpleError) {
-      // If simple API also fails, use the fallback that returns empty array
-      try {
-        const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/fallback')
-        return response
-      } catch (fallbackError) {
-        // Return empty array as last resort
-        return []
-      }
+    } catch (fallbackError) {
+      console.error('[fetchUserOrganizations] All endpoints failed, returning empty array')
+      // Return empty array as last resort
+      return []
     }
   }
 }

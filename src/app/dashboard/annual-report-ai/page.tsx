@@ -6,6 +6,10 @@ export const dynamic = 'force-dynamic'
 import React, { useState, useEffect } from 'react'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { PageHeader } from '@/components/layout/PageHeader'
+import jsPDF from 'jspdf'
+import { useToast } from '@/components/ui/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
+import { useOrganization } from '@/contexts/OrganizationContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -257,11 +261,24 @@ export default function AnnualReportAI() {
 
       // Complete
       setGenerationProgress(prev => ({ ...prev, status: 'completed', estimatedTimeRemaining: 0 }))
-      setGeneratedReport(generateFullReport())
+      const fullReport = generateFullReport()
+      setGeneratedReport(fullReport)
+      
+      // Show success notification
+      toast({
+        title: 'Report Generated Successfully',
+        description: 'Your annual report has been generated. Click Download to save it to your assets.',
+        variant: 'success'
+      })
 
     } catch (error) {
       console.error('Report generation failed:', error)
       setReportSections(prev => prev.map(s => ({ ...s, status: 'error' })))
+      toast({
+        title: 'Report Generation Failed',
+        description: 'There was an error generating your report. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsGenerating(false)
     }
@@ -297,16 +314,140 @@ ${section.content}
     ).join('\n')
   }
 
-  const handleDownloadReport = () => {
-    const blob = new Blob([generatedReport], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `annual-report-${reportDate.getFullYear()}.md`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const { selectedOrganization } = useOrganization()
+
+  const handleDownloadReport = async () => {
+    if (!generatedReport) return
+
+    try {
+      // Generate PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      })
+
+      // Add content to PDF
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 20
+      const lineHeight = 7
+      let yPosition = margin
+
+      // Add title
+      pdf.setFontSize(20)
+      pdf.text(`Annual Report ${reportDate.getFullYear()}`, pageWidth / 2, yPosition, { align: 'center' })
+      yPosition += lineHeight * 2
+
+      // Add generated date
+      pdf.setFontSize(10)
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' })
+      yPosition += lineHeight * 3
+
+      // Add report content
+      pdf.setFontSize(12)
+      const lines = generatedReport.split('\n')
+      
+      for (const line of lines) {
+        if (yPosition > pageHeight - margin) {
+          pdf.addPage()
+          yPosition = margin
+        }
+
+        if (line.startsWith('## ')) {
+          // Section headers
+          pdf.setFontSize(14)
+          pdf.setFont(undefined, 'bold')
+          pdf.text(line.replace('## ', ''), margin, yPosition)
+          pdf.setFont(undefined, 'normal')
+          pdf.setFontSize(12)
+          yPosition += lineHeight * 1.5
+        } else if (line.startsWith('---')) {
+          // Dividers
+          pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+          yPosition += lineHeight
+        } else if (line.trim()) {
+          // Regular text with word wrap
+          const splitText = pdf.splitTextToSize(line, pageWidth - (margin * 2))
+          for (const textLine of splitText) {
+            if (yPosition > pageHeight - margin) {
+              pdf.addPage()
+              yPosition = margin
+            }
+            pdf.text(textLine, margin, yPosition)
+            yPosition += lineHeight
+          }
+        } else {
+          // Empty lines
+          yPosition += lineHeight * 0.5
+        }
+      }
+
+      // Convert PDF to blob
+      const pdfBlob = pdf.output('blob')
+      
+      // Create form data for upload
+      const formData = new FormData()
+      formData.append('pdf', pdfBlob)
+      formData.append('title', `Annual Report ${reportDate.getFullYear()}`)
+      formData.append('description', `AI-generated annual report for ${reportDate.getFullYear()}`)
+      formData.append('category', 'reports')
+      if (selectedOrganization) {
+        formData.append('organizationId', selectedOrganization.id)
+      }
+
+      // Upload to Supabase and save as asset
+      const response = await fetch('/api/assets/upload-pdf', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Invalidate assets query to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['assets'] })
+        queryClient.invalidateQueries({ queryKey: ['user-assets'] })
+        
+        toast({
+          title: 'Report saved successfully',
+          description: 'Your annual report has been saved to your assets.',
+          variant: 'success'
+        })
+
+        // Also download the PDF locally
+        const url = URL.createObjectURL(pdfBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `annual-report-${reportDate.getFullYear()}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } else {
+        throw new Error(result.error || 'Failed to save report')
+      }
+    } catch (error) {
+      console.error('Error generating/saving PDF:', error)
+      toast({
+        title: 'Error saving report',
+        description: error instanceof Error ? error.message : 'Failed to save the report to your assets.',
+        variant: 'destructive'
+      })
+
+      // Fallback: just download as markdown
+      const blob = new Blob([generatedReport], { type: 'text/markdown' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `annual-report-${reportDate.getFullYear()}.md`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -179,6 +179,7 @@
     "immer": "^10.1.1",
     "isomorphic-dompurify": "^2.26.0",
     "js-yaml": "^4.1.0",
+    "jspdf": "^3.0.2",
     "lodash": "^4.17.21",
     "lokijs": "^1.5.12",
     "lucide-react": "^0.540.0",
