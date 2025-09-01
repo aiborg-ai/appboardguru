@@ -225,8 +225,3 @@ export default function InstrumentPlayPage() {
     </DashboardLayout>
   );
 }
-
-// Helper function for classnames
-function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
