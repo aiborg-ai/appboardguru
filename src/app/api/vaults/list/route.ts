@@ -28,67 +28,21 @@ export async function GET(request: NextRequest) {
     
     console.log('[Vaults List] Fetching vaults for user:', user.email, 'org:', organizationId);
     
-    // Build query for vaults - show vaults where user is either:
-    // 1. The creator (created_by)
-    // 2. A member (in vault_members)
-    // 3. In the same organization (for organization-wide vaults)
+    // Simplified query - just get vaults for the organization
+    // Don't use complex joins that might fail
     
-    let vaultsQuery;
+    let vaultsQuery = supabase
+      .from('vaults')
+      .select('*');
     
     if (organizationId) {
-      // When organization is specified, get all vaults for that org
-      // where user has access (member of org or creator)
-      vaultsQuery = supabase
-        .from('vaults')
-        .select(`
-          id,
-          name,
-          description,
-          meeting_date,
-          status,
-          priority,
-          access_level,
-          vault_type,
-          organization_id,
-          created_by,
-          is_public,
-          metadata,
-          created_at,
-          updated_at,
-          vault_members (
-            user_id,
-            role,
-            status
-          )
-        `)
-        .eq('organization_id', organizationId)
-        .or(`created_by.eq.${user.id},is_public.eq.true`);
+      // Get all vaults for this organization
+      console.log('[Vaults List] Filtering by organization:', organizationId);
+      vaultsQuery = vaultsQuery.eq('organization_id', organizationId);
     } else {
-      // Get all vaults user has access to
-      vaultsQuery = supabase
-        .from('vaults')
-        .select(`
-          id,
-          name,
-          description,
-          meeting_date,
-          status,
-          priority,
-          access_level,
-          vault_type,
-          organization_id,
-          created_by,
-          is_public,
-          metadata,
-          created_at,
-          updated_at,
-          vault_members (
-            user_id,
-            role,
-            status
-          )
-        `)
-        .or(`created_by.eq.${user.id}`);
+      // Get vaults created by the user
+      console.log('[Vaults List] Getting vaults created by user:', user.id);
+      vaultsQuery = vaultsQuery.eq('created_by', user.id);
     }
     
     // Order by creation date
@@ -104,20 +58,13 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
     
-    // Transform vaults data for the frontend
+    // Transform vaults data for the frontend - simplified without joins
     const transformedVaults = (vaults || []).map(vault => {
-      // Get user's role in the vault
-      const userMembership = vault.vault_members?.find(
-        (member: any) => member.user_id === user.id
-      );
+      // Determine user's role based on creator
+      const userRole = vault.created_by === user.id ? 'owner' : 'member';
       
-      // Determine user's role
-      let userRole = 'member';
-      if (vault.created_by === user.id) {
-        userRole = 'owner';
-      } else if (userMembership) {
-        userRole = userMembership.role;
-      }
+      // Extract metadata if it exists
+      const metadata = vault.metadata || {};
       
       return {
         id: vault.id,
@@ -125,18 +72,18 @@ export async function GET(request: NextRequest) {
         description: vault.description,
         meetingDate: vault.meeting_date,
         status: vault.status || 'active',
-        priority: vault.priority || 'medium',
-        accessLevel: vault.access_level || vault.metadata?.access_level || 'organization',
-        vaultType: vault.vault_type || vault.metadata?.vault_type || 'board_pack',
+        priority: metadata.priority || vault.priority || 'medium',
+        accessLevel: metadata.access_level || vault.access_level || 'organization',
+        vaultType: metadata.vault_type || vault.vault_type || 'board_pack',
         organizationId: vault.organization_id,
         userRole,
         isOwner: vault.created_by === user.id,
         isPublic: vault.is_public,
         createdAt: vault.created_at,
         updatedAt: vault.updated_at,
-        // Add counts (these would be better as aggregated queries)
-        memberCount: (vault.vault_members?.length || 0) + 1, // +1 for creator
-        assetCount: 0, // Placeholder - would need separate query
+        // Placeholder counts - would need separate queries
+        memberCount: 1,
+        assetCount: 0,
         lastActivityAt: vault.updated_at
       };
     });
