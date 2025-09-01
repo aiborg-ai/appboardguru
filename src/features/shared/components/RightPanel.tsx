@@ -47,6 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { ResizeHandle } from '@/components/ui/resize-handle';
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { CONTEXT_SCOPE_OPTIONS, mapContextScopeToChat, type ContextScopeOption } from '@/features/ai-chat/ai/ScopeSelectorTypes';
@@ -67,7 +68,7 @@ interface RightPanelProps {
 }
 
 type PanelTab = 'ai-chat' | 'boardchat' | 'fyi' | 'logs';
-type PanelWidth = 'narrow' | 'wide' | 'full';
+type PanelWidth = 'narrow' | 'medium' | 'wide' | 'full' | 'custom';
 
 type ContextScope = 'general' | 'boardguru' | 'organization' | 'vault' | 'asset';
 
@@ -193,7 +194,9 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   const [isMinimized, setIsMinimized] = useState(false);
   
   // Panel width controls
-  const [panelWidth, setPanelWidth] = useState<PanelWidth>('wide');
+  const [panelWidth, setPanelWidth] = useState<PanelWidth>('medium');
+  const [customWidth, setCustomWidth] = useState<number>(480);
+  const [showWidthIndicator, setShowWidthIndicator] = useState(false);
   
   // FYI integration
   const { currentContext, contextEntities } = useContextDetection();
@@ -237,6 +240,7 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
     const savedScope = localStorage.getItem('ai-chat-context-scope');
     const savedContext = localStorage.getItem('ai-chat-selected-context');
     const savedWidth = localStorage.getItem('right-panel-width');
+    const savedCustomWidth = localStorage.getItem('right-panel-custom-width');
     
     if (savedScope && ['general', 'boardguru', 'organization', 'vault', 'asset'].includes(savedScope)) {
       setContextScope(savedScope as ContextScope);
@@ -251,7 +255,11 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
       }
     }
     
-    if (savedWidth && ['narrow', 'wide', 'full'].includes(savedWidth)) {
+    if (savedCustomWidth) {
+      setCustomWidth(parseInt(savedCustomWidth, 10));
+    }
+    
+    if (savedWidth && ['narrow', 'medium', 'wide', 'full', 'custom'].includes(savedWidth)) {
       setPanelWidth(savedWidth as PanelWidth);
     }
   }, []);
@@ -265,7 +273,10 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   // Save panel width to localStorage
   useEffect(() => {
     localStorage.setItem('right-panel-width', panelWidth);
-  }, [panelWidth]);
+    if (panelWidth === 'custom') {
+      localStorage.setItem('right-panel-custom-width', customWidth.toString());
+    }
+  }, [panelWidth, customWidth]);
   
   // Logs state
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOG_ENTRIES);
@@ -540,13 +551,80 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
   // Panel width calculation
   const getPanelWidth = () => {
     if (isMinimized) return 'w-12';
+    if (panelWidth === 'custom') {
+      // Use inline style for custom width
+      return '';
+    }
     switch (panelWidth) {
-      case 'narrow': return 'w-80';  // 320px
-      case 'wide': return 'w-120';   // 480px - default
-      case 'full': return 'w-160';   // 640px
-      default: return 'w-120';
+      case 'narrow': return 'w-80';   // 320px
+      case 'medium': return 'w-[480px]'; // 480px - default
+      case 'wide': return 'w-[640px]';   // 640px
+      case 'full': return 'w-1/2';    // 50% of screen
+      default: return 'w-[480px]';
     }
   };
+  
+  // Get numeric width for custom sizing
+  const getNumericWidth = (): number => {
+    if (isMinimized) return 48;
+    if (panelWidth === 'custom') return customWidth;
+    switch (panelWidth) {
+      case 'narrow': return 320;
+      case 'medium': return 480;
+      case 'wide': return 640;
+      case 'full': return window.innerWidth / 2;
+      default: return 480;
+    }
+  };
+  
+  // Handle resize from drag
+  const handleResize = (newWidth: number) => {
+    setCustomWidth(newWidth);
+    setPanelWidth('custom');
+    setShowWidthIndicator(true);
+    setTimeout(() => setShowWidthIndicator(false), 2000);
+  };
+  
+  // Keyboard shortcuts for width control
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle shortcuts when panel is open and not minimized
+      if (!isOpen || isMinimized) return;
+      
+      // Ctrl/Cmd + Shift + [ for narrower
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '[') {
+        e.preventDefault();
+        const widths: PanelWidth[] = ['narrow', 'medium', 'wide', 'full'];
+        const currentIndex = widths.indexOf(panelWidth as any);
+        if (currentIndex > 0) {
+          setPanelWidth(widths[currentIndex - 1]);
+        } else if (panelWidth === 'custom' && customWidth > 320) {
+          setCustomWidth(Math.max(320, customWidth - 50));
+        }
+      }
+      
+      // Ctrl/Cmd + Shift + ] for wider
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === ']') {
+        e.preventDefault();
+        const widths: PanelWidth[] = ['narrow', 'medium', 'wide', 'full'];
+        const currentIndex = widths.indexOf(panelWidth as any);
+        if (currentIndex >= 0 && currentIndex < widths.length - 1) {
+          setPanelWidth(widths[currentIndex + 1]);
+        } else if (panelWidth === 'custom' && customWidth < window.innerWidth * 0.8) {
+          setCustomWidth(Math.min(window.innerWidth * 0.8, customWidth + 50));
+        }
+      }
+      
+      // Ctrl/Cmd + Shift + \ for reset to default
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '\\') {
+        e.preventDefault();
+        setPanelWidth('medium');
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isMinimized, panelWidth, customWidth]);
   
   const panelWidthClass = getPanelWidth();
 
@@ -566,17 +644,30 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
       )}
 
       {/* Panel */}
-      <div className={cn(
-        "fixed right-0 top-0 h-full bg-white border-l border-gray-200 shadow-xl z-50 transform transition-all duration-300 ease-in-out flex flex-col",
-        isOpen ? "translate-x-0" : "translate-x-full",
-        panelWidthClass,
-        className
-      )}>
+      <div 
+        className={cn(
+          "fixed right-0 top-0 h-full bg-white border-l border-gray-200 shadow-xl z-50 transform transition-all duration-300 ease-in-out flex flex-col",
+          isOpen ? "translate-x-0" : "translate-x-full",
+          panelWidthClass,
+          className
+        )}
+        style={panelWidth === 'custom' ? { width: `${customWidth}px` } : undefined}
+      >
+        {/* Resize Handle */}
+        {!isMinimized && (
+          <ResizeHandle
+            onResize={handleResize}
+            minWidth={320}
+            maxWidth={window.innerWidth * 0.8}
+            showIndicator={true}
+          />
+        )}
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+        <div className="border-b border-gray-200 bg-gray-50">
           {!isMinimized && (
-            <>
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col">
+              {/* Tab buttons row */}
+              <div className="flex items-center justify-between px-3 pt-3 pb-2">
                 <div className="flex items-center space-x-1">
                   <Button
                     variant={activeTab === 'ai-chat' ? 'default' : 'ghost'}
@@ -630,37 +721,90 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center space-x-1">
-                {/* Width Controls */}
-                <div className="flex items-center border rounded bg-white">
-                  <Button
-                    variant={panelWidth === 'narrow' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setPanelWidth('narrow')}
-                    className="h-6 w-6 p-0 rounded-r-none"
-                    title="Narrow width"
-                  >
-                    <MinusCircle className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant={panelWidth === 'wide' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setPanelWidth('wide')}
-                    className="h-6 w-6 p-0 rounded-none border-x"
-                    title="Default width"
-                  >
-                    <Circle className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant={panelWidth === 'full' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setPanelWidth('full')}
-                    className="h-6 w-6 p-0 rounded-l-none"
-                    title="Full width"
-                  >
-                    <PlusCircle className="h-3 w-3" />
-                  </Button>
+              
+              {/* Controls row */}
+              <div className="flex items-center justify-between px-3 pb-2">
+                {/* Width indicator */}
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    {panelWidth === 'custom' ? `${customWidth}px` : 
+                     panelWidth === 'narrow' ? '320px' :
+                     panelWidth === 'medium' ? '480px' :
+                     panelWidth === 'wide' ? '640px' :
+                     panelWidth === 'full' ? '50%' : '480px'}
+                  </Badge>
+                  {showWidthIndicator && (
+                    <span className="text-xs text-gray-500 animate-pulse">Resizing...</span>
+                  )}
                 </div>
+                
+                <div className="flex items-center space-x-1">
+                {/* Width Controls Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      title="Adjust panel width"
+                    >
+                      <Maximize2 className="h-3 w-3 mr-1" />
+                      <span className="text-xs">
+                        {panelWidth === 'custom' ? `${customWidth}px` : panelWidth}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-xs">
+                      Panel Width
+                      <div className="text-[10px] text-gray-500 font-normal mt-1">
+                        Use Ctrl+Shift+[ / ] to adjust
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setPanelWidth('narrow')}
+                      className="text-xs"
+                    >
+                      <MinusCircle className="h-3 w-3 mr-2" />
+                      Narrow (320px)
+                      {panelWidth === 'narrow' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setPanelWidth('medium')}
+                      className="text-xs"
+                    >
+                      <Circle className="h-3 w-3 mr-2" />
+                      Medium (480px)
+                      {panelWidth === 'medium' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setPanelWidth('wide')}
+                      className="text-xs"
+                    >
+                      <PlusCircle className="h-3 w-3 mr-2" />
+                      Wide (640px)
+                      {panelWidth === 'wide' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setPanelWidth('full')}
+                      className="text-xs"
+                    >
+                      <Maximize2 className="h-3 w-3 mr-2" />
+                      Full (50%)
+                      {panelWidth === 'full' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    {panelWidth === 'custom' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-xs" disabled>
+                          <RefreshCw className="h-3 w-3 mr-2" />
+                          Custom: {customWidth}px
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <Button
                   variant="ghost"
@@ -685,11 +829,11 @@ export default function RightPanel({ className, externalControl }: RightPanelPro
                   <X className="h-3 w-3" />
                 </Button>
               </div>
-            </>
+            </div>
           )}
 
           {isMinimized && (
-            <div className="flex flex-col items-center space-y-2 w-full">
+            <div className="flex flex-col items-center space-y-2 w-full p-3">
               <Button
                 variant="ghost"
                 size="sm"
