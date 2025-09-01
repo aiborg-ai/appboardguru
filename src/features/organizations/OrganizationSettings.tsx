@@ -131,24 +131,39 @@ export function OrganizationSettings({
   userRole = 'viewer',
   onClose
 }: OrganizationSettingsProps) {
-  const [userId, setUserId] = React.useState<string>("")
+  const [userId, setUserId] = React.useState<string | null>(null)
+  const [isUserLoading, setIsUserLoading] = React.useState(true)
   const { toast } = useToast()
   const [activeTab, setActiveTab] = React.useState("general")
 
   // Get current user
   React.useEffect(() => {
     const getUser = async () => {
-      const supabase = createSupabaseBrowserClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
+      try {
+        const supabase = createSupabaseBrowserClient()
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) {
+          console.error('Error fetching user:', error)
+          setIsUserLoading(false)
+          return
+        }
+        if (user) {
+          setUserId(user.id)
+        }
+      } catch (error) {
+        console.error('Error in getUser:', error)
+      } finally {
+        setIsUserLoading(false)
       }
     }
     getUser()
   }, [])
 
-  // Fetch organization data
-  const { data: organization, isLoading, error } = useOrganization(organizationId, userId)
+  // Fetch organization data - only when userId is available
+  const { data: organization, isLoading, error } = useOrganization(
+    organizationId, 
+    userId || undefined
+  )
   const updateOrganizationMutation = useUpdateOrganization()
 
   // Form setup
@@ -245,6 +260,39 @@ export function OrganizationSettings({
   const canEdit = userRole === 'owner' || userRole === 'admin'
   const canManageMembers = canEdit
   const canAccessDangerZone = userRole === 'owner'
+
+  // Show loading while user is being fetched
+  if (isUserLoading) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading user information...</span>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Check if user is authenticated
+  if (!userId) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Authentication Required
+            </h3>
+            <p className="text-gray-600">
+              Please sign in to access organization settings.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (isLoading) {
     return (
