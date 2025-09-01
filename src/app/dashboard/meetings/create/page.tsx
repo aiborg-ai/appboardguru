@@ -59,7 +59,14 @@ export default function CreateMeetingPage() {
           isRequired: invitee.isRequired,
           canVote: invitee.canVote
         })),
-        settings: data.settings
+        settings: {
+          allowGuests: data.settings.allowVirtualAttendance,
+          recordMeeting: data.settings.autoRecord,
+          autoGenerateMinutes: false,
+          requireRsvp: data.settings.requireRSVP,
+          allowProxyVoting: false,
+          publicMeeting: false
+        }
       };
 
       // Make API call to create meeting

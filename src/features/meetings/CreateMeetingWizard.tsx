@@ -17,6 +17,7 @@ import {
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
 // Step definitions
 const STEPS = [
@@ -138,6 +139,7 @@ export default function CreateMeetingWizard({
   className,
   isFullPage = false
 }: CreateMeetingWizardProps) {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<MeetingWizardStep>('type');
   const [wizardData, setWizardData] = useState<MeetingWizardData>({
     meetingType: 'board',
@@ -191,13 +193,19 @@ export default function CreateMeetingWizard({
     setIsLoading(true);
     try {
       await onComplete(wizardData);
-      onClose();
+      // Don't close here - let the parent component handle navigation after success
     } catch (error) {
       console.error('Failed to create meeting:', error);
+      toast({
+        title: 'Failed to create meeting',
+        description: error instanceof Error ? error.message : 'Please check your details and try again',
+        variant: 'destructive',
+      });
+      // Don't re-throw - we've shown the error to the user
     } finally {
       setIsLoading(false);
     }
-  }, [wizardData, onComplete, onClose]);
+  }, [wizardData, onComplete, toast]);
 
   // Validation for each step
   const isStepValid = useCallback((step: MeetingWizardStep) => {

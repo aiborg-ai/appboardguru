@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
     if (meetingError) {
       console.error('Error creating meeting:', meetingError);
       return NextResponse.json(
-        { error: 'Failed to create meeting' },
+        { error: meetingError.message || 'Failed to create meeting', details: meetingError },
         { status: 500 }
       );
     }
