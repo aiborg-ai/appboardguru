@@ -81,6 +81,10 @@ export default function CreateMeetingPage() {
       const result = await response.json();
 
       if (!response.ok) {
+        console.error('API Error Response:', result);
+        if (result.details) {
+          console.error('Validation errors:', result.details);
+        }
         throw new Error(result.error || 'Failed to create meeting');
       }
 

@@ -57,7 +57,7 @@ export type MeetingWizardStep = typeof STEPS[number]['id'];
 
 // Meeting types
 export type MeetingType = 'agm' | 'board' | 'committee' | 'other';
-export type AttendeeRole = 'board_member' | 'guest' | 'presenter' | 'observer' | 'secretary' | 'facilitator';
+export type AttendeeRole = 'organizer' | 'chair' | 'secretary' | 'board_member' | 'presenter' | 'guest' | 'observer' | 'facilitator';
 
 // Wizard data structure
 export interface MeetingWizardData {

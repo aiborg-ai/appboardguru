@@ -26,11 +26,13 @@ interface ReviewStepProps {
 }
 
 const ATTENDEE_ROLE_LABELS: Record<AttendeeRole, string> = {
-  board_member: 'Board Member',
-  guest: 'Guest',
-  presenter: 'Presenter',
-  observer: 'Observer',
+  organizer: 'Organizer',
+  chair: 'Chair',
   secretary: 'Secretary',
+  board_member: 'Board Member',
+  presenter: 'Presenter',
+  guest: 'Guest',
+  observer: 'Observer',
   facilitator: 'Facilitator',
 };
 

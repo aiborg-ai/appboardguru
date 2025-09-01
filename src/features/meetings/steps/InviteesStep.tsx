@@ -29,7 +29,27 @@ interface InviteesStepProps {
   onUpdate: (_updates: Partial<MeetingWizardData>) => void;
 }
 
-const ATTENDEE_ROLES = [
+const ATTENDEE_ROLES: Array<{
+  value: AttendeeRole;
+  label: string;
+  icon: any;
+  color: string;
+  description: string;
+}> = [
+  { 
+    value: 'organizer', 
+    label: 'Organizer', 
+    icon: Crown,
+    color: 'bg-purple-600',
+    description: 'Meeting organizer with full control'
+  },
+  { 
+    value: 'chair', 
+    label: 'Chair', 
+    icon: Shield,
+    color: 'bg-indigo-500',
+    description: 'Meeting chair who leads the session'
+  },
   { 
     value: 'board_member', 
     label: 'Board Member', 
