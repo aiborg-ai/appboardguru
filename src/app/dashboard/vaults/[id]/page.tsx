@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/features/shared/components/views'
+import { VaultShareModal } from '@/features/vaults/VaultShareModal'
 import { 
   Shield,
   Settings, 
@@ -132,6 +133,7 @@ export default function VaultDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string; email: string } | null>(null)
   
   const { currentOrganization } = useOrganization()
@@ -289,7 +291,7 @@ export default function VaultDashboardPage() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => {/* Handle share */}}
+              onClick={() => setShowShareModal(true)}
               className="flex items-center gap-2"
             >
               <Share2 className="h-4 w-4" />
@@ -637,6 +639,26 @@ export default function VaultDashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Share Modal */}
+      {vault && (
+        <VaultShareModal
+          vault={{
+            id: vault.id,
+            name: vault.name,
+            description: vault.description,
+            organization_id: vault.organization?.id,
+            is_public: vault.isPublic
+          }}
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          onShareComplete={() => {
+            setShowShareModal(false)
+            // Optionally refresh vault data
+            window.location.reload()
+          }}
+        />
+      )}
     </DashboardLayout>
   )
 }
