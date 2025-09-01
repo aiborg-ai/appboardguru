@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
-import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { createSupabaseBrowserClient } from "@/lib/supabase-client"
 import { Database } from "@/types/database"
 
 // Import sub-components (we'll create these next)

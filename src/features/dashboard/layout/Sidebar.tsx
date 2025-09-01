@@ -150,6 +150,12 @@ const menuItems: MenuItem[] = [
         href: '/dashboard/compliance'
       },
       {
+        id: 'peer-benchmarking',
+        label: 'Peer Benchmarking',
+        icon: BarChart3,
+        href: '/dashboard/peer-benchmarking'
+      },
+      {
         id: 'performance-analytics',
         label: 'Performance Analytics',
         icon: TrendingUp,
