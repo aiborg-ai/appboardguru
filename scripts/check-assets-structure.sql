@@ -1,5 +1,6 @@
 -- Check the actual structure of the assets table
 -- This will help us understand what columns exist and what's missing
+-- Last updated: Force Vercel rebuild
 
 -- 1. Show all columns in the assets table
 SELECT 
