@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
-import { OrganizationSettings } from '@/features/organizations/OrganizationSettings'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,7 +46,6 @@ export default function OrganizationDetailPage({}: OrganizationDetailPageProps) 
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
   
   const { 
@@ -177,7 +175,7 @@ export default function OrganizationDetailPage({}: OrganizationDetailPageProps) 
           <div className="flex items-center gap-3">
             <Button 
               variant="outline" 
-              onClick={() => setShowSettings(true)}
+              onClick={() => router.push(`/dashboard/organizations/${slug}/settings`)}
               className="flex items-center gap-2"
             >
               <Settings className="h-4 w-4" />
@@ -407,13 +405,6 @@ export default function OrganizationDetailPage({}: OrganizationDetailPageProps) 
           </CardContent>
         </Card>
 
-        {/* Organization Settings Modal */}
-        {showSettings && (
-          <OrganizationSettings
-            organizationId={organization.id}
-            onClose={() => setShowSettings(false)}
-          />
-        )}
       </div>
     </DashboardLayout>
   )

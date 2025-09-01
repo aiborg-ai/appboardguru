@@ -194,6 +194,54 @@ export function OrganizationSettings({
     }
   }
 
+  // Handler for updating general organization info
+  const handleUpdateOrganization = async (data: any) => {
+    try {
+      const response = await fetch(`/api/organizations/${organizationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      if (!response.ok) throw new Error('Failed to update organization')
+      
+      toast({
+        title: 'Settings updated',
+        description: 'Organization settings have been saved successfully.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update settings. Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  // Handler for updating complex settings (assets, compliance, notifications)
+  const handleUpdateSettings = async (data: any) => {
+    try {
+      const response = await fetch(`/api/organizations/${organizationId}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      if (!response.ok) throw new Error('Failed to update settings')
+      
+      toast({
+        title: 'Settings updated',
+        description: 'Your settings have been saved successfully.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update settings. Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const canEdit = userRole === 'owner' || userRole === 'admin'
   const canManageMembers = canEdit
   const canAccessDangerZone = userRole === 'owner'
@@ -297,162 +345,58 @@ export function OrganizationSettings({
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Basic information about your organization.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={handleSubmit(onSubmitGeneral)} className="space-y-4">
-                {/* Organization Logo */}
-                <div className="space-y-2">
-                  <Label>Organization Logo</Label>
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={organization.logo_url || undefined} alt={organization.name} />
-                      <AvatarFallback>{getInitials(organization.name)}</AvatarFallback>
-                    </Avatar>
-                    <Button variant="outline" size="sm" disabled={!canEdit}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Logo
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Recommended: Square image, at least 256x256 pixels
-                  </p>
-                </div>
-
-                {/* Organization Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Organization Name *</Label>
-                  <Input
-                    id="name"
-                    {...register('name')}
-                    disabled={!canEdit}
-                    className={errors.name ? 'border-red-500' : ''}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-600">{errors.name.message}</p>
-                  )}
-                </div>
-
-                {/* Organization Slug (read-only) */}
-                <div className="space-y-2">
-                  <Label>Organization URL</Label>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-muted-foreground">
-                      boardguru.com/
-                    </span>
-                    <Input
-                      value={organization.slug}
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Organization URL cannot be changed after creation.
-                  </p>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    {...register('description')}
-                    rows={3}
-                    disabled={!canEdit}
-                    className={errors.description ? 'border-red-500' : ''}
-                  />
-                  {errors.description && (
-                    <p className="text-sm text-red-600">{errors.description.message}</p>
-                  )}
-                </div>
-
-                {/* Website */}
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    {...register('website')}
-                    type="url"
-                    placeholder="https://example.com"
-                    disabled={!canEdit}
-                    className={errors.website ? 'border-red-500' : ''}
-                  />
-                  {errors.website && (
-                    <p className="text-sm text-red-600">{errors.website.message}</p>
-                  )}
-                </div>
-
-                {/* Industry */}
-                <div className="space-y-2">
-                  <Label htmlFor="industry">Industry</Label>
-                  <Select
-                    onValueChange={(value) => setValue('industry', value)}
-                    value={watch('industry') || ''}
-                    disabled={!canEdit}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {commonIndustries.map((industry) => (
-                        <SelectItem key={industry} value={industry}>
-                          {industry}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Organization Size */}
-                <div className="space-y-2">
-                  <Label htmlFor="organizationSize">Organization Size</Label>
-                  <Select
-                    onValueChange={(value: string) => setValue('organizationSize', value as any)}
-                    value={watch('organizationSize') || ''}
-                    disabled={!canEdit}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select organization size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {organizationSizes.map((size) => (
-                        <SelectItem key={size.value} value={size.value}>
-                          {size.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {canEdit && (
-                  <div className="flex justify-end">
-                    <Button
-                      type="submit"
-                      disabled={!isDirty || isSubmitting || updateOrganizationMutation.isPending}
-                    >
-                      {(isSubmitting || updateOrganizationMutation.isPending) ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </form>
-            </CardContent>
-          </Card>
+          <GeneralTab
+            organization={organization}
+            canEdit={canEdit}
+            onUpdate={handleUpdateOrganization}
+          />
         </TabsContent>
+
+        <TabsContent value="assets" className="space-y-6">
+          <AssetSettingsTab
+            settings={organization.settings?.assets || {
+              categories: ['Board Documents', 'Financial Reports', 'Legal Documents', 'Other'],
+              storageLimit: 100,
+              approvalWorkflow: false,
+              aiProcessing: true,
+              defaultPermissions: 'organization',
+              watermarking: true,
+              retentionDays: 2555,
+              autoClassification: true
+            }}
+            canEdit={canEdit}
+            onUpdate={handleUpdateSettings}
+          />
+        </TabsContent>
+
+        <TabsContent value="compliance" className="space-y-6">
+          <ComplianceTab
+            settings={organization.compliance_settings || {
+              auditLogging: true,
+              twoFactorRequired: false,
+              dataEncryption: true,
+              accessLogging: true,
+              complianceStandards: []
+            }}
+            canEdit={canEdit}
+            onUpdate={handleUpdateSettings}
+          />
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <NotificationsTab
+            settings={organization.settings?.notifications || {
+              emailUpdates: true,
+              securityAlerts: true,
+              weeklyReports: false,
+              monthlyDigest: true,
+              activityAlerts: true
+            }}
+            canEdit={canEdit}
+            onUpdate={handleUpdateSettings}
+          />
+        </TabsContent>
+
 
         <TabsContent value="members">
           <MembersTab 
