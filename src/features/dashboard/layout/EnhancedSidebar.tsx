@@ -63,10 +63,22 @@ const baseMenuItems: MenuItem[] = [
     href: '/dashboard/vaults'
   },
   {
+    id: 'assets',
+    label: 'My Assets',
+    icon: FolderIcon,
+    href: '/dashboard/assets'
+  },
+  {
     id: 'meetings',
     label: 'Meetings',
     icon: Calendar,
     href: '/dashboard/meetings'
+  },
+  {
+    id: 'boardmates',
+    label: 'BoardMates',
+    icon: Users,
+    href: '/dashboard/boardmates'
   },
   {
     id: 'instruments',
@@ -144,18 +156,6 @@ const baseMenuItems: MenuItem[] = [
 ]
 
 const bottomMenuItems: MenuItem[] = [
-  {
-    id: 'assets',
-    label: 'My Assets',
-    icon: FolderIcon,
-    href: '/dashboard/assets'
-  },
-  {
-    id: 'boardmates',
-    label: 'BoardMates',
-    icon: Users,
-    href: '/dashboard/boardmates'
-  },
   {
     id: 'settings',
     label: 'Settings',
