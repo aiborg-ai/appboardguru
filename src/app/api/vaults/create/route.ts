@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     
     // Use mock mode for test director or if database operations are failing
     const isTestDirector = user.email === 'test.director@appboardguru.com';
-    const USE_MOCK_MODE = isTestDirector || true; // Use mock for test director or toggle for real database
+    const USE_MOCK_MODE = false; // Disable mock mode - use real database
     
     if (USE_MOCK_MODE) {
       // Return mock successful response
