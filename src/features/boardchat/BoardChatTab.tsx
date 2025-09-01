@@ -50,6 +50,14 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface BoardChatTabProps {
   className?: string;
+  initialSelectedMember?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    designation?: string;
+    company?: string;
+  } | null;
 }
 
 type ConversationType = 'direct' | 'group' | 'vault';
@@ -206,8 +214,8 @@ const MOCK_MESSAGES: Message[] = [
   }
 ];
 
-export function BoardChatTab({ className }: BoardChatTabProps) {
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(MOCK_CONVERSATIONS[0]);
+export function BoardChatTab({ className, initialSelectedMember }: BoardChatTabProps) {
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'direct' | 'groups' | 'vaults'>('all');
@@ -216,7 +224,9 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
   const { currentOrganization } = useOrganization();
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -225,6 +235,59 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
   useEffect(() => {
     scrollToBottom();
   }, [selectedConversation, messages]);
+
+  // Handle initial member selection
+  useEffect(() => {
+    if (initialSelectedMember && !hasInitialized) {
+      setHasInitialized(true);
+      
+      // Check if conversation already exists with this member
+      const existingConversation = conversations.find(conv => 
+        conv.type === 'direct' && 
+        (conv.name === initialSelectedMember.name ||
+         conv.participants.includes(initialSelectedMember.name))
+      );
+
+      if (existingConversation) {
+        // Select existing conversation
+        setSelectedConversation(existingConversation);
+        setActiveTab('direct');
+      } else {
+        // Create new direct message conversation
+        const newConversation: Conversation = {
+          id: `direct-${initialSelectedMember.id}-${Date.now()}`,
+          type: 'direct',
+          name: initialSelectedMember.name,
+          avatar: initialSelectedMember.avatar,
+          lastMessage: {
+            content: 'Start a new conversation',
+            timestamp: new Date(),
+            sender: 'System'
+          },
+          unreadCount: 0,
+          participants: [initialSelectedMember.name],
+          isOnline: true,
+          isPinned: false
+        };
+        
+        // Add to conversations list
+        setConversations(prev => [newConversation, ...prev]);
+        
+        // Select the new conversation
+        setSelectedConversation(newConversation);
+        setActiveTab('direct');
+      }
+      
+      // Focus the message input after a short delay
+      setTimeout(() => {
+        messageInputRef.current?.focus();
+      }, 100);
+    } else if (!initialSelectedMember && !hasInitialized) {
+      // If no initial member, select the first conversation
+      setSelectedConversation(MOCK_CONVERSATIONS[0]);
+      setHasInitialized(true);
+    }
+  }, [initialSelectedMember, hasInitialized, conversations]);
 
   const handleSendMessage = () => {
     if (message.trim() && selectedConversation) {
@@ -639,6 +702,8 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
               
               <div className="flex-1">
                 <Input
+                  ref={messageInputRef}
+                  data-message-input
                   type="text"
                   placeholder={`Message ${selectedConversation.name}...`}
                   value={message}
@@ -693,3 +758,6 @@ export function BoardChatTab({ className }: BoardChatTabProps) {
     </div>
   );
 }
+
+// Export as default for compatibility
+export default BoardChatTab;

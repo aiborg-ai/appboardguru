@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback, ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -523,10 +524,22 @@ export default function BoardMatesPage() {
     console.log('Edit boardmate:', boardmate.id);
   }, []);
 
+  const router = useRouter();
+
   const handleMessage = useCallback((boardmate: BoardMateProfile) => {
-    // Open messaging interface
-    console.log('Message boardmate:', boardmate.id);
-  }, []);
+    // Store boardmate info for BoardChat to use
+    sessionStorage.setItem('boardchat_selected_member', JSON.stringify({
+      id: boardmate.id,
+      name: boardmate.full_name,
+      email: boardmate.email,
+      avatar: boardmate.avatar_url,
+      designation: boardmate.designation,
+      company: boardmate.company
+    }));
+    
+    // Navigate to BoardChat with query params
+    router.push(`/dashboard/boardchat?memberId=${boardmate.id}&memberName=${encodeURIComponent(boardmate.full_name)}`);
+  }, [router]);
 
   const handleManageAssociations = useCallback((boardmate: BoardMateProfile) => {
     setSelectedBoardmate(boardmate);
