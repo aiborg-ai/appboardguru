@@ -3,686 +3,639 @@
 // Force dynamic rendering to prevent static generation issues
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { useOrganization } from '@/contexts/OrganizationContext'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/features/shared/components/views'
 import { 
-  Package, 
+  Shield,
+  Settings, 
   Users, 
-  FolderOpen, 
-  Activity,
-  CheckSquare,
-  MessageSquare,
-  BarChart3,
-  Settings,
-  Upload,
-  UserPlus,
-  Share2,
-  Download,
-  Eye,
   Calendar,
   Clock,
-  Shield,
-  Star,
-  AlertCircle,
+  MapPin,
+  Edit,
   ArrowLeft,
-  MoreVertical,
-  Grid3x3,
-  List,
-  Search,
-  Filter,
-  ChevronRight,
   FileText,
-  Image,
-  Video,
-  File,
-  Loader2
+  Crown,
+  UserCheck,
+  FolderOpen,
+  Activity,
+  TrendingUp,
+  Plus,
+  Share2,
+  Lock,
+  Unlock,
+  Download,
+  Upload,
+  BarChart3,
+  History
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase-client'
+import Link from 'next/link'
 
-// Simple toast implementation
-const toast = {
-  error: (message: string) => console.error('Toast:', message),
-  success: (message: string) => console.log('Toast:', message),
-  info: (message: string) => console.info('Toast:', message)
+interface VaultAsset {
+  id: string
+  asset: {
+    id: string
+    title: string
+    fileName: string
+    fileSize: number
+    fileType: string
+    mimeType: string
+    thumbnailUrl?: string
+    createdAt: string
+  }
+  isFeatured: boolean
+  isRequiredReading: boolean
+  viewCount: number
+  downloadCount: number
 }
 
-// Component imports (to be created)
-import VaultSpaceHeader from '@/components/vaults/VaultSpaceHeader'
-import VaultAssetGrid from '@/components/vaults/VaultAssetGrid'
-import VaultMembersList from '@/components/vaults/VaultMembersList'
-import VaultActivityFeed from '@/components/vaults/VaultActivityFeed'
-import VaultTaskBoard from '@/components/vaults/VaultTaskBoard'
-import VaultAnalytics from '@/components/vaults/VaultAnalytics'
+interface VaultMember {
+  id: string
+  role: string
+  status: string
+  joinedAt: string
+  lastAccessedAt?: string
+  accessCount: number
+  user: {
+    id: string
+    email: string
+  }
+}
+
+interface VaultActivity {
+  id: string
+  type: string
+  description: string
+  timestamp: string
+  details?: any
+  riskLevel?: string
+  performedBy?: {
+    id: string
+    email: string
+  }
+}
 
 interface VaultData {
   id: string
   name: string
-  description: string
-  status: 'active' | 'draft' | 'archived' | 'expired'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  created_at: string
-  updated_at: string
-  organization_id: string
-  created_by: string
-  is_public: boolean
-  metadata: any
+  description?: string
+  meetingDate?: string
+  location?: string
+  status: string
+  priority: string
+  createdAt: string
+  updatedAt: string
+  expiresAt?: string
+  archivedAt?: string
+  memberCount: number
+  assetCount: number
+  totalSizeBytes: number
+  lastActivityAt?: string
+  tags?: string[]
+  category?: string
   organization?: {
     id: string
     name: string
     slug: string
+    logo_url?: string
   }
-  vault_members?: Array<{
+  createdBy?: {
     id: string
-    user_id: string
-    role: string
-    status: string
-    joined_at: string
-    user: {
-      id: string
-      email: string
-      full_name?: string
-      avatar_url?: string
-    }
-  }>
-  assets?: Array<{
-    id: string
-    file_name: string
-    file_type: string
-    file_size: number
-    created_at: string
-    uploaded_by: string
-  }>
-  member_count?: number
-  asset_count?: number
+    email: string
+  }
+  settings?: any
+  isPublic: boolean
+  requiresInvitation: boolean
+  accessCode?: string
+  userRole: string
+  userJoinedAt: string
+  userLastAccessed?: string
+  members: VaultMember[]
+  assets: VaultAsset[]
+  recentActivity: VaultActivity[]
 }
 
-export default function VaultSpacePage() {
-  const params = useParams()
+export default function VaultDashboardPage() {
   const router = useRouter()
-  const vaultId = params?.id as string
+  const params = useParams()
+  const vaultId = params.id as string
   
   const [vault, setVault] = useState<VaultData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [currentUser, setCurrentUser] = useState<{ id: string; email: string } | null>(null)
   
-  // Fetch vault data
+  const { currentOrganization } = useOrganization()
+
+  // Get current user on mount
   useEffect(() => {
-    if (!vaultId) return
-    
-    const fetchVaultData = async () => {
+    const getUser = async () => {
+      const supabase = createSupabaseBrowserClient()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      
+      if (error || !user) {
+        router.push('/auth/signin')
+        return
+      }
+      
+      setCurrentUser({ id: user.id, email: user.email || '' })
+    }
+
+    getUser()
+  }, [router])
+
+  // Fetch vault details using API endpoint
+  useEffect(() => {
+    if (!vaultId || !currentUser) return
+
+    const fetchVault = async () => {
+      setIsLoading(true)
+      setError(null)
+
       try {
-        setLoading(true)
-        const supabase = createClient()
-        
-        // Fetch vault with relations
-        const { data: vaultData, error: vaultError } = await supabase
-          .from('vaults')
-          .select(`
-            *,
-            organization:organizations(id, name, slug),
-            vault_members(
-              id, user_id, role, status, joined_at,
-              user:users(id, email, full_name, avatar_url)
-            )
-          `)
-          .eq('id', vaultId)
-          .single()
-        
-        if (vaultError) {
-          console.error('Error fetching vault:', vaultError)
-          toast.error('Failed to load vault')
-          router.push('/dashboard/vaults')
-          return
+        const response = await fetch(`/api/vaults/${vaultId}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch vault')
         }
-        
-        // Fetch asset count
-        const { count: assetCount } = await supabase
-          .from('assets')
-          .select('*', { count: 'exact', head: true })
-          .eq('vault_id', vaultId)
-        
-        setVault({
-          ...vaultData,
-          member_count: vaultData.vault_members?.length || 0,
-          asset_count: assetCount || 0
-        })
-      } catch (error) {
-        console.error('Error:', error)
-        toast.error('An error occurred while loading the vault')
+
+        setVault(data.vault)
+      } catch (err) {
+        console.error('Error fetching vault:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load vault')
       } finally {
-        setLoading(false)
+        setIsLoading(false)
       }
     }
-    
-    fetchVaultData()
-  }, [vaultId, router])
-  
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200'
-      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200'
-      case 'archived': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'expired': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-  }
-  
-  // Get priority color
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-700'
-      case 'high': return 'bg-orange-100 text-orange-700'
-      case 'medium': return 'bg-yellow-100 text-yellow-700'
-      case 'low': return 'bg-gray-100 text-gray-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
-  }
-  
-  if (loading) {
+
+    fetchVault()
+  }, [vaultId, currentUser])
+
+  // Loading state
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
-            <p className="text-gray-600">Loading vault...</p>
-          </div>
+        <div className="p-6">
+          <EmptyState
+            variant="loading"
+            title="Loading Vault"
+            description="Please wait while we fetch the vault details..."
+          />
         </div>
       </DashboardLayout>
     )
   }
-  
-  if (!vault) {
+
+  // Error state
+  if (error || !vault) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-            <h2 className="text-xl font-semibold">Vault Not Found</h2>
-            <p className="text-gray-600">The vault you're looking for doesn't exist or you don't have access.</p>
-            <Button onClick={() => router.push('/dashboard/vaults')}>
-              Back to Vaults
+        <div className="p-6">
+          <EmptyState
+            icon={Shield}
+            title="Vault Not Found"
+            description={error || `The vault could not be found or you don't have access to it.`}
+            actions={[
+              {
+                id: 'back',
+                label: 'Back to Vaults',
+                icon: ArrowLeft,
+                onClick: () => router.push('/dashboard/vaults'),
+                primary: true
+              }
+            ]}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'owner': return 'bg-purple-100 text-purple-800'
+      case 'admin': return 'bg-red-100 text-red-800'
+      case 'moderator': return 'bg-blue-100 text-blue-800'
+      case 'member': return 'bg-green-100 text-green-800'
+      case 'viewer': return 'bg-gray-100 text-gray-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'owner': return Crown
+      case 'admin': return Shield
+      case 'moderator': return UserCheck
+      default: return Users
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800'
+      case 'draft': return 'bg-yellow-100 text-yellow-800'
+      case 'archived': return 'bg-gray-100 text-gray-800'
+      case 'expired': return 'bg-red-100 text-red-800'
+      case 'cancelled': return 'bg-orange-100 text-orange-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-800'
+      case 'high': return 'bg-orange-100 text-orange-800'
+      case 'medium': return 'bg-yellow-100 text-yellow-800'
+      case 'low': return 'bg-green-100 text-green-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  const RoleIcon = getRoleIcon(vault.userRole)
+
+  return (
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/dashboard/vaults"
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Vaults</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {/* Handle share */}}
+              className="flex items-center gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowSettings(true)}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+            <Button 
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit Vault
             </Button>
           </div>
         </div>
-      </DashboardLayout>
-    )
-  }
-  
-  return (
-    <DashboardLayout>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header Section */}
-        <div className="bg-white border-b">
-          <div className="p-6">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-              <button
-                onClick={() => router.push('/dashboard/vaults')}
-                className="hover:text-blue-600 flex items-center gap-1"
-              >
-                <Package className="h-4 w-4" />
-                Vaults
-              </button>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-gray-900 font-medium">{vault.name}</span>
-            </div>
-            
-            {/* Vault Header */}
+
+        {/* Vault Header Card */}
+        <Card>
+          <CardHeader>
             <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900">{vault.name}</h1>
-                  <Badge className={cn("text-xs", getStatusColor(vault.status))}>
-                    {vault.status}
-                  </Badge>
-                  {vault.priority !== 'medium' && (
-                    <Badge variant="outline" className={cn("text-xs", getPriorityColor(vault.priority))}>
-                      {vault.priority} priority
-                    </Badge>
-                  )}
-                  {vault.is_public && (
-                    <Badge variant="outline" className="text-xs">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Public
-                    </Badge>
-                  )}
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center">
+                  <Shield className="h-8 w-8 text-indigo-600" />
                 </div>
-                
-                {vault.description && (
-                  <p className="text-gray-600 mb-4 max-w-3xl">{vault.description}</p>
-                )}
-                
-                {/* Quick Stats */}
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">
-                      <strong>{vault.member_count}</strong> Members
-                    </span>
+                <div>
+                  <CardTitle className="text-2xl font-bold text-gray-900">
+                    {vault.name}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {vault.description || 'No description available'}
+                  </CardDescription>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge className={getRoleColor(vault.userRole)}>
+                      <RoleIcon className="w-3 h-3 mr-1" />
+                      {vault.userRole}
+                    </Badge>
+                    <Badge className={getStatusColor(vault.status)}>
+                      {vault.status}
+                    </Badge>
+                    <Badge className={getPriorityColor(vault.priority)}>
+                      Priority: {vault.priority}
+                    </Badge>
+                    {vault.isPublic ? (
+                      <Badge variant="outline" className="text-xs">
+                        <Unlock className="w-3 h-3 mr-1" />
+                        Public
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Private
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">
-                      <strong>{vault.asset_count}</strong> Assets
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">
-                      Created {new Date(vault.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {vault.organization && (
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-700">{vault.organization.name}</span>
-                    </div>
-                  )}
                 </div>
               </div>
-              
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={() => {
-                    // TODO: Implement upload
-                    toast.info('Upload feature coming soon')
-                  }}
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={() => {
-                    // TODO: Implement invite
-                    toast.info('Invite feature coming soon')
-                  }}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Invite
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={() => {
-                    // TODO: Implement share
-                    toast.info('Share feature coming soon')
-                  }}
-                >
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </Button>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/vaults/${vaultId}/settings`)}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Vault
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
-                      Archive Vault
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="text-right">
+                {vault.meetingDate && (
+                  <>
+                    <div className="text-sm text-gray-500">Meeting Date</div>
+                    <div className="font-medium flex items-center justify-end gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(vault.meetingDate).toLocaleDateString()}
+                    </div>
+                  </>
+                )}
+                {vault.location && (
+                  <div className="mt-2">
+                    <div className="text-sm text-gray-500">Location</div>
+                    <div className="font-medium flex items-center justify-end gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {vault.location}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-          
-          {/* Tabs Navigation */}
-          <div className="px-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full max-w-3xl grid-cols-6 h-12 bg-transparent border-b-0">
-                <TabsTrigger 
-                  value="overview" 
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="assets"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
-                >
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Assets
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="members"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Members
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="tasks"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
-                >
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                  Tasks
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="activity"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
-                >
-                  <Activity className="h-4 w-4 mr-2" />
-                  Activity
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Analytics
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          </CardHeader>
+        </Card>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Assets */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-amber-600" />
+                Assets
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {vault.assetCount || 0}
+              </div>
+              <div className="text-sm text-gray-500 mb-4">
+                Total Size: {formatFileSize(vault.totalSizeBytes || 0)}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => router.push(`/dashboard/vaults/${vaultId}/assets`)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Assets
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Members */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="w-5 h-5 text-green-600" />
+                Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {vault.memberCount || vault.members?.length || 0}
+              </div>
+              <div className="text-sm text-gray-500 mb-4">
+                Active members with access
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => router.push(`/dashboard/vaults/${vaultId}/members`)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Invite Members
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Activity */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Activity className="w-5 h-5 text-orange-600" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {vault.recentActivity?.length || 0}
+              </div>
+              <div className="text-sm text-gray-500 mb-4">
+                Actions in last 7 days
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => router.push(`/dashboard/vaults/${vaultId}/activity`)}
+              >
+                <History className="w-4 h-4 mr-2" />
+                View Activity Log
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-        
-        {/* Tab Content */}
-        <div className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6 mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Featured Assets */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <Star className="h-5 w-5 text-yellow-500" />
-                          Featured Assets
-                        </span>
-                        <Button variant="ghost" size="sm">View All</Button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Placeholder for featured assets */}
-                        <div className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
-                          <div className="flex items-start gap-3">
-                            <FileText className="h-8 w-8 text-blue-600 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">Annual Strategy Review.pdf</p>
-                              <p className="text-sm text-gray-500">2.4 MB • Updated 2 days ago</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
-                          <div className="flex items-start gap-3">
-                            <FileText className="h-8 w-8 text-green-600 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">Q4 Financial Report.xlsx</p>
-                              <p className="text-sm text-gray-500">1.8 MB • Updated 5 days ago</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Recent Activity */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Activity className="h-5 w-5 text-blue-600" />
-                        Recent Activity
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {/* Placeholder activities */}
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>JD</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="text-sm">
-                              <span className="font-medium">John Doe</span> uploaded 
-                              <span className="font-medium"> Annual Strategy Review.pdf</span>
-                            </p>
-                            <p className="text-xs text-gray-500">2 hours ago</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>AS</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="text-sm">
-                              <span className="font-medium">Alice Smith</span> commented on 
-                              <span className="font-medium"> Q4 Financial Report</span>
-                            </p>
-                            <p className="text-xs text-gray-500">5 hours ago</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>BJ</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="text-sm">
-                              <span className="font-medium">Bob Johnson</span> joined the vault
-                            </p>
-                            <p className="text-xs text-gray-500">1 day ago</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Upcoming Tasks */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <CheckSquare className="h-5 w-5 text-green-600" />
-                          Upcoming Tasks
-                        </span>
-                        <Button variant="ghost" size="sm">View All</Button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-3 border rounded-lg">
-                          <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">Review Q4 Financial Report</p>
-                            <p className="text-sm text-gray-500">Due tomorrow • Assigned to John Doe</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">High</Badge>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 border rounded-lg">
-                          <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">Prepare board meeting agenda</p>
-                            <p className="text-sm text-gray-500">Due in 3 days • Assigned to Alice Smith</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">Medium</Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                {/* Sidebar */}
-                <div className="space-y-6">
-                  {/* Vault Info */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Vault Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/dashboard/vaults/${vaultId}/assets`)}
+          >
+            <CardContent className="p-6 text-center">
+              <FolderOpen className="w-8 h-8 text-amber-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Assets</h3>
+              <p className="text-sm text-gray-500">Manage documents</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/dashboard/vaults/${vaultId}/members`)}
+          >
+            <CardContent className="p-6 text-center">
+              <Users className="w-8 h-8 text-green-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Members</h3>
+              <p className="text-sm text-gray-500">Manage access</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/dashboard/vaults/${vaultId}/activity`)}
+          >
+            <CardContent className="p-6 text-center">
+              <Activity className="w-8 h-8 text-orange-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Activity Log</h3>
+              <p className="text-sm text-gray-500">Track changes</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setShowSettings(true)}
+          >
+            <CardContent className="p-6 text-center">
+              <Settings className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Settings</h3>
+              <p className="text-sm text-gray-500">Configure vault</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => {/* Handle share */}}
+          >
+            <CardContent className="p-6 text-center">
+              <Share2 className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Share</h3>
+              <p className="text-sm text-gray-500">Share vault</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/dashboard/vaults/${vaultId}/analytics`)}
+          >
+            <CardContent className="p-6 text-center">
+              <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">Analytics</h3>
+              <p className="text-sm text-gray-500">View insights</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Assets */}
+        {vault.assets && vault.assets.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                Recent Assets
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {vault.assets.slice(0, 5).map((asset) => (
+                  <div key={asset.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Owner</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>TD</AvatarFallback>
-                          </Avatar>
-                          <p className="text-sm font-medium">Test Director</p>
+                        <div className="font-medium text-gray-900">{asset.asset.title || asset.asset.fileName}</div>
+                        <div className="text-sm text-gray-500">
+                          {formatFileSize(asset.asset.fileSize)} • {asset.asset.fileType}
                         </div>
                       </div>
-                      <Separator />
-                      <div>
-                        <p className="text-sm text-gray-500">Organization</p>
-                        <p className="text-sm font-medium">{vault.organization?.name || 'N/A'}</p>
-                      </div>
-                      <Separator />
-                      <div>
-                        <p className="text-sm text-gray-500">Created</p>
-                        <p className="text-sm font-medium">
-                          {new Date(vault.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                      <Separator />
-                      <div>
-                        <p className="text-sm text-gray-500">Last Updated</p>
-                        <p className="text-sm font-medium">
-                          {new Date(vault.updated_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Active Members */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center justify-between">
-                        Active Members
-                        <Badge variant="secondary" className="text-xs">{vault.member_count}</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {vault.vault_members?.slice(0, 5).map((member) => (
-                          <div key={member.id} className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              {member.user.avatar_url ? (
-                                <AvatarImage src={member.user.avatar_url} />
-                              ) : (
-                                <AvatarFallback>
-                                  {member.user.full_name?.[0] || member.user.email[0].toUpperCase()}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {member.user.full_name || member.user.email}
-                              </p>
-                              <p className="text-xs text-gray-500 capitalize">{member.role}</p>
-                            </div>
-                            <div className="w-2 h-2 bg-green-500 rounded-full" title="Online" />
-                          </div>
-                        ))}
-                      </div>
-                      {vault.member_count! > 5 && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full mt-3"
-                          onClick={() => setActiveTab('members')}
-                        >
-                          View all {vault.member_count} members
-                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {asset.isFeatured && (
+                        <Badge variant="outline" className="text-xs">Featured</Badge>
                       )}
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Quick Upload */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Quick Upload</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                        <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">
-                          Drop files here or click to browse
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Maximum file size: 50MB
-                        </p>
+                      {asset.isRequiredReading && (
+                        <Badge variant="outline" className="text-xs">Required</Badge>
+                      )}
+                      <Button variant="ghost" size="sm">
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Activity */}
+        {vault.recentActivity && vault.recentActivity.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="w-5 h-5 text-orange-600" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {vault.recentActivity.slice(0, 5).map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">{activity.description}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {activity.performedBy?.email} • {new Date(activity.timestamp).toLocaleString()}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Welcome Message for New Vaults */}
+        {vault.assetCount === 0 && (
+          <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-indigo-900 mb-2">
+                    Welcome to your new vault!
+                  </h3>
+                  <p className="text-indigo-700 mb-4">
+                    Your secure vault is ready. Get started by adding assets and inviting members to collaborate.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 text-indigo-700">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      <span className="text-sm">Upload your first assets</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-indigo-700">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      <span className="text-sm">Invite team members</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-indigo-700">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      <span className="text-sm">Configure access settings</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-indigo-700">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      <span className="text-sm">Set up notifications</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </TabsContent>
-            
-            {/* Assets Tab */}
-            <TabsContent value="assets" className="mt-0">
-              <VaultAssetGrid vaultId={vaultId} viewMode={viewMode} />
-            </TabsContent>
-            
-            {/* Members Tab */}
-            <TabsContent value="members" className="mt-0">
-              <VaultMembersList vaultId={vaultId} members={vault.vault_members || []} />
-            </TabsContent>
-            
-            {/* Tasks Tab */}
-            <TabsContent value="tasks" className="mt-0">
-              <VaultTaskBoard vaultId={vaultId} />
-            </TabsContent>
-            
-            {/* Activity Tab */}
-            <TabsContent value="activity" className="mt-0">
-              <VaultActivityFeed vaultId={vaultId} />
-            </TabsContent>
-            
-            {/* Analytics Tab */}
-            <TabsContent value="analytics" className="mt-0">
-              <VaultAnalytics vaultId={vaultId} />
-            </TabsContent>
-          </Tabs>
-        </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   )
