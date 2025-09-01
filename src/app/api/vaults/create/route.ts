@@ -45,7 +45,7 @@ const createVaultSchema = z.object({
   })),
 
   // Vault settings
-  vaultName: z.string().min(1, 'Vault name is required'),
+  vaultName: z.string().optional().transform(val => val || 'Untitled Vault'), // Allow empty names, default to "Untitled Vault"
   vaultDescription: z.string().optional(),
   accessLevel: z.enum(['organization', 'restricted', 'private']),
   vaultType: z.enum(['board_pack', 'document_set', 'project', 'compliance']),
