@@ -27,24 +27,36 @@ export const organizationKeys = {
 // API functions
 async function fetchUserOrganizations(userId: string): Promise<OrganizationWithRole[]> {
   try {
-    // Try the enhanced API first
+    // Try the basic API first (simpler, more reliable)
     const response = await apiClient.get<{
       success: boolean
       data: { organizations: OrganizationWithRole[] }
       message: string
-    }>(`/api/organizations?userId=${userId}`)
+    }>(`/api/organizations/basic?userId=${userId}`)
     
     return response.data.organizations
   } catch (error) {
-    console.warn('[fetchUserOrganizations] Main endpoint failed, using safe fallback')
+    console.warn('[fetchUserOrganizations] Basic endpoint failed, trying safe fallback')
     // Fallback to safe API that always returns an array
     try {
       const response = await apiClient.get<OrganizationWithRole[]>('/api/organizations/safe')
       return response
     } catch (fallbackError) {
-      console.error('[fetchUserOrganizations] All endpoints failed, returning empty array')
-      // Return empty array as last resort
-      return []
+      console.error('[fetchUserOrganizations] All endpoints failed, trying enhanced API')
+      // Try enhanced API as last resort
+      try {
+        const response = await apiClient.get<{
+          success: boolean
+          data: { organizations: OrganizationWithRole[] }
+          message: string
+        }>(`/api/organizations?userId=${userId}`)
+        
+        return response.data.organizations
+      } catch (enhancedError) {
+        console.error('[fetchUserOrganizations] All API endpoints failed, returning empty array')
+        // Return empty array as last resort
+        return []
+      }
     }
   }
 }
