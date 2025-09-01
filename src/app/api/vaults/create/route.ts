@@ -17,14 +17,19 @@ const createVaultSchema = z.object({
     website: z.string().url().optional().or(z.literal('')),
   }).nullable(),
 
-  // Assets
+  // Assets - make the schema more flexible to handle different asset formats
   selectedAssets: z.array(z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    file_type: z.string(),
-    file_size: z.number(),
-    created_at: z.string(),
-  })),
+    id: z.string(),
+    name: z.string().optional(),
+    fileName: z.string().optional(),
+    file_name: z.string().optional(),
+    file_type: z.string().optional(),
+    fileType: z.string().optional(),
+    file_size: z.number().optional(),
+    fileSize: z.number().optional(),
+    created_at: z.string().optional(),
+    filePath: z.string().optional(),
+  }).passthrough()),
 
   // BoardMates
   selectedBoardMates: z.array(z.object({
@@ -81,9 +86,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
+    console.log('[Vault Create API] Received request with keys:', Object.keys(body));
+    console.log('[Vault Create API] Selected assets:', body.selectedAssets?.length || 0);
+    
     // Validate request body
     const validationResult = createVaultSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('[Vault Create API] Validation failed:', validationResult.error.issues);
+      console.error('[Vault Create API] Request body:', JSON.stringify(body, null, 2));
       return NextResponse.json(
         { error: 'Invalid request data', details: validationResult.error.issues },
         { status: 400 }
