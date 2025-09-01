@@ -430,6 +430,7 @@ export default function BoardMatesPage() {
   const [boardmates, setBoardmates] = useState<BoardMateProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   
   // Association manager state
   const [selectedBoardmate, setSelectedBoardmate] = useState<BoardMateProfile | null>(null);
@@ -442,6 +443,7 @@ export default function BoardMatesPage() {
       // Show mock data for demo when no organization is selected
       console.log('No organization selected, using mock data for demo');
       setBoardmates(mockBoardmates);
+      setIsUsingMockData(true);
       setIsLoading(false);
       return;
     }
@@ -459,6 +461,7 @@ export default function BoardMatesPage() {
         if (response.status === 401) {
           console.log('Unauthorized - showing mock boardmates for demo');
           setBoardmates(mockBoardmates);
+          setIsUsingMockData(true);
           setError(null); // Clear error to show demo data
           setIsLoading(false);
           return;
@@ -469,16 +472,19 @@ export default function BoardMatesPage() {
       
       const data = await response.json();
       setBoardmates(data.boardmates || []);
+      setIsUsingMockData(data.is_mock_data || false);
     } catch (err) {
       console.error('Error loading boardmates:', err);
       
       // Show mock data on error for better demo experience
       if (err instanceof Error && err.message.includes('Unauthorized')) {
         setBoardmates(mockBoardmates);
+        setIsUsingMockData(true);
         setError(null);
       } else {
         // For other errors, still show mock data with a soft warning
         setBoardmates(mockBoardmates);
+        setIsUsingMockData(true);
         setError('Using demo data - Live data unavailable');
       }
     } finally {
@@ -701,6 +707,31 @@ export default function BoardMatesPage() {
               </div>
             </div>
           </div>
+
+          {/* Demo Data Notice */}
+          {isUsingMockData && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-amber-900 mb-1">
+                    Using Demo Data
+                  </h4>
+                  <p className="text-sm text-amber-700">
+                    You're viewing sample board members for demonstration. To see real data, ensure:
+                  </p>
+                  <ul className="mt-2 text-sm text-amber-700 list-disc list-inside space-y-1">
+                    <li>You're logged in with a valid account</li>
+                    <li>Your organization is properly configured</li>
+                    <li>Database migrations have been applied</li>
+                  </ul>
+                  <p className="text-xs text-amber-600 mt-2">
+                    Run <code className="bg-amber-100 px-1 py-0.5 rounded">npx supabase db push</code> to apply migrations.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -934,6 +965,11 @@ export default function BoardMatesPage() {
                 <div className="flex items-center justify-between mb-6">
                   <p className="text-sm text-gray-600">
                     Showing {filteredBoardMates.length} of {boardmates.length} BoardMates
+                    {isUsingMockData && (
+                      <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-700">
+                        Demo Data
+                      </Badge>
+                    )}
                   </p>
                 </div>
               )}
