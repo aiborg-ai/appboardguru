@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
+import { createTypedSupabaseClient } from '@/lib/supabase-typed'
 import type {
   VaultWithRelations,
   VaultAssetWithRelations,
@@ -30,10 +30,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('[Vault API] Starting GET request')
     const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
+    
+    // Get authenticated user with proper error handling
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      console.log('[Vault API] Authentication failed:', authError?.message || 'No user')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    console.log('[Vault API] User authenticated:', user.id)
 
     const vaultId = (await params).id
+    console.log('[Vault API] Fetching vault:', vaultId)
 
     // Get vault with basic information first
     const { data: vault, error: vaultError } = await supabase
@@ -282,8 +293,15 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('Vault details API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('[Vault API] Detailed error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      type: typeof error
+    })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
@@ -294,7 +312,12 @@ export async function PUT(
 ) {
   try {
     const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
+    
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const vaultId = (await params).id
     const updates: UpdateVaultRequest = await request.json()
@@ -423,7 +446,12 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
+    
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const vaultId = (await params).id
 
