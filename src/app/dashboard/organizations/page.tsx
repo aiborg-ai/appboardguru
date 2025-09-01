@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
 import { OrganizationSettings } from '@/features/organizations/OrganizationSettings'
 import { useOrganization } from '@/contexts/OrganizationContext'
@@ -53,6 +54,7 @@ import {
 import { Button } from '@/components/ui/button'
 
 export default function OrganizationsPage() {
+  const router = useRouter()
   const [showSettings, setShowSettings] = useState(false)
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
   const [selectedOrg, setSelectedOrg] = useState<any>(null)
@@ -430,7 +432,10 @@ export default function OrganizationsPage() {
                   return (
                     <div key={org.id} className="relative group">
                       <div className="bg-white border border-gray-200 hover:border-gray-300 rounded-xl p-6 transition-all duration-300 hover:shadow-lg cursor-pointer">
-                        <div onClick={() => selectOrganization(org)}>
+                        <div onClick={() => {
+                          selectOrganization(org)
+                          router.push(`/dashboard/organizations/${org.slug || org.id}`)
+                        }}>
                           {/* Organization Header */}
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center space-x-3">

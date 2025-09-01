@@ -440,7 +440,7 @@ export default function GlobalNavigationBar() {
                   {organizations.map((org) => (
                     <DropdownMenuItem 
                       key={org.id}
-                      onClick={() => router.push(`/dashboard/organizations/${org.id}`)}
+                      onClick={() => router.push(`/dashboard/organizations/${org.slug || org.id}`)}
                       className={`flex items-center space-x-3 px-3 py-2 ${
                         currentOrganization.id === org.id ? 'bg-blue-50' : ''
                       }`}
