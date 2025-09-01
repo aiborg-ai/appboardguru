@@ -1,0 +1,6 @@
+# Vercel Rebuild Trigger
+# This file is used to force Vercel to rebuild with cache refresh
+# Last rebuild: 2025-09-01T21:15:00Z
+
+REBUILD_TIMESTAMP=2025-09-01T21:15:00Z
+REBUILD_REASON=Force rebuild with improved AI Assistant width controls and cache refresh
