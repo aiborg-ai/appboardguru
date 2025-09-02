@@ -11,7 +11,31 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Dynamically import AnnotationViewer to avoid SSR issues
 const AnnotationViewer = dynamic(
-  () => import('@/features/annotations/AnnotationViewer'),
+  () => import('@/features/annotations/AnnotationViewer').catch((err) => {
+    console.error('Failed to load AnnotationViewer:', err);
+    // Return a fallback component
+    return {
+      default: () => (
+        <div className="h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-600 mb-4">
+              <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Viewer</h3>
+            <p className="text-gray-600 mb-4">The annotation viewer failed to load. Please refresh the page.</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      )
+    };
+  }),
   { 
     ssr: false,
     loading: () => (

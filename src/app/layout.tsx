@@ -4,6 +4,7 @@ import { Metadata } from 'next'
 import { Providers } from './providers'
 import { EnvProvider } from './env-provider'
 import { ErrorBoundary } from '@/components/error-boundary'
+import '@/utils/chunkRetry' // Initialize chunk retry handler
 
 const inter = Inter({ 
   subsets: ['latin'],

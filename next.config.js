@@ -16,6 +16,15 @@ const nextConfig = {
       fs: false,
     }
     
+    // Add chunk loading error handler
+    if (!isServer) {
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          '__webpack_retry_chunk__': JSON.stringify(true)
+        })
+      );
+    }
+    
     // Note: Next.js manages webpack cache internally in development mode
     // We can only modify cache settings for production builds
     if (!dev) {
