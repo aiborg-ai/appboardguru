@@ -109,7 +109,13 @@ export default function AnnotationDetailPage() {
     const defaultOrgId = '39fbf63f-efd9-4c68-a91f-e8c36bc88ecc'; // TestOrg ID from previous tests
     
     return (
-      <ErrorBoundary>
+      <ErrorBoundary
+        onError={(error, errorInfo) => {
+          console.error('AnnotationViewer Error (No Org):', error);
+          console.error('Error Info:', errorInfo);
+          setError('Failed to load annotation viewer. Please try again.');
+        }}
+      >
         <div className="h-screen flex flex-col">
           <AnnotationViewer
             assetId={assetData.id}
@@ -127,7 +133,13 @@ export default function AnnotationDetailPage() {
   }
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('AnnotationViewer Error:', error);
+        console.error('Error Info:', errorInfo);
+        setError('Failed to load annotation viewer. Please try again.');
+      }}
+    >
       <div className="h-screen flex flex-col">
         <AnnotationViewer
           assetId={assetData.id}

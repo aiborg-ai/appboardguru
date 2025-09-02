@@ -329,7 +329,7 @@ export default function AnnotationViewer({
           <DocumentPanel
             assetId={assetId}
             assetUrl={assetUrl}
-            annotations={annotations}
+            annotations={annotations || []}
             selectedAnnotation={selectedAnnotation}
             showIndicators={showAnnotationIndicators}
             currentUserId={currentUserId}
@@ -368,7 +368,7 @@ export default function AnnotationViewer({
               className="bg-white border-l overflow-hidden"
             >
               <AnnotationsPanel
-                annotations={annotations}
+                annotations={annotations || []}
                 selectedAnnotation={selectedAnnotation}
                 currentUserId={currentUserId}
                 connectedUsers={connectedUsers}
