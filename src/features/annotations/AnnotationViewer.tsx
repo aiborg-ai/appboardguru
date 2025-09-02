@@ -335,9 +335,14 @@ export default function AnnotationViewer({
             showIndicators={showAnnotationIndicators}
             currentUserId={currentUserId}
             onAnnotationClick={setSelectedAnnotation}
-            onAnnotationCreate={(annotation) => {
-              // Handle new annotation
-              syncAnnotation(annotation);
+            onAnnotationCreate={async (annotation) => {
+              // Create annotation through the store (which calls the API)
+              const { createAnnotation } = useAnnotationViewerStore.getState();
+              await createAnnotation(annotation);
+              // Sync with other users
+              if (syncAnnotation) {
+                syncAnnotation(annotation);
+              }
             }}
           />
         </div>

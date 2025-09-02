@@ -16,22 +16,24 @@ type AnnotationContent =
 
 // Type-safe position data for annotations
 interface AnnotationPosition {
-  readonly x: number;
-  readonly y: number;
+  readonly x?: number; // Legacy format support
+  readonly y?: number;
   readonly width?: number;
   readonly height?: number;
   readonly page?: number;
   readonly boundingRect?: {
-    readonly top: number;
-    readonly left: number;
-    readonly right: number;
-    readonly bottom: number;
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+    readonly pageNumber: number;
   };
   readonly rects?: readonly {
     readonly x: number;
     readonly y: number;
     readonly width: number;
     readonly height: number;
+    readonly pageNumber: number;
   }[];
 }
 
@@ -170,7 +172,7 @@ export function useAnnotationSync({
               if (payload.new && 'created_by' in payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the annotation
                 const { data: userInfo } = await supabase
-                  .from('profiles')
+                  .from('users')
                   .select('id, full_name, avatar_url')
                   .eq('id', payload.new.created_by)
                   .single();
@@ -212,7 +214,7 @@ export function useAnnotationSync({
               if (payload.new && 'created_by' in payload.new && payload.new.created_by !== currentUserId) {
                 // Fetch user information for the reply
                 const { data: userInfo } = await supabase
-                  .from('profiles')
+                  .from('users')
                   .select('id, full_name, avatar_url')
                   .eq('id', payload.new.created_by)
                   .single();
@@ -349,28 +351,13 @@ export function useAnnotationSync({
   // Sync a single annotation (for real-time updates)
   const syncAnnotation = useCallback(async (annotation: any) => {
     try {
-      // Broadcast annotation to other users via Supabase real-time
-      const { error } = await supabase
-        .from('asset_annotations')
-        .upsert({
-          ...annotation,
-          asset_id: assetId,
-          organization_id: organizationId,
-          created_by: currentUserId,
-        });
-
-      if (error) {
-        throw error;
-      }
+      // The annotation is already created via API, this just notifies other users
+      // Real-time sync happens automatically through Supabase subscriptions
+      console.log('Annotation created, syncing via real-time subscriptions');
     } catch (error) {
-      console.error('Error syncing annotation:', error);
-      toast({
-        title: 'Sync Error',
-        description: 'Failed to sync annotation',
-        variant: 'destructive',
-      });
+      console.error('Error in sync annotation:', error);
     }
-  }, [assetId, organizationId, currentUserId, supabase, toast]);
+  }, []);
 
   return {
     isConnected,

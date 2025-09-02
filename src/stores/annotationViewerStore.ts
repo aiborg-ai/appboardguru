@@ -6,10 +6,24 @@ interface Annotation {
   asset_id: string;
   page_number: number;
   position: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x?: number; // Legacy format support
+    y?: number;
+    width?: number;
+    height?: number;
+    boundingRect?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      pageNumber: number;
+    };
+    rects?: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      pageNumber: number;
+    }>;
   };
   content?: {
     text?: string;
@@ -21,7 +35,7 @@ interface Annotation {
   annotation_type: string;
   created_by: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   is_resolved: boolean;
   is_private: boolean;
   user: {
@@ -249,16 +263,12 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
             });
             
             if (!response.ok) {
-              throw new Error('Failed to create annotation');
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to create annotation');
             }
             
             const data = await response.json();
-            const newAnnotation = {
-              ...annotation,
-              id: data.annotation.id,
-              created_at: data.annotation.created_at,
-              updated_at: data.annotation.updated_at,
-            } as Annotation;
+            const newAnnotation = data.annotation;
             
             set((state) => ({
               annotations: [...state.annotations, newAnnotation],
@@ -266,6 +276,7 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
               selectedAnnotation: newAnnotation.id,
             }));
           } catch (error) {
+            console.error('Error creating annotation:', error);
             set({
               error: error instanceof Error ? error.message : 'Failed to create annotation',
               isCreatingAnnotation: false,
@@ -275,12 +286,17 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
         
         resolveAnnotation: async (id) => {
           try {
-            const response = await fetch(`/api/assets/annotations/${id}/resolve`, {
+            const response = await fetch(`/api/annotations/${id}`, {
               method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ is_resolved: true }),
             });
             
             if (!response.ok) {
-              throw new Error('Failed to resolve annotation');
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to resolve annotation');
             }
             
             set((state) => ({
@@ -297,16 +313,17 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
         
         addReply: async (annotationId, reply) => {
           try {
-            const response = await fetch(`/api/assets/annotations/${annotationId}/replies`, {
+            const response = await fetch(`/api/annotations/${annotationId}/replies`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ text: reply }),
+              body: JSON.stringify({ reply_text: reply }),
             });
             
             if (!response.ok) {
-              throw new Error('Failed to add reply');
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to add reply');
             }
             
             const data = await response.json();

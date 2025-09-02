@@ -35,10 +35,24 @@ interface Annotation {
   id: string;
   page_number: number;
   position: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x?: number; // Legacy format support
+    y?: number;
+    width?: number;
+    height?: number;
+    boundingRect?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      pageNumber: number;
+    };
+    rects?: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      pageNumber: number;
+    }>;
   };
   content?: {
     text?: string;
@@ -163,36 +177,64 @@ export default function DocumentPanel({
       return;
     }
     
-    // Get the container element for positioning
-    const containerElement = documentRef.current;
-    if (!containerElement) {
-      console.log('No container element found');
+    // Get the PDF page element for accurate positioning
+    const pageElement = document.querySelector('.react-pdf__Page__canvas') as HTMLCanvasElement;
+    const textLayerElement = document.querySelector('.react-pdf__Page__textContent') as HTMLDivElement;
+    
+    if (!pageElement) {
+      console.log('No page element found');
       return;
     }
     
-    const containerRect = containerElement.getBoundingClientRect();
+    const pageRect = pageElement.getBoundingClientRect();
+    const scale = zoom / 100;
     
     // Calculate bounding box for all selected text rectangles
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const pdfRects = [];
     
     for (let i = 0; i < rects.length; i++) {
       const rect = rects[i];
-      minX = Math.min(minX, rect.left);
-      minY = Math.min(minY, rect.top);
-      maxX = Math.max(maxX, rect.right);
-      maxY = Math.max(maxY, rect.bottom);
+      
+      // Calculate position relative to the PDF page (accounting for zoom)
+      const pdfRect = {
+        x: (rect.left - pageRect.left) / scale,
+        y: (rect.top - pageRect.top) / scale,
+        width: rect.width / scale,
+        height: rect.height / scale,
+        pageNumber: currentPage
+      };
+      
+      pdfRects.push(pdfRect);
+      
+      minX = Math.min(minX, pdfRect.x);
+      minY = Math.min(minY, pdfRect.y);
+      maxX = Math.max(maxX, pdfRect.x + pdfRect.width);
+      maxY = Math.max(maxY, pdfRect.y + pdfRect.height);
     }
     
-    // Calculate position relative to the document container (not scaled)
+    // Create the annotation position data structure
     const position = {
-      x: minX - containerRect.left,
-      y: minY - containerRect.top,
-      width: maxX - minX,
-      height: maxY - minY
+      boundingRect: {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+        pageNumber: currentPage
+      },
+      rects: pdfRects,
+      // Store viewport position for immediate display
+      viewportPosition: {
+        x: (rects[0].left - pageRect.left),
+        y: (rects[0].top - pageRect.top),
+        width: maxX - minX,
+        height: maxY - minY
+      }
     };
     
-    console.log('Calculated position:', position);
-    console.log('Container rect:', containerRect);
+    console.log('Calculated PDF position:', position);
+    console.log('Page rect:', pageRect);
+    console.log('Scale:', scale);
     
     setSelectionRect({
       position,
@@ -200,7 +242,7 @@ export default function DocumentPanel({
       range,
       pageNumber: currentPage
     });
-  }, [isCreatingAnnotation, currentPage]);
+  }, [isCreatingAnnotation, currentPage, zoom]);
 
   // Create new annotation
   const createAnnotation = useCallback((comment: string, color: string = '#FFFF00') => {
@@ -209,7 +251,7 @@ export default function DocumentPanel({
     const newAnnotation = {
       asset_id: assetId,
       page_number: currentPage,
-      position: selectionRect.position,
+      position: selectionRect.position, // This now includes boundingRect and rects
       selected_text: selectionRect.text,
       comment_text: comment,
       color,
@@ -223,6 +265,8 @@ export default function DocumentPanel({
         full_name: 'Current User' // This would come from auth context
       }
     };
+    
+    console.log('Creating annotation with position:', newAnnotation.position);
     
     onAnnotationCreate(newAnnotation);
     setIsCreatingAnnotation(false);
@@ -255,6 +299,9 @@ export default function DocumentPanel({
     const isHovered = hoveredAnnotation === annotation.id;
     const isOwn = annotation.created_by === currentUserId;
     
+    // Use boundingRect if available, otherwise fall back to legacy position format
+    const position = annotation.position.boundingRect || annotation.position;
+    
     return (
       <motion.div
         key={annotation.id}
@@ -265,10 +312,10 @@ export default function DocumentPanel({
           isHovered && "ring-2 ring-blue-300"
         )}
         style={{
-          left: `${annotation.position.x}px`,
-          top: `${annotation.position.y}px`,
-          width: `${annotation.position.width}px`,
-          height: `${annotation.position.height}px`,
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          width: `${position.width}px`,
+          height: `${position.height}px`,
           backgroundColor: annotation.color,
           opacity: annotation.opacity
         }}
@@ -532,12 +579,10 @@ export default function DocumentPanel({
           <div
             className="absolute border-2 border-blue-500 bg-blue-100 bg-opacity-30 pointer-events-none"
             style={{
-              left: `${selectionRect.position.x}px`,
-              top: `${selectionRect.position.y}px`,
-              width: `${selectionRect.position.width}px`,
-              height: `${selectionRect.position.height}px`,
-              transform: `scale(${zoom / 100})`,
-              transformOrigin: 'top left'
+              left: `${selectionRect.position.viewportPosition?.x || selectionRect.position.boundingRect.x}px`,
+              top: `${selectionRect.position.viewportPosition?.y || selectionRect.position.boundingRect.y}px`,
+              width: `${selectionRect.position.boundingRect.width}px`,
+              height: `${selectionRect.position.boundingRect.height}px`
             }}
           />
           
