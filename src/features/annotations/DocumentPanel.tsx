@@ -84,11 +84,13 @@ export default function DocumentPanel({
   const documentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Filter annotations for current page
-  const pageAnnotations = annotations.filter(a => a.page_number === currentPage);
+  // Filter annotations for current page with defensive checks
+  const pageAnnotations = !annotations || !Array.isArray(annotations) 
+    ? [] 
+    : annotations.filter(a => a && a.page_number === currentPage);
   
   // Group overlapping annotations
-  const annotationGroups = groupAnnotationsByPosition(pageAnnotations);
+  const annotationGroups = groupAnnotationsByPosition(pageAnnotations || []);
 
   // Load PDF (placeholder for now)
   useEffect(() => {
@@ -447,7 +449,9 @@ export default function DocumentPanel({
           <div className="space-y-1">
             {[...Array(totalPages)].map((_, i) => {
               const pageNum = i + 1;
-              const pageAnnotationCount = annotations.filter(a => a.page_number === pageNum).length;
+              const pageAnnotationCount = (!annotations || !Array.isArray(annotations)) 
+                ? 0 
+                : annotations.filter(a => a && a.page_number === pageNum).length;
               const isCurrentPage = pageNum === currentPage;
               
               return (

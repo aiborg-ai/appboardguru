@@ -7,6 +7,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Dynamically import AnnotationViewer to avoid SSR issues
 const AnnotationViewer = dynamic(
@@ -37,6 +38,7 @@ export default function AnnotationDetailPage() {
   const { user } = useAuth();
   const [assetData, setAssetData] = useState(MOCK_ASSET);
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Wait for organization context to be ready
   useEffect(() => {
@@ -47,16 +49,47 @@ export default function AnnotationDetailPage() {
 
   // In production, fetch the actual asset data
   useEffect(() => {
-    // This would be an API call to get asset details
-    // For now, we use mock data
-    console.log('Loading annotation for ID:', params.id);
-    console.log('Current organization:', currentOrganization);
-    console.log('User:', user);
+    try {
+      // This would be an API call to get asset details
+      // For now, we use mock data
+      console.log('Loading annotation for ID:', params.id);
+      console.log('Current organization:', currentOrganization);
+      console.log('User:', user);
+      
+      // Validate required data
+      if (!params.id) {
+        setError('Invalid annotation ID');
+        return;
+      }
+    } catch (err) {
+      console.error('Error loading annotation:', err);
+      setError('Failed to load annotation');
+    }
   }, [params.id, currentOrganization, user]);
 
   const handleClose = () => {
     router.push('/dashboard/annotations');
   };
+
+  // Show error if any
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Annotation</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={handleClose} variant="outline">
+            Back to Annotations
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading while organization context is loading
   if (orgLoading || !isReady) {
@@ -76,6 +109,25 @@ export default function AnnotationDetailPage() {
     const defaultOrgId = '39fbf63f-efd9-4c68-a91f-e8c36bc88ecc'; // TestOrg ID from previous tests
     
     return (
+      <ErrorBoundary>
+        <div className="h-screen flex flex-col">
+          <AnnotationViewer
+            assetId={assetData.id}
+            assetUrl={assetData.url}
+            assetName={assetData.name}
+            vaultId={assetData.vault_id}
+            vaultName={assetData.vault_name}
+            organizationId={defaultOrgId}
+            currentUserId={user?.id || 'demo-user-id'}
+            onClose={handleClose}
+          />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
       <div className="h-screen flex flex-col">
         <AnnotationViewer
           assetId={assetData.id}
@@ -83,26 +135,11 @@ export default function AnnotationDetailPage() {
           assetName={assetData.name}
           vaultId={assetData.vault_id}
           vaultName={assetData.vault_name}
-          organizationId={defaultOrgId}
+          organizationId={currentOrganization.id}
           currentUserId={user?.id || 'demo-user-id'}
           onClose={handleClose}
         />
       </div>
-    );
-  }
-
-  return (
-    <div className="h-screen flex flex-col">
-      <AnnotationViewer
-        assetId={assetData.id}
-        assetUrl={assetData.url}
-        assetName={assetData.name}
-        vaultId={assetData.vault_id}
-        vaultName={assetData.vault_name}
-        organizationId={currentOrganization.id}
-        currentUserId={user?.id || 'demo-user-id'}
-        onClose={handleClose}
-      />
-    </div>
+    </ErrorBoundary>
   );
 }

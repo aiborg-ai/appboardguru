@@ -54,7 +54,10 @@ export function groupAnnotationsByPosition(
   annotations: Annotation[],
   overlapThreshold: number = 30
 ): Annotation[][] {
-  if (annotations.length === 0) return [];
+  // Add defensive checks
+  if (!annotations || !Array.isArray(annotations) || annotations.length === 0) {
+    return [];
+  }
   
   const groups: Annotation[][] = [];
   const processedIds = new Set<string>();
@@ -99,7 +102,10 @@ export function calculateStackedPositions(
   annotations: Annotation[],
   stackOffset: number = 5
 ): Array<{ annotation: Annotation; adjustedPosition: AnnotationPosition }> {
-  if (annotations.length === 0) return [];
+  // Add defensive checks
+  if (!annotations || !Array.isArray(annotations) || annotations.length === 0) {
+    return [];
+  }
   
   // Sort by creation date or some other criterion
   const sorted = [...annotations].sort((a, b) => {
@@ -136,7 +142,10 @@ export function detectAnnotationClusters(
   density: number;
   annotations: Annotation[];
 }> {
-  if (annotations.length === 0) return [];
+  // Add defensive checks
+  if (!annotations || !Array.isArray(annotations) || annotations.length === 0) {
+    return [];
+  }
   
   // Create a grid map
   const grid = new Map<string, Annotation[]>();
@@ -273,6 +282,10 @@ export function mergeOverlappingAnnotations(
   annotations: Annotation[];
   isPrimary: boolean;
 }> {
+  // Add defensive checks
+  if (!annotations || !Array.isArray(annotations)) {
+    return [];
+  }
   const groups = groupAnnotationsByPosition(annotations);
   
   return groups.map(group => {
