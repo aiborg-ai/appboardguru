@@ -42,3 +42,5 @@ Thumbs.db
 *.tmp
 temp/
 tmp/
+
+# Force rebuild: 2025-09-02-15:45:00
