@@ -139,22 +139,38 @@ export default function DocumentPanel({
   const handleMouseUp = useCallback(() => {
     if (!isCreatingAnnotation) return;
     
+    console.log('Handle mouse up - annotation mode active');
+    
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
+    if (!selection || selection.isCollapsed) {
+      console.log('No selection or collapsed');
+      return;
+    }
     
     const selectedText = selection.toString().trim();
-    if (!selectedText) return;
+    if (!selectedText) {
+      console.log('No text selected');
+      return;
+    }
+    
+    console.log('Selected text:', selectedText);
     
     const range = selection.getRangeAt(0);
     const rects = range.getClientRects();
     
-    if (rects.length === 0) return;
+    if (rects.length === 0) {
+      console.log('No client rects found');
+      return;
+    }
     
-    // Get the PDF page element
-    const pageElement = documentRef.current?.querySelector('.react-pdf__Page');
-    if (!pageElement) return;
+    // Get the container element for positioning
+    const containerElement = documentRef.current;
+    if (!containerElement) {
+      console.log('No container element found');
+      return;
+    }
     
-    const pageRect = pageElement.getBoundingClientRect();
+    const containerRect = containerElement.getBoundingClientRect();
     
     // Calculate bounding box for all selected text rectangles
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -167,30 +183,24 @@ export default function DocumentPanel({
       maxY = Math.max(maxY, rect.bottom);
     }
     
-    // Calculate position relative to PDF page
+    // Calculate position relative to the document container (not scaled)
     const position = {
-      x: (minX - pageRect.left) / (zoom / 100),
-      y: (minY - pageRect.top) / (zoom / 100),
-      width: (maxX - minX) / (zoom / 100),
-      height: (maxY - minY) / (zoom / 100)
+      x: minX - containerRect.left,
+      y: minY - containerRect.top,
+      width: maxX - minX,
+      height: maxY - minY
     };
     
-    // Store the selection rectangles for multi-line highlighting
-    const highlightRects = Array.from(rects).map(rect => ({
-      x: (rect.left - pageRect.left) / (zoom / 100),
-      y: (rect.top - pageRect.top) / (zoom / 100),
-      width: rect.width / (zoom / 100),
-      height: rect.height / (zoom / 100)
-    }));
+    console.log('Calculated position:', position);
+    console.log('Container rect:', containerRect);
     
     setSelectionRect({
       position,
       text: selectedText,
       range,
-      rects: highlightRects,
       pageNumber: currentPage
     });
-  }, [isCreatingAnnotation, zoom, currentPage]);
+  }, [isCreatingAnnotation, currentPage]);
 
   // Create new annotation
   const createAnnotation = useCallback((comment: string, color: string = '#FFFF00') => {
@@ -512,29 +522,44 @@ export default function DocumentPanel({
             </div>
           )}
           
-          {/* Selection Overlay */}
-          {isCreatingAnnotation && selectionRect && (
-            <div
-              className="absolute border-2 border-blue-500 bg-blue-100 bg-opacity-30"
-              style={{
-                left: `${selectionRect.position.x}px`,
-                top: `${selectionRect.position.y}px`,
-                width: `${selectionRect.position.width}px`,
-                height: `${selectionRect.position.height}px`
-              }}
-            >
-              <AnnotationBubble
-                position={selectionRect.position}
-                onSubmit={(comment, color) => createAnnotation(comment, color)}
-                onCancel={() => {
-                  setSelectionRect(null);
-                  window.getSelection()?.removeAllRanges();
-                }}
-              />
-            </div>
-          )}
         </div>
       </div>
+      
+      {/* Annotation Bubble - Outside transformed container */}
+      {isCreatingAnnotation && selectionRect && (
+        <>
+          {/* Selection highlight inside the document */}
+          <div
+            className="absolute border-2 border-blue-500 bg-blue-100 bg-opacity-30 pointer-events-none"
+            style={{
+              left: `${selectionRect.position.x}px`,
+              top: `${selectionRect.position.y}px`,
+              width: `${selectionRect.position.width}px`,
+              height: `${selectionRect.position.height}px`,
+              transform: `scale(${zoom / 100})`,
+              transformOrigin: 'top left'
+            }}
+          />
+          
+          {/* Annotation bubble - fixed position for now */}
+          <div className="fixed top-20 right-20 z-[9999]">
+            <AnnotationBubble
+              position={selectionRect.position}
+              selectedText={selectionRect.text}
+              onSubmit={(comment, color, type, tags) => {
+                console.log('Submitting annotation:', { comment, color, type, tags });
+                createAnnotation(comment, color);
+              }}
+              onCancel={() => {
+                console.log('Cancelling annotation');
+                setSelectionRect(null);
+                setIsCreatingAnnotation(false);
+                window.getSelection()?.removeAllRanges();
+              }}
+            />
+          </div>
+        </>
+      )}
       
       {/* Page Indicator Heat Map */}
       <div className="absolute right-4 top-1/2 transform -translate-y-1/2">

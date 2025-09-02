@@ -120,21 +120,15 @@ export default function AnnotationBubble({
     );
   };
 
-  // Calculate bubble position (above or below selection)
-  const bubbleStyle = {
-    position: 'absolute' as const,
-    left: `${position.x}px`,
-    top: position.y > 300 ? `${position.y - 10}px` : `${position.y + position.height + 10}px`,
-    transform: position.y > 300 ? 'translateY(-100%)' : 'translateY(0)',
-    zIndex: 9999
-  };
+  // Bubble is now positioned by parent container, so no positioning needed here
+  const bubbleStyle = {};
 
   return (
     <AnimatePresence>
       <motion.div
         ref={bubbleRef}
-        initial={{ opacity: 0, scale: 0.9, y: position.y > 300 ? 10 : -10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
         style={bubbleStyle}
         className={cn(
@@ -354,15 +348,6 @@ export default function AnnotationBubble({
           </div>
         </div>
 
-        {/* Arrow pointer */}
-        <div
-          className={cn(
-            "absolute w-3 h-3 bg-white border rotate-45",
-            position.y > 300 
-              ? "bottom-[-6px] left-4 border-t-0 border-l-0" 
-              : "top-[-6px] left-4 border-b-0 border-r-0"
-          )}
-        />
       </motion.div>
     </AnimatePresence>
   );
