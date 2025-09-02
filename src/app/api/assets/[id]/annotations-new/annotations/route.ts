@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { AnnotationRepository } from '@/lib/repositories/annotation.repository';
 import { AnnotationService } from '@/lib/services/annotation.service';
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createSupabaseServerClient();
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -57,7 +57,7 @@ export async function POST(
   { params }: { params: { assetId: string } }
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createSupabaseServerClient();
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
