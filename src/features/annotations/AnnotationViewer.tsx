@@ -83,7 +83,7 @@ export default function AnnotationViewer({
   } = useAnnotationViewerStore();
 
   // Real-time sync
-  const { connectedUsers, syncAnnotation } = useAnnotationSync({
+  const { connectedUsers = [], syncAnnotation } = useAnnotationSync({
     assetId,
     organizationId,
     currentUserId
@@ -162,13 +162,14 @@ export default function AnnotationViewer({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, toggleFullscreen]);
 
-  // Calculate annotation statistics
+  // Calculate annotation statistics  
+  const safeAnnotations = annotations || [];
   const annotationStats = {
-    total: annotations.length,
-    byMe: annotations.filter(a => a.created_by === currentUserId).length,
-    resolved: annotations.filter(a => a.is_resolved).length,
-    active: annotations.filter(a => !a.is_resolved).length,
-    users: new Set(annotations.map(a => a.created_by)).size
+    total: safeAnnotations.length,
+    byMe: safeAnnotations.filter(a => a.created_by === currentUserId).length,
+    resolved: safeAnnotations.filter(a => a.is_resolved).length,
+    active: safeAnnotations.filter(a => !a.is_resolved).length,
+    users: new Set(safeAnnotations.map(a => a.created_by)).size
   };
 
   return (

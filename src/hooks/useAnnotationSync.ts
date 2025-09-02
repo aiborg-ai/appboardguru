@@ -115,8 +115,8 @@ export function useAnnotationSync({
   onUserPresence,
 }: UseAnnotationSyncProps): {
   isConnected: boolean;
-  activeUsers: UserPresenceData[];
-  syncAnnotations: () => Promise<Annotation[] | null>;
+  connectedUsers: UserPresenceData[];
+  syncAnnotation: (annotation: any) => Promise<void>;
 } {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
@@ -346,9 +346,35 @@ export function useAnnotationSync({
     }
   }, [assetId, toast]);
 
+  // Sync a single annotation (for real-time updates)
+  const syncAnnotation = useCallback(async (annotation: any) => {
+    try {
+      // Broadcast annotation to other users via Supabase real-time
+      const { error } = await supabase
+        .from('asset_annotations')
+        .upsert({
+          ...annotation,
+          asset_id: assetId,
+          organization_id: organizationId,
+          created_by: currentUserId,
+        });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error syncing annotation:', error);
+      toast({
+        title: 'Sync Error',
+        description: 'Failed to sync annotation',
+        variant: 'destructive',
+      });
+    }
+  }, [assetId, organizationId, currentUserId, supabase, toast]);
+
   return {
     isConnected,
-    activeUsers,
-    syncAnnotations,
+    connectedUsers: activeUsers,
+    syncAnnotation,
   };
 }
