@@ -10,8 +10,15 @@ export const createSupabaseServerClient = async () => {
   if (!supabaseUrl || !supabaseKey) {
     console.error('[Supabase Server] Missing environment variables:', {
       hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseKey
+      hasKey: !!supabaseKey,
+      nodeEnv: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV
     })
+    // In production, provide more detailed error
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV) {
+      console.error('[Supabase Server] Environment variables must be configured in Vercel Dashboard')
+      console.error('[Supabase Server] Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    }
     throw new Error('Supabase environment variables are not configured')
   }
   
