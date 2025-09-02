@@ -49,8 +49,8 @@ const AnnotationViewer = dynamic(
 // Mock data for demonstration - using real PDF
 const MOCK_ASSET = {
   id: 'demo-asset-1',
-  name: 'Apple Inc 2023 Annual Report',
-  url: '/assets/annual-reports/Apple_Inc_2023_Annual_Report.pdf',
+  name: 'Tesla 2023 Annual Report',
+  url: '/assets/annual-reports/Tesla_2023_Annual_Report.pdf',
   vault_id: 'vault-1',
   vault_name: 'Board Documents',
 };
