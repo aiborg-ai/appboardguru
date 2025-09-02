@@ -215,7 +215,8 @@ export default function AnnotationsPage() {
   }, [annotations, searchQuery, statusFilter, typeFilter])
 
   const handleViewAnnotation = (annotation: AnnotationData) => {
-    window.location.href = `/dashboard/assets/${annotation.asset_id}/annotations`
+    // Navigate to the new annotation viewer
+    window.location.href = `/dashboard/annotations/${annotation.id}`
   }
 
   const handleMarkResolved = async (annotationId: string) => {
