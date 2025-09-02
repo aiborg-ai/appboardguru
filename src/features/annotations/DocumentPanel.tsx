@@ -21,7 +21,8 @@ import {
   MessageSquare,
   Plus,
   FileText,
-  Search
+  Search,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,19 +102,24 @@ export default function DocumentPanel({
 
   // PDF loading state
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<boolean>(true);
   const [pageWidth, setPageWidth] = useState<number>(800);
   
   // Handle PDF load success
   const onPdfLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setTotalPages(numPages);
     setPdfError(null);
+    setPdfLoading(false);
+    console.log('PDF loaded successfully with', numPages, 'pages');
   }, []);
   
   // Handle PDF load error
   const onPdfLoadError = useCallback((error: Error) => {
     console.error('PDF load error:', error);
-    setPdfError('Failed to load PDF. Please try again.');
-  }, []);
+    console.error('PDF URL:', assetUrl);
+    setPdfError(`Failed to load PDF: ${error.message}`);
+    setPdfLoading(false);
+  }, [assetUrl]);
   
   // Calculate page width based on container
   useEffect(() => {
@@ -452,10 +458,15 @@ export default function DocumentPanel({
               <div className="text-red-600 mb-4">
                 <FileText className="h-12 w-12 mx-auto" />
               </div>
-              <p className="text-gray-600">{pdfError}</p>
+              <p className="text-gray-600 mb-2">{pdfError}</p>
+              <p className="text-xs text-gray-500">URL: {assetUrl}</p>
               <Button 
                 className="mt-4"
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  setPdfError(null);
+                  setPdfLoading(true);
+                  window.location.reload();
+                }}
               >
                 Retry
               </Button>
@@ -465,6 +476,12 @@ export default function DocumentPanel({
               file={assetUrl}
               onLoadSuccess={onPdfLoadSuccess}
               onLoadError={onPdfLoadError}
+              loading={
+                <div className="bg-white shadow-xl p-8 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+                  <p className="text-gray-600">Loading PDF document...</p>
+                </div>
+              }
               className="flex justify-center"
             >
               <Page
@@ -473,6 +490,11 @@ export default function DocumentPanel({
                 renderTextLayer={true}
                 renderAnnotationLayer={false}
                 className="shadow-xl bg-white"
+                loading={
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  </div>
+                }
               />
             </Document>
           )}
