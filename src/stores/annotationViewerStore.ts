@@ -238,8 +238,10 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
             }
             
             const data = await response.json();
+            // The controller returns { success, data: { annotations }, metadata }
+            const annotations = data.data?.annotations || data.annotations || [];
             set({ 
-              annotations: data.annotations || [], 
+              annotations: annotations, 
               isLoading: false 
             });
           } catch (error) {
@@ -254,6 +256,8 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
           set({ isCreatingAnnotation: true, error: null });
           
           try {
+            console.log('Sending annotation to API:', annotation);
+            
             const response = await fetch(`/api/assets/${annotation.asset_id}/annotations`, {
               method: 'POST',
               headers: {
@@ -262,13 +266,25 @@ export const useAnnotationViewerStore = create<AnnotationViewerState>()(
               body: JSON.stringify(annotation),
             });
             
+            const responseData = await response.json();
+            console.log('API response:', responseData);
+            
             if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Failed to create annotation');
+              // Log validation errors if present
+              if (responseData.details) {
+                console.error('Validation errors:', responseData.details);
+              }
+              throw new Error(responseData.error || 'Failed to create annotation');
             }
             
-            const data = await response.json();
-            const newAnnotation = data.annotation;
+            // The controller returns { success, data: { annotation }, metadata }
+            const newAnnotation = responseData.data?.annotation || responseData.annotation;
+            
+            if (!newAnnotation) {
+              throw new Error('Invalid response format from API');
+            }
+            
+            console.log('New annotation created:', newAnnotation);
             
             set((state) => ({
               annotations: [...state.annotations, newAnnotation],

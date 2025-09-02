@@ -248,31 +248,50 @@ export default function DocumentPanel({
   const createAnnotation = useCallback((comment: string, color: string = '#FFFF00') => {
     if (!selectionRect) return;
     
+    // Transform position data to match API schema
+    const boundingRect = selectionRect.position.boundingRect;
+    const rects = selectionRect.position.rects.map((rect: any) => ({
+      x1: rect.x,
+      y1: rect.y,
+      x2: rect.x + rect.width,
+      y2: rect.y + rect.height,
+      width: rect.width,
+      height: rect.height
+    }));
+    
     const newAnnotation = {
       asset_id: assetId,
-      page_number: currentPage,
-      position: selectionRect.position, // This now includes boundingRect and rects
-      selected_text: selectionRect.text,
-      comment_text: comment,
-      color,
+      annotationType: 'highlight',
+      content: {
+        text: comment || selectionRect.text // Use comment or selected text
+      },
+      pageNumber: currentPage,
+      position: {
+        pageNumber: currentPage,
+        rects: rects,
+        boundingRect: {
+          x1: boundingRect.x,
+          y1: boundingRect.y,
+          x2: boundingRect.x + boundingRect.width,
+          y2: boundingRect.y + boundingRect.height,
+          width: boundingRect.width,
+          height: boundingRect.height
+        }
+      },
+      selectedText: selectionRect.text,
+      commentText: comment,
+      color: color,
       opacity: 0.3,
-      annotation_type: 'highlight',
-      created_by: currentUserId,
-      created_at: new Date().toISOString(),
-      is_resolved: false,
-      user: {
-        id: currentUserId,
-        full_name: 'Current User' // This would come from auth context
-      }
+      isPrivate: false
     };
     
-    console.log('Creating annotation with position:', newAnnotation.position);
+    console.log('Creating annotation with API-compatible format:', newAnnotation);
     
     onAnnotationCreate(newAnnotation);
     setIsCreatingAnnotation(false);
     setSelectionRect(null);
     window.getSelection()?.removeAllRanges();
-  }, [selectionRect, assetId, currentPage, currentUserId, onAnnotationCreate]);
+  }, [selectionRect, assetId, currentPage, onAnnotationCreate]);
 
   // Navigate to annotation page
   const navigateToAnnotation = useCallback((annotation: Annotation) => {
