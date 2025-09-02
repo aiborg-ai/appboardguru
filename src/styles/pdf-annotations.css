@@ -1,0 +1,127 @@
+/* PDF Text Layer Styles for react-pdf */
+
+/* Ensure text layer is positioned correctly */
+.react-pdf__Page {
+  position: relative;
+  display: inline-block;
+}
+
+.react-pdf__Page__textContent {
+  position: absolute !important;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 1;
+  line-height: 1;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+/* Style text spans for selection */
+.react-pdf__Page__textContent span {
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+/* Highlight selected text */
+.react-pdf__Page__textContent ::selection {
+  background: rgba(0, 100, 255, 0.3);
+}
+
+.react-pdf__Page__textContent ::-moz-selection {
+  background: rgba(0, 100, 255, 0.3);
+}
+
+/* Canvas layer should be behind text */
+.react-pdf__Page__canvas {
+  position: relative;
+  z-index: 1;
+}
+
+/* Text layer should be on top for selection */
+.react-pdf__Page__textContent {
+  z-index: 2;
+  color: transparent;
+}
+
+/* Annotation layer */
+.react-pdf__Page__annotations {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.react-pdf__Page__annotations .annotationLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Custom annotation overlays */
+.annotation-overlay {
+  position: absolute;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.annotation-overlay:hover {
+  opacity: 0.8;
+  transform: scale(1.02);
+}
+
+/* Annotation creation mode */
+.annotation-creating .react-pdf__Page__textContent {
+  cursor: crosshair;
+}
+
+.annotation-creating .react-pdf__Page__textContent span {
+  cursor: text;
+}
+
+/* Selection highlight during annotation */
+.annotation-selection {
+  position: absolute;
+  background: rgba(255, 235, 59, 0.4);
+  border: 2px solid #ffc107;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Loading states */
+.react-pdf__Page__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 600px;
+  background: #f5f5f5;
+}
+
+/* Error states */
+.react-pdf__Page__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: #fff;
+  color: #d32f2f;
+  padding: 2rem;
+  text-align: center;
+}

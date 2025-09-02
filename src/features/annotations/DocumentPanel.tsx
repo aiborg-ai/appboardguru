@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+import '@/styles/pdf-annotations.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 import {
   ZoomIn,
   ZoomOut,
@@ -92,11 +99,35 @@ export default function DocumentPanel({
   // Group overlapping annotations
   const annotationGroups = groupAnnotationsByPosition(pageAnnotations || []);
 
-  // Load PDF (placeholder for now)
+  // PDF loading state
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pageWidth, setPageWidth] = useState<number>(800);
+  
+  // Handle PDF load success
+  const onPdfLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
+    setTotalPages(numPages);
+    setPdfError(null);
+  }, []);
+  
+  // Handle PDF load error
+  const onPdfLoadError = useCallback((error: Error) => {
+    console.error('PDF load error:', error);
+    setPdfError('Failed to load PDF. Please try again.');
+  }, []);
+  
+  // Calculate page width based on container
   useEffect(() => {
-    // In a real implementation, this would load the PDF using PDF.js
-    setTotalPages(10); // Mock total pages
-  }, [assetUrl]);
+    const updatePageWidth = () => {
+      if (documentRef.current) {
+        const containerWidth = documentRef.current.clientWidth - 64; // Subtract padding
+        setPageWidth(Math.min(containerWidth, 1200)); // Max width 1200px
+      }
+    };
+    
+    updatePageWidth();
+    window.addEventListener('resize', updatePageWidth);
+    return () => window.removeEventListener('resize', updatePageWidth);
+  }, []);
 
   // Handle text selection for creating annotations
   const handleMouseUp = useCallback(() => {
@@ -105,25 +136,55 @@ export default function DocumentPanel({
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) return;
     
+    const selectedText = selection.toString().trim();
+    if (!selectedText) return;
+    
     const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    const containerRect = documentRef.current?.getBoundingClientRect();
+    const rects = range.getClientRects();
     
-    if (!containerRect) return;
+    if (rects.length === 0) return;
     
+    // Get the PDF page element
+    const pageElement = documentRef.current?.querySelector('.react-pdf__Page');
+    if (!pageElement) return;
+    
+    const pageRect = pageElement.getBoundingClientRect();
+    
+    // Calculate bounding box for all selected text rectangles
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    for (let i = 0; i < rects.length; i++) {
+      const rect = rects[i];
+      minX = Math.min(minX, rect.left);
+      minY = Math.min(minY, rect.top);
+      maxX = Math.max(maxX, rect.right);
+      maxY = Math.max(maxY, rect.bottom);
+    }
+    
+    // Calculate position relative to PDF page
     const position = {
-      x: rect.left - containerRect.left,
-      y: rect.top - containerRect.top,
-      width: rect.width,
-      height: rect.height
+      x: (minX - pageRect.left) / (zoom / 100),
+      y: (minY - pageRect.top) / (zoom / 100),
+      width: (maxX - minX) / (zoom / 100),
+      height: (maxY - minY) / (zoom / 100)
     };
+    
+    // Store the selection rectangles for multi-line highlighting
+    const highlightRects = Array.from(rects).map(rect => ({
+      x: (rect.left - pageRect.left) / (zoom / 100),
+      y: (rect.top - pageRect.top) / (zoom / 100),
+      width: rect.width / (zoom / 100),
+      height: rect.height / (zoom / 100)
+    }));
     
     setSelectionRect({
       position,
-      text: selection.toString(),
-      range
+      text: selectedText,
+      range,
+      rects: highlightRects,
+      pageNumber: currentPage
     });
-  }, [isCreatingAnnotation]);
+  }, [isCreatingAnnotation, zoom, currentPage]);
 
   // Create new annotation
   const createAnnotation = useCallback((comment: string, color: string = '#FFFF00') => {
@@ -375,36 +436,46 @@ export default function DocumentPanel({
       <div className="flex-1 overflow-auto p-8">
         <div 
           ref={documentRef}
-          className="relative mx-auto bg-white shadow-xl"
+          className={cn(
+            "relative mx-auto",
+            isCreatingAnnotation && "annotation-creating"
+          )}
           style={{
-            width: `${8.5 * zoom}px`,
-            minHeight: `${11 * zoom}px`,
             transform: `scale(${zoom / 100})`,
             transformOrigin: 'top center'
           }}
           onMouseUp={handleMouseUp}
         >
-          {/* Document Content (Placeholder) */}
-          <div className="p-8">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold mb-4">Document Page {currentPage}</h1>
-              <p className="text-gray-600 mb-4">
-                This is a placeholder for the actual PDF content. In production, this would render the PDF using PDF.js or a similar library.
-              </p>
+          {/* PDF Document */}
+          {pdfError ? (
+            <div className="bg-white shadow-xl p-8 text-center">
+              <div className="text-red-600 mb-4">
+                <FileText className="h-12 w-12 mx-auto" />
+              </div>
+              <p className="text-gray-600">{pdfError}</p>
+              <Button 
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
             </div>
-            
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <h2 className="text-lg font-semibold">Section {i + 1}</h2>
-                  <p className="text-gray-700 leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          ) : (
+            <Document
+              file={assetUrl}
+              onLoadSuccess={onPdfLoadSuccess}
+              onLoadError={onPdfLoadError}
+              className="flex justify-center"
+            >
+              <Page
+                pageNumber={currentPage}
+                width={pageWidth}
+                renderTextLayer={true}
+                renderAnnotationLayer={false}
+                className="shadow-xl bg-white"
+              />
+            </Document>
+          )}
           
           {/* Annotation Overlays */}
           {showIndicators && (
