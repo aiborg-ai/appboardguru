@@ -852,16 +852,22 @@ export class AssetRepository extends BaseRepository {
           updated_at: new Date().toISOString()
         }
         
-        // Check if organization_id and vault_id columns exist (after migration)
-        // For now, we'll store these in metadata or skip them
-        // Once migration is run, uncomment these lines:
-        // assetData.organization_id = uploadData.organizationId
-        // assetData.vault_id = uploadData.vaultId
+        // Add organization_id and vault_id if they're provided
+        // These fields may not exist if migration hasn't been run yet
+        // Using 'any' type to bypass TypeScript checking temporarily
+        if (uploadData.organizationId) {
+          (assetData as any).organization_id = uploadData.organizationId
+        }
+        if (uploadData.vaultId) {
+          (assetData as any).vault_id = uploadData.vaultId
+        }
         
-        console.log('Creating asset record without organization_id/vault_id (migration pending):', {
+        console.log('Creating asset record with optional organization_id:', {
           title: assetData.title,
           owner_id: assetData.owner_id,
-          file_name: assetData.file_name
+          file_name: assetData.file_name,
+          organization_id: (assetData as any).organization_id || 'not set',
+          vault_id: (assetData as any).vault_id || 'not set'
         })
 
         const { data: asset, error: dbError } = await this.supabase
