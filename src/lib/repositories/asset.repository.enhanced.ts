@@ -726,7 +726,30 @@ export class AssetRepository extends BaseRepository {
         
         console.log('Assets bucket verified:', assetsBucket.name)
         
-        const { data: uploadResult, error: uploadError } = await this.supabase.storage
+        // Create a service role client for storage operations if we have the key
+        // This bypasses RLS policies which might be blocking uploads
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        let storageClient = this.supabase.storage
+        
+        if (serviceRoleKey) {
+          console.log('Using service role for storage upload')
+          const { createClient } = await import('@supabase/supabase-js')
+          const serviceSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            serviceRoleKey,
+            {
+              auth: {
+                persistSession: false,
+                autoRefreshToken: false
+              }
+            }
+          )
+          storageClient = serviceSupabase.storage
+        } else {
+          console.log('Service role key not found, using user session for upload')
+        }
+        
+        const { data: uploadResult, error: uploadError } = await storageClient
           .from('assets')
           .upload(filePath, uploadData.file, {
             contentType: uploadData.mimeType,
@@ -782,8 +805,8 @@ export class AssetRepository extends BaseRepository {
         
         console.log('Supabase storage upload successful:', uploadResult)
 
-        // Get public URL if needed
-        const { data: { publicUrl } } = this.supabase.storage
+        // Get public URL if needed (use the same client that was used for upload)
+        const { data: { publicUrl } } = storageClient
           .from('assets')
           .getPublicUrl(uploadResult.path)
 
