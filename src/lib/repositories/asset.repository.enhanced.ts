@@ -829,7 +829,9 @@ export class AssetRepository extends BaseRepository {
   async createAssetRecord(uploadData: AssetUploadData, storageResult: StorageUploadResult): Promise<Result<AssetWithDetails>> {
     return this.executeTransaction(async () => {
       try {
-        const assetData: AssetInsert = {
+        // Build asset data, excluding fields that don't exist in the database yet
+        // TODO: Add organization_id and vault_id after running migration
+        const assetData: any = {
           title: uploadData.title,
           description: uploadData.description,
           file_name: storageResult.fileName,
@@ -840,8 +842,6 @@ export class AssetRepository extends BaseRepository {
           mime_type: uploadData.mimeType,
           category: uploadData.category,
           tags: uploadData.tags,
-          organization_id: uploadData.organizationId,
-          vault_id: uploadData.vaultId,
           folder_path: uploadData.folderPath,
           owner_id: uploadData.uploadedBy, // Changed from uploaded_by to owner_id to match database schema
           storage_bucket: 'assets',
@@ -851,6 +851,18 @@ export class AssetRepository extends BaseRepository {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
+        
+        // Check if organization_id and vault_id columns exist (after migration)
+        // For now, we'll store these in metadata or skip them
+        // Once migration is run, uncomment these lines:
+        // assetData.organization_id = uploadData.organizationId
+        // assetData.vault_id = uploadData.vaultId
+        
+        console.log('Creating asset record without organization_id/vault_id (migration pending):', {
+          title: assetData.title,
+          owner_id: assetData.owner_id,
+          file_name: assetData.file_name
+        })
 
         const { data: asset, error: dbError } = await this.supabase
           .from('assets')
@@ -859,20 +871,32 @@ export class AssetRepository extends BaseRepository {
             *,
             owner:users!owner_id(
               id, full_name, email, avatar_url
-            ),
-            vault:vaults(id, name, organization_id),
-            organization:organizations(id, name, slug)
+            )
           `)
           .single()
 
         if (dbError) {
+          console.error('Database insert failed:', {
+            error: dbError,
+            message: dbError.message,
+            code: dbError.code,
+            details: dbError.details,
+            hint: dbError.hint,
+            assetData: assetData
+          })
+          
           // Clean up uploaded file if database insert fails
           await this.deleteFileFromStorage(storageResult.filePath)
           
           return failure(new RepositoryError(
-            'Failed to create asset record',
+            `Failed to create asset record: ${dbError.message}`,
             'DATABASE_INSERT_FAILED',
-            { error: dbError.message }
+            { 
+              error: dbError.message,
+              code: dbError.code,
+              hint: dbError.hint,
+              details: dbError.details
+            }
           ))
         }
 
