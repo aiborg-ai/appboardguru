@@ -214,10 +214,10 @@ export class AnnotationController {
         )
       }
 
-      // Get asset to verify access and get organization ID
+      // Get asset to verify access and get organization ID and vault_id
       const { data: asset } = await supabase
         .from('assets')
-        .select('id, organization_id, file_name')
+        .select('id, organization_id, file_name, vault_id')
         .eq('id', assetId)
         .single()
 
@@ -228,13 +228,14 @@ export class AnnotationController {
         )
       }
 
-      // Create annotation
+      // Create annotation with vault membership validation
       const annotationData: CreateAnnotationRequest = validation.data
       const result = await this.annotationService.createAnnotation(
         annotationData,
         assetId as AssetId,
         user.id as UserId,
-        asset.organization_id as OrganizationId
+        asset.organization_id as OrganizationId,
+        asset.vault_id // Pass vault_id for membership validation
       )
 
       if (!result.success) {

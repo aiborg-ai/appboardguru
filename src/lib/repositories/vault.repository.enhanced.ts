@@ -197,6 +197,9 @@ export interface VaultAssetWithDetails {
     full_name?: string
     email: string
   }
+  annotation_count?: number
+  unresolved_annotation_count?: number
+  last_annotation_at?: string
 }
 
 export class VaultRepository extends BaseRepository {
@@ -784,6 +787,34 @@ export class VaultRepository extends BaseRepository {
       display_order: item.display_order
     })) || []
 
+    // Add annotation counts for each asset
+    const assetsWithAnnotations = await Promise.all(
+      transformedAssets.map(async (asset) => {
+        // Get annotation counts for this asset
+        const { data: annotationData } = await this.supabase
+          .from('asset_annotations')
+          .select('id, is_resolved, created_at')
+          .eq('asset_id', asset.id)
+          .eq('vault_id', vaultId)
+          .eq('is_deleted', false)
+
+        const annotationCount = annotationData?.length || 0
+        const unresolvedCount = annotationData?.filter(a => !a.is_resolved).length || 0
+        const lastAnnotation = annotationData?.length > 0 
+          ? annotationData.sort((a, b) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0].created_at 
+          : null
+
+        return {
+          ...asset,
+          annotation_count: annotationCount,
+          unresolved_annotation_count: unresolvedCount,
+          last_annotation_at: lastAnnotation
+        }
+      })
+    )
+
     await this.logActivity({
       user_id: userId,
       event_type: 'vault_management',
@@ -791,12 +822,12 @@ export class VaultRepository extends BaseRepository {
       action: 'list_assets',
       resource_type: 'vault',
       resource_id: vaultId,
-      event_description: `Listed vault assets`,
+      event_description: `Listed vault assets with annotations`,
       outcome: 'success',
       severity: 'low'
     })
 
-    return success(transformedAssets)
+    return success(assetsWithAnnotations)
   }
 
   async getStats(

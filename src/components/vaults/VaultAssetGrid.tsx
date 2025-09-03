@@ -25,8 +25,11 @@ import {
   Copy,
   Move,
   Lock,
-  Loader2
+  Loader2,
+  MessageSquare,
+  MessageCircle
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -76,6 +79,9 @@ interface Asset {
     full_name?: string
     email: string
   }
+  annotation_count?: number
+  unresolved_annotation_count?: number
+  last_annotation_at?: string
 }
 
 interface VaultAssetGridProps {
@@ -91,6 +97,7 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
   const [sortBy, setSortBy] = useState('name')
   const [filterType, setFilterType] = useState('all')
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
+  const router = useRouter()
   
   // Get current user from auth store
   const { user } = useAuthStore()
@@ -230,6 +237,11 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
       toast.info(`Deleting ${asset.file_name}`)
       // TODO: Implement delete functionality
     }
+  }
+  
+  const handleViewAnnotations = (asset: Asset) => {
+    // Navigate to the annotations page for this asset
+    router.push(`/dashboard/assets/${asset.id}/annotations`)
   }
   
   const toggleAssetSelection = (assetId: string) => {
@@ -403,6 +415,15 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
                           <Eye className="h-4 w-4 mr-2" />
                           Preview
                         </DropdownMenuItem>
+                        {asset.file_type.includes('pdf') && (
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation()
+                            handleViewAnnotations(asset)
+                          }}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Annotations {asset.annotation_count ? `(${asset.annotation_count})` : ''}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={(e) => {
                           e.stopPropagation()
                           handleDownload(asset)
@@ -461,13 +482,37 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
                     <p>{formatDate(asset.created_at)}</p>
                   </div>
                   
-                  {/* Featured Badge */}
-                  {asset.is_featured && (
-                    <Badge variant="secondary" className="mt-2 text-xs">
-                      <Star className="h-3 w-3 mr-1" />
-                      Featured
-                    </Badge>
-                  )}
+                  {/* Annotations and Featured Badge */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {/* Annotation Count */}
+                    {asset.file_type.includes('pdf') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleViewAnnotations(asset)
+                        }}
+                      >
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        {asset.annotation_count || 0}
+                        {asset.unresolved_annotation_count ? (
+                          <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                            {asset.unresolved_annotation_count}
+                          </Badge>
+                        ) : null}
+                      </Button>
+                    )}
+                    
+                    {/* Featured Badge */}
+                    {asset.is_featured && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Star className="h-3 w-3 mr-1" />
+                        Featured
+                      </Badge>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )
@@ -532,6 +577,13 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
                             <p className="text-xs text-gray-500 truncate">{asset.description}</p>
                           )}
                         </div>
+                        {/* Annotations badge */}
+                        {asset.file_type.includes('pdf') && asset.annotation_count ? (
+                          <Badge variant="outline" className="ml-2 flex-shrink-0">
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            {asset.annotation_count}
+                          </Badge>
+                        ) : null}
                         {asset.is_featured && (
                           <Star className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                         )}
@@ -545,6 +597,19 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {asset.file_type.includes('pdf') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleViewAnnotations(asset)
+                            }}
+                            title={`View annotations (${asset.annotation_count || 0})`}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -579,6 +644,15 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
                               <Eye className="h-4 w-4 mr-2" />
                               Preview
                             </DropdownMenuItem>
+                            {asset.file_type.includes('pdf') && (
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation()
+                                handleViewAnnotations(asset)
+                              }}>
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Annotations {asset.annotation_count ? `(${asset.annotation_count})` : ''}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem>
                               <Edit3 className="h-4 w-4 mr-2" />
                               Rename

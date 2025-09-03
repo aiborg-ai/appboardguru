@@ -26,7 +26,7 @@ export interface IAnnotationService {
   getAnnotationsByAssetId(assetId: AssetId, criteria?: Partial<AnnotationQueryCriteria>): Promise<AnnotationsResult>
   getAnnotationById(id: AnnotationId): Promise<SingleAnnotationResult>
   getAnnotationsByPage(assetId: AssetId, pageNumber: number): Promise<AnnotationsResult>
-  createAnnotation(data: CreateAnnotationRequest, assetId: AssetId, userId: UserId, organizationId: OrganizationId): Promise<SingleAnnotationResult>
+  createAnnotation(data: CreateAnnotationRequest, assetId: AssetId, userId: UserId, organizationId: OrganizationId, vaultId?: string): Promise<SingleAnnotationResult>
   updateAnnotation(id: AnnotationId, data: UpdateAnnotationRequest, userId: UserId): Promise<SingleAnnotationResult>
   deleteAnnotation(id: AnnotationId, userId: UserId): Promise<Result<void>>
   countAnnotations(criteria: AnnotationQueryCriteria): Promise<AnnotationCountResult>
@@ -35,6 +35,7 @@ export interface IAnnotationService {
   canUserAccessAnnotation(annotationId: AnnotationId, userId: UserId): Promise<boolean>
   canUserEditAnnotation(annotationId: AnnotationId, userId: UserId): Promise<boolean>
   canUserDeleteAnnotation(annotationId: AnnotationId, userId: UserId): Promise<boolean>
+  validateVaultMembership(vaultId: string, userId: UserId): Promise<boolean>
 }
 
 export class AnnotationService implements IAnnotationService {
@@ -83,8 +84,20 @@ export class AnnotationService implements IAnnotationService {
     data: CreateAnnotationRequest, 
     assetId: AssetId, 
     userId: UserId, 
-    organizationId: OrganizationId
+    organizationId: OrganizationId,
+    vaultId?: string
   ): Promise<SingleAnnotationResult> {
+    // Validate vault membership if vaultId is provided
+    if (vaultId) {
+      const isVaultMember = await this.validateVaultMembership(vaultId, userId)
+      if (!isVaultMember) {
+        return { 
+          success: false, 
+          error: new Error('Permission denied: You must be a vault member to create annotations') 
+        }
+      }
+    }
+
     // Validate input data
     const validation = this.validateAnnotationData(data)
     if (!validation.valid) {
@@ -334,5 +347,30 @@ export class AnnotationService implements IAnnotationService {
     // Only the creator can delete their annotation
     // In a more complex system, organization admins might also be allowed
     return result.data.createdBy === userId
+  }
+
+  async validateVaultMembership(vaultId: string, userId: UserId): Promise<boolean> {
+    try {
+      // Check if user is a member of the vault
+      const vaultMemberCheck = await this.annotationRepository.checkVaultMembership(vaultId, userId)
+      if (!vaultMemberCheck.success || !vaultMemberCheck.data) {
+        return false
+      }
+
+      // Check if the member is active and has appropriate permissions
+      const member = vaultMemberCheck.data
+      if (member.status !== 'active') {
+        return false
+      }
+
+      // Check role-based permissions
+      // Viewers can only view and reply to annotations
+      // Contributors and above can create new annotations
+      const allowedRoles = ['contributor', 'moderator', 'admin', 'owner']
+      return allowedRoles.includes(member.role)
+    } catch (error) {
+      console.error('Error validating vault membership:', error)
+      return false
+    }
   }
 }

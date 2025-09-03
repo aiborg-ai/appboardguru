@@ -31,6 +31,7 @@ export interface IAnnotationRepository {
   createReply(annotationId: AnnotationId, replyText: string, userId: UserId): Promise<Result<AnnotationReply>>
   updateReply(replyId: string, replyText: string, userId: UserId): Promise<Result<AnnotationReply>>
   deleteReply(replyId: string): Promise<Result<void>>
+  checkVaultMembership(vaultId: string, userId: UserId): Promise<Result<any>>
 }
 
 export class AnnotationRepository extends BaseRepository implements IAnnotationRepository {
@@ -428,5 +429,21 @@ export class AnnotationRepository extends BaseRepository implements IAnnotationR
         avatarUrl: data.users?.avatar_url
       }
     }
+  }
+
+  async checkVaultMembership(vaultId: string, userId: UserId): Promise<Result<any>> {
+    return this.executeQuery(
+      () => {
+        const query = this.queryBuilder()
+          .from('vault_members')
+          .select('*')
+          .eq('vault_id', vaultId)
+          .eq('user_id', userId)
+          .single()
+
+        return query
+      },
+      (data) => data
+    )
   }
 }
