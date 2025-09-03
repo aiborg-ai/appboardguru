@@ -114,13 +114,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!organizationId) {
-      validationErrors.push({
-        field: 'organizationId',
-        message: 'Organization context is required for file uploads.',
-        code: 'ORGANIZATION_REQUIRED'
-      })
-    }
+    // Organization ID is optional - we'll fetch the user's default if not provided
+    // Removed the validation error for missing organizationId
 
     // Enhanced file validations
     if (file) {

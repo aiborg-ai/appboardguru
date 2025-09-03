@@ -710,17 +710,12 @@ export function FileUploadDropzone({
       formData.append('category', fileItem.category)
       formData.append('folderPath', fileItem.folder)
       
-      // Add organization context - REQUIRED for uploads
+      // Add organization context if provided - API will fetch default if not provided
       if (organizationId) {
         formData.append('organizationId', organizationId)
         console.log('Regular upload - organizationId:', organizationId)
       } else {
-        console.error('No organizationId provided for upload - upload will fail')
-        updateFileProperty(fileItem.id, 'status', 'error')
-        updateFileProperty(fileItem.id, 'error', 'No organization selected. Please select an organization from the sidebar.')
-        collaboration.broadcastUploadFailed(fileItem.id, fileItem.file.name, 'No organization selected', 0)
-        reject(new Error('No organization selected. Please select an organization from the sidebar.'))
-        return
+        console.log('No organizationId provided - API will use user\'s default organization')
       }
       
       if (vaultId) {
