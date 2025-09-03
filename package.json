@@ -1,7 +1,7 @@
 {
   "name": "appboardguru",
   "version": "1.0.5",
-  "_vercel_cache_bust": "2025-09-03-documents-feature",
+  "_vercel_cache_bust": "2025-01-03-documents-deployment-fix",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
