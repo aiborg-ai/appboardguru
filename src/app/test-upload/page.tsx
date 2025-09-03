@@ -119,7 +119,7 @@ export default function TestUploadPage() {
 
   return (
     <div className="container mx-auto p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Upload Test Page</h1>
+      <h1 className="text-2xl font-bold mb-6">Upload Test Page (v2)</h1>
       
       <Card className="p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Debug Upload Issues</h2>
