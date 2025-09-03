@@ -335,4 +335,4 @@ export default function DocumentsPage() {
     </DashboardLayout>
   )
 }
-// Force rebuild: Documents feature v2
+// Force rebuild: Documents feature v3 - Cache refresh
