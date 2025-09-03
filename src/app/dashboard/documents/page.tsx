@@ -90,14 +90,10 @@ export default function DocumentsPage() {
       }
 
       // Fetch documents where user is owner or has been granted access
+      // Simplified query without joins that might not exist yet
       const { data: assets, error } = await supabase
         .from('assets')
-        .select(`
-          *,
-          owner:users!owner_id(id, full_name, email),
-          organization:organizations!organization_id(id, name),
-          asset_annotations(count)
-        `)
+        .select('*')
         .or(`owner_id.eq.${user.id}`)
         .eq('is_deleted', false)
         .order('created_at', { ascending: false })
@@ -115,18 +111,18 @@ export default function DocumentsPage() {
       // Transform assets to documents format
       const transformedDocs: Document[] = (assets || []).map(asset => ({
         id: asset.id,
-        title: asset.title,
+        title: asset.title || asset.file_name || 'Untitled',
         file_name: asset.file_name,
-        file_type: asset.file_type,
-        file_size: asset.file_size,
-        organization_id: asset.organization_id,
-        organization: asset.organization,
+        file_type: asset.file_type || 'application/octet-stream',
+        file_size: asset.file_size || 0,
+        organization_id: asset.organization_id || null,
+        organization: null, // Will be populated when DB is ready
         vault_associations: [], // Will be populated from vault_assets table
         shared_with_boardmates: [], // Will be populated from asset_shares table
-        annotation_count: asset.asset_annotations?.[0]?.count || 0,
+        annotation_count: 0, // Will be populated when DB is ready
         created_at: asset.created_at,
         updated_at: asset.updated_at,
-        attribution_status: asset.organization_id ? 'complete' : 'pending'
+        attribution_status: asset.attribution_status || (asset.organization_id ? 'complete' : 'pending')
       }))
 
       setDocuments(transformedDocs)
