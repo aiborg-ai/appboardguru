@@ -238,77 +238,83 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Create branded types
-    const userIdResult = createUserId(user.id)
+    // Simplify organization resolution - always get user's first active organization if not provided
+    let finalOrganizationId = organizationId
     
-    // Handle both UUID and legacy org ID formats
-    let finalOrganizationId: any = organizationId
-    
-    // If it's a legacy format like "org-001", we need to look up the actual UUID
-    if (organizationId && organizationId.startsWith('org-')) {
-      console.log('Legacy organization ID detected:', organizationId)
+    if (!finalOrganizationId) {
+      console.log('No organization provided, fetching user\'s default organization...')
       
-      // Look up the actual organization UUID
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('slug', organizationId.replace('org-', ''))
+      // Get user's first active organization
+      const { data: userOrg, error: orgError } = await supabase
+        .from('organization_members')
+        .select('organization_id, organizations(id, name, status)')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('joined_at', { ascending: false })
+        .limit(1)
         .single()
       
-      if (org) {
-        finalOrganizationId = org.id
-        console.log('Resolved to UUID:', finalOrganizationId)
+      if (userOrg?.organization_id) {
+        finalOrganizationId = userOrg.organization_id
+        console.log('Using user\'s organization:', finalOrganizationId)
       } else {
-        // Try to find any organization the user belongs to
-        const { data: userOrg } = await supabase
-          .from('organization_members')
-          .select('organization_id')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single()
-        
-        if (userOrg) {
-          finalOrganizationId = userOrg.organization_id
-          console.log('Using user\'s default organization:', finalOrganizationId)
+        // Special case: test director - auto-create organization
+        if (user.email === 'test.director@appboardguru.com') {
+          console.log('Test director detected - creating default organization')
+          
+          const { data: newOrg, error: createOrgError } = await supabase
+            .from('organizations')
+            .insert({
+              name: 'Test Director Organization',
+              slug: `test-director-org-${Date.now()}`,
+              description: 'Auto-created organization for test director',
+              created_by: user.id,
+              status: 'active',
+              industry: 'Technology',
+              organization_size: 'medium'
+            })
+            .select()
+            .single()
+          
+          if (newOrg && !createOrgError) {
+            // Create membership
+            await supabase
+              .from('organization_members')
+              .insert({
+                organization_id: newOrg.id,
+                user_id: user.id,
+                role: 'owner',
+                status: 'active',
+                joined_at: new Date().toISOString()
+              })
+            
+            finalOrganizationId = newOrg.id
+            console.log('Created organization for test director:', finalOrganizationId)
+          } else {
+            console.error('Failed to create organization:', createOrgError)
+            return NextResponse.json({ 
+              error: 'No organization found. Please ensure you are a member of an organization.',
+              code: 'NO_ORGANIZATION',
+              details: { 
+                userId: user.id,
+                email: user.email,
+                createError: createOrgError?.message 
+              }
+            }, { status: 400 })
+          }
+        } else {
+          console.error('No organization found for user:', user.id)
+          return NextResponse.json({ 
+            error: 'No organization found. Please ensure you are a member of an organization.',
+            code: 'NO_ORGANIZATION',
+            details: { userId: user.id, email: user.email }
+          }, { status: 400 })
         }
       }
     }
     
-    // If still no organization and it's test director, create one
-    if (!finalOrganizationId && user.email === 'test.director@appboardguru.com') {
-      console.log('Test director detected without org - creating default organization')
-      
-      const { data: newOrg, error: createOrgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: 'Test Director Organization',
-          slug: `test-director-org-${Date.now()}`,
-          description: 'Auto-created organization for test director',
-          created_by: user.id,
-          status: 'active',
-          industry: 'Technology',
-          organization_size: 'medium'
-        })
-        .select()
-        .single()
-      
-      if (newOrg && !createOrgError) {
-        // Create membership
-        await supabase
-          .from('organization_members')
-          .insert({
-            organization_id: newOrg.id,
-            user_id: user.id,
-            role: 'owner',
-            status: 'active',
-            joined_at: new Date().toISOString()
-          })
-        
-        finalOrganizationId = newOrg.id
-        console.log('Created organization for test director:', finalOrganizationId)
-      }
-    }
-    
+    // Create branded types
+    const userIdResult = createUserId(user.id)
     const organizationIdResult = createOrganizationId(finalOrganizationId)
 
     if (!userIdResult.success) {

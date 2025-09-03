@@ -701,15 +701,30 @@ export class AssetRepository extends BaseRepository {
         const { data: buckets, error: bucketError } = await this.supabase.storage.listBuckets()
         if (bucketError) {
           console.error('Error listing buckets:', bucketError)
-        } else {
-          const assetsBucket = buckets?.find(b => b.id === 'assets')
-          if (!assetsBucket) {
-            console.error('CRITICAL: Assets storage bucket does not exist!')
-            console.error('Please run the SQL script at database/fix-assets-storage-bucket.sql')
-          } else {
-            console.log('Assets bucket found:', assetsBucket)
-          }
+          return failure(new RepositoryError(
+            'Cannot access storage service. Please check your connection and try again.',
+            'STORAGE_SERVICE_ERROR',
+            { error: bucketError.message }
+          ))
         }
+        
+        const assetsBucket = buckets?.find(b => b.id === 'assets')
+        if (!assetsBucket) {
+          console.error('CRITICAL: Assets storage bucket does not exist!')
+          console.error('Solution: Run this SQL in Supabase Dashboard:')
+          console.error("INSERT INTO storage.buckets (id, name, public) VALUES ('assets', 'assets', false);")
+          
+          return failure(new RepositoryError(
+            'Storage bucket "assets" not found. Please contact your administrator to set up the storage bucket.',
+            'STORAGE_BUCKET_MISSING',
+            { 
+              solution: 'Run the migration: database/migrations/20250103_fix_storage_bucket_complete.sql',
+              adminAction: 'Execute the storage bucket setup SQL in Supabase Dashboard'
+            }
+          ))
+        }
+        
+        console.log('Assets bucket verified:', assetsBucket.name)
         
         const { data: uploadResult, error: uploadError } = await this.supabase.storage
           .from('assets')
@@ -736,17 +751,20 @@ export class AssetRepository extends BaseRepository {
           // Check if it's a bucket not found error
           if (uploadError.message?.includes('not found') || uploadError.message?.includes('does not exist')) {
             console.error('CRITICAL: Storage bucket "assets" not found!')
-            console.error('Solution: Run this SQL in Supabase Dashboard:')
-            console.error("INSERT INTO storage.buckets (id, name, public) VALUES ('assets', 'assets', false);")
+            console.error('Solution: Run the migration SQL in Supabase Dashboard')
             return failure(new RepositoryError(
-              'Storage bucket "assets" not found. Please contact administrator.',
-              'STORAGE_BUCKET_NOT_FOUND',
-              { error: uploadError.message, filePath, solution: 'Run database/fix-assets-storage-bucket.sql' }
+              'Storage is not configured. Please ask your administrator to run the storage setup.',
+              'STORAGE_NOT_CONFIGURED',
+              { 
+                error: uploadError.message,
+                userAction: 'Contact your administrator to set up file storage',
+                adminAction: 'Run database/migrations/20250103_fix_storage_bucket_complete.sql in Supabase'
+              }
             ))
           }
           
           // Check if it's a permission error
-          if (uploadError.message?.includes('permission') || uploadError.message?.includes('policy')) {
+          if (uploadError.message?.includes('permission') || uploadError.message?.includes('policy') || uploadError.message?.includes('authorized')) {
             console.error('Storage permission error. User may not have upload rights.')
             return failure(new RepositoryError(
               'Permission denied. You may not have rights to upload files.',

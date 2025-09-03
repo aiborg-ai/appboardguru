@@ -735,105 +735,21 @@ export function FileUploadDropzone({
         formData.append('tags', fileItem.tags.join(','))
       }
 
-      // Check file size and use appropriate upload method
-      const DIRECT_UPLOAD_THRESHOLD = 4 * 1024 * 1024 // 4MB
+      // Always use direct upload via our API route
+      // This simplifies the logic and ensures consistent error handling
+      console.log('Uploading file:', {
+        fileName: fileItem.file.name,
+        fileSize: fileItem.file.size,
+        sizeMB: (fileItem.file.size / (1024 * 1024)).toFixed(2),
+        organizationId
+      })
       
-      if (fileItem.file.size > DIRECT_UPLOAD_THRESHOLD) {
-        // Use direct upload for large files
-        console.log('Using direct upload for large file:', {
-          fileName: fileItem.file.name,
-          fileSize: fileItem.file.size,
-          sizeMB: (fileItem.file.size / (1024 * 1024)).toFixed(2)
-        })
-        
-        // Fetch presigned URL in an async IIFE
-        ;(async () => {
-          try {
-            console.log('Requesting presigned URL with organizationId:', organizationId)
-            
-            // First, get a presigned upload URL
-            const urlResponse = await fetch('/api/assets/upload-url', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                fileName: fileItem.file.name,
-                fileType: fileItem.file.type,
-                fileSize: fileItem.file.size,
-                organizationId: organizationId || undefined
-              })
-            })
-            
-            if (!urlResponse.ok) {
-              const error = await urlResponse.json()
-              throw new Error(error.error || 'Failed to get upload URL')
-            }
-            
-            const { uploadUrl, path, metadata } = await urlResponse.json()
-            
-            // Upload directly to Supabase using the presigned URL
-            xhr.open('PUT', uploadUrl)
-            xhr.setRequestHeader('Content-Type', fileItem.file.type)
-            
-            // Override the load handler for direct upload
-            xhr.addEventListener('load', async () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                // After successful upload, create the database record
-                const recordResponse = await fetch('/api/assets', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    filePath: path,
-                    fileName: fileItem.file.name,
-                    fileSize: fileItem.file.size,
-                    fileType: fileItem.file.type,
-                    title: fileItem.title,
-                    category: fileItem.category,
-                    tags: fileItem.tags,
-                    organizationId: metadata.organizationId
-                  })
-                })
-                
-                if (recordResponse.ok) {
-                  updateFileProperty(fileItem.id, 'status', 'success')
-                  updateFileProperty(fileItem.id, 'progress', 100)
-                  collaboration.broadcastUploadCompleted(fileItem.id, { path }, Date.now() - startTime)
-                  resolve({ id: fileItem.id, path } as any)
-                } else {
-                  throw new Error('Failed to create asset record')
-                }
-              } else {
-                throw new Error(`Direct upload failed with status ${xhr.status}`)
-              }
-            })
-            
-            xhr.send(fileItem.file)
-          } catch (error) {
-            updateFileProperty(fileItem.id, 'status', 'error')
-            updateFileProperty(fileItem.id, 'error', error instanceof Error ? error.message : 'Failed to upload file')
-            reject(error)
-          }
-        })()
-      } else {
-        // Use regular upload for small files
-        xhr.open('POST', '/api/assets/upload')
-        
-        // Add debug logging
-        console.log('Starting regular upload:', {
-          fileName: fileItem.file.name,
-          fileSize: fileItem.file.size,
-          organizationId,
-          vaultId
-        })
-        
-        xhr.send(formData)
-      }
-      
-      // Configure timeout
+      // Open connection to upload endpoint
+      xhr.open('POST', '/api/assets/upload')
       xhr.timeout = 300000 // 5 minutes timeout
+      
+      // Send the form data
+      xhr.send(formData)
     })
   }
 
