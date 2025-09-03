@@ -78,6 +78,12 @@ const menuItems: MenuItem[] = [
     href: '/dashboard/assets'
   },
   {
+    id: 'documents',
+    label: 'Documents',
+    icon: FileText,
+    href: '/dashboard/documents'
+  },
+  {
     id: 'meetings',
     label: 'Meetings',
     icon: Calendar,
