@@ -153,7 +153,21 @@ export const useAnnotationStore = create<AnnotationStoreState>()(
           setLoadingState(loadingKey, { status: 'loading' })
           
           try {
-            const response = await fetch(`/api/assets/${assetId}/annotations`)
+            // Get the Supabase session for auth headers
+            const supabase = createSupabaseBrowserClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            
+            const headers: HeadersInit = {
+              'Content-Type': 'application/json'
+            }
+            
+            if (session?.access_token) {
+              headers['Authorization'] = `Bearer ${session.access_token}`
+            }
+            
+            const response = await fetch(`/api/assets/${assetId}/annotations`, {
+              headers
+            })
             
             if (!response.ok) {
               throw new Error(`Failed to load annotations: ${response.statusText}`)
@@ -180,9 +194,21 @@ export const useAnnotationStore = create<AnnotationStoreState>()(
           setCreatingAnnotation(true)
           
           try {
+            // Get the Supabase session for auth headers
+            const supabase = createSupabaseBrowserClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            
+            const headers: HeadersInit = {
+              'Content-Type': 'application/json'
+            }
+            
+            if (session?.access_token) {
+              headers['Authorization'] = `Bearer ${session.access_token}`
+            }
+            
             const response = await fetch(`/api/assets/${assetId}/annotations`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers,
               body: JSON.stringify(data)
             })
             
@@ -211,9 +237,21 @@ export const useAnnotationStore = create<AnnotationStoreState>()(
           const { updateAnnotation } = get()
           
           try {
+            // Get the Supabase session for auth headers
+            const supabase = createSupabaseBrowserClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            
+            const headers: HeadersInit = {
+              'Content-Type': 'application/json'
+            }
+            
+            if (session?.access_token) {
+              headers['Authorization'] = `Bearer ${session.access_token}`
+            }
+            
             const response = await fetch(`/api/assets/${assetId}/annotations/${annotationId}`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
+              headers,
               body: JSON.stringify(data)
             })
             
@@ -240,8 +278,21 @@ export const useAnnotationStore = create<AnnotationStoreState>()(
           const { removeAnnotation } = get()
           
           try {
+            // Get the Supabase session for auth headers
+            const supabase = createSupabaseBrowserClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            
+            const headers: HeadersInit = {
+              'Content-Type': 'application/json'
+            }
+            
+            if (session?.access_token) {
+              headers['Authorization'] = `Bearer ${session.access_token}`
+            }
+            
             const response = await fetch(`/api/assets/${assetId}/annotations/${annotationId}`, {
-              method: 'DELETE'
+              method: 'DELETE',
+              headers
             })
             
             if (!response.ok) {

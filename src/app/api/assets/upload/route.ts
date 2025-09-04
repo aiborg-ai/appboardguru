@@ -75,13 +75,31 @@ export async function POST(request: NextRequest) {
   let fileBuffer: ArrayBuffer | null = null;
   
   try {
-    // Get authenticated user
+    // Create Supabase client
     const supabase = await createSupabaseServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    // Try to get user from session (cookies) first
+    let { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    // If no user from cookies, try Authorization header
+    if (!user) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const { data, error } = await supabase.auth.getUser(token)
+        if (!error && data?.user) {
+          user = data.user
+          authError = null
+        }
+      }
+    }
     
     if (authError || !user) {
+      console.error('Authentication failed:', authError?.message || 'No user found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    console.log('Authenticated user:', user.email, '(', user.id, ')')
 
     // Parse and validate form data
     const formData = await request.formData()
@@ -391,11 +409,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Log successful upload
-    console.log('Upload successful:', {
-      assetId: uploadResult.data.id,
-      fileName: uploadResult.data.file_name,
-      fileSize: uploadResult.data.file_size,
-      storagePath: uploadResult.data.file_path
+    console.log('Upload successful, raw data:', JSON.stringify(uploadResult.data, null, 2))
+    console.log('Upload successful summary:', {
+      assetId: uploadResult.data?.id,
+      fileName: uploadResult.data?.file_name,
+      fileSize: uploadResult.data?.file_size,
+      storagePath: uploadResult.data?.file_path
     })
     
     // Transform response data

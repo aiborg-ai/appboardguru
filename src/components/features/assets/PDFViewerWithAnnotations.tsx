@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react'
 import { AnnotationPanel } from '@/components/organisms/annotation-panel'
-import { EnhancedPDFViewer } from '@/components/pdf/EnhancedPDFViewer'
+import { ClientPDFViewer } from '@/components/pdf/ClientPDFViewer'
 import { AssetId, AnnotationType, AssetAnnotation } from '@/types/annotation-types'
 import { useAnnotationStore } from '@/lib/stores/annotation-store'
 import { Button } from '@/components/atoms/Button'
@@ -105,7 +105,49 @@ export const PDFViewerWithAnnotations = React.memo<PDFViewerWithAnnotationsProps
           isPanelVisible ? 'mr-0' : 'mr-0'
         }`}
       >
-        <EnhancedPDFViewer {...pdfViewerProps} />
+        <ClientPDFViewer 
+          assetId={assetId as AssetId}
+          fileUrl={filePath}
+          onPageChange={handlePageChange}
+          enableAnnotations={enableAnnotations}
+          onAnnotationSelect={handleAnnotationSelect}
+          onAnnotationCreate={async (annotation) => {
+            // Convert to the format expected by the store
+            const annotationData = {
+              annotationType: annotation.type as any,
+              content: { text: annotation.text || '' },
+              pageNumber: annotation.page,
+              position: {
+                pageNumber: annotation.page,
+                rects: [{
+                  x1: annotation.x,
+                  y1: annotation.y,
+                  x2: annotation.x + annotation.width,
+                  y2: annotation.y + annotation.height,
+                  width: annotation.width,
+                  height: annotation.height
+                }],
+                boundingRect: {
+                  x1: annotation.x,
+                  y1: annotation.y,
+                  x2: annotation.x + annotation.width,
+                  y2: annotation.y + annotation.height,
+                  width: annotation.width,
+                  height: annotation.height
+                }
+              },
+              commentText: annotation.comment || '',
+              color: annotation.color,
+              opacity: 0.3,
+              isPrivate: false
+            }
+            
+            // Use the annotation store to save it
+            const { createAnnotation } = useAnnotationStore.getState()
+            await createAnnotation(assetId, annotationData)
+            onAnnotationChange?.()
+          }}
+        />
       </div>
       
       {/* Panel Toggle Button */}

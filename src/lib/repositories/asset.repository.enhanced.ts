@@ -659,7 +659,7 @@ export class AssetRepository extends BaseRepository {
 
   // Storage Operations
   async uploadFileToStorage(uploadData: AssetUploadData): Promise<Result<StorageUploadResult>> {
-    return this.executeTransaction(async () => {
+    return this.transaction(async () => {
       try {
         // Validate organization access
         const orgValidation = await this.validateOrganizationAccess(
@@ -827,7 +827,7 @@ export class AssetRepository extends BaseRepository {
   }
 
   async createAssetRecord(uploadData: AssetUploadData, storageResult: StorageUploadResult): Promise<Result<AssetWithDetails>> {
-    return this.executeTransaction(async () => {
+    return this.transaction(async () => {
       try {
         // Build asset data, excluding fields that don't exist in the database yet
         // TODO: Add organization_id and vault_id after running migration
@@ -870,15 +870,11 @@ export class AssetRepository extends BaseRepository {
           vault_id: (assetData as any).vault_id || 'not set'
         })
 
+        // First insert the asset without joins
         const { data: asset, error: dbError } = await this.supabase
           .from('assets')
           .insert(assetData)
-          .select(`
-            *,
-            owner:users!owner_id(
-              id, full_name, email, avatar_url
-            )
-          `)
+          .select('*')
           .single()
 
         if (dbError) {
@@ -903,6 +899,16 @@ export class AssetRepository extends BaseRepository {
               hint: dbError.hint,
               details: dbError.details
             }
+          ))
+        }
+
+        console.log('Asset inserted successfully:', JSON.stringify(asset, null, 2))
+
+        // Make sure we have the asset data
+        if (!asset) {
+          return failure(new RepositoryError(
+            'No asset returned from database insert',
+            'NO_ASSET_RETURNED'
           ))
         }
 

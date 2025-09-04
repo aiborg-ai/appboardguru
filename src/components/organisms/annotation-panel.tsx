@@ -75,7 +75,7 @@ export function AnnotationPanel({
     return () => {
       disableRealTimeUpdates()
     }
-  }, [assetId, loadAnnotations, enableRealTimeUpdates, disableRealTimeUpdates])
+  }, [assetId]) // Only depend on assetId, not the functions
 
   // Filter annotations based on current page and filters
   const filteredAnnotations = useMemo(() => {

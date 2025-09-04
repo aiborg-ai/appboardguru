@@ -32,6 +32,7 @@ interface Document {
   file_name: string
   file_type: string
   file_size: number
+  file_path?: string
   organization_id?: string
   organization?: {
     id: string
@@ -124,6 +125,7 @@ export default function DocumentsPage() {
         file_name: asset.file_name,
         file_type: asset.file_type || 'application/octet-stream',
         file_size: asset.file_size || 0,
+        file_path: asset.file_url || asset.file_path || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Use a dummy PDF for testing
         organization_id: asset.organization_id || null,
         organization: null, // Will be populated when DB is ready
         vault_associations: [], // Will be populated from vault_assets table
