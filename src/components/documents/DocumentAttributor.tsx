@@ -323,14 +323,12 @@ export function DocumentAttributor({ document, onComplete }: DocumentAttributorP
             <SelectValue placeholder="Select an organization" />
           </SelectTrigger>
           <SelectContent>
-            <div>
-              <SelectItem value="">None</SelectItem>
-              {organizations.map(org => (
-                <SelectItem key={org.id} value={org.id}>
-                  {org.name}
-                </SelectItem>
-              ))}
-            </div>
+            <SelectItem value="">None</SelectItem>
+            {organizations.map(org => (
+              <SelectItem key={org.id} value={org.id}>
+                {org.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-gray-500">
