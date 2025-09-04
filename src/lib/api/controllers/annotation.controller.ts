@@ -15,7 +15,7 @@ import {
   AnnotationType 
 } from '@/types/annotation-types'
 import { IAnnotationService } from '@/lib/services/annotation.service'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createSupabaseApiClient } from '@/lib/supabase-api-auth'
 
 // Validation schemas using Zod
 const createAnnotationSchema = z.object({
@@ -103,8 +103,8 @@ export class AnnotationController {
    */
   async getAnnotations(request: NextRequest, assetId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
-      // Authenticate user
-      const supabase = await createSupabaseServerClient()
+      // Authenticate user (supports both cookie and header auth)
+      const supabase = await createSupabaseApiClient(request)
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {
@@ -188,8 +188,8 @@ export class AnnotationController {
    */
   async createAnnotation(request: NextRequest, assetId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
-      // Authenticate user
-      const supabase = await createSupabaseServerClient()
+      // Authenticate user (supports both cookie and header auth)
+      const supabase = await createSupabaseApiClient(request)
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {
@@ -214,10 +214,10 @@ export class AnnotationController {
         )
       }
 
-      // Get asset to verify access and get organization ID and vault_id
+      // Get asset to verify access and get organization ID
       const { data: asset } = await supabase
         .from('assets')
-        .select('id, organization_id, file_name, vault_id')
+        .select('id, organization_id, file_name')
         .eq('id', assetId)
         .single()
 
@@ -228,14 +228,14 @@ export class AnnotationController {
         )
       }
 
-      // Create annotation with vault membership validation
+      // Create annotation without vault validation for now
       const annotationData: CreateAnnotationRequest = validation.data
       const result = await this.annotationService.createAnnotation(
         annotationData,
         assetId as AssetId,
         user.id as UserId,
-        asset.organization_id as OrganizationId,
-        asset.vault_id // Pass vault_id for membership validation
+        asset.organization_id as OrganizationId
+        // Vault validation removed until vault_assets table is properly setup
       )
 
       if (!result.success) {

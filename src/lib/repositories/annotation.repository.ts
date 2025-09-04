@@ -4,7 +4,7 @@
  */
 
 import { BaseRepository } from './base.repository'
-import { Result } from '@/lib/result/types'
+import { Result } from './result'
 import { 
   AssetAnnotation, 
   AnnotationId, 
@@ -39,7 +39,62 @@ export class AnnotationRepository extends BaseRepository implements IAnnotationR
   private readonly repliesTableName = 'annotation_replies'
 
   constructor(supabase: SupabaseClient) {
-    super(supabase)
+    super(supabase as any)
+  }
+
+  // Implement abstract methods from BaseRepository
+  protected getEntityName(): string {
+    return 'annotation'
+  }
+
+  protected getSearchFields(): string[] {
+    return ['comment_text', 'selected_text']
+  }
+
+  protected getTableName(): string {
+    return this.tableName
+  }
+
+  // Helper method to get query builder
+  private queryBuilder() {
+    return this.supabase
+  }
+
+  // Add the missing executeQuery method
+  private async executeQuery<T, R>(
+    queryFn: () => any,
+    transformFn: (data: T, count?: number) => R
+  ): Promise<Result<R>> {
+    try {
+      const query = queryFn()
+      const { data, error, count } = await query
+
+      if (error) {
+        return {
+          success: false,
+          error: {
+            code: error.code || 'QUERY_ERROR',
+            message: error.message,
+            details: error.details
+          }
+        }
+      }
+
+      const result = transformFn(data, count)
+      return {
+        success: true,
+        data: result
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'UNEXPECTED_ERROR',
+          message: error?.message || 'An unexpected error occurred',
+          details: error
+        }
+      }
+    }
   }
 
   async findById(id: AnnotationId): Promise<Result<AssetAnnotation | null>> {
