@@ -175,7 +175,7 @@ export class AnnotationService implements IAnnotationService {
     const errors: AnnotationValidationError[] = []
 
     // Validate annotation type
-    const validTypes = ['highlight', 'area', 'textbox', 'drawing', 'stamp']
+    const validTypes = ['highlight', 'area', 'textbox', 'drawing', 'stamp', 'voice']
     if (!validTypes.includes(data.annotationType)) {
       errors.push({
         field: 'annotationType',
@@ -218,11 +218,20 @@ export class AnnotationService implements IAnnotationService {
     }
 
     // Validate content
-    if (!data.content || (!data.content.text && !data.content.image)) {
+    if (!data.content || (!data.content.text && !data.content.image && !data.content.audioUrl)) {
       errors.push({
         field: 'content',
-        message: 'Annotation must have text or image content',
+        message: 'Annotation must have text, image, or audio content',
         code: 'MISSING_CONTENT'
+      })
+    }
+    
+    // Validate voice annotations specifically
+    if (data.annotationType === 'voice' && !data.content.audioUrl && !data.audioData) {
+      errors.push({
+        field: 'content.audioUrl',
+        message: 'Voice annotations require audio content',
+        code: 'MISSING_AUDIO'
       })
     }
 

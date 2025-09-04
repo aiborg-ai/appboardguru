@@ -72,16 +72,20 @@ export interface AssetAnnotation {
   organizationId: OrganizationId
   createdBy: UserId
   annotationType: AnnotationType
+  annotationSubtype?: string // Preserves original type from document_annotations
   content: AnnotationContent
   pageNumber: number
   position: AnnotationPosition
   selectedText?: string
   commentText?: string
+  voiceUrl?: string // Direct voice URL for voice annotations
+  voiceTranscription?: string // Transcribed text from voice
   color: string
   opacity: number
   isPrivate: boolean
   isResolved: boolean
   isDeleted: boolean
+  sharedWith?: UserId[] // Array of users the annotation is shared with
   createdAt: string
   updatedAt?: string
   deletedAt?: string

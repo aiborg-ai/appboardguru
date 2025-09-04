@@ -356,22 +356,44 @@ export class CollaborativeDocumentsService {
       updatedAt: new Date()
     };
 
-    // Store in database
+    // Store in database using asset_annotations table
     const { error } = await this.supabase
-      .from('board_room_document_annotations')
+      .from('asset_annotations')
       .insert({
         id: annotation.id,
-        document_id: documentId,
-        annotator_id: annotatorId,
-        annotation_type: annotation.type,
-        content: annotation.content,
-        position_data: annotation.positionData,
-        page_number: annotation.pageNumber,
+        asset_id: documentId, // Using document_id as asset_id
+        created_by: annotatorId,
+        annotation_type: annotation.type === 'highlight' ? 'highlight' : 'textbox',
+        annotation_subtype: annotation.type, // Preserve original type
+        content: {
+          text: annotation.content,
+          originalType: annotation.type
+        },
+        page_number: annotation.pageNumber || 1,
+        position: {
+          pageNumber: annotation.pageNumber || 1,
+          rects: annotation.positionData.boundingRect ? [{
+            x1: annotation.positionData.boundingRect.x,
+            y1: annotation.positionData.boundingRect.y,
+            x2: annotation.positionData.boundingRect.x + annotation.positionData.boundingRect.width,
+            y2: annotation.positionData.boundingRect.y + annotation.positionData.boundingRect.height,
+            width: annotation.positionData.boundingRect.width,
+            height: annotation.positionData.boundingRect.height
+          }] : [],
+          boundingRect: annotation.positionData.boundingRect
+        },
+        selected_text: annotation.positionData.textContent,
+        comment_text: annotation.content,
+        is_private: annotation.visibility !== 'all',
         is_resolved: false,
-        thread_id: annotation.threadId,
-        parent_annotation_id: annotation.parentAnnotationId,
-        priority_level: annotation.priorityLevel,
-        visibility: annotation.visibility
+        organization_id: await this.getOrganizationIdForDocument(documentId),
+        metadata: {
+          thread_id: annotation.threadId,
+          parent_annotation_id: annotation.parentAnnotationId,
+          priority_level: annotation.priorityLevel,
+          visibility: annotation.visibility,
+          annotator_name: annotatorName
+        }
       });
 
     if (error) {
@@ -446,11 +468,14 @@ export class CollaborativeDocumentsService {
     annotation.reactions.push(reaction);
     annotation.updatedAt = new Date();
 
-    // Update in database
+    // Update in database using asset_annotations table
     await this.supabase
-      .from('board_room_document_annotations')
+      .from('asset_annotations')
       .update({
-        reactions: annotation.reactions,
+        metadata: await this.supabase.rpc('jsonb_merge', {
+          target: annotation.metadata || {},
+          source: { reactions: annotation.reactions }
+        }),
         updated_at: annotation.updatedAt.toISOString()
       })
       .eq('id', annotationId);
@@ -498,9 +523,9 @@ export class CollaborativeDocumentsService {
       );
     }
 
-    // Update in database
+    // Update in database using asset_annotations table
     await this.supabase
-      .from('board_room_document_annotations')
+      .from('asset_annotations')
       .update({
         is_resolved: true,
         resolved_by: resolvedBy,
@@ -730,11 +755,12 @@ export class CollaborativeDocumentsService {
 
     if (error || !doc) return null;
 
-    // Load annotations
+    // Load annotations from asset_annotations table
     const { data: annotations } = await this.supabase
-      .from('board_room_document_annotations')
-      .select('*')
-      .eq('document_id', documentId)
+      .from('asset_annotations')
+      .select('*, users!created_by(full_name)')
+      .eq('asset_id', documentId)
+      .eq('is_deleted', false)
       .order('created_at');
 
     const document: CollaborativeDocument = {
@@ -766,8 +792,8 @@ export class CollaborativeDocumentsService {
    */
   private async getAnnotation(annotationId: string): Promise<DocumentAnnotation | null> {
     const { data: annotation, error } = await this.supabase
-      .from('board_room_document_annotations')
-      .select('*')
+      .from('asset_annotations')
+      .select('*, users!created_by(full_name)')
       .eq('id', annotationId)
       .single();
 
@@ -780,25 +806,60 @@ export class CollaborativeDocumentsService {
    * Map database annotation to interface
    */
   private mapAnnotation(dbAnnotation: any): DocumentAnnotation {
+    // Map from asset_annotations table structure
+    const metadata = dbAnnotation.metadata || {};
+    const content = typeof dbAnnotation.content === 'object' ? dbAnnotation.content : { text: dbAnnotation.comment_text };
+    
     return {
       id: dbAnnotation.id,
-      documentId: dbAnnotation.document_id,
-      annotatorId: dbAnnotation.annotator_id,
-      annotatorName: dbAnnotation.annotator_name || 'Unknown User',
-      type: dbAnnotation.annotation_type,
-      content: dbAnnotation.content,
-      positionData: dbAnnotation.position_data,
+      documentId: dbAnnotation.asset_id,
+      annotatorId: dbAnnotation.created_by,
+      annotatorName: dbAnnotation.users?.full_name || metadata.annotator_name || 'Unknown User',
+      type: (dbAnnotation.annotation_subtype || dbAnnotation.annotation_type) as any,
+      content: content.text || dbAnnotation.comment_text || '',
+      positionData: this.mapPositionData(dbAnnotation.position),
       pageNumber: dbAnnotation.page_number,
       isResolved: dbAnnotation.is_resolved,
       resolvedBy: dbAnnotation.resolved_by,
       resolvedAt: dbAnnotation.resolved_at ? new Date(dbAnnotation.resolved_at) : undefined,
-      threadId: dbAnnotation.thread_id,
-      parentAnnotationId: dbAnnotation.parent_annotation_id,
-      priorityLevel: dbAnnotation.priority_level,
-      visibility: dbAnnotation.visibility,
-      reactions: dbAnnotation.reactions || [],
+      threadId: metadata.thread_id,
+      parentAnnotationId: metadata.parent_annotation_id,
+      priorityLevel: metadata.priority_level || 'normal',
+      visibility: metadata.visibility || 'all',
+      reactions: metadata.reactions || [],
       createdAt: new Date(dbAnnotation.created_at),
       updatedAt: new Date(dbAnnotation.updated_at)
+    };
+  }
+  
+  /**
+   * Map position data from asset_annotations format
+   */
+  private mapPositionData(position: any): AnnotationPosition {
+    if (!position) {
+      return {
+        startOffset: 0,
+        endOffset: 0,
+        startContainer: '',
+        endContainer: '',
+        boundingRect: { x: 0, y: 0, width: 100, height: 30 },
+        textContent: ''
+      };
+    }
+    
+    const boundingRect = position.boundingRect || {};
+    return {
+      startOffset: 0,
+      endOffset: 0,
+      startContainer: '',
+      endContainer: '',
+      boundingRect: {
+        x: boundingRect.x1 || 0,
+        y: boundingRect.y1 || 0,
+        width: boundingRect.width || 100,
+        height: boundingRect.height || 30
+      },
+      textContent: position.selected_text || ''
     };
   }
 
@@ -946,6 +1007,31 @@ export class CollaborativeDocumentsService {
     return colors[hash % colors.length];
   }
 
+  /**
+   * Get organization ID for document
+   */
+  private async getOrganizationIdForDocument(documentId: string): Promise<string> {
+    // Try to get from assets table first
+    const { data: asset } = await this.supabase
+      .from('assets')
+      .select('organization_id')
+      .eq('id', documentId)
+      .single();
+    
+    if (asset?.organization_id) {
+      return asset.organization_id;
+    }
+    
+    // Fallback to a default or session-based organization
+    const { data: session } = await this.supabase
+      .from('board_room_sessions')
+      .select('organization_id')
+      .eq('id', documentId)
+      .single();
+    
+    return session?.organization_id || 'default-org';
+  }
+  
   /**
    * Generate encryption key for document
    */

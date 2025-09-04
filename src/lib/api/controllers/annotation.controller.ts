@@ -20,6 +20,7 @@ import { createSupabaseApiClient } from '@/lib/supabase-api-auth'
 // Validation schemas using Zod
 const createAnnotationSchema = z.object({
   annotationType: z.enum(['highlight', 'area', 'textbox', 'drawing', 'stamp', 'voice']),
+  annotationSubtype: z.string().optional(), // For preserving original document annotation types
   content: z.object({
     text: z.string().optional(),
     image: z.string().optional(),
@@ -55,10 +56,13 @@ const createAnnotationSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   opacity: z.number().min(0).max(1).optional(),
   isPrivate: z.boolean().optional(),
+  sharedWith: z.array(z.string().uuid()).optional(), // Array of user IDs to share with
   // Voice annotation specific fields
   audioData: z.string().optional(),
   audioFormat: z.string().optional(),
-  transcribeAudio: z.boolean().optional()
+  transcribeAudio: z.boolean().optional(),
+  voiceUrl: z.string().optional(),
+  voiceTranscription: z.string().optional()
 })
 
 const updateAnnotationSchema = z.object({
