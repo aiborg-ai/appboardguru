@@ -124,30 +124,31 @@ export function DocumentUploader({ onUploadComplete, currentOrganization }: Docu
         return newFiles
       })
 
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      // Create FormData for upload
+      const formData = new FormData()
+      formData.append('file', filePreview.file)
+      formData.append('title', filePreview.file.name.replace(/\.[^/.]+$/, '')) // Remove extension
+      formData.append('description', `Document uploaded on ${new Date().toLocaleDateString()}`)
+      formData.append('category', 'document')
+      formData.append('folderPath', '/')
+      formData.append('tags', 'unattributed')
+      
+      // If we have a current organization, include it
+      if (currentOrganization?.id) {
+        formData.append('organizationId', currentOrganization.id)
+      }
 
-      // Generate unique file name
-      const timestamp = new Date().getTime()
-      const safeName = filePreview.file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-      const fileName = `${user.id}/${timestamp}_${safeName}`
-
-      // Upload to Supabase Storage
       setFiles(prev => {
         const newFiles = [...prev]
         newFiles[index] = { ...newFiles[index], progress: 30 }
         return newFiles
       })
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('assets')
-        .upload(fileName, filePreview.file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (uploadError) throw uploadError
+      // Use the API endpoint for upload
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
       setFiles(prev => {
         const newFiles = [...prev]
@@ -155,29 +156,15 @@ export function DocumentUploader({ onUploadComplete, currentOrganization }: Docu
         return newFiles
       })
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('assets')
-        .getPublicUrl(fileName)
+      const result = await response.json()
 
-      // Create asset record in database
-      const assetData = {
-        owner_id: user.id,
-        title: filePreview.file.name.replace(/\.[^/.]+$/, ''), // Remove extension
-        description: `Document uploaded on ${new Date().toLocaleDateString()}`,
-        file_name: fileName,
-        original_file_name: filePreview.file.name,
-        file_path: publicUrl,
-        file_size: filePreview.file.size,
-        file_type: filePreview.file.type || 'application/octet-stream',
-        mime_type: filePreview.file.type || 'application/octet-stream',
-        storage_bucket: 'assets',
-        category: 'document',
-        tags: ['unattributed'],
-        visibility: 'private',
-        is_processed: false,
-        processing_status: 'pending',
-        organization_id: null, // Will be set in attribution stage
+      if (!response.ok) {
+        // Handle validation errors specially
+        if (result.validationErrors) {
+          const errorMessages = result.validationErrors.map((err: any) => err.message).join('. ')
+          throw new Error(errorMessages)
+        }
+        throw new Error(result.error || result.message || 'Upload failed')
       }
 
       setFiles(prev => {
@@ -186,13 +173,7 @@ export function DocumentUploader({ onUploadComplete, currentOrganization }: Docu
         return newFiles
       })
 
-      const { data: asset, error: dbError } = await supabase
-        .from('assets')
-        .insert([assetData])
-        .select()
-        .single()
-
-      if (dbError) throw dbError
+      const asset = result.asset
 
       // Update file status
       setFiles(prev => {

@@ -89,13 +89,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Get all user's organizations
+    // Note: is_primary might not exist in all databases yet
     const { data: memberships, error } = await supabase
       .from('organization_members')
       .select(`
         organization_id,
         role,
         status,
-        is_primary,
         organizations!inner (
           id,
           name,
@@ -112,7 +112,6 @@ export async function GET(request: NextRequest) {
       `)
       .eq('user_id', targetUserId)
       .eq('status', 'active')
-      .order('is_primary', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -125,11 +124,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to include role information
-    const organizations = (memberships || []).map(m => ({
+    const organizations = (memberships || []).map((m: any, index: number) => ({
       ...m.organizations,
       userRole: m.role,
       membershipStatus: m.status,
-      isPrimary: m.is_primary
+      isPrimary: m.is_primary || (index === 0) // First org is primary if column doesn't exist
     }));
 
     console.log(`[Organizations Basic] Found ${organizations.length} organizations`);
