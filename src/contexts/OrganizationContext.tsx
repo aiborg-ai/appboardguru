@@ -85,33 +85,37 @@ const OrganizationContext = createContext<OrganizationContextType | null>(null)
 // Custom hook to use the organization context
 export const useOrganization = () => {
   const context = useContext(OrganizationContext)
+  
+  // During build/SSR, return a dummy context to prevent errors
+  // This should be before the error throw to maintain consistent hook behavior
+  if (typeof window === 'undefined') {
+    return {
+      currentOrganization: null,
+      currentVault: null,
+      organizations: [],
+      vaults: [],
+      pendingInvitations: [],
+      isLoadingOrganizations: false,
+      isLoadingVaults: false,
+      isLoadingInvitations: false,
+      selectOrganization: () => {},
+      selectVault: () => {},
+      refreshOrganizations: () => {},
+      refreshVaults: () => {},
+      refreshInvitations: () => {},
+      acceptInvitation: async () => false,
+      rejectInvitation: async () => false,
+      filterByOrganization: (items: any[]) => items,
+      isCurrentOrganization: () => false,
+      totalVaults: 0,
+      totalPendingInvitations: 0
+    } as OrganizationContextType
+  }
+  
   if (!context) {
-    // During build/SSR, return a dummy context to prevent errors
-    if (typeof window === 'undefined') {
-      return {
-        currentOrganization: null,
-        currentVault: null,
-        organizations: [],
-        vaults: [],
-        pendingInvitations: [],
-        isLoadingOrganizations: false,
-        isLoadingVaults: false,
-        isLoadingInvitations: false,
-        selectOrganization: () => {},
-        selectVault: () => {},
-        refreshOrganizations: () => {},
-        refreshVaults: () => {},
-        refreshInvitations: () => {},
-        acceptInvitation: async () => false,
-        rejectInvitation: async () => false,
-        filterByOrganization: (items: any[]) => items,
-        isCurrentOrganization: () => false,
-        totalVaults: 0,
-        totalPendingInvitations: 0
-      } as OrganizationContextType
-    }
     throw new Error('useOrganization must be used within an OrganizationProvider')
   }
+  
   return context
 }
 
@@ -140,9 +144,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({
   // This ensures consistent behavior and proper database access
   const shouldUseDemoData = isDemoMode && !isTestDirector
   
-  // Use demo organizations or real organizations based on mode
-  // Skip the hook entirely in demo mode to prevent API calls
-  // IMPORTANT: Test director always uses real data regardless of demo mode
+  // Always call the hook to maintain consistent hook order
+  // Pass empty string when in demo mode to skip API calls
   const { 
     data: realOrganizations = [], 
     isLoading: isLoadingRealOrganizations,

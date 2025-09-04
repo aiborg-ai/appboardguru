@@ -88,3 +88,29 @@ export function FYIErrorBoundary({ children }: { children: React.ReactNode }) {
     </ErrorBoundary>
   )
 }
+
+// Context-specific error boundary for organization context
+export function OrganizationErrorBoundary({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            Unable to load organization data. Please check your connection and refresh the page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-xs text-yellow-600 hover:text-yellow-700 underline"
+          >
+            Refresh Page
+          </button>
+        </div>
+      }
+      onError={(error) => {
+        console.error('Organization context error:', error)
+      }}
+    >
+      {children}
+    </ErrorBoundary>
+  )
+}

@@ -67,7 +67,16 @@ export default function DocumentsPage() {
   })
   
   const { toast } = useToast()
-  const { currentOrganization } = useOrganization()
+  
+  // Safely use organization context with defensive checks
+  let currentOrganization = null
+  try {
+    const orgContext = useOrganization()
+    currentOrganization = orgContext?.currentOrganization || null
+  } catch (error) {
+    console.error('Organization context error:', error)
+  }
+  
   const supabase = createSupabaseBrowserClient()
 
   // Fetch documents
