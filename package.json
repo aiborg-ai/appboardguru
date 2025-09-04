@@ -1,7 +1,7 @@
 {
   "name": "appboardguru",
-  "version": "1.0.5",
-  "_vercel_cache_bust": "2025-01-03-documents-deployment-fix",
+  "version": "1.0.6",
+  "_vercel_cache_bust": "2025-01-04-force-rebuild-with-tests",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
