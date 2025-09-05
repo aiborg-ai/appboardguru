@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 // Force dynamic rendering for this route
@@ -7,27 +7,63 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
+    // Create Supabase client with proper auth handling
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // First try Bearer token from Authorization header
+    const authHeader = request.headers.get('authorization')
+    let user = null
+    let supabase
+
+    if (authHeader?.startsWith('Bearer ')) {
+      // Use Bearer token authentication
+      const token = authHeader.substring(7)
+      
+      supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      })
+      
+      const { data: authData, error: authError } = await supabase.auth.getUser(token)
+      if (!authError && authData?.user) {
+        user = authData.user
+        console.log('[Assets API] Authenticated via Bearer token:', user.email)
+      }
+    }
+
+    // If no user from Bearer token, try cookies
+    if (!user) {
+      const cookieStore = await cookies()
+      const allCookies = cookieStore.getAll()
+      
+      supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          get(name: string) {
+            const cookie = allCookies.find(c => c.name === name)
+            return cookie?.value
+          },
+          set() {},
+          remove() {}
+        }
+      })
+      
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser()
+      if (!cookieError && cookieUser) {
+        user = cookieUser
+        console.log('[Assets API] Authenticated via cookies:', user.email)
+      }
+    }
+    
+    if (!user) {
+      console.error('[Assets API] No authenticated user')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -41,36 +77,12 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'updated_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     
-    // Build query for user's accessible assets
+    // Build query - start with basic fields only
     let query = supabase
       .from('assets')
-      .select(`
-        *,
-        owner:users!owner_id(id, full_name, email),
-        organization:organizations!organization_id(id, name)
-      `)
-
-    // Filter by user's organizations
-    // Get user's organizations first
-    const { data: userOrgs } = await supabase
-      .from('organization_members')
-      .select('organization_id')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-    
-    if (userOrgs && userOrgs.length > 0) {
-      const orgIds = userOrgs.map(org => org.organization_id)
-      query = query.in('organization_id', orgIds)
-    } else {
-      // If user has no organizations, return empty result
-      return NextResponse.json({
-        success: true,
-        assets: [],
-        total: 0,
-        page,
-        limit
-      })
-    }
+      .select('*', { count: 'exact' })
+      .or(`owner_id.eq.${user.id},uploaded_by.eq.${user.id}`)
+      .eq('is_deleted', false)
 
     // Apply filters
     if (category && category !== 'all') {
@@ -108,14 +120,16 @@ export async function GET(request: NextRequest) {
     const { data: assets, error, count } = await query
     
     // Log for debugging
-    console.log('Assets query result:', {
+    console.log('[Assets API] Query result:', {
+      userId: user.id,
+      userEmail: user.email,
       count,
       assetsLength: assets?.length,
       error: error?.message
     })
 
     if (error) {
-      console.error('Database error:', error)
+      console.error('[Assets API] Database error:', error)
       // Return empty array instead of error for better UX
       return NextResponse.json({
         success: true,
@@ -124,8 +138,25 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         totalPages: 0,
-        message: 'Unable to fetch assets. Please check your permissions.'
+        message: 'Unable to fetch assets'
       })
+    }
+
+    // Get owner details separately if needed
+    const ownerIds = [...new Set((assets || []).map(a => a.owner_id).filter(Boolean))]
+    let owners: any = {}
+    
+    if (ownerIds.length > 0) {
+      const { data: ownerData } = await supabase
+        .from('users')
+        .select('id, email, full_name')
+        .in('id', ownerIds)
+      
+      if (ownerData) {
+        ownerData.forEach(owner => {
+          owners[owner.id] = owner
+        })
+      }
     }
 
     // Transform data for frontend consumption
@@ -133,76 +164,112 @@ export async function GET(request: NextRequest) {
       id: asset.id,
       title: asset.title || asset.file_name || 'Untitled',
       fileName: asset.file_name,
-      file_name: asset.file_name, // Support both formats
+      file_name: asset.file_name,
       fileType: asset.file_type,
-      file_type: asset.file_type, // Support both formats
+      file_type: asset.file_type,
       fileSize: asset.file_size,
-      file_size: asset.file_size, // Support both formats
+      file_size: asset.file_size,
       category: asset.category || 'general',
       folder: asset.folder_path || '/',
       tags: asset.tags || [],
       thumbnail: asset.thumbnail_url,
-      thumbnailUrl: asset.thumbnail_url, // Support both formats
-      thumbnail_url: asset.thumbnail_url, // Support both formats
+      thumbnailUrl: asset.thumbnail_url,
+      thumbnail_url: asset.thumbnail_url,
       createdAt: asset.created_at,
-      created_at: asset.created_at, // Support both formats
+      created_at: asset.created_at,
       updatedAt: asset.updated_at,
-      updated_at: asset.updated_at, // Support both formats
+      updated_at: asset.updated_at,
       isOwner: asset.owner_id === user.id,
-      owner: asset.owner ? {
-        id: asset.owner.id,
-        name: asset.owner.full_name || asset.owner.email?.split('@')[0] || 'Unknown',
-        email: asset.owner.email
+      owner: owners[asset.owner_id] ? {
+        id: asset.owner_id,
+        name: owners[asset.owner_id].full_name || owners[asset.owner_id].email?.split('@')[0] || 'Unknown',
+        email: owners[asset.owner_id].email
       } : null,
       owner_id: asset.owner_id,
-      organization: asset.organization,
       organization_id: asset.organization_id,
-      vault: asset.vault,
       vault_id: asset.vault_id,
-      sharedWith: [], // TODO: Implement sharing system
-      downloadCount: 0,
-      viewCount: 0,
-      isShared: false // TODO: Implement sharing system
+      sharedWith: [],
+      downloadCount: asset.download_count || 0,
+      viewCount: asset.view_count || 0,
+      isShared: false
     }))
 
     return NextResponse.json({
       success: true,
       assets: transformedAssets,
-      totalCount: count,
+      totalCount: count || 0,
       page,
       limit,
       totalPages: Math.ceil((count || 0) / limit)
     })
 
   } catch (error) {
-    console.error('Assets API error:', error)
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
+    console.error('[Assets API] Unexpected error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error',
+      assets: [],
+      totalCount: 0
+    }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
+    // Create Supabase client with proper auth handling
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // First try Bearer token from Authorization header
+    const authHeader = request.headers.get('authorization')
+    let user = null
+    let supabase
+
+    if (authHeader?.startsWith('Bearer ')) {
+      // Use Bearer token authentication
+      const token = authHeader.substring(7)
+      
+      supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      })
+      
+      const { data: authData, error: authError } = await supabase.auth.getUser(token)
+      if (!authError && authData?.user) {
+        user = authData.user
+      }
+    }
+
+    // If no user from Bearer token, try cookies
+    if (!user) {
+      const cookieStore = await cookies()
+      const allCookies = cookieStore.getAll()
+      
+      supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          get(name: string) {
+            const cookie = allCookies.find(c => c.name === name)
+            return cookie?.value
+          },
+          set() {},
+          remove() {}
+        }
+      })
+      
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser()
+      if (!cookieError && cookieUser) {
+        user = cookieUser
+      }
+    }
+    
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -269,7 +336,11 @@ export async function POST(request: NextRequest) {
       folder_path: body.folderPath || body.folder_path || '/',
       thumbnail_url: body.thumbnailUrl || body.thumbnail_url || null,
       
-      // Timestamps (handled by database defaults but included for clarity)
+      // Status fields
+      status: 'ready',
+      is_deleted: false,
+      
+      // Timestamps
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -279,13 +350,7 @@ export async function POST(request: NextRequest) {
       assetData.vault_id = body.vaultId || body.vault_id
     }
     
-    console.log('[Assets API] Attempting to insert asset with data:', {
-      ...assetData,
-      user_id: assetData.user_id ? 'present' : 'missing',
-      owner_id: assetData.owner_id ? 'present' : 'missing',
-      uploaded_by: assetData.uploaded_by ? 'present' : 'missing',
-      organization_id: assetData.organization_id ? 'present' : 'missing'
-    })
+    console.log('[Assets API POST] Attempting to insert asset for user:', user.email)
     
     const { data: asset, error } = await supabase
       .from('assets')
@@ -294,18 +359,11 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[Assets API] Database error:', {
+      console.error('[Assets API POST] Database error:', {
         code: error.code,
         message: error.message,
         details: error.details,
-        hint: error.hint,
-        assetData: {
-          file_name: assetData.file_name,
-          hasUserId: !!assetData.user_id,
-          hasOwnerId: !!assetData.owner_id,
-          hasUploadedBy: !!assetData.uploaded_by,
-          hasOrgId: !!assetData.organization_id
-        }
+        hint: error.hint
       })
       return NextResponse.json({ 
         error: 'Failed to create asset',
@@ -313,6 +371,8 @@ export async function POST(request: NextRequest) {
         code: error.code
       }, { status: 500 })
     }
+
+    console.log('[Assets API POST] Asset created successfully:', asset.id)
 
     // Try to log activity - this might fail if audit_logs table doesn't exist
     try {
@@ -333,7 +393,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ asset }, { status: 201 })
 
   } catch (error) {
-    console.error('Create asset error:', error)
+    console.error('[Assets API POST] Unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
