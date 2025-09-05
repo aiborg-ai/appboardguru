@@ -219,36 +219,91 @@ export class AnnotationController {
       }
 
       // Get asset to verify access and get organization ID
-      const { data: asset } = await supabase
+      // First try to get from assets table
+      const { data: asset, error: assetError } = await supabase
         .from('assets')
-        .select('id, organization_id, file_name')
+        .select('id, file_name')
         .eq('id', assetId)
         .single()
 
+      if (assetError) {
+        console.error('Error fetching asset:', assetError)
+      }
+
       if (!asset) {
+        console.error('Asset not found:', assetId)
         return NextResponse.json(
           { success: false, error: 'Asset not found or access denied' },
           { status: 404 }
         )
       }
 
-      // Create annotation without vault validation for now
+      // Try to get organization_id from various sources
+      let organizationId: string | null = null
+
+      // Try 1: Get from user's active organization
+      const { data: userOrg } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .single()
+
+      if (userOrg?.organization_id) {
+        organizationId = userOrg.organization_id
+        console.log('Got organization_id from user membership:', organizationId)
+      }
+
+      // Try 2: If still no org, try to get from vaults
+      if (!organizationId) {
+        const { data: vault } = await supabase
+          .from('vault_assets')
+          .select('vault:vaults!inner(organization_id)')
+          .eq('id', assetId)
+          .limit(1)
+          .single()
+
+        if (vault?.vault?.organization_id) {
+          organizationId = vault.vault.organization_id
+          console.log('Got organization_id from vault:', organizationId)
+        }
+      }
+
+      // Try 3: Use a default or create without org (temporary)
+      if (!organizationId) {
+        // For now, we'll proceed without organization_id
+        console.warn('No organization_id found, proceeding without it')
+        // Use a placeholder UUID or get default org
+        organizationId = '00000000-0000-0000-0000-000000000000'
+      }
+
+      // Create annotation
       const annotationData: CreateAnnotationRequest = validation.data
+      console.log('Creating annotation with data:', {
+        assetId,
+        userId: user.id,
+        organizationId,
+        annotationType: annotationData.annotationType,
+        pageNumber: annotationData.pageNumber
+      })
+
       const result = await this.annotationService.createAnnotation(
         annotationData,
         assetId as AssetId,
         user.id as UserId,
-        asset.organization_id as OrganizationId
-        // Vault validation removed until vault_assets table is properly setup
+        organizationId as OrganizationId
       )
 
       if (!result.success) {
+        console.error('Failed to create annotation:', result.error.message)
         return NextResponse.json(
           { success: false, error: result.error.message },
           { status: 400 }
         )
       }
 
+      console.log('Annotation created successfully:', result.data.id)
       return NextResponse.json({
         success: true,
         data: { annotation: result.data },
@@ -272,8 +327,8 @@ export class AnnotationController {
    */
   async getAnnotation(request: NextRequest, assetId: string, annotationId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
-      // Authenticate user
-      const supabase = await createSupabaseServerClient()
+      // Authenticate user (supports both cookie and header auth)
+      const supabase = await createSupabaseApiClient(request)
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {
@@ -337,8 +392,8 @@ export class AnnotationController {
    */
   async updateAnnotation(request: NextRequest, assetId: string, annotationId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
-      // Authenticate user
-      const supabase = await createSupabaseServerClient()
+      // Authenticate user (supports both cookie and header auth)
+      const supabase = await createSupabaseApiClient(request)
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {
@@ -402,8 +457,8 @@ export class AnnotationController {
    */
   async deleteAnnotation(request: NextRequest, assetId: string, annotationId: string): Promise<NextResponse<ApiResponse<any>>> {
     try {
-      // Authenticate user
-      const supabase = await createSupabaseServerClient()
+      // Authenticate user (supports both cookie and header auth)
+      const supabase = await createSupabaseApiClient(request)
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
       if (authError || !user) {

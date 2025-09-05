@@ -206,23 +206,34 @@ export const useAnnotationStore = create<AnnotationStoreState>()(
               headers['Authorization'] = `Bearer ${session.access_token}`
             }
             
+            console.log('Sending annotation request to:', `/api/assets/${assetId}/annotations`)
+            console.log('Request headers:', headers)
+            console.log('Request data:', data)
+
             const response = await fetch(`/api/assets/${assetId}/annotations`, {
               method: 'POST',
               headers,
               body: JSON.stringify(data)
             })
             
+            console.log('Response status:', response.status, response.statusText)
+            
             if (!response.ok) {
-              throw new Error(`Failed to create annotation: ${response.statusText}`)
+              const errorText = await response.text()
+              console.error('Failed response body:', errorText)
+              throw new Error(`Failed to create annotation: ${response.status} ${response.statusText}`)
             }
             
             const result = await response.json()
+            console.log('Response result:', result)
             
             if (result.success) {
               const newAnnotation = result.data.annotation
+              console.log('Annotation created successfully:', newAnnotation)
               addAnnotation(assetId, newAnnotation)
               return newAnnotation
             } else {
+              console.error('API returned error:', result.error)
               throw new Error(result.error || 'Failed to create annotation')
             }
           } catch (error) {

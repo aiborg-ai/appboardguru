@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 /**
  * GET /api/organizations/basic
  * Simple endpoint for fetching user's organizations
+ * Supports both cookie-based and Bearer token authentication
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -25,25 +26,59 @@ export async function GET(request: NextRequest) {
       }, { status: 503 });
     }
 
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
-    
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        get(name: string) {
-          const cookie = allCookies.find(c => c.name === name);
-          return cookie?.value;
+    // First try Bearer token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    let user = null;
+    let supabase;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      // Use Bearer token authentication
+      const token = authHeader.substring(7);
+      
+      supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         },
-        set() {},
-        remove() {}
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      });
+      
+      const { data: authData, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && authData?.user) {
+        user = authData.user;
+        console.log('[Organizations Basic] Authenticated via Bearer token:', user.email);
       }
-    });
+    }
+
+    // If no user from Bearer token, try cookies
+    if (!user) {
+      const cookieStore = await cookies();
+      const allCookies = cookieStore.getAll();
+      
+      supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          get(name: string) {
+            const cookie = allCookies.find(c => c.name === name);
+            return cookie?.value;
+          },
+          set() {},
+          remove() {}
+        }
+      });
+      
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+      if (!cookieError && cookieUser) {
+        user = cookieUser;
+        console.log('[Organizations Basic] Authenticated via cookies:', user.email);
+      }
+    }
     
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('[Organizations Basic] Auth error:', authError?.message);
+    if (!user) {
+      console.error('[Organizations Basic] No authenticated user found');
       // Return empty organizations instead of error for better UX
       return NextResponse.json({
         success: true,
@@ -113,6 +148,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!memberships || memberships.length === 0) {
+      console.log('[Organizations Basic] No memberships found for user:', targetUserId);
       return NextResponse.json({
         success: true,
         data: { organizations: [] },
@@ -147,7 +183,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log(`[Organizations Basic] Found ${organizations.length} organizations`);
+    console.log(`[Organizations Basic] Found ${organizations.length} organizations for user ${user.email}`);
 
     return NextResponse.json({
       success: true,
