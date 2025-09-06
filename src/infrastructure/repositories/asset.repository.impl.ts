@@ -1037,4 +1037,83 @@ export class AssetRepositoryImpl implements IAssetRepository {
     const allowedPermissions = permissions[level] || [];
     return allowedPermissions.includes(permission);
   }
+
+  // Transaction support methods
+  async executeTransaction<T>(
+    callback: (repository: IAssetRepository) => Promise<T>
+  ): Promise<Result<T>> {
+    try {
+      // Note: Supabase doesn't support traditional transactions
+      // We'll implement a basic version with error handling
+      // For production, consider using Supabase Edge Functions with proper transactions
+      
+      console.log('[AssetRepository] Executing transaction');
+      
+      // Create a new instance with the same client for the transaction
+      const transactionRepo = new AssetRepositoryImpl(this.supabase);
+      
+      try {
+        // Execute the callback with the transaction repository
+        const result = await callback(transactionRepo);
+        
+        console.log('[AssetRepository] Transaction completed successfully');
+        return ResultUtils.ok(result);
+      } catch (error) {
+        console.error('[AssetRepository] Transaction failed:', error);
+        
+        // In a real transaction, we would rollback here
+        // With Supabase, we need to implement compensating actions
+        
+        return ResultUtils.fail(
+          error instanceof Error ? error : new Error('Transaction failed')
+        );
+      }
+    } catch (error) {
+      console.error('[AssetRepository] Failed to execute transaction:', error);
+      return ResultUtils.fail(
+        error instanceof Error ? error : new Error('Failed to execute transaction')
+      );
+    }
+  }
+
+  // Helper method to start a transaction (for future implementation)
+  async startTransaction(): Promise<Result<void>> {
+    try {
+      // Supabase doesn't support explicit transaction start
+      // This is a placeholder for future implementation
+      this.transaction = this.supabase;
+      return ResultUtils.ok(undefined);
+    } catch (error) {
+      return ResultUtils.fail(
+        error instanceof Error ? error : new Error('Failed to start transaction')
+      );
+    }
+  }
+
+  // Helper method to commit a transaction (for future implementation)
+  async commitTransaction(): Promise<Result<void>> {
+    try {
+      // Supabase auto-commits, this is a placeholder
+      this.transaction = null;
+      return ResultUtils.ok(undefined);
+    } catch (error) {
+      return ResultUtils.fail(
+        error instanceof Error ? error : new Error('Failed to commit transaction')
+      );
+    }
+  }
+
+  // Helper method to rollback a transaction (for future implementation)
+  async rollbackTransaction(): Promise<Result<void>> {
+    try {
+      // Supabase doesn't support explicit rollback
+      // Would need to implement compensating actions
+      this.transaction = null;
+      return ResultUtils.ok(undefined);
+    } catch (error) {
+      return ResultUtils.fail(
+        error instanceof Error ? error : new Error('Failed to rollback transaction')
+      );
+    }
+  }
 }
