@@ -178,8 +178,8 @@ export function registerHandlers(): void {
   const listAssetsHandler = createListAssetsQueryHandler({ assetRepository });
   commandBus.registerQueryHandler('ListAssets', listAssetsHandler);
 
-  const searchAssetsHandler = createSearchAssetsQueryHandler({ assetRepository });
-  commandBus.registerQueryHandler('SearchAssets', searchAssetsHandler);
+  // SearchAssets is handled through ListAssets query with filters
+  // No separate SearchAssets handler needed
 
   // Register Meeting Command Handlers
   console.log('[RegisterHandlers] Registering Meeting handlers...');

@@ -49,35 +49,56 @@ export enum AssetVisibility {
 }
 
 // Domain Events
-export class AssetUploadedEvent extends DomainEvent {
+export class AssetUploadedEvent implements DomainEvent {
+  public readonly eventType = 'AssetUploaded';
+  public readonly occurredAt: Date;
+  public readonly aggregateId: string;
+  public readonly eventData: any;
+
   constructor(
     public readonly assetId: AssetId,
     public readonly fileName: string,
     public readonly uploadedBy: UserId,
     public readonly organizationId?: OrganizationId
   ) {
-    super('AssetUploaded');
+    this.aggregateId = assetId;
+    this.occurredAt = new Date();
+    this.eventData = { fileName, uploadedBy, organizationId };
   }
 }
 
-export class AssetSharedEvent extends DomainEvent {
+export class AssetSharedEvent implements DomainEvent {
+  public readonly eventType = 'AssetShared';
+  public readonly occurredAt: Date;
+  public readonly aggregateId: string;
+  public readonly eventData: any;
+
   constructor(
     public readonly assetId: AssetId,
     public readonly sharedWith: UserId,
     public readonly sharedBy: UserId,
     public readonly permissions: string[]
   ) {
-    super('AssetShared');
+    this.aggregateId = assetId;
+    this.occurredAt = new Date();
+    this.eventData = { sharedWith, sharedBy, permissions };
   }
 }
 
-export class AssetDeletedEvent extends DomainEvent {
+export class AssetDeletedEvent implements DomainEvent {
+  public readonly eventType = 'AssetDeleted';
+  public readonly occurredAt: Date;
+  public readonly aggregateId: string;
+  public readonly eventData: any;
+
   constructor(
     public readonly assetId: AssetId,
     public readonly deletedBy: UserId,
     public readonly reason?: string
   ) {
-    super('AssetDeleted');
+    this.aggregateId = assetId;
+    this.occurredAt = new Date();
+    this.eventData = { deletedBy, reason };
   }
 }
 
