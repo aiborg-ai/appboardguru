@@ -318,7 +318,7 @@ export const ActionItemCard: React.FC<ActionItemCardProps> = ({
           {!compact && actionItem.status !== 'completed' && (
             <Select value={actionItem.status} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-32 h-8">
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>

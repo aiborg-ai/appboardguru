@@ -247,7 +247,7 @@ export default function ActivityAnalyticsDashboard() {
           {/* Time range selector */}
           <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
             <SelectTrigger className="w-32">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1d">Last Day</SelectItem>

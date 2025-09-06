@@ -669,7 +669,7 @@ export default function MeetingEffectivenessAnalytics({
             <div className="flex gap-4 items-center">
               <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="date">Sort by Date</SelectItem>
@@ -681,7 +681,7 @@ export default function MeetingEffectivenessAnalytics({
 
               <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Meeting Types</SelectItem>

@@ -375,7 +375,7 @@ export default function MemberEngagementDashboard({
             </Button>
             <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
               <SelectTrigger className="w-32">
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="overview">Overview</SelectItem>
@@ -540,7 +540,7 @@ export default function MemberEngagementDashboard({
             <div className="flex gap-4 items-center">
               <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="name">Sort by Name</SelectItem>
@@ -552,7 +552,7 @@ export default function MemberEngagementDashboard({
 
               <Select value={filterLevel} onValueChange={(value: any) => setFilterLevel(value)}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>

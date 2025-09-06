@@ -454,7 +454,7 @@ export default function BoardAnalyticsDashboard({
         <div className="flex gap-2">
           <Select value={timePeriod} onValueChange={(value: any) => setTimePeriod(value)}>
             <SelectTrigger className="w-32">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="30d">Last 30 days</SelectItem>

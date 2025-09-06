@@ -256,7 +256,7 @@ export default function PeerBenchmarkingPage() {
           <div className="flex items-center gap-3">
             <Select value={timePeriod} onValueChange={(v: any) => setTimePeriod(v)}>
               <SelectTrigger className="w-32">
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="quarterly">Quarterly</SelectItem>

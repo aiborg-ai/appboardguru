@@ -486,7 +486,7 @@ export const CollaborationMetricsPanel = memo(function CollaborationMetricsPanel
         <div className="flex items-center space-x-2">
           <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
             <SelectTrigger className="w-20 h-8">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1h">1h</SelectItem>

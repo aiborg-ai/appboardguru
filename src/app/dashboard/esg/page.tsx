@@ -490,7 +490,7 @@ export default function ESGScorecardPage() {
           <div className="flex items-center gap-3">
             <Select value={timePeriod} onValueChange={(value: any) => setTimePeriod(value)}>
               <SelectTrigger className="w-32">
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="30d">30 Days</SelectItem>

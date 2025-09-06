@@ -352,7 +352,7 @@ export function UserManagementPage() {
                 <Label htmlFor="role">Role</Label>
                 <Select name="role" defaultValue={UserRole.MEMBER}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>

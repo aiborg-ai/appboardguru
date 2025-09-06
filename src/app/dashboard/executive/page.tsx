@@ -353,7 +353,7 @@ export default function ExecutiveDashboardPage() {
             <div className="flex items-center gap-3">
               <Select value={selectedRole} onValueChange={(value: ExecutiveRole) => setSelectedRole(value)}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   {getAvailableRoles(executiveContext).map(role => (

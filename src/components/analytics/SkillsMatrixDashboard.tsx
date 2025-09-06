@@ -525,7 +525,7 @@ export default function SkillsMatrixDashboard({
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
@@ -537,7 +537,7 @@ export default function SkillsMatrixDashboard({
 
               <Select value={selectedMember} onValueChange={setSelectedMember}>
                 <SelectTrigger className="w-48">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Members</SelectItem>

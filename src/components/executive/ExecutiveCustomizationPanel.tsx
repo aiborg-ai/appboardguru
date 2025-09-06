@@ -428,7 +428,7 @@ export default function ExecutiveCustomizationPanel({
                           onValueChange={(value) => updateCustomMetric(metric.id, { dataSource: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="governance">Governance</SelectItem>
@@ -446,7 +446,7 @@ export default function ExecutiveCustomizationPanel({
                           onValueChange={(value: any) => updateCustomMetric(metric.id, { aggregationType: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="average">Average</SelectItem>
@@ -467,7 +467,7 @@ export default function ExecutiveCustomizationPanel({
                           onValueChange={(value: any) => updateCustomMetric(metric.id, { timeframe: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="realtime">Real-time</SelectItem>
@@ -486,7 +486,7 @@ export default function ExecutiveCustomizationPanel({
                           onValueChange={(value: any) => updateCustomMetric(metric.id, { visualization: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="number">Number</SelectItem>
@@ -571,7 +571,7 @@ export default function ExecutiveCustomizationPanel({
                           onValueChange={(value: any) => updateAlertPreference(alert.id, { priority: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="low">Low</SelectItem>
