@@ -4,10 +4,15 @@
  */
 
 import { BaseEntity } from '@/01-shared/types/core.types';
-import { EventBus, DomainEvent } from '@/01-shared/lib/event-bus';
+import { EventBus } from '@/01-shared/lib/event-bus';
 
-// Re-export DomainEvent for consistency
-export { DomainEvent };
+// Define DomainEvent interface locally
+export interface DomainEvent {
+  eventType: string;
+  aggregateId: string;
+  eventData: any;
+  occurredAt: Date;
+}
 
 export class AggregateRoot implements BaseEntity {
   readonly id: string;

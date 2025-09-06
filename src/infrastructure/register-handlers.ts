@@ -17,18 +17,16 @@ import { BoardRepositoryImpl } from './repositories/board.repository.impl';
 // Storage Service
 import { StorageServiceImpl } from './storage/storage.service.impl';
 
-// Asset Handlers
-import {
-  createUploadAssetCommandHandler,
-  createDeleteAssetCommandHandler,
-  createShareAssetCommandHandler,
-  createUpdateAssetCommandHandler
-} from '@/application/cqrs/commands/upload-asset.command';
+// Asset Command Handlers
+import { createUploadAssetCommandHandler } from '@/application/cqrs/commands/upload-asset.command';
+import { createDeleteAssetCommandHandler } from '@/application/cqrs/commands/delete-asset.command';
+import { createShareAssetCommandHandler } from '@/application/cqrs/commands/share-asset.command';
+import { createUpdateAssetCommandHandler } from '@/application/cqrs/commands/update-asset.command';
 
+// Asset Query Handlers
 import {
   createGetAssetQueryHandler,
-  createListAssetsQueryHandler,
-  createSearchAssetsQueryHandler
+  createListAssetsQueryHandler
 } from '@/application/cqrs/queries/get-asset.query';
 
 // Meeting Command Handlers
