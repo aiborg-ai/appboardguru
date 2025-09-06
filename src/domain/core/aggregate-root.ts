@@ -3,10 +3,13 @@
  * Implements domain event handling and business invariants
  */
 
-import { BaseEntity, DomainEvent } from '@/01-shared/types/core.types';
-import { eventBus, EventBuilder } from '@/01-shared/lib/event-bus';
+import { BaseEntity } from '@/01-shared/types/core.types';
+import { EventBus, DomainEvent } from '@/01-shared/lib/event-bus';
 
-export abstract class AggregateRoot implements BaseEntity {
+// Re-export DomainEvent for consistency
+export { DomainEvent };
+
+export class AggregateRoot implements BaseEntity {
   readonly id: string;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -25,7 +28,12 @@ export abstract class AggregateRoot implements BaseEntity {
     payload: unknown,
     metadata?: Record<string, unknown>
   ): void {
-    const event = EventBuilder.create(eventType, this.id, payload, metadata);
+    const event: DomainEvent = {
+      eventType,
+      aggregateId: this.id,
+      eventData: payload,
+      occurredAt: new Date()
+    };
     this.domainEvents.push(event);
   }
 
@@ -37,16 +45,18 @@ export abstract class AggregateRoot implements BaseEntity {
     this.domainEvents = [];
   }
 
-  async publishDomainEvents(): Promise<void> {
+  async publishDomainEvents(eventBus?: EventBus): Promise<void> {
     const events = this.getDomainEvents();
     
     // Store events in case we need to restore them
     const eventsCopy = [...events];
     
     try {
-      // Publish all events (could be parallel for performance)
-      const publishPromises = events.map(event => eventBus.publish(event));
-      await Promise.all(publishPromises);
+      // If eventBus is provided, publish all events
+      if (eventBus) {
+        const publishPromises = events.map(event => eventBus.publish(event));
+        await Promise.all(publishPromises);
+      }
       
       // Only clear events after successful publishing
       this.clearDomainEvents();
@@ -62,5 +72,8 @@ export abstract class AggregateRoot implements BaseEntity {
     this.updatedAt = new Date();
   }
 
-  abstract validate(): void;
+  // Default implementation - can be overridden
+  validate(): void {
+    // Default validation - entities can override this
+  }
 }

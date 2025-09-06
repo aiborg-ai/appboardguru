@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   FileText, 
   Eye, 
@@ -36,7 +37,6 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DocumentAttributor } from './DocumentAttributor'
-import { PDFViewerWithAnnotations } from '@/components/features/assets/PDFViewerWithAnnotations'
 
 interface Document {
   id: string
@@ -108,9 +108,9 @@ export function DocumentLibrary({
   isLoading,
   onDocumentUpdate 
 }: DocumentLibraryProps) {
+  const router = useRouter()
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const [attributeDialogOpen, setAttributeDialogOpen] = useState(false)
-  const [viewerDialogOpen, setViewerDialogOpen] = useState(false)
 
   const handleAttributeDocument = (doc: Document) => {
     setSelectedDocument(doc)
@@ -118,8 +118,8 @@ export function DocumentLibrary({
   }
 
   const handleViewDocument = (doc: Document) => {
-    setSelectedDocument(doc)
-    setViewerDialogOpen(true)
+    // Navigate to the full-page document viewer
+    router.push(`/dashboard/assets/${doc.id}/view`)
   }
 
   const handleDownload = async (doc: Document) => {
@@ -453,33 +453,6 @@ export function DocumentLibrary({
         </DialogContent>
       </Dialog>
 
-      {/* Viewer Dialog for PDFs with Annotations */}
-      <Dialog open={viewerDialogOpen} onOpenChange={setViewerDialogOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
-          {selectedDocument && selectedDocument.file_type === 'application/pdf' && (
-            <PDFViewerWithAnnotations
-              assetId={selectedDocument.id}
-              filePath={selectedDocument.file_path || ''}
-              className="h-full"
-            />
-          )}
-          {selectedDocument && selectedDocument.file_type !== 'application/pdf' && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Document Preview</h3>
-                <p className="text-gray-500 mb-4">
-                  Preview is available for PDF documents only
-                </p>
-                <Button onClick={() => handleDownload(selectedDocument)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Document
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

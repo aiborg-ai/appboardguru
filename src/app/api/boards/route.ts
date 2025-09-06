@@ -1,106 +1,157 @@
+/**
+ * Boards API Routes
+ * RESTful API endpoints for board management using CQRS
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { commandBus } from '@/application/cqrs/command-bus';
+import { ensureHandlersRegistered } from '@/infrastructure/register-handlers';
+import { createBrowserClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { CreateBoardCommand } from '@/application/cqrs/commands/create-board.command';
+import { ListBoardsQuery, SearchBoardsQuery, GetMyBoardsQuery } from '@/application/cqrs/queries/get-board.query';
+import type { Board, BoardType } from '@/domain/entities/board.entity';
+import type { UserId, OrganizationId } from '@/types/core';
+
+// Ensure handlers are registered
+ensureHandlersRegistered();
 
 /**
  * GET /api/boards
- * Get all boards for the current organization
+ * List boards with optional filters
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Get current user
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get('organization_id');
-    const status = searchParams.get('status') || 'active';
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    
+    // Check if this is a search request
+    const searchQuery = searchParams.get('search');
+    if (searchQuery) {
+      const query = new SearchBoardsQuery({
+        searchQuery,
+        requestedBy: user.id as UserId,
+        limit: parseInt(searchParams.get('limit') || '10')
+      });
 
-    if (!organizationId) {
-      // Get all organizations the user has access to
-      const { data: userMemberships } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
+      const result = await commandBus.executeQuery<SearchBoardsQuery, Board[]>(query);
 
-      const orgIds = userMemberships?.map((m: any) => m?.organization_id) || [];
-      
-      if (orgIds.length === 0) {
-        return NextResponse.json({ boards: [], total: 0 });
-      }
-
-      const { data: boards, error } = await supabaseAdmin
-        .from('boards')
-        .select(`
-          *,
-          organizations!inner (
-            id,
-            name,
-            logo_url
-          )
-        `)
-        .in('organization_id', orgIds)
-        .eq('status', status)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching boards:', error);
-        return NextResponse.json({ error: 'Failed to fetch boards' }, { status: 500 });
+      if (!result.success) {
+        console.error('[GET /api/boards] Search failed:', result.error);
+        return NextResponse.json(
+          { error: result.error?.message || 'Failed to search boards' },
+          { status: 400 }
+        );
       }
 
       return NextResponse.json({
-        boards: boards || [],
-        total: boards?.length || 0
+        success: true,
+        data: result.data
       });
     }
 
-    // Verify user has access to this specific organization
-    const { data: orgMember, error: orgError } = await supabase
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', organizationId)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+    // Check if this is a "my boards" request
+    const myBoards = searchParams.get('my') === 'true';
+    if (myBoards) {
+      const query = new GetMyBoardsQuery({
+        userId: user.id as UserId,
+        role: searchParams.get('role') as any
+      });
 
-    if (orgError || !orgMember) {
-      return NextResponse.json({ error: 'Access denied to organization' }, { status: 403 });
+      const result = await commandBus.executeQuery<GetMyBoardsQuery, Board[]>(query);
+
+      if (!result.success) {
+        console.error('[GET /api/boards] Get my boards failed:', result.error);
+        return NextResponse.json(
+          { error: result.error?.message || 'Failed to get your boards' },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: result.data
+      });
     }
 
-    // Get boards for the specific organization
-    const { data: boards, error } = await supabaseAdmin
-      .from('boards')
-      .select(`
-        *,
-        organizations!inner (
-          id,
-          name,
-          logo_url
-        )
-      `)
-      .eq('organization_id', organizationId)
-      .eq('status', status)
-      .order('name');
+    // Otherwise, list boards with filters
+    const filters: any = {};
 
-    if (error) {
-      console.error('Error fetching boards:', error);
-      return NextResponse.json({ error: 'Failed to fetch boards' }, { status: 500 });
+    if (searchParams.get('organizationId') || searchParams.get('organization_id')) {
+      filters.organizationId = (searchParams.get('organizationId') || searchParams.get('organization_id')) as OrganizationId;
+    }
+    if (searchParams.get('status')) {
+      filters.status = searchParams.get('status')?.split(',');
+    }
+    if (searchParams.get('boardType')) {
+      filters.boardType = searchParams.get('boardType')?.split(',');
+    }
+    if (searchParams.get('memberUserId')) {
+      filters.memberUserId = searchParams.get('memberUserId') as UserId;
+    }
+
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') as any || 'desc';
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    // Execute query
+    const query = new ListBoardsQuery({
+      requestedBy: user.id as UserId,
+      filters,
+      sortBy,
+      sortOrder,
+      limit,
+      offset
+    });
+
+    const result = await commandBus.executeQuery<ListBoardsQuery, { boards: Board[]; total: number }>(query);
+
+    if (!result.success) {
+      console.error('[GET /api/boards] Query failed:', result.error);
+      return NextResponse.json(
+        { error: result.error?.message || 'Failed to fetch boards' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({
-      boards: boards || [],
-      total: boards?.length || 0,
-      organization_id: organizationId
+      success: true,
+      data: result.data.boards,
+      boards: result.data.boards, // For backward compatibility
+      total: result.data.total,
+      limit,
+      offset
     });
 
   } catch (error) {
-    console.error('Error in GET /api/boards:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[GET /api/boards] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -110,81 +161,80 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Get current user
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
+    // Parse request body
     const body = await request.json();
-    const {
-      organization_id,
-      name,
-      description,
-      board_type = 'main_board',
-      parent_board_id,
-      established_date,
-      meeting_frequency,
-      meeting_location,
-      settings
-    } = body;
-
-    if (!organization_id || !name) {
-      return NextResponse.json({
-        error: 'Organization ID and board name are required'
-      }, { status: 400 });
+    
+    // Validate required fields
+    if (!body.name || !body.organizationId) {
+      return NextResponse.json(
+        { error: 'Board name and organization ID are required' },
+        { status: 400 }
+      );
     }
 
-    // Verify user has admin access to this organization
-    const { data: orgMember, error: orgError } = await supabase
-      .from('organization_members')
-      .select('role')
-      .eq('organization_id', organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .in('role', ['owner', 'admin'])
-      .single();
+    // Execute command
+    const command = new CreateBoardCommand({
+      name: body.name,
+      organizationId: body.organizationId as OrganizationId,
+      boardType: body.boardType as BoardType,
+      description: body.description,
+      settings: body.settings,
+      termLength: body.termLength,
+      initialMembers: body.initialMembers,
+      createdBy: user.id as UserId
+    });
 
-    if (orgError || !orgMember) {
-      return NextResponse.json({
-        error: 'Access denied - admin role required'
-      }, { status: 403 });
-    }
+    const result = await commandBus.executeCommand<CreateBoardCommand, Board>(command);
 
-    // Create the board
-    const { data: newBoard, error: createError } = await supabaseAdmin
-      .from('boards')
-      .insert({
-        organization_id,
-        name,
-        description,
-        board_type,
-        parent_board_id,
-        established_date,
-        meeting_frequency,
-        meeting_location,
-        settings: settings || {},
-        created_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (createError || !newBoard) {
-      console.error('Error creating board:', createError);
-      return NextResponse.json({ error: 'Failed to create board' }, { status: 500 });
+    if (!result.success) {
+      console.error('[POST /api/boards] Command failed:', result.error);
+      
+      const errorMessage = result.error?.message || 'Failed to create board';
+      if (errorMessage.toLowerCase().includes('already exists')) {
+        return NextResponse.json(
+          { error: errorMessage },
+          { status: 409 }
+        );
+      }
+      
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({
-      message: 'Board created successfully',
-      board: newBoard
+      success: true,
+      data: result.data
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error in POST /api/boards:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[POST /api/boards] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

@@ -1,266 +1,473 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createTypedSupabaseClient, getAuthenticatedUser } from '@/lib/supabase-typed'
-import type {
-  AssetRow,
-  AssetUpdate,
-  TypedSupabaseClient,
-  AssetWithOwner
-} from '@/types/api'
-import type { Database } from '@/types/database'
+/**
+ * Asset Detail API Route
+ * Refactored to use CQRS and hexagonal architecture
+ */
 
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { CommandBus } from '@/application/cqrs/command-bus';
+import { GetAssetQuery } from '@/application/cqrs/queries/get-asset.query';
+import { UpdateAssetCommand } from '@/application/cqrs/commands/update-asset.command';
+import { DeleteAssetCommand } from '@/application/cqrs/commands/delete-asset.command';
+import { registerAssetHandlers } from '@/application/cqrs/register-asset-handlers';
+import { AssetRepositoryImpl } from '@/infrastructure/repositories/asset.repository.impl';
+import { StorageServiceImpl } from '@/infrastructure/services/storage.service.impl';
+import { createUserId, createAssetId } from '@/types/core';
+import type { Database } from '@/types/database';
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
+/**
+ * Helper to extract user from request
+ */
+async function authenticateUser(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  // Try Bearer token first
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    
+    const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+    
+    const { data: authData, error } = await supabase.auth.getUser(token);
+    if (!error && authData?.user) {
+      console.log('[Asset API] Authenticated via Bearer token:', authData.user.email);
+      return { user: authData.user, supabase };
+    }
+  }
+  
+  // Fallback to cookies
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+  
+  const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        const cookie = allCookies.find(c => c.name === name);
+        return cookie?.value;
+      },
+      set() {},
+      remove() {}
+    }
+  });
+  
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (!error && user) {
+    console.log('[Asset API] Authenticated via cookies:', user.email);
+    return { user, supabase };
+  }
+  
+  return null;
+}
+
+/**
+ * Initialize command bus with dependencies
+ */
+function initializeCommandBus(supabase: any) {
+  const commandBus = CommandBus.getInstance();
+  
+  // Create dependencies
+  const assetRepository = new AssetRepositoryImpl(supabase);
+  const storageService = new StorageServiceImpl(supabase);
+  
+  // Register handlers
+  registerAssetHandlers(commandBus, {
+    assetRepository,
+    storageService
+  });
+  
+  return commandBus;
+}
+
+/**
+ * GET /api/assets/[id]
+ * Get a single asset using CQRS query
+ */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
-
-    const { id: assetId } = await params
-
-    // Get asset with sharing information
-    const { data: asset, error } = await supabase
-      .from('assets')
-      .select(`
-        *,
-        owner:users!assets_owner_id_fkey(id, name, email),
-        asset_shares(
-          id,
-          shared_with_user_id,
-          permission_level,
-          share_message,
-          expires_at,
-          is_active,
-          created_at,
-          users!asset_shares_shared_with_user_id_fkey(id, name, email)
-        ),
-        asset_comments(
-          id,
-          comment_text,
-          created_at,
-          user:users!asset_comments_user_id_fkey(id, name, email)
-        )
-      `)
-      .eq('id', assetId)
-      .eq('is_deleted', false)
-      .single()
-
-    if (error || !asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
-    }
-
-    // Check if user has access to this asset
-    const isOwner = asset.owner_id === user.id
-    const hasSharedAccess = asset.asset_shares?.some((share) => 
-      share.shared_with_user_id === user.id && 
-      share.is_active &&
-      (!share.expires_at || new Date(share.expires_at) > new Date())
-    )
-
-    if (!isOwner && !hasSharedAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
-
-    // Increment view count
-    await supabase
-      .from('assets')
-      .update({ view_count: (asset.view_count || 0) + 1 })
-      .eq('id', assetId)
-
-    // Log activity using comprehensive logging system
-    const { logAssetActivity, getRequestContext } = await import('@/lib/services/activity-logger')
-    const requestContext = getRequestContext(request)
+    const assetId = params.id;
     
-    await logAssetActivity(
-      user.id,
-      asset.organization_id || '',
-      'opened',
-      assetId,
-      asset.title,
-      {
-        ...requestContext,
-        asset_type: asset.file_type,
-        asset_size: asset.file_size,
-        view_count: asset.view_count + 1
-      }
-    )
-
-    // Transform data
-    const transformedAsset = {
-      ...asset,
-      isOwner,
-      sharedWith: asset.asset_shares?.map((share) => ({
-        id: share.id,
-        userId: share.shared_with_user_id,
-        userName: share.users?.name || '',
-        userEmail: share.users?.email || '',
-        permission: share.permission_level,
-        message: share.share_message,
-        expiresAt: share.expires_at,
-        isActive: share.is_active,
-        sharedAt: share.created_at
-      })) || [],
-      comments: asset.asset_comments?.map((comment) => ({
-        id: comment.id,
-        text: comment.comment_text,
-        createdAt: comment.created_at,
-        user: {
-          id: comment.user?.id,
-          name: comment.user?.name,
-          email: comment.user?.email
-        }
-      })) || []
+    if (!assetId) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Asset ID is required' 
+      }, { status: 400 });
     }
-
-    return NextResponse.json({ asset: transformedAsset })
-
+    
+    // Authenticate user
+    const auth = await authenticateUser(request);
+    if (!auth) {
+      console.error('[Asset API] No authenticated user');
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized' 
+      }, { status: 401 });
+    }
+    
+    const { user, supabase } = auth;
+    
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const includeDeleted = searchParams.get('includeDeleted') === 'true';
+    
+    // Initialize command bus
+    const commandBus = initializeCommandBus(supabase);
+    
+    // Create and execute query
+    const query = new GetAssetQuery({
+      assetId: createAssetId(assetId),
+      userId: createUserId(user.id),
+      includeDeleted
+    });
+    
+    console.log('[Asset API] Executing get query:', {
+      assetId,
+      userId: user.id,
+      userEmail: user.email,
+      includeDeleted
+    });
+    
+    const result = await commandBus.executeQuery(query);
+    
+    if (!result.success) {
+      console.error('[Asset API] Query failed:', result.error);
+      
+      // Return 404 if asset not found
+      if (result.error.message === 'Asset not found' || 
+          result.error.message.includes('not have permission')) {
+        return NextResponse.json({
+          success: false,
+          error: result.error.message
+        }, { status: 404 });
+      }
+      
+      return NextResponse.json({
+        success: false,
+        error: result.error.message
+      }, { status: 500 });
+    }
+    
+    const asset = result.data;
+    
+    // Get storage URL if file path exists
+    let fileUrl: string | undefined;
+    if (asset.fileMetadata.filePath) {
+      // Generate a signed URL for secure file access
+      const storageResult = await supabase.storage
+        .from(asset.fileMetadata.storageBucket || 'assets')
+        .createSignedUrl(asset.fileMetadata.filePath, 3600); // 1 hour expiry
+      
+      if (storageResult.data) {
+        fileUrl = storageResult.data.signedUrl;
+      }
+    }
+    
+    // Transform asset for frontend
+    const transformedAsset = {
+      id: asset.id,
+      title: asset.title || asset.fileMetadata.fileName || 'Untitled',
+      description: asset.description,
+      fileName: asset.fileMetadata.fileName,
+      file_name: asset.fileMetadata.fileName,
+      fileType: asset.fileMetadata.fileType,
+      file_type: asset.fileMetadata.fileType,
+      fileSize: asset.fileMetadata.fileSize,
+      file_size: asset.fileMetadata.fileSize,
+      mimeType: asset.fileMetadata.mimeType,
+      mime_type: asset.fileMetadata.mimeType,
+      filePath: asset.fileMetadata.filePath,
+      file_path: fileUrl || asset.fileMetadata.filePath,
+      category: asset.category || 'general',
+      folder: asset.folderPath || '/',
+      folderPath: asset.folderPath,
+      folder_path: asset.folderPath,
+      tags: asset.tags || [],
+      thumbnail: asset.fileMetadata.thumbnailUrl,
+      thumbnailUrl: asset.fileMetadata.thumbnailUrl,
+      thumbnail_url: asset.fileMetadata.thumbnailUrl,
+      createdAt: asset.createdAt,
+      created_at: asset.createdAt,
+      updatedAt: asset.updatedAt,
+      updated_at: asset.updatedAt,
+      isOwner: asset.ownerId === user.id,
+      owner: {
+        id: asset.ownerId,
+        name: user.email?.split('@')[0] || 'Unknown',
+        email: user.email
+      },
+      owner_id: asset.ownerId,
+      uploadedBy: asset.uploadedBy,
+      uploaded_by: asset.uploadedBy,
+      organizationId: asset.organizationId,
+      organization_id: asset.organizationId,
+      vaultId: asset.vaultId,
+      vault_id: asset.vaultId,
+      status: asset.status,
+      visibility: asset.visibility,
+      viewCount: asset.viewCount,
+      view_count: asset.viewCount,
+      downloadCount: asset.downloadCount,
+      download_count: asset.downloadCount,
+      isDeleted: asset.isDeleted,
+      is_deleted: asset.isDeleted
+    };
+    
+    console.log('[Asset API] Query successful:', {
+      assetId: asset.id,
+      title: asset.title,
+      status: asset.status
+    });
+    
+    return NextResponse.json({
+      success: true,
+      asset: transformedAsset
+    });
+    
   } catch (error) {
-    console.error('Asset fetch error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('[Asset API] Unexpected error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }
 
-interface UpdateAssetRequest {
-  title?: string
-  description?: string
-  category?: string
-  folderPath?: string
-  tags?: string[]
-}
-
+/**
+ * PUT /api/assets/[id]
+ * Update an asset using UpdateAssetCommand
+ */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
-
-    const { id: assetId } = await params
-    const body: UpdateAssetRequest = await request.json()
+    const assetId = params.id;
     
-    // Check if user owns the asset or has edit permission
-    const { data: asset, error: fetchError } = await supabase
-      .from('assets')
-      .select(`
-        *,
-        asset_shares(shared_with_user_id, permission_level, is_active, expires_at)
-      `)
-      .eq('id', assetId)
-      .eq('is_deleted', false)
-      .single()
-
-    if (fetchError || !asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
+    if (!assetId) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Asset ID is required' 
+      }, { status: 400 });
     }
-
-    const isOwner = asset.owner_id === user.id
-    const hasEditAccess = asset.asset_shares?.some((share) => 
-      share.shared_with_user_id === user.id && 
-      share.is_active &&
-      ['edit', 'admin'].includes(share.permission_level) &&
-      (!share.expires_at || new Date(share.expires_at) > new Date())
-    )
-
-    if (!isOwner && !hasEditAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    
+    // Authenticate user
+    const auth = await authenticateUser(request);
+    if (!auth) {
+      console.error('[Asset API] No authenticated user');
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized' 
+      }, { status: 401 });
     }
-
-    // Update asset
-    const updateData: Partial<AssetUpdate> = {}
-    if (body.title !== undefined) updateData.title = body.title
-    if (body.description !== undefined) updateData.description = body.description
-    if (body.category !== undefined) updateData.category = body.category
-    if (body.folderPath !== undefined) updateData.folder_path = body.folderPath
-    if (body.tags !== undefined) updateData.tags = body.tags
-
-    const { data: updatedAsset, error: updateError } = await supabase
-      .from('assets')
-      .update(updateData)
-      .eq('id', assetId)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error('Update error:', updateError)
-      return NextResponse.json({ error: 'Failed to update asset' }, { status: 500 })
+    
+    const { user, supabase } = auth;
+    
+    // Parse request body
+    const body = await request.json();
+    
+    // Initialize command bus
+    const commandBus = initializeCommandBus(supabase);
+    
+    // Create and execute update command
+    const command = new UpdateAssetCommand({
+      assetId: createAssetId(assetId),
+      updatedBy: createUserId(user.id),
+      updates: {
+        title: body.title,
+        description: body.description,
+        tags: body.tags,
+        category: body.category,
+        folderPath: body.folderPath || body.folder_path,
+        visibility: body.visibility
+      }
+    });
+    
+    console.log('[Asset API] Executing update command:', {
+      assetId,
+      userId: user.id,
+      updateFields: Object.keys(command.payload.updates).filter(k => command.payload.updates[k as keyof typeof command.payload.updates] !== undefined)
+    });
+    
+    const result = await commandBus.executeCommand(command);
+    
+    if (!result.success) {
+      console.error('[Asset API] Update failed:', result.error);
+      
+      // Return 403 for permission errors
+      if (result.error.message.includes('permission')) {
+        return NextResponse.json({
+          success: false,
+          error: result.error.message
+        }, { status: 403 });
+      }
+      
+      // Return 404 for not found
+      if (result.error.message === 'Asset not found') {
+        return NextResponse.json({
+          success: false,
+          error: result.error.message
+        }, { status: 404 });
+      }
+      
+      return NextResponse.json({
+        success: false,
+        error: result.error.message
+      }, { status: 500 });
     }
-
-    // Log activity
-    await supabase
-      .from('asset_activity_log')
-      .insert({
-        asset_id: assetId,
-        user_id: user.id,
-        activity_type: 'edit',
-        activity_details: { changes: updateData }
-      })
-
-    return NextResponse.json({ asset: updatedAsset })
-
+    
+    const updatedAsset = result.data;
+    
+    // Transform asset for frontend
+    const transformedAsset = {
+      id: updatedAsset.id,
+      title: updatedAsset.title || updatedAsset.fileMetadata.fileName || 'Untitled',
+      description: updatedAsset.description,
+      fileName: updatedAsset.fileMetadata.fileName,
+      file_name: updatedAsset.fileMetadata.fileName,
+      fileType: updatedAsset.fileMetadata.fileType,
+      file_type: updatedAsset.fileMetadata.fileType,
+      fileSize: updatedAsset.fileMetadata.fileSize,
+      file_size: updatedAsset.fileMetadata.fileSize,
+      category: updatedAsset.category || 'general',
+      folderPath: updatedAsset.folderPath,
+      folder_path: updatedAsset.folderPath,
+      tags: updatedAsset.tags || [],
+      visibility: updatedAsset.visibility,
+      updatedAt: updatedAsset.updatedAt,
+      updated_at: updatedAsset.updatedAt
+    };
+    
+    console.log('[Asset API] Update successful:', {
+      assetId: updatedAsset.id,
+      title: updatedAsset.title
+    });
+    
+    return NextResponse.json({
+      success: true,
+      asset: transformedAsset
+    });
+    
   } catch (error) {
-    console.error('Asset update error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('[Asset API] Unexpected error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }
 
+/**
+ * DELETE /api/assets/[id]
+ * Delete an asset using DeleteAssetCommand
+ */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createTypedSupabaseClient()
-    const user = await getAuthenticatedUser(supabase)
-
-    const { id: assetId } = await params
-
-    // Check if user owns the asset
-    const { data: asset, error: fetchError } = await supabase
-      .from('assets')
-      .select('owner_id, title, file_path')
-      .eq('id', assetId)
-      .eq('is_deleted', false)
-      .single()
-
-    if (fetchError || !asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
+    const assetId = params.id;
+    
+    if (!assetId) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Asset ID is required' 
+      }, { status: 400 });
     }
-
-    if (asset.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Only the owner can delete this asset' }, { status: 403 })
+    
+    // Authenticate user
+    const auth = await authenticateUser(request);
+    if (!auth) {
+      console.error('[Asset API] No authenticated user');
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized' 
+      }, { status: 401 });
     }
-
-    // Soft delete the asset
-    const { error: deleteError } = await supabase
-      .from('assets')
-      .update({
-        is_deleted: true,
-        deleted_at: new Date().toISOString()
-      })
-      .eq('id', assetId)
-
-    if (deleteError) {
-      console.error('Delete error:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete asset' }, { status: 500 })
+    
+    const { user, supabase } = auth;
+    
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const permanent = searchParams.get('permanent') === 'true';
+    const reason = searchParams.get('reason');
+    
+    // Initialize command bus
+    const commandBus = initializeCommandBus(supabase);
+    
+    // Create and execute delete command
+    const command = new DeleteAssetCommand({
+      assetId: createAssetId(assetId),
+      userId: createUserId(user.id),
+      permanent,
+      reason: reason || undefined
+    });
+    
+    console.log('[Asset API] Executing delete command:', {
+      assetId,
+      userId: user.id,
+      permanent,
+      reason
+    });
+    
+    const result = await commandBus.executeCommand(command);
+    
+    if (!result.success) {
+      console.error('[Asset API] Delete failed:', result.error);
+      
+      // Return 403 for permission errors
+      if (result.error.message.includes('permission')) {
+        return NextResponse.json({
+          success: false,
+          error: result.error.message
+        }, { status: 403 });
+      }
+      
+      // Return 404 for not found
+      if (result.error.message === 'Asset not found') {
+        return NextResponse.json({
+          success: false,
+          error: result.error.message
+        }, { status: 404 });
+      }
+      
+      return NextResponse.json({
+        success: false,
+        error: result.error.message
+      }, { status: 500 });
     }
-
-    // Log activity
-    await supabase
-      .from('asset_activity_log')
-      .insert({
-        asset_id: assetId,
-        user_id: user.id,
-        activity_type: 'delete',
-        activity_details: { 
-          title: asset.title,
-          file_path: asset.file_path 
-        }
-      })
-
-    return NextResponse.json({ success: true, message: 'Asset deleted successfully' })
-
+    
+    console.log('[Asset API] Delete successful:', {
+      assetId,
+      permanent
+    });
+    
+    return NextResponse.json({
+      success: true,
+      message: permanent ? 'Asset permanently deleted' : 'Asset moved to trash'
+    });
+    
   } catch (error) {
-    console.error('Asset delete error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('[Asset API] Unexpected error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }

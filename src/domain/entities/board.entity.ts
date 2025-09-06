@@ -3,7 +3,7 @@
  * Implements business rules for board governance
  */
 
-import { AggregateRoot } from '../core/aggregate-root';
+import { AggregateRoot } from '../core';
 import { ValueObject } from '@/01-shared/types/core.types';
 import { Result, ResultUtils } from '@/01-shared/lib/result';
 
@@ -86,6 +86,33 @@ export enum BoardMemberRole {
   OBSERVER = 'observer'
 }
 
+// Board Type Enum
+export enum BoardType {
+  BOARD_OF_DIRECTORS = 'board_of_directors',
+  ADVISORY_BOARD = 'advisory_board',
+  EXECUTIVE_BOARD = 'executive_board',
+  SUPERVISORY_BOARD = 'supervisory_board',
+  COMMITTEE = 'committee',
+  CUSTOM = 'custom'
+}
+
+// Committee
+export class Committee {
+  constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly description: string,
+    public readonly chairUserId: string,
+    public readonly memberUserIds: string[],
+    public readonly createdAt: Date,
+    public readonly isActive: boolean = true
+  ) {}
+
+  hasMember(userId: string): boolean {
+    return this.chairUserId === userId || this.memberUserIds.includes(userId);
+  }
+}
+
 // Board Member
 export class BoardMember {
   constructor(
@@ -93,7 +120,9 @@ export class BoardMember {
     public readonly role: BoardMemberRole,
     public readonly joinedAt: Date,
     public readonly isVotingMember: boolean = true,
-    public readonly committees: string[] = []
+    public readonly committees: string[] = [],
+    public readonly termEndDate?: Date,
+    public readonly attendanceRate: number = 100
   ) {}
 
   hasVotingRights(): boolean {
@@ -109,29 +138,41 @@ export class BoardMember {
       BoardMemberRole.TREASURER
     ].includes(this.role);
   }
+
+  isTermExpired(): boolean {
+    return this.termEndDate ? this.termEndDate < new Date() : false;
+  }
 }
 
 // Board Entity
 export class Board extends AggregateRoot {
   private name: BoardName;
   private organizationId: string;
+  private boardType: BoardType;
   private status: BoardStatus;
   private settings: BoardSettings;
   private members: Map<string, BoardMember>;
+  private committees: Map<string, Committee>;
   private description?: string;
   private establishedDate: Date;
   private nextMeetingDate?: Date;
+  private termLength?: number; // Term length in months
+  private lastElectionDate?: Date;
 
   private constructor(
     id: string,
     name: BoardName,
     organizationId: string,
+    boardType: BoardType,
     status: BoardStatus,
     settings: BoardSettings,
     members: Map<string, BoardMember>,
+    committees: Map<string, Committee>,
     description?: string,
     establishedDate?: Date,
     nextMeetingDate?: Date,
+    termLength?: number,
+    lastElectionDate?: Date,
     createdAt?: Date,
     updatedAt?: Date,
     version?: number
@@ -139,12 +180,16 @@ export class Board extends AggregateRoot {
     super(id, createdAt, updatedAt, version);
     this.name = name;
     this.organizationId = organizationId;
+    this.boardType = boardType;
     this.status = status;
     this.settings = settings;
     this.members = members;
+    this.committees = committees;
     this.description = description;
     this.establishedDate = establishedDate || new Date();
     this.nextMeetingDate = nextMeetingDate;
+    this.termLength = termLength;
+    this.lastElectionDate = lastElectionDate;
   }
 
   static create(
@@ -152,8 +197,10 @@ export class Board extends AggregateRoot {
     name: string,
     organizationId: string,
     createdByUserId: string,
+    boardType: BoardType = BoardType.BOARD_OF_DIRECTORS,
     description?: string,
-    settings?: Partial<BoardSettings['props']>
+    settings?: Partial<BoardSettings['props']>,
+    termLength?: number
   ): Result<Board> {
     const nameResult = BoardName.create(name);
     if (!nameResult.success) {
@@ -162,31 +209,41 @@ export class Board extends AggregateRoot {
 
     const boardSettings = BoardSettings.create(settings);
     const members = new Map<string, BoardMember>();
+    const committees = new Map<string, Committee>();
     
     // Creator becomes the initial chairman
     members.set(createdByUserId, new BoardMember(
       createdByUserId,
       BoardMemberRole.CHAIRMAN,
       new Date(),
-      true
+      true,
+      [],
+      termLength ? new Date(Date.now() + termLength * 30 * 24 * 60 * 60 * 1000) : undefined
     ));
 
     const board = new Board(
       id,
       nameResult.data,
       organizationId,
+      boardType,
       BoardStatus.PENDING_SETUP,
       boardSettings,
       members,
-      description
+      committees,
+      description,
+      new Date(),
+      undefined,
+      termLength
     );
 
     board.addDomainEvent('BoardCreated', {
       boardId: id,
       name: name,
       organizationId,
+      boardType,
       createdBy: createdByUserId,
-      settings: boardSettings.props
+      settings: boardSettings.props,
+      termLength
     });
 
     board.validate();
@@ -415,6 +472,136 @@ export class Board extends AggregateRoot {
     return ResultUtils.ok(undefined);
   }
 
+  // Committee Management Methods
+  createCommittee(
+    committeeId: string,
+    name: string,
+    description: string,
+    chairUserId: string,
+    memberUserIds: string[],
+    createdBy: string
+  ): Result<void> {
+    if (this.committees.has(committeeId)) {
+      return ResultUtils.fail(new Error('Committee already exists'));
+    }
+
+    // Verify chair is a board member
+    if (!this.members.has(chairUserId)) {
+      return ResultUtils.fail(new Error('Committee chair must be a board member'));
+    }
+
+    // Verify all members are board members
+    for (const userId of memberUserIds) {
+      if (!this.members.has(userId)) {
+        return ResultUtils.fail(new Error(`User ${userId} is not a board member`));
+      }
+    }
+
+    const committee = new Committee(
+      committeeId,
+      name,
+      description,
+      chairUserId,
+      memberUserIds,
+      new Date(),
+      true
+    );
+
+    this.committees.set(committeeId, committee);
+    this.updateVersion();
+
+    this.addDomainEvent('BoardCommitteeCreated', {
+      boardId: this.id,
+      committeeId,
+      name,
+      chairUserId,
+      memberCount: memberUserIds.length,
+      createdBy
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  dissolveCommittee(committeeId: string, dissolvedBy: string, reason: string): Result<void> {
+    const committee = this.committees.get(committeeId);
+    if (!committee) {
+      return ResultUtils.fail(new Error('Committee not found'));
+    }
+
+    this.committees.delete(committeeId);
+    this.updateVersion();
+
+    this.addDomainEvent('BoardCommitteeDissolved', {
+      boardId: this.id,
+      committeeId,
+      committeeName: committee.name,
+      dissolvedBy,
+      reason
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  updateMemberAttendance(userId: string, newRate: number): Result<void> {
+    const member = this.members.get(userId);
+    if (!member) {
+      return ResultUtils.fail(new Error('User is not a board member'));
+    }
+
+    if (newRate < 0 || newRate > 100) {
+      return ResultUtils.fail(new Error('Attendance rate must be between 0 and 100'));
+    }
+
+    this.members.set(userId, new BoardMember(
+      member.userId,
+      member.role,
+      member.joinedAt,
+      member.isVotingMember,
+      member.committees,
+      member.termEndDate,
+      newRate
+    ));
+
+    this.updateVersion();
+    return ResultUtils.ok(undefined);
+  }
+
+  conductElection(electionDate: Date, electedBy: string): Result<void> {
+    if (this.status !== BoardStatus.ACTIVE) {
+      return ResultUtils.fail(new Error('Board must be active to conduct elections'));
+    }
+
+    this.lastElectionDate = electionDate;
+    this.updateVersion();
+
+    // Reset term end dates for all members if term length is defined
+    if (this.termLength) {
+      const newTermEndDate = new Date(electionDate.getTime() + this.termLength * 30 * 24 * 60 * 60 * 1000);
+      
+      for (const [userId, member] of this.members.entries()) {
+        this.members.set(userId, new BoardMember(
+          member.userId,
+          member.role,
+          member.joinedAt,
+          member.isVotingMember,
+          member.committees,
+          newTermEndDate,
+          member.attendanceRate
+        ));
+      }
+    }
+
+    this.addDomainEvent('BoardElectionConducted', {
+      boardId: this.id,
+      electionDate,
+      memberCount: this.members.size,
+      termLength: this.termLength,
+      conductedBy: electedBy
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
   // Getters
   getName(): string {
     return this.name.value;
@@ -422,6 +609,10 @@ export class Board extends AggregateRoot {
 
   getOrganizationId(): string {
     return this.organizationId;
+  }
+
+  getBoardType(): BoardType {
+    return this.boardType;
   }
 
   getStatus(): BoardStatus {
@@ -449,6 +640,14 @@ export class Board extends AggregateRoot {
     return this.members.size;
   }
 
+  getCommittees(): Committee[] {
+    return Array.from(this.committees.values());
+  }
+
+  getCommittee(committeeId: string): Committee | undefined {
+    return this.committees.get(committeeId);
+  }
+
   getDescription(): string | undefined {
     return this.description;
   }
@@ -459,6 +658,27 @@ export class Board extends AggregateRoot {
 
   getNextMeetingDate(): Date | undefined {
     return this.nextMeetingDate;
+  }
+
+  getTermLength(): number | undefined {
+    return this.termLength;
+  }
+
+  getLastElectionDate(): Date | undefined {
+    return this.lastElectionDate;
+  }
+
+  getMembersWithExpiredTerms(): BoardMember[] {
+    return Array.from(this.members.values())
+      .filter(m => m.isTermExpired());
+  }
+
+  getAverageAttendanceRate(): number {
+    const members = Array.from(this.members.values());
+    if (members.length === 0) return 0;
+    
+    const totalRate = members.reduce((sum, m) => sum + m.attendanceRate, 0);
+    return totalRate / members.length;
   }
 
   hasQuorum(): boolean {
@@ -504,6 +724,7 @@ export class Board extends AggregateRoot {
       id: this.id,
       name: this.name.value,
       organizationId: this.organizationId,
+      boardType: this.boardType,
       status: this.status,
       settings: this.settings.props,
       members: Array.from(this.members.entries()).map(([userId, member]) => ({
@@ -511,14 +732,30 @@ export class Board extends AggregateRoot {
         role: member.role,
         joinedAt: member.joinedAt,
         isVotingMember: member.isVotingMember,
-        committees: member.committees
+        committees: member.committees,
+        termEndDate: member.termEndDate,
+        attendanceRate: member.attendanceRate
+      })),
+      committees: Array.from(this.committees.entries()).map(([id, committee]) => ({
+        id,
+        name: committee.name,
+        description: committee.description,
+        chairUserId: committee.chairUserId,
+        memberUserIds: committee.memberUserIds,
+        createdAt: committee.createdAt,
+        isActive: committee.isActive
       })),
       description: this.description,
       establishedDate: this.establishedDate,
       nextMeetingDate: this.nextMeetingDate,
+      termLength: this.termLength,
+      lastElectionDate: this.lastElectionDate,
       memberCount: this.members.size,
       votingMemberCount: this.getVotingMembers().length,
+      committeeCount: this.committees.size,
       hasQuorum: this.hasQuorum(),
+      averageAttendanceRate: this.getAverageAttendanceRate(),
+      membersWithExpiredTerms: this.getMembersWithExpiredTerms().length,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       version: this.version

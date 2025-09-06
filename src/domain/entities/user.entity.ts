@@ -3,7 +3,7 @@
  * Implements business rules and invariants for users
  */
 
-import { AggregateRoot } from '../core/aggregate-root';
+import { AggregateRoot } from '../core';
 import { ValueObject } from '@/01-shared/types/core.types';
 import { Result, ResultUtils } from '@/01-shared/lib/result';
 
@@ -79,7 +79,51 @@ export enum UserStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
-  PENDING = 'pending'
+  PENDING = 'pending',
+  INVITED = 'invited',
+  DELETED = 'deleted'
+}
+
+// Password Value Object
+export class Password extends ValueObject<{ hash: string }> {
+  private constructor(hash: string) {
+    super({ hash });
+  }
+
+  static createFromHash(hash: string): Password {
+    return new Password(hash);
+  }
+
+  static create(plainPassword: string): Result<Password> {
+    if (!plainPassword || plainPassword.length < 8) {
+      return ResultUtils.fail(new Error('Password must be at least 8 characters'));
+    }
+
+    if (plainPassword.length > 128) {
+      return ResultUtils.fail(new Error('Password cannot exceed 128 characters'));
+    }
+
+    if (!/[A-Z]/.test(plainPassword)) {
+      return ResultUtils.fail(new Error('Password must contain at least one uppercase letter'));
+    }
+
+    if (!/[a-z]/.test(plainPassword)) {
+      return ResultUtils.fail(new Error('Password must contain at least one lowercase letter'));
+    }
+
+    if (!/[0-9]/.test(plainPassword)) {
+      return ResultUtils.fail(new Error('Password must contain at least one number'));
+    }
+
+    // Note: In production, hash the password using bcrypt or similar
+    // For now, we'll just store a placeholder
+    const hash = `hashed_${plainPassword}`;
+    return ResultUtils.ok(new Password(hash));
+  }
+
+  get value(): string {
+    return this.props.hash;
+  }
 }
 
 // User Entity
@@ -91,6 +135,18 @@ export class User extends AggregateRoot {
   private organizationId?: string;
   private lastLoginAt?: Date;
   private preferences: Record<string, unknown>;
+  private emailVerified: boolean;
+  private emailVerifiedAt?: Date;
+  private passwordHash?: string;
+  private passwordChangedAt?: Date;
+  private twoFactorEnabled: boolean;
+  private twoFactorSecret?: string;
+  private resetPasswordToken?: string;
+  private resetPasswordExpiry?: Date;
+  private inviteToken?: string;
+  private inviteExpiry?: Date;
+  private failedLoginAttempts: number;
+  private lockedUntil?: Date;
 
   private constructor(
     id: string,
@@ -101,6 +157,18 @@ export class User extends AggregateRoot {
     organizationId?: string,
     lastLoginAt?: Date,
     preferences?: Record<string, unknown>,
+    emailVerified: boolean = false,
+    emailVerifiedAt?: Date,
+    passwordHash?: string,
+    passwordChangedAt?: Date,
+    twoFactorEnabled: boolean = false,
+    twoFactorSecret?: string,
+    resetPasswordToken?: string,
+    resetPasswordExpiry?: Date,
+    inviteToken?: string,
+    inviteExpiry?: Date,
+    failedLoginAttempts: number = 0,
+    lockedUntil?: Date,
     createdAt?: Date,
     updatedAt?: Date,
     version?: number
@@ -113,6 +181,18 @@ export class User extends AggregateRoot {
     this.organizationId = organizationId;
     this.lastLoginAt = lastLoginAt;
     this.preferences = preferences || {};
+    this.emailVerified = emailVerified;
+    this.emailVerifiedAt = emailVerifiedAt;
+    this.passwordHash = passwordHash;
+    this.passwordChangedAt = passwordChangedAt;
+    this.twoFactorEnabled = twoFactorEnabled;
+    this.twoFactorSecret = twoFactorSecret;
+    this.resetPasswordToken = resetPasswordToken;
+    this.resetPasswordExpiry = resetPasswordExpiry;
+    this.inviteToken = inviteToken;
+    this.inviteExpiry = inviteExpiry;
+    this.failedLoginAttempts = failedLoginAttempts;
+    this.lockedUntil = lockedUntil;
   }
 
   static create(
@@ -280,6 +360,227 @@ export class User extends AggregateRoot {
     });
   }
 
+  // Authentication Methods
+  verifyEmail(token?: string): Result<void> {
+    if (this.emailVerified) {
+      return ResultUtils.fail(new Error('Email is already verified'));
+    }
+
+    if (token && this.inviteToken !== token) {
+      return ResultUtils.fail(new Error('Invalid verification token'));
+    }
+
+    this.emailVerified = true;
+    this.emailVerifiedAt = new Date();
+    this.inviteToken = undefined;
+    this.inviteExpiry = undefined;
+    
+    if (this.status === UserStatus.PENDING) {
+      this.status = UserStatus.ACTIVE;
+    }
+
+    this.updateVersion();
+
+    this.addDomainEvent('UserEmailVerified', {
+      userId: this.id,
+      email: this.email.value,
+      verifiedAt: this.emailVerifiedAt
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  setPassword(passwordHash: string): Result<void> {
+    this.passwordHash = passwordHash;
+    this.passwordChangedAt = new Date();
+    this.resetPasswordToken = undefined;
+    this.resetPasswordExpiry = undefined;
+    this.updateVersion();
+
+    this.addDomainEvent('UserPasswordChanged', {
+      userId: this.id,
+      changedAt: this.passwordChangedAt
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  initiatePasswordReset(token: string, expiryHours: number = 24): Result<void> {
+    this.resetPasswordToken = token;
+    this.resetPasswordExpiry = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
+    this.updateVersion();
+
+    this.addDomainEvent('PasswordResetInitiated', {
+      userId: this.id,
+      email: this.email.value,
+      expiryAt: this.resetPasswordExpiry
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  resetPassword(token: string, newPasswordHash: string): Result<void> {
+    if (!this.resetPasswordToken || this.resetPasswordToken !== token) {
+      return ResultUtils.fail(new Error('Invalid reset token'));
+    }
+
+    if (this.resetPasswordExpiry && this.resetPasswordExpiry < new Date()) {
+      return ResultUtils.fail(new Error('Reset token has expired'));
+    }
+
+    this.passwordHash = newPasswordHash;
+    this.passwordChangedAt = new Date();
+    this.resetPasswordToken = undefined;
+    this.resetPasswordExpiry = undefined;
+    this.failedLoginAttempts = 0;
+    this.lockedUntil = undefined;
+    this.updateVersion();
+
+    this.addDomainEvent('PasswordReset', {
+      userId: this.id,
+      resetAt: this.passwordChangedAt
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  enableTwoFactor(secret: string): Result<void> {
+    if (this.twoFactorEnabled) {
+      return ResultUtils.fail(new Error('Two-factor authentication is already enabled'));
+    }
+
+    this.twoFactorEnabled = true;
+    this.twoFactorSecret = secret;
+    this.updateVersion();
+
+    this.addDomainEvent('TwoFactorEnabled', {
+      userId: this.id,
+      enabledAt: new Date()
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  disableTwoFactor(): Result<void> {
+    if (!this.twoFactorEnabled) {
+      return ResultUtils.fail(new Error('Two-factor authentication is not enabled'));
+    }
+
+    this.twoFactorEnabled = false;
+    this.twoFactorSecret = undefined;
+    this.updateVersion();
+
+    this.addDomainEvent('TwoFactorDisabled', {
+      userId: this.id,
+      disabledAt: new Date()
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  recordFailedLogin(): Result<void> {
+    this.failedLoginAttempts++;
+    
+    // Lock account after 5 failed attempts
+    if (this.failedLoginAttempts >= 5) {
+      this.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // Lock for 30 minutes
+      
+      this.addDomainEvent('UserAccountLocked', {
+        userId: this.id,
+        lockedUntil: this.lockedUntil,
+        attempts: this.failedLoginAttempts
+      });
+    }
+
+    this.updateVersion();
+    return ResultUtils.ok(undefined);
+  }
+
+  recordSuccessfulLogin(): Result<void> {
+    this.lastLoginAt = new Date();
+    this.failedLoginAttempts = 0;
+    this.lockedUntil = undefined;
+    this.updateVersion();
+
+    this.addDomainEvent('UserLoggedIn', {
+      userId: this.id,
+      loginAt: this.lastLoginAt
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  isAccountLocked(): boolean {
+    return this.lockedUntil ? this.lockedUntil > new Date() : false;
+  }
+
+  canLogin(): boolean {
+    return this.isActive() && !this.isAccountLocked() && this.emailVerified;
+  }
+
+  inviteUser(inviteToken: string, expiryDays: number = 7): Result<void> {
+    if (this.status !== UserStatus.INVITED && this.status !== UserStatus.PENDING) {
+      return ResultUtils.fail(new Error('User is already active'));
+    }
+
+    this.inviteToken = inviteToken;
+    this.inviteExpiry = new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000);
+    this.status = UserStatus.INVITED;
+    this.updateVersion();
+
+    this.addDomainEvent('UserInvited', {
+      userId: this.id,
+      email: this.email.value,
+      inviteExpiry: this.inviteExpiry
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  acceptInvite(token: string): Result<void> {
+    if (this.status !== UserStatus.INVITED) {
+      return ResultUtils.fail(new Error('User is not in invited status'));
+    }
+
+    if (!this.inviteToken || this.inviteToken !== token) {
+      return ResultUtils.fail(new Error('Invalid invite token'));
+    }
+
+    if (this.inviteExpiry && this.inviteExpiry < new Date()) {
+      return ResultUtils.fail(new Error('Invite has expired'));
+    }
+
+    this.status = UserStatus.ACTIVE;
+    this.emailVerified = true;
+    this.emailVerifiedAt = new Date();
+    this.inviteToken = undefined;
+    this.inviteExpiry = undefined;
+    this.updateVersion();
+
+    this.addDomainEvent('InviteAccepted', {
+      userId: this.id,
+      acceptedAt: new Date()
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
+  softDelete(): Result<void> {
+    if (this.status === UserStatus.DELETED) {
+      return ResultUtils.fail(new Error('User is already deleted'));
+    }
+
+    this.status = UserStatus.DELETED;
+    this.updateVersion();
+
+    this.addDomainEvent('UserDeleted', {
+      userId: this.id,
+      deletedAt: new Date()
+    });
+
+    return ResultUtils.ok(undefined);
+  }
+
   // Getters
   getEmail(): string {
     return this.email.value;
@@ -323,6 +624,42 @@ export class User extends AggregateRoot {
 
   canPerformAdminActions(): boolean {
     return this.role === UserRole.ADMIN && this.isActive();
+  }
+
+  getPasswordHash(): string | undefined {
+    return this.passwordHash;
+  }
+
+  isEmailVerified(): boolean {
+    return this.emailVerified;
+  }
+
+  getEmailVerifiedAt(): Date | undefined {
+    return this.emailVerifiedAt;
+  }
+
+  isTwoFactorEnabled(): boolean {
+    return this.twoFactorEnabled;
+  }
+
+  getTwoFactorSecret(): string | undefined {
+    return this.twoFactorSecret;
+  }
+
+  getResetPasswordToken(): string | undefined {
+    return this.resetPasswordToken;
+  }
+
+  getResetPasswordExpiry(): Date | undefined {
+    return this.resetPasswordExpiry;
+  }
+
+  getFailedLoginAttempts(): number {
+    return this.failedLoginAttempts;
+  }
+
+  getLockedUntil(): Date | undefined {
+    return this.lockedUntil;
   }
 
   validate(): void {

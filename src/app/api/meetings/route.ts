@@ -1,53 +1,41 @@
+/**
+ * Meeting API Routes
+ * RESTful API endpoints for meeting management using CQRS
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { z } from 'zod';
+import { commandBus } from '@/application/cqrs/command-bus';
+import { ensureHandlersRegistered } from '@/infrastructure/register-handlers';
+import { createBrowserClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { ScheduleMeetingCommand } from '@/application/cqrs/commands/schedule-meeting.command';
+import { ListMeetingsQuery } from '@/application/cqrs/queries/get-meeting.query';
+import type { Meeting } from '@/domain/entities/meeting.entity';
+import type { UserId, BoardId, OrganizationId } from '@/types/core';
 
-// Validation schemas
-const createMeetingSchema = z.object({
-  organizationId: z.string().uuid(),
-  boardId: z.string().uuid().optional().nullable(),
-  committeeId: z.string().uuid().optional().nullable(),
-  title: z.string().min(1).max(255),
-  description: z.string().optional(),
-  meetingType: z.enum(['agm', 'board', 'committee', 'other']),
-  scheduledStart: z.string(),
-  scheduledEnd: z.string(),
-  timezone: z.string().default('UTC'),
-  location: z.string().optional().nullable(),
-  virtualMeetingUrl: z.string().url().optional().nullable(),
-  isHybrid: z.boolean().default(false),
-  agendaItems: z.array(z.object({
-    title: z.string(),
-    description: z.string().optional(),
-    type: z.enum(['presentation', 'discussion', 'decision', 'information', 'break']),
-    estimatedDuration: z.number(),
-    presenter: z.string().optional(),
-    order: z.number()
-  })).optional().default([]),
-  invitees: z.array(z.object({
-    userId: z.string().uuid().optional(),
-    email: z.string().email(),
-    name: z.string(),
-    role: z.enum(['organizer', 'chair', 'secretary', 'board_member', 'presenter', 'guest', 'observer', 'facilitator']),
-    isRequired: z.boolean().default(false),
-    canVote: z.boolean().default(false)
-  })).optional().default([]),
-  settings: z.object({
-    allowGuests: z.boolean().default(true),
-    recordMeeting: z.boolean().default(false),
-    autoGenerateMinutes: z.boolean().default(false),
-    requireRsvp: z.boolean().default(true),
-    allowProxyVoting: z.boolean().default(false),
-    publicMeeting: z.boolean().default(false)
-  }).optional()
-});
+// Ensure handlers are registered
+ensureHandlersRegistered();
 
-// GET /api/meetings - Fetch meetings list
+/**
+ * GET /api/meetings
+ * List meetings with optional filters
+ */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Get authenticated user
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
@@ -56,268 +44,67 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get query parameters
+    // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const organizationId = searchParams.get('organizationId');
-    const status = searchParams.get('status');
-    const meetingType = searchParams.get('type');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const filters: any = {};
+
+    if (searchParams.get('boardId')) {
+      filters.boardId = searchParams.get('boardId') as BoardId;
+    }
+    if (searchParams.get('organizationId')) {
+      filters.organizationId = searchParams.get('organizationId') as OrganizationId;
+    }
+    if (searchParams.get('status')) {
+      filters.status = searchParams.get('status')?.split(',');
+    }
+    if (searchParams.get('type')) {
+      filters.type = searchParams.get('type')?.split(',');
+    }
+    if (searchParams.get('fromDate')) {
+      filters.fromDate = new Date(searchParams.get('fromDate')!);
+    }
+    if (searchParams.get('toDate')) {
+      filters.toDate = new Date(searchParams.get('toDate')!);
+    }
+    if (searchParams.get('search')) {
+      filters.searchQuery = searchParams.get('search');
+    }
+
+    const sortBy = searchParams.get('sortBy') as any || 'scheduledStart';
+    const sortOrder = searchParams.get('sortOrder') as any || 'asc';
+    const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Build query
-    let query = supabase
-      .from('meetings')
-      .select(`
-        *,
-        organization:organizations(id, name, slug),
-        board:boards(id, name),
-        committee:committees(id, name),
-        organizer:auth.users!meetings_organizer_id_fkey(id, email),
-        attendees:meeting_attendees(count)
-      `)
-      .order('scheduled_start', { ascending: false })
-      .limit(limit)
-      .offset(offset);
-
-    // Apply filters
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
-    }
-    if (status) {
-      query = query.eq('status', status);
-    }
-    if (meetingType) {
-      query = query.eq('meeting_type', meetingType);
-    }
-
-    // Filter by user's organizations
-    const { data: userOrgs } = await supabase
-      .from('organization_members')
-      .select('organization_id')
-      .eq('user_id', user.id)
-      .eq('status', 'active');
-
-    if (userOrgs && userOrgs.length > 0) {
-      const orgIds = userOrgs.map(o => o.organization_id);
-      query = query.in('organization_id', orgIds);
-    }
-
-    const { data: meetings, error } = await query;
-
-    if (error) {
-      console.error('Error fetching meetings:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch meetings' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: meetings || [],
-      pagination: {
-        limit,
-        offset,
-        total: meetings?.length || 0
-      }
+    // Execute query
+    const query = new ListMeetingsQuery({
+      userId: user.id as UserId,
+      filters,
+      sortBy,
+      sortOrder,
+      limit,
+      offset
     });
 
-  } catch (error) {
-    console.error('Unexpected error in GET /api/meetings:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+    const result = await commandBus.executeQuery<ListMeetingsQuery, { meetings: Meeting[]; total: number }>(query);
 
-// POST /api/meetings - Create new meeting
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    if (!result.success) {
+      console.error('[GET /api/meetings] Query failed:', result.error);
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Parse and validate request body
-    const body = await request.json();
-    const validation = createMeetingSchema.safeParse(body);
-    
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.issues },
+        { error: result.error?.message || 'Failed to fetch meetings' },
         { status: 400 }
       );
     }
 
-    const data = validation.data;
-
-    // Verify user has permission to create meetings in this organization
-    const { data: membership, error: memberError } = await supabase
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', data.organizationId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (memberError || !membership || membership.status !== 'active') {
-      return NextResponse.json(
-        { error: 'You do not have permission to create meetings in this organization' },
-        { status: 403 }
-      );
-    }
-
-    // Generate meeting number
-    const meetingNumber = `${data.meetingType.toUpperCase()}-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-
-    // Create the meeting
-    const { data: meeting, error: meetingError } = await supabase
-      .from('meetings')
-      .insert({
-        organization_id: data.organizationId,
-        board_id: data.boardId,
-        committee_id: data.committeeId,
-        title: data.title,
-        description: data.description,
-        meeting_type: data.meetingType,
-        meeting_number: meetingNumber,
-        status: 'scheduled',
-        scheduled_start: data.scheduledStart,
-        scheduled_end: data.scheduledEnd,
-        timezone: data.timezone,
-        location: data.location,
-        virtual_meeting_url: data.virtualMeetingUrl,
-        is_hybrid: data.isHybrid,
-        created_by: user.id,
-        organizer_id: user.id,
-        settings: data.settings || {},
-        agenda_item_count: data.agendaItems?.length || 0,
-        attendee_count: data.invitees?.length || 0
-      })
-      .select()
-      .single();
-
-    if (meetingError) {
-      console.error('Error creating meeting:', meetingError);
-      return NextResponse.json(
-        { error: meetingError.message || 'Failed to create meeting', details: meetingError },
-        { status: 500 }
-      );
-    }
-
-    // Create agenda items if provided
-    if (data.agendaItems && data.agendaItems.length > 0) {
-      const agendaItems = data.agendaItems.map((item, index) => ({
-        meeting_id: meeting.id,
-        title: item.title,
-        description: item.description,
-        item_type: item.type,
-        order_index: item.order || index + 1,
-        estimated_duration: item.estimatedDuration,
-        presenter_name: item.presenter,
-        created_by: user.id
-      }));
-
-      const { error: agendaError } = await supabase
-        .from('meeting_agenda_items')
-        .insert(agendaItems);
-
-      if (agendaError) {
-        console.error('Error creating agenda items:', agendaError);
-        // Continue even if agenda items fail
-      }
-    }
-
-    // Add invitees if provided
-    if (data.invitees && data.invitees.length > 0) {
-      const attendees = data.invitees.map(invitee => ({
-        meeting_id: meeting.id,
-        user_id: invitee.userId,
-        external_email: invitee.userId ? null : invitee.email,
-        external_name: invitee.userId ? null : invitee.name,
-        role: invitee.role,
-        is_required: invitee.isRequired,
-        can_vote: invitee.canVote,
-        invited_by: user.id,
-        rsvp_status: 'pending'
-      }));
-
-      const { error: attendeeError } = await supabase
-        .from('meeting_attendees')
-        .insert(attendees);
-
-      if (attendeeError) {
-        console.error('Error adding attendees:', attendeeError);
-        // Continue even if attendees fail
-      }
-    }
-
-    // Add the creator as an attendee with organizer role
-    await supabase
-      .from('meeting_attendees')
-      .insert({
-        meeting_id: meeting.id,
-        user_id: user.id,
-        role: 'organizer',
-        is_required: true,
-        can_vote: true,
-        rsvp_status: 'accepted',
-        invited_by: user.id
-      });
-
-    // Fetch the complete meeting data with relations
-    const { data: completeMeeting, error: fetchError } = await supabase
-      .from('meetings')
-      .select(`
-        *,
-        organization:organizations(id, name, slug),
-        board:boards(id, name),
-        committee:committees(id, name),
-        organizer:auth.users!meetings_organizer_id_fkey(id, email),
-        agenda_items:meeting_agenda_items(
-          id,
-          title,
-          description,
-          item_type,
-          order_index,
-          estimated_duration
-        ),
-        attendees:meeting_attendees(
-          id,
-          user_id,
-          external_email,
-          external_name,
-          role,
-          rsvp_status
-        )
-      `)
-      .eq('id', meeting.id)
-      .single();
-
-    if (fetchError) {
-      console.error('Error fetching complete meeting:', fetchError);
-      // Return basic meeting data if fetch fails
-      return NextResponse.json({
-        success: true,
-        data: meeting,
-        message: 'Meeting created successfully'
-      });
-    }
-
     return NextResponse.json({
       success: true,
-      data: completeMeeting,
-      message: 'Meeting created successfully'
+      data: result.data.meetings,
+      total: result.data.total,
+      limit,
+      offset
     });
 
   } catch (error) {
-    console.error('Unexpected error in POST /api/meetings:', error);
+    console.error('[GET /api/meetings] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -325,20 +112,113 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/meetings/[id] - Update meeting
-export async function PATCH(request: NextRequest) {
-  // Implementation for updating meetings
-  return NextResponse.json(
-    { error: 'Not implemented yet' },
-    { status: 501 }
-  );
-}
+/**
+ * POST /api/meetings
+ * Schedule a new meeting
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
 
-// DELETE /api/meetings/[id] - Delete meeting
-export async function DELETE(request: NextRequest) {
-  // Implementation for deleting meetings
-  return NextResponse.json(
-    { error: 'Not implemented yet' },
-    { status: 501 }
-  );
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Parse request body
+    const body = await request.json();
+    
+    // Validate required fields
+    if (!body.title || !body.type || !body.boardId || !body.organizationId) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.scheduledStart || !body.scheduledEnd) {
+      return NextResponse.json(
+        { error: 'Meeting schedule is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.location || !body.location.type) {
+      return NextResponse.json(
+        { error: 'Meeting location is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.attendees || body.attendees.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one attendee is required' },
+        { status: 400 }
+      );
+    }
+
+    // Execute command
+    const command = new ScheduleMeetingCommand({
+      input: {
+        title: body.title,
+        description: body.description,
+        type: body.type,
+        boardId: body.boardId as BoardId,
+        organizationId: body.organizationId as OrganizationId,
+        scheduledStart: new Date(body.scheduledStart),
+        scheduledEnd: new Date(body.scheduledEnd),
+        location: body.location,
+        attendees: body.attendees.map((a: any) => ({
+          userId: a.userId as UserId,
+          role: a.role
+        })),
+        agendaItems: body.agendaItems,
+        quorumRequired: body.quorumRequired || 1,
+        chairperson: body.chairperson as UserId | undefined,
+        secretary: body.secretary as UserId | undefined,
+        recurrence: body.recurrence,
+        tags: body.tags,
+        sendInvitations: body.sendInvitations !== false,
+        checkConflicts: body.checkConflicts !== false
+      },
+      scheduledBy: user.id as UserId
+    });
+
+    const result = await commandBus.executeCommand<ScheduleMeetingCommand, Meeting>(command);
+
+    if (!result.success) {
+      console.error('[POST /api/meetings] Command failed:', result.error);
+      return NextResponse.json(
+        { error: result.error?.message || 'Failed to schedule meeting' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result.data
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('[POST /api/meetings] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

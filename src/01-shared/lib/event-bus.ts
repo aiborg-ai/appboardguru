@@ -3,7 +3,15 @@
  * Implements publish-subscribe pattern for loose coupling
  */
 
-import { DomainEvent, EventHandler } from '../types/core.types';
+import { EventHandler } from '../types/core.types';
+
+// Define DomainEvent interface locally to match aggregate-root
+export interface DomainEvent {
+  eventType: string;
+  aggregateId: string;
+  eventData: any;
+  occurredAt: Date;
+}
 
 type EventCallback<T extends DomainEvent = DomainEvent> = (event: T) => Promise<void> | void;
 type Unsubscribe = () => void;

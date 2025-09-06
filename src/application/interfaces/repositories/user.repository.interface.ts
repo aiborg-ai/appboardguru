@@ -1,52 +1,85 @@
 /**
  * User Repository Interface
- * Defines the contract for user data persistence
+ * Defines the contract for user data access operations
  */
 
-import { Repository, PaginationParams, PaginatedResult } from '@/01-shared/types/core.types';
-import { Result } from '@/01-shared/lib/result';
+import { Result } from '@/01-shared/types/core.types';
 import { User, UserRole, UserStatus } from '@/domain/entities/user.entity';
+import type { UserId, OrganizationId } from '@/types/core';
 
-export interface UserSearchCriteria {
-  email?: string;
-  role?: UserRole;
-  status?: UserStatus;
-  organizationId?: string;
-  searchTerm?: string;
+export interface UserFilters {
+  organizationId?: OrganizationId;
+  role?: UserRole | UserRole[];
+  status?: UserStatus | UserStatus[];
+  emailVerified?: boolean;
+  searchQuery?: string;
+  createdAfter?: Date;
+  createdBefore?: Date;
 }
 
-export interface IUserRepository extends Repository<User> {
-  // Basic CRUD operations inherited from Repository interface
+export interface UserListOptions {
+  filters?: UserFilters;
+  sortBy?: 'email' | 'name' | 'createdAt' | 'lastLoginAt' | 'status';
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
+export interface UserStatistics {
+  totalUsers: number;
+  activeUsers: number;
+  pendingUsers: number;
+  suspendedUsers: number;
+  verifiedUsers: number;
+  twoFactorEnabledUsers: number;
+  usersByRole: Record<UserRole, number>;
+  userGrowth: {
+    period: string;
+    newUsers: number;
+    activeLogins: number;
+  }[];
+  averageLoginFrequency: number;
+}
+
+export interface IUserRepository {
+  // Basic CRUD Operations
+  create(user: User): Promise<Result<User>>;
+  update(userId: UserId, user: User): Promise<Result<User>>;
+  delete(userId: UserId): Promise<Result<void>>;
+  findById(userId: UserId): Promise<Result<User>>;
   
-  // Additional user-specific methods
+  // Authentication-specific queries
   findByEmail(email: string): Promise<Result<User | null>>;
+  findByResetToken(token: string): Promise<Result<User | null>>;
+  findByInviteToken(token: string): Promise<Result<User | null>>;
   
-  findByOrganization(
-    organizationId: string,
-    params?: PaginationParams
-  ): Promise<Result<PaginatedResult<User>>>;
+  // List and search operations
+  list(options: UserListOptions): Promise<Result<{ users: User[]; total: number }>>;
+  findByOrganization(organizationId: OrganizationId, role?: UserRole): Promise<Result<User[]>>;
+  search(query: string, limit?: number): Promise<Result<User[]>>;
   
-  findByRole(
-    role: UserRole,
-    params?: PaginationParams
-  ): Promise<Result<PaginatedResult<User>>>;
+  // Batch operations
+  findByIds(userIds: UserId[]): Promise<Result<User[]>>;
+  bulkUpdateStatus(userIds: UserId[], status: UserStatus): Promise<Result<number>>;
   
-  search(
-    criteria: UserSearchCriteria,
-    params?: PaginationParams
-  ): Promise<Result<PaginatedResult<User>>>;
+  // Statistics and analytics
+  getStatistics(organizationId?: OrganizationId, dateRange?: { from: Date; to: Date }): Promise<Result<UserStatistics>>;
+  getLoginActivity(userId: UserId, days?: number): Promise<Result<{ date: Date; loginCount: number }[]>>;
   
-  findActiveUsers(
-    params?: PaginationParams
-  ): Promise<Result<PaginatedResult<User>>>;
+  // Authentication helpers
+  updateLastLogin(userId: UserId, timestamp: Date): Promise<Result<void>>;
+  updatePasswordHash(userId: UserId, passwordHash: string): Promise<Result<void>>;
+  updateEmailVerification(userId: UserId, verified: boolean, verifiedAt?: Date): Promise<Result<void>>;
+  updateTwoFactorAuth(userId: UserId, enabled: boolean, secret?: string): Promise<Result<void>>;
+  updateFailedLoginAttempts(userId: UserId, attempts: number, lockedUntil?: Date): Promise<Result<void>>;
   
-  countByOrganization(organizationId: string): Promise<Result<number>>;
+  // Token management
+  saveResetToken(userId: UserId, token: string, expiry: Date): Promise<Result<void>>;
+  clearResetToken(userId: UserId): Promise<Result<void>>;
+  saveInviteToken(userId: UserId, token: string, expiry: Date): Promise<Result<void>>;
+  clearInviteToken(userId: UserId): Promise<Result<void>>;
   
-  countByRole(role: UserRole): Promise<Result<number>>;
-  
-  existsByEmail(email: string): Promise<Result<boolean>>;
-  
-  bulkSave(users: User[]): Promise<Result<User[]>>;
-  
-  bulkDelete(ids: string[]): Promise<Result<void>>;
+  // Validation helpers
+  emailExists(email: string, excludeUserId?: UserId): Promise<Result<boolean>>;
+  canCreateUser(email: string, organizationId?: OrganizationId): Promise<Result<boolean>>;
 }

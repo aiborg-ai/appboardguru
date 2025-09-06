@@ -1,189 +1,281 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+/**
+ * Meeting Detail API Routes
+ * RESTful API endpoints for individual meeting operations using CQRS
+ */
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+import { NextRequest, NextResponse } from 'next/server';
+import { commandBus } from '@/application/cqrs/command-bus';
+import { ensureHandlersRegistered } from '@/infrastructure/register-handlers';
+import { createBrowserClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { GetMeetingQuery } from '@/application/cqrs/queries/get-meeting.query';
+import { 
+  StartMeetingCommand,
+  EndMeetingCommand,
+  CancelMeetingCommand,
+  UpdateAttendeeStatusCommand,
+  AddMeetingMinutesCommand
+} from '@/application/cqrs/commands/manage-meeting.command';
+import type { Meeting } from '@/domain/entities/meeting.entity';
+import type { MeetingId, UserId } from '@/types/core';
+
+// Ensure handlers are registered
+ensureHandlersRegistered();
+
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
+/**
+ * GET /api/meetings/[id]
+ * Get a specific meeting by ID
+ */
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Check authentication
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const meetingId = params.id;
+    const meetingId = params.id as MeetingId;
 
-    // Get meeting details
-    const { data: meeting, error: meetingError } = await supabase
-      .from('meetings')
-      .select(`
-        id,
-        organization_id,
-        created_by,
-        title,
-        description,
-        meeting_type,
-        status,
-        visibility,
-        scheduled_start,
-        scheduled_end,
-        timezone,
-        location,
-        virtual_meeting_url,
-        is_recurring,
-        recurrence_type,
-        recurrence_interval,
-        recurrence_end_date,
-        parent_meeting_id,
-        agenda_finalized,
-        invitations_sent,
-        documents_locked,
-        estimated_duration_minutes,
-        actual_start,
-        actual_end,
-        settings,
-        tags,
-        category,
-        created_at,
-        updated_at,
-        cancelled_at,
-        cancelled_reason
-      `)
-      .eq('id', meetingId)
-      .single();
+    // Execute query
+    const query = new GetMeetingQuery({
+      meetingId,
+      userId: user.id as UserId
+    });
 
-    if (meetingError || !meeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
+    const result = await commandBus.executeQuery<GetMeetingQuery, Meeting>(query);
+
+    if (!result.success) {
+      console.error('[GET /api/meetings/[id]] Query failed:', result.error);
+      return NextResponse.json(
+        { error: result.error?.message || 'Failed to fetch meeting' },
+        { status: result.error?.message?.includes('not found') ? 404 : 400 }
+      );
     }
-
-    // Verify user has access to the organization
-    const { data: orgMember } = await supabase
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    if (!orgMember) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Transform to match our interface
-    const formattedMeeting = {
-      id: (meeting as any)?.id,
-      organizationId: (meeting as any)?.organization_id,
-      createdBy: (meeting as any)?.created_by,
-      title: (meeting as any)?.title,
-      description: (meeting as any)?.description,
-      meetingType: (meeting as any)?.meeting_type,
-      status: (meeting as any)?.status,
-      visibility: (meeting as any)?.visibility,
-      scheduledStart: (meeting as any)?.start_time,
-      scheduledEnd: (meeting as any)?.end_time,
-      timezone: (meeting as any)?.timezone,
-      location: (meeting as any)?.location,
-      virtualMeetingUrl: (meeting as any)?.virtual_meeting_url,
-      isRecurring: (meeting as any)?.is_recurring,
-      recurrenceType: (meeting as any)?.recurrence_type,
-      recurrenceInterval: (meeting as any)?.recurrence_interval,
-      recurrenceEndDate: (meeting as any)?.recurrence_end_date,
-      parentMeetingId: (meeting as any)?.parent_meeting_id,
-      agendaFinalized: (meeting as any)?.agenda_finalized,
-      invitationsSent: (meeting as any)?.invitations_sent,
-      documentsLocked: (meeting as any)?.documents_locked,
-      estimatedDurationMinutes: (meeting as any)?.estimated_duration_minutes,
-      actualStart: (meeting as any)?.actual_start,
-      actualEnd: (meeting as any)?.actual_end,
-      settings: (meeting as any)?.settings,
-      tags: (meeting as any)?.tags,
-      category: (meeting as any)?.category,
-      createdAt: (meeting as any)?.created_at,
-      updatedAt: (meeting as any)?.updated_at,
-      cancelledAt: (meeting as any)?.cancelled_at,
-      cancelledReason: (meeting as any)?.cancelled_reason
-    };
 
     return NextResponse.json({
-      meeting: formattedMeeting
+      success: true,
+      data: result.data
     });
 
   } catch (error) {
-    console.error('Error in GET /api/meetings/[id]:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[GET /api/meetings/[id]] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+/**
+ * PATCH /api/meetings/[id]
+ * Update meeting status or details
+ */
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Check authentication
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const meetingId = params.id;
-    const updates = await request.json();
+    const meetingId = params.id as MeetingId;
+    const body = await request.json();
 
-    // Check if user has access to this meeting and can manage it
-    const { data: meeting, error: meetingError } = await supabase
-      .from('meetings')
-      .select(`
-        id,
-        organization_id,
-        created_by
-      `)
-      .eq('id', meetingId)
-      .single();
+    // Handle different types of updates based on the action
+    let command: any;
+    let result: any;
 
-    if (meetingError || !meeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
+    switch (body.action) {
+      case 'start':
+        command = new StartMeetingCommand({
+          meetingId,
+          startedBy: user.id as UserId,
+          actualStart: new Date()
+        });
+        result = await commandBus.executeCommand<StartMeetingCommand, Meeting>(command);
+        break;
+
+      case 'end':
+        command = new EndMeetingCommand({
+          meetingId,
+          endedBy: user.id as UserId,
+          actualEnd: new Date(),
+          summary: body.summary
+        });
+        result = await commandBus.executeCommand<EndMeetingCommand, Meeting>(command);
+        break;
+
+      case 'cancel':
+        command = new CancelMeetingCommand({
+          meetingId,
+          cancelledBy: user.id as UserId,
+          reason: body.reason || 'Meeting cancelled'
+        });
+        result = await commandBus.executeCommand<CancelMeetingCommand, Meeting>(command);
+        break;
+
+      case 'updateAttendee':
+        if (!body.attendeeId || !body.status) {
+          return NextResponse.json(
+            { error: 'Attendee ID and status are required' },
+            { status: 400 }
+          );
+        }
+        command = new UpdateAttendeeStatusCommand({
+          meetingId,
+          attendeeId: body.attendeeId as UserId,
+          status: body.status,
+          updatedBy: user.id as UserId
+        });
+        result = await commandBus.executeCommand<UpdateAttendeeStatusCommand, Meeting>(command);
+        break;
+
+      case 'addMinutes':
+        if (!body.content) {
+          return NextResponse.json(
+            { error: 'Minutes content is required' },
+            { status: 400 }
+          );
+        }
+        command = new AddMeetingMinutesCommand({
+          meetingId,
+          minutes: {
+            content: body.content,
+            decisions: body.decisions,
+            actionItems: body.actionItems,
+            attachments: body.attachments
+          },
+          addedBy: user.id as UserId
+        });
+        result = await commandBus.executeCommand<AddMeetingMinutesCommand, Meeting>(command);
+        break;
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action. Valid actions are: start, end, cancel, updateAttendee, addMinutes' },
+          { status: 400 }
+        );
     }
 
-    // Check if user is meeting organizer or has admin/superuser role
-    const { data: orgMember } = await supabase
-      .from('organization_members')
-      .select('role, status')
-      .eq('organization_id', (meeting as any)?.organization_id)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    const canManage = (meeting as any)?.created_by === user.id || 
-                     ((orgMember as any) && ['owner', 'admin', 'superuser'].includes((orgMember as any)?.role));
-
-    if (!canManage) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    if (!result.success) {
+      console.error('[PATCH /api/meetings/[id]] Command failed:', result.error);
+      return NextResponse.json(
+        { error: result.error?.message || 'Failed to update meeting' },
+        { status: 400 }
+      );
     }
 
-    // Update the meeting
-    const { data: updatedMeeting, error: updateError } = await supabase
-      .from('meetings')
-      .update(updates as any)
-      .eq('id', meetingId)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('Error updating meeting:', updateError);
-      return NextResponse.json({ error: 'Failed to update meeting' }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      meeting: updatedMeeting,
-      message: 'Meeting updated successfully' 
+    return NextResponse.json({
+      success: true,
+      data: result.data
     });
 
   } catch (error) {
-    console.error('Error in PATCH /api/meetings/[id]:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[PATCH /api/meetings/[id]] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/meetings/[id]
+ * Cancel a meeting
+ */
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    // Authenticate user
+    const cookieStore = cookies();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const meetingId = params.id as MeetingId;
+    const { reason } = await request.json().catch(() => ({ reason: 'Meeting cancelled' }));
+
+    // Execute cancel command
+    const command = new CancelMeetingCommand({
+      meetingId,
+      cancelledBy: user.id as UserId,
+      reason
+    });
+
+    const result = await commandBus.executeCommand<CancelMeetingCommand, Meeting>(command);
+
+    if (!result.success) {
+      console.error('[DELETE /api/meetings/[id]] Command failed:', result.error);
+      return NextResponse.json(
+        { error: result.error?.message || 'Failed to cancel meeting' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Meeting cancelled successfully',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('[DELETE /api/meetings/[id]] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
