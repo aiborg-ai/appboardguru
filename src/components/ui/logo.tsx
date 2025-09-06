@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface LogoProps {
@@ -15,10 +16,17 @@ export function Logo({
   variant = 'default' 
 }: LogoProps) {
   const sizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16',
-    xl: 'w-24 h-24'
+    sm: 'w-10 h-10',
+    md: 'w-14 h-14',
+    lg: 'w-20 h-20',
+    xl: 'w-28 h-28'
+  };
+
+  const imageSizes = {
+    sm: 40,
+    md: 56,
+    lg: 80,
+    xl: 112
   };
 
   const textSizeClasses = {
@@ -34,86 +42,56 @@ export function Logo({
     dark: 'text-[#003d5c]'
   };
 
-  const bgColorClasses = {
-    default: 'bg-[#f5ede4]',
-    light: 'bg-white/10',
-    dark: 'bg-[#003d5c]'
-  };
+  // Create base64 encoded logo based on the BoardGuru design
+  const logoSvg = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <style>
+        .bg-circle { fill: #f5ede4; }
+        .main-color { fill: #003d5c; stroke: #003d5c; }
+        .no-fill { fill: none; stroke: #003d5c; stroke-width: 3; }
+      </style>
+    </defs>
+    <!-- Background Circle -->
+    <circle cx="100" cy="100" r="95" class="bg-circle"/>
+    <!-- Outer Ring -->
+    <circle cx="100" cy="100" r="90" class="no-fill"/>
+    
+    <!-- Head Circle -->
+    <circle cx="100" cy="65" r="22" class="no-fill" stroke-width="4"/>
+    
+    <!-- Glasses - Two rectangles with bridge -->
+    <rect x="75" y="58" width="18" height="14" rx="3" class="no-fill" stroke-width="3"/>
+    <rect x="107" y="58" width="18" height="14" rx="3" class="no-fill" stroke-width="3"/>
+    <line x1="93" y1="65" x2="107" y2="65" stroke="#003d5c" stroke-width="3"/>
+    
+    <!-- Body - Simplified suit shape -->
+    <path d="M 60 100 C 60 95 65 92 70 90 L 80 88 C 90 86 100 86 100 86 C 100 86 110 86 120 88 L 130 90 C 135 92 140 95 140 100 L 140 150 C 140 155 135 160 130 160 L 70 160 C 65 160 60 155 60 150 Z" class="no-fill" stroke-width="4"/>
+    
+    <!-- Tie -->
+    <polygon points="100,86 95,95 95,130 100,135 105,130 105,95" class="main-color"/>
+    
+    <!-- Collar lines -->
+    <line x1="85" y1="86" x2="95" y2="95" stroke="#003d5c" stroke-width="3"/>
+    <line x1="115" y1="86" x2="105" y2="95" stroke="#003d5c" stroke-width="3"/>
+  </svg>`;
 
-  const iconColorClasses = {
-    default: 'text-[#003d5c]',
-    light: 'text-white',
-    dark: 'text-white'
-  };
+  const encodedLogo = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString('base64')}`;
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      {/* Icon */}
+      {/* Logo Image */}
       <div className={cn(
-        'relative rounded-full flex items-center justify-center',
-        sizeClasses[size],
-        bgColorClasses[variant]
+        'relative flex items-center justify-center',
+        sizeClasses[size]
       )}>
-        <svg
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className={cn('w-full h-full', iconColorClasses[variant])}
-        >
-          {/* Circle border */}
-          <circle 
-            cx="50" 
-            cy="50" 
-            r="45" 
-            stroke="currentColor" 
-            strokeWidth="3"
-            fill="none"
-          />
-          
-          {/* Head */}
-          <circle 
-            cx="50" 
-            cy="30" 
-            r="12" 
-            stroke="currentColor" 
-            strokeWidth="2.5"
-            fill="none"
-          />
-          
-          {/* Glasses */}
-          <path 
-            d="M 35 28 Q 35 25 38 25 L 42 25 Q 45 25 45 28 L 45 32 Q 45 35 42 35 L 38 35 Q 35 35 35 32 Z
-               M 55 28 Q 55 25 58 25 L 62 25 Q 65 25 65 28 L 65 32 Q 65 35 62 35 L 58 35 Q 55 35 55 32 Z
-               M 45 30 L 55 30"
-            stroke="currentColor" 
-            strokeWidth="2.5"
-            fill="none"
-          />
-          
-          {/* Body - Suit */}
-          <path 
-            d="M 30 55 Q 30 50 35 48 L 40 46 Q 45 44 50 44 Q 55 44 60 46 L 65 48 Q 70 50 70 55 L 70 75 Q 70 80 65 80 L 35 80 Q 30 80 30 75 Z"
-            stroke="currentColor" 
-            strokeWidth="2.5"
-            fill="none"
-          />
-          
-          {/* Tie */}
-          <path 
-            d="M 50 44 L 50 65 M 46 48 L 50 52 L 54 48"
-            stroke="currentColor" 
-            strokeWidth="2"
-            fill="none"
-          />
-          
-          {/* Collar */}
-          <path 
-            d="M 42 44 L 46 48 L 50 44 L 54 48 L 58 44"
-            stroke="currentColor" 
-            strokeWidth="2"
-            fill="none"
-          />
-        </svg>
+        <Image
+          src={encodedLogo}
+          alt="BoardGuru"
+          width={imageSizes[size]}
+          height={imageSizes[size]}
+          className="w-full h-full object-contain"
+          priority
+        />
       </div>
 
       {/* Text */}
