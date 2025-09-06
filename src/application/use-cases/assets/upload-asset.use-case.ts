@@ -210,7 +210,7 @@ export class UploadAssetUseCase {
             assetId: asset.id,
             title: asset.title || input.title,
             fileName: input.fileName,
-            fileType: fileExtension,
+            fileType: this.extractFileType(input.fileName),
             mimeType: input.mimeType,
             filePath: storagePath,
             storageBucket,

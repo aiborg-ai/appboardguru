@@ -947,6 +947,7 @@ export class AssetRepositoryImpl implements IAssetRepository {
       original_file_name: props.fileMetadata.originalFileName,
       storage_bucket: props.fileMetadata.storageBucket || 'assets',
       owner_id: props.ownerId,
+      user_id: props.ownerId,  // Add user_id for RLS policy compatibility
       uploaded_by: props.uploadedBy,
       organization_id: props.organizationId,
       vault_id: props.vaultId,
