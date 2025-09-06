@@ -186,10 +186,16 @@ export async function POST(request: NextRequest) {
     
     // Step 7: Handle result
     if (!result.success) {
-      console.error('[Upload API] Upload failed:', result.error);
+      console.error('[Upload API] Upload failed:', {
+        error: result.error,
+        message: result.error.message,
+        stack: result.error.stack,
+        details: JSON.stringify(result.error)
+      });
       return NextResponse.json({ 
         success: false,
-        error: result.error.message 
+        error: result.error.message,
+        details: result.error.toString()
       }, { status: 500 });
     }
     

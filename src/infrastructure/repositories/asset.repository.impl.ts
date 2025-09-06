@@ -43,6 +43,15 @@ export class AssetRepositoryImpl implements IAssetRepository {
     try {
       const assetData = this.domainToDb(asset);
       
+      console.log('[AssetRepository] Creating asset with data:', {
+        id: assetData.id,
+        user_id: assetData.user_id,
+        owner_id: assetData.owner_id,
+        uploaded_by: assetData.uploaded_by,
+        organization_id: assetData.organization_id,
+        title: assetData.title
+      });
+      
       const { data, error } = await this.getClient()
         .from('assets')
         .insert(assetData)
@@ -50,6 +59,10 @@ export class AssetRepositoryImpl implements IAssetRepository {
         .single();
 
       if (error) {
+        console.error('[AssetRepository] Database insert failed:', {
+          error,
+          assetData
+        });
         console.error('[AssetRepository] Create failed:', error);
         return ResultUtils.fail(new Error(`Failed to create asset: ${error.message}`));
       }
