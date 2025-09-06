@@ -296,11 +296,9 @@ export class UploadAssetUseCase {
   }
 
   private generateAssetId(): string {
-    // Generate a unique asset ID
-    // In production, this might use a UUID library or database sequence
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 15);
-    return `asset_${timestamp}_${random}`;
+    // Generate a UUID v4 for the asset ID
+    // Supabase requires UUID format for the id column
+    return crypto.randomUUID();
   }
 
   private extractFileType(fileName: string): string {
