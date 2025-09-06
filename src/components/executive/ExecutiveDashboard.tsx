@@ -533,7 +533,7 @@ export default function ExecutiveDashboard({
         <div className="flex gap-4">
           <Select value={activeView} onValueChange={setActiveView}>
             <SelectTrigger className="w-40">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="strategic">Strategic View</SelectItem>
@@ -545,7 +545,7 @@ export default function ExecutiveDashboard({
           
           <Select value={timePeriod} onValueChange={(value: any) => setTimePeriod(value)}>
             <SelectTrigger className="w-32">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="24h">Last 24h</SelectItem>

@@ -241,7 +241,7 @@ export function GeneralSettingsTab({
               disabled={!canEdit}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((option) => (
@@ -265,7 +265,7 @@ export function GeneralSettingsTab({
               disabled={!canEdit}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 {PRIORITY_OPTIONS.map((option) => (

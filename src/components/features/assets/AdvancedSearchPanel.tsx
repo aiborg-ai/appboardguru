@@ -622,7 +622,7 @@ export function AdvancedSearchPanel({
                 onValueChange={(value) => handleFilterChange('sortBy', value)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="relevance">Relevance</SelectItem>
@@ -643,7 +643,7 @@ export function AdvancedSearchPanel({
                 onValueChange={(value) => handleFilterChange('sortOrder', value)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="desc">Descending</SelectItem>

@@ -344,7 +344,7 @@ export function InviteMemberModal({
                         disabled={isLoading}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue placeholder="Select option" />
                         </SelectTrigger>
                         <SelectContent>
                           {roles.map((role) => (
@@ -437,7 +437,7 @@ export function InviteMemberModal({
               disabled={isLoading}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 {expirationOptions.map((option) => (

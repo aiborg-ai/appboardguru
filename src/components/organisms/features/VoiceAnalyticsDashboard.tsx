@@ -155,7 +155,7 @@ export function VoiceAnalyticsDashboard({
             setTimeRange(prev => ({ ...prev, period: value as any }))
           }>
             <SelectTrigger className="w-40">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="daily">Last 24 Hours</SelectItem>

@@ -93,7 +93,7 @@ export default function ReviewStep({ data, onUpdate }: ReviewStepProps) {
                 }
               >
                 <SelectTrigger id="vault-type">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="board_pack">
@@ -133,7 +133,7 @@ export default function ReviewStep({ data, onUpdate }: ReviewStepProps) {
                 }
               >
                 <SelectTrigger id="access-level">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="private">

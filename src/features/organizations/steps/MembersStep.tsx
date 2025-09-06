@@ -420,7 +420,7 @@ export default function MembersStep({ data, onUpdate }: MembersStepProps) {
                           }
                         >
                           <SelectTrigger className="bg-white">
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             {Object.entries(ROLE_CONFIG).map(([key, config]) => (

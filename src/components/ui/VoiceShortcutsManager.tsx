@@ -783,7 +783,7 @@ export function VoiceShortcutsManager({
                   onValueChange={(value) => setFormData(prev => ({ ...prev, commandType: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     {COMMAND_TYPES.map(type => (

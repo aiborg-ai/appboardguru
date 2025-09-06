@@ -636,7 +636,7 @@ export function AdvancedFileUpload({
                             disabled={file.status === 'uploading' || file.status === 'processing'}
                           >
                             <SelectTrigger>
-                              <SelectValue />
+                              <SelectValue placeholder="Select option" />
                             </SelectTrigger>
                             <SelectContent>
                               {CATEGORIES.map(cat => (

@@ -226,7 +226,7 @@ export function ActivitySearch({ organizationId, onResultSelect }: ActivitySearc
             </Button>
             <Select value={filters.timeRange} onValueChange={(value) => setFilters(prev => ({ ...prev, timeRange: value }))}>
               <SelectTrigger className="w-32">
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1h">Last Hour</SelectItem>

@@ -395,7 +395,7 @@ export default function AssociationManager({
                                 onValueChange={(value) => handleBoardRoleChange(board.id, value)}
                               >
                                 <SelectTrigger className="w-48">
-                                  <SelectValue />
+                                  <SelectValue placeholder="Select option" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {BOARD_ROLES.map((role) => (
@@ -471,7 +471,7 @@ export default function AssociationManager({
                                 }}
                               >
                                 <SelectTrigger className="w-32">
-                                  <SelectValue />
+                                  <SelectValue placeholder="Select option" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {COMMITTEE_ROLES.map((role) => (
@@ -549,7 +549,7 @@ export default function AssociationManager({
                                 }}
                               >
                                 <SelectTrigger className="w-32">
-                                  <SelectValue />
+                                  <SelectValue placeholder="Select option" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {VAULT_ROLES.map((role) => (

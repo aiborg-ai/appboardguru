@@ -241,7 +241,7 @@ export default function CreateEventModal({ isOpen, onClose, onSuccess }: CreateE
               disabled={isSubmitting}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 {EVENT_TYPES.map(type => (
@@ -403,7 +403,7 @@ export default function CreateEventModal({ isOpen, onClose, onSuccess }: CreateE
               disabled={isSubmitting}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 {REMINDER_OPTIONS.map(option => (

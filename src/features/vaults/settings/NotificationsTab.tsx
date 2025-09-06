@@ -257,7 +257,7 @@ export function NotificationsTab({
             disabled={!canEdit || !formData.emailNotifications}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="instant">Instant</SelectItem>

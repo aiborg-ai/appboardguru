@@ -612,7 +612,7 @@ export function NotificationPreferences({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(priorityConfig).map(([key, config]) => (
@@ -821,7 +821,7 @@ export function NotificationPreferences({
                   onValueChange={(value) => updatePreference('timezone', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     {timezoneOptions.map(option => (

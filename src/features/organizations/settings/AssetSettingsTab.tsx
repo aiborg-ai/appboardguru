@@ -174,7 +174,7 @@ export function AssetSettingsTab({ settings, canEdit, onUpdate }: AssetSettingsT
               disabled={!canEdit}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="0">No retention</SelectItem>
@@ -337,7 +337,7 @@ export function AssetSettingsTab({ settings, canEdit, onUpdate }: AssetSettingsT
             disabled={!canEdit}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="organization">

@@ -448,7 +448,7 @@ export function VaultBroadcastModal({
                           onValueChange={(value) => updateInvitation(invitation.id, { permissionLevel: value as any })}
                         >
                           <SelectTrigger className="w-32">
-                            <SelectValue />
+                            <SelectValue placeholder="Select option" />
                           </SelectTrigger>
                           <SelectContent>
                             {permissionLevels.map(level => (
@@ -491,7 +491,7 @@ export function VaultBroadcastModal({
                 <Label>Default Permission Level</Label>
                 <Select value={bulkPermissionLevel} onValueChange={setBulkPermissionLevel}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     {permissionLevels.map(level => (

@@ -231,7 +231,7 @@ export function ActivityChart({
           <div className="flex items-center gap-2">
             <Select value={chartType} onValueChange={(value: string) => setChartType(value as typeof chartType)}>
               <SelectTrigger className="w-32">
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="line">
@@ -251,7 +251,7 @@ export function ActivityChart({
             {onTimeRangeChange && (
               <Select value={timeRange} onValueChange={onTimeRangeChange}>
                 <SelectTrigger className="w-20">
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1h">1h</SelectItem>

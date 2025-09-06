@@ -459,7 +459,7 @@ export const FinancialIntegration: React.FC<FinancialIntegrationProps> = ({
               }))}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="maximize_roi">Maximize ROI</SelectItem>

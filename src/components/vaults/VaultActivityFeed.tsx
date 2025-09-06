@@ -385,7 +385,7 @@ export default function VaultActivityFeed({ vaultId }: VaultActivityFeedProps) {
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-40">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Activities</SelectItem>
@@ -399,7 +399,7 @@ export default function VaultActivityFeed({ vaultId }: VaultActivityFeedProps) {
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="w-40">
                 <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="24hours">Last 24 Hours</SelectItem>

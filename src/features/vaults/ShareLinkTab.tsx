@@ -204,7 +204,7 @@ export function ShareLinkTab({
                 <Label>Permission Level</Label>
                 <Select value={permission} onValueChange={setPermission}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="viewer">
@@ -227,7 +227,7 @@ export function ShareLinkTab({
                 <Label>Link Expiration</Label>
                 <Select value={expiresIn} onValueChange={setExpiresIn}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1h">1 hour</SelectItem>
@@ -246,7 +246,7 @@ export function ShareLinkTab({
                 <Label>Usage Limit</Label>
                 <Select value={maxUses} onValueChange={setMaxUses}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">1 use</SelectItem>

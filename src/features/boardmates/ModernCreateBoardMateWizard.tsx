@@ -520,7 +520,7 @@ export default function ModernCreateBoardMateWizard({
                         onValueChange={(value) => updateData({ country: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select option" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="United States">United States</SelectItem>

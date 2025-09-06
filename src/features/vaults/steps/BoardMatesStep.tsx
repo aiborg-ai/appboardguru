@@ -249,7 +249,7 @@ export default function BoardMatesStep({ data, onUpdate }: BoardMatesStepProps) 
                     }
                   >
                     <SelectTrigger id="member-role">
-                      <SelectValue />
+                      <SelectValue placeholder="Select option" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="viewer">

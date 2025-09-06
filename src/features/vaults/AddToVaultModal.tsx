@@ -324,7 +324,7 @@ export function AddToVaultModal({
                   <Label>Folder</Label>
                   <Select value={folderPath} onValueChange={setFolderPath}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select option" />
                     </SelectTrigger>
                     <SelectContent>
                       {folderOptions.map(folder => (

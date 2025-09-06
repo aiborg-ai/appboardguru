@@ -235,7 +235,7 @@ export function ShareExternalTab({
         <Label>Permission Level</Label>
         <Select value={permission} onValueChange={setPermission}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="Select option" />
           </SelectTrigger>
           <SelectContent>
             {PERMISSION_LEVELS.map((level) => {
@@ -276,7 +276,7 @@ export function ShareExternalTab({
           <Label>Access Expiration</Label>
           <Select value={expiresIn} onValueChange={setExpiresIn}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7d">7 days</SelectItem>

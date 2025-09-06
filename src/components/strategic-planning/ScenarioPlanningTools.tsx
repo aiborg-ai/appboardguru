@@ -231,7 +231,7 @@ export const ScenarioPlanningTools: React.FC<ScenarioPlanningToolsProps> = ({
               onValueChange={(value: any) => setFormData(prev => ({ ...prev, scenario_type: value }))}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="optimistic">Optimistic</SelectItem>
@@ -291,7 +291,7 @@ export const ScenarioPlanningTools: React.FC<ScenarioPlanningToolsProps> = ({
                 onValueChange={(value: any) => setNewVariable(prev => ({ ...prev, type: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="market_size">Market Size</SelectItem>
@@ -310,7 +310,7 @@ export const ScenarioPlanningTools: React.FC<ScenarioPlanningToolsProps> = ({
                 onValueChange={(value: any) => setNewVariable(prev => ({ ...prev, distribution: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="normal">Normal</SelectItem>

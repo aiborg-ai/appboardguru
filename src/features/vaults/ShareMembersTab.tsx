@@ -238,7 +238,7 @@ export function ShareMembersTab({
         <Label>Permission Level</Label>
         <Select value={permission} onValueChange={setPermission}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="Select option" />
           </SelectTrigger>
           <SelectContent>
             {PERMISSION_LEVELS.map((level) => {
@@ -344,7 +344,7 @@ export function ShareMembersTab({
         <Label>Access Expiration</Label>
         <Select value={expiresIn} onValueChange={setExpiresIn}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="Select option" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="never">Never</SelectItem>

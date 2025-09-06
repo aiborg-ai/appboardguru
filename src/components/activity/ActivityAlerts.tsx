@@ -397,7 +397,7 @@ export function ActivityAlerts({ organizationId }: ActivityAlertsProps) {
                     <label className="text-sm font-medium">Priority</label>
                     <Select value={newRule.priority} onValueChange={(value: string) => setNewRule(prev => ({ ...prev, priority: value as any }))}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select option" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="low">Low</SelectItem>
@@ -446,7 +446,7 @@ export function ActivityAlerts({ organizationId }: ActivityAlertsProps) {
                     <label className="text-sm font-medium">Time Window</label>
                     <Select value={newRule.timeWindow} onValueChange={(value) => setNewRule(prev => ({ ...prev, timeWindow: value }))}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select option" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="5m">5 minutes</SelectItem>
@@ -462,7 +462,7 @@ export function ActivityAlerts({ organizationId }: ActivityAlertsProps) {
                   <label className="text-sm font-medium">Notification Method</label>
                   <Select value={newRule.actionType} onValueChange={(value: string) => setNewRule(prev => ({ ...prev, actionType: value as any }))}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select option" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="email">Email</SelectItem>

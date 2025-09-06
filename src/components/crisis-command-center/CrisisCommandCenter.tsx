@@ -334,7 +334,7 @@ const CrisisCommandCenter: React.FC = () => {
           
           <Select value={refreshInterval.toString()} onValueChange={(value) => setRefreshInterval(Number(value))}>
             <SelectTrigger className="w-32">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="15">15s</SelectItem>

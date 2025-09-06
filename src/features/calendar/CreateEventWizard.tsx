@@ -585,7 +585,7 @@ export default function CreateEventWizard({
                   onValueChange={(value) => setWizardData(prev => ({ ...prev, reminder_minutes: parseInt(value) }))}
                 >
                   <SelectTrigger className="mt-2">
-                    <SelectValue />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
                     {REMINDER_OPTIONS.map(option => (

@@ -283,7 +283,7 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-40">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Files</SelectItem>
@@ -297,7 +297,7 @@ export default function VaultAssetGrid({ vaultId, viewMode: initialViewMode }: V
           {/* Sort */}
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-32">
-              <SelectValue />
+              <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name">Name</SelectItem>

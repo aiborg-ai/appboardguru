@@ -467,7 +467,7 @@ export const PredictiveAnalytics: React.FC<PredictiveAnalyticsProps> = ({
             <Label htmlFor="forecast-type">Forecast Type</Label>
             <Select value={selectedForecastType} onValueChange={setSelectedForecastType}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="performance">Performance Forecast</SelectItem>

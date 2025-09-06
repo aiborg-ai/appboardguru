@@ -584,7 +584,7 @@ ${summary.riskFactors.map(risk => `• [${risk.severity.toUpperCase()}] ${risk.d
                     onValueChange={(value: any) => setGenerationOptions({...generationOptions, targetAudience: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select option" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="board">Board Members</SelectItem>
@@ -602,7 +602,7 @@ ${summary.riskFactors.map(risk => `• [${risk.severity.toUpperCase()}] ${risk.d
                     onValueChange={(value: any) => setGenerationOptions({...generationOptions, maxLength: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select option" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="short">Short (Up to 200 words)</SelectItem>
