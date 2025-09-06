@@ -23,17 +23,26 @@ export function Logo({
     xl: { width: 320, height: 320 }
   };
 
+  // Optional background styles for different variants
+  const backgroundStyles = {
+    default: '', // No background - transparent
+    light: 'bg-white/10 backdrop-blur-sm rounded-full p-2',
+    dark: 'bg-gray-900/10 backdrop-blur-sm rounded-full p-2'
+  };
+
   return (
     <div className={cn('flex items-center', className)}>
-      {/* Logo Image - Using the actual BoardGuru logo as-is */}
-      <Image
-        src="/boardguru-logo.png"
-        alt="BoardGuru"
-        width={sizeConfigs[size].width}
-        height={sizeConfigs[size].height}
-        className="object-contain"
-        priority
-      />
+      <div className={cn('flex items-center justify-center', backgroundStyles[variant])}>
+        {/* Logo Image - Using the actual BoardGuru logo with transparent background */}
+        <Image
+          src="/boardguru-logo.png"
+          alt="BoardGuru"
+          width={sizeConfigs[size].width}
+          height={sizeConfigs[size].height}
+          className="object-contain"
+          priority
+        />
+      </div>
     </div>
   );
 }
