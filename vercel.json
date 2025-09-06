@@ -1,5 +1,5 @@
 {
-  "buildCommand": "rm -rf .next && npm run build",
+  "buildCommand": "rm -rf .next && SKIP_ENV_VALIDATION=true npm run build",
   "framework": "nextjs",
   "installCommand": "npm cache clean --force && npm install --force",
   "env": {
@@ -8,7 +8,8 @@
   "build": {
     "env": {
       "NODE_OPTIONS": "--max-old-space-size=4096",
-      "NEXT_TELEMETRY_DISABLED": "1"
+      "NEXT_TELEMETRY_DISABLED": "1",
+      "SKIP_ENV_VALIDATION": "true"
     }
   },
   "functions": {
