@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, Shield, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase-client'
 import { useRouter } from 'next/navigation'
+import { LogoWithTagline } from '@/components/ui/logo'
 
 const signinSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -374,14 +375,14 @@ export default function SignInPage() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-            <img 
-              src="/boardguru-logo.svg" 
-              alt="BoardGuru" 
-              className="h-12 w-auto"
+          <Link href="/" className="inline-flex items-center justify-center mb-6">
+            <LogoWithTagline 
+              size="lg" 
+              variant="default"
+              tagline="Enterprise Board Governance"
             />
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-gray-900 mt-4">
             Welcome back
           </h2>
           <p className="mt-2 text-sm text-gray-600">

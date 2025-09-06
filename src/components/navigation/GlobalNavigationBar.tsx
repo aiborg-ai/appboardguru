@@ -37,6 +37,7 @@ import { useAuth } from '@/lib/stores'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import { useGlobalKeyboardShortcuts } from '@/hooks/useGlobalKeyboardShortcuts'
 import { supabase } from '@/lib/supabase-client'
+import { Logo } from '@/components/ui/logo'
 
 interface BreadcrumbItem {
   label: string
@@ -241,10 +242,10 @@ export default function GlobalNavigationBar() {
           <div className="flex items-center flex-1 min-w-0">
             {/* Logo */}
             <div className="flex items-center mr-6">
-              <img 
-                src="/boardguru-logo.svg" 
-                alt="BoardGuru" 
-                className="h-8 w-auto"
+              <Logo 
+                size="sm" 
+                showText={true}
+                variant="default"
               />
             </div>
 

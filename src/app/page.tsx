@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Shield, FileText, Brain, Users, Lock, BarChart3, CheckCircle, ArrowRight, Menu, X, Upload, AlertCircle } from 'lucide-react'
 import { RegistrationModal } from '@/features/shared/forms/RegistrationModal'
 import { UploadModal } from '@/features/shared/forms/UploadModal'
+import { Logo, LogoWithTagline } from '@/components/ui/logo'
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -54,13 +55,11 @@ export default function HomePage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="flex items-center space-x-2">
-                  <img 
-                    src="/boardguru-logo.svg" 
-                    alt="BoardGuru" 
-                    className="h-8 w-auto"
-                  />
-                </div>
+                <Logo 
+                  size="md" 
+                  showText={true}
+                  variant="default"
+                />
               </div>
             </div>
             

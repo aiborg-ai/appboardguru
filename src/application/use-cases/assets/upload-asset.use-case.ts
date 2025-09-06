@@ -81,7 +81,7 @@ export class UploadAssetUseCase {
     try {
       // Step 1: Validate input
       const validationResult = this.validateInput(input);
-      if (!validationResult.success) {
+      if (validationResult.success === false) {
         return ResultUtils.fail(validationResult.error);
       }
 
@@ -92,7 +92,7 @@ export class UploadAssetUseCase {
           input.organizationId,
           input.vaultId
         );
-        if (!permissionCheck.success) {
+        if (permissionCheck.success === false) {
           return ResultUtils.fail(permissionCheck.error);
         }
       }
@@ -119,7 +119,7 @@ export class UploadAssetUseCase {
         }
       });
 
-      if (!uploadResult.success) {
+      if (uploadResult.success === false) {
         return ResultUtils.fail(uploadResult.error);
       }
 
@@ -134,7 +134,7 @@ export class UploadAssetUseCase {
         originalFileName: input.fileName
       });
 
-      if (!fileMetadataResult.success) {
+      if (fileMetadataResult.success === false) {
         // Cleanup uploaded file if metadata creation fails
         // await this.storageService.deleteFile({ bucket: storageBucket, path: storagePath });
         return ResultUtils.fail(fileMetadataResult.error);
@@ -173,7 +173,7 @@ export class UploadAssetUseCase {
         folderPath: input.folderPath
       });
 
-      if (!assetResult.success) {
+      if (assetResult.success === false) {
         // Cleanup uploaded file if asset creation fails
         // await this.storageService.deleteFile({ bucket: storageBucket, path: storagePath });
         return ResultUtils.fail(assetResult.error);
@@ -188,7 +188,7 @@ export class UploadAssetUseCase {
 
       // Step 9: Persist asset to repository
       const saveResult = await this.assetRepository.create(asset);
-      if (!saveResult.success) {
+      if (saveResult.success === false) {
         // Cleanup uploaded file if save fails
         // await this.storageService.deleteFile({ bucket: storageBucket, path: storagePath });
         return ResultUtils.fail(saveResult.error);
