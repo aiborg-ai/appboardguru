@@ -244,7 +244,7 @@ export default function GlobalNavigationBar() {
             <div className="flex items-center mr-6">
               <Logo 
                 size="sm" 
-                showText={true}
+                showText={false}
                 variant="default"
               />
             </div>
