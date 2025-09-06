@@ -3,6 +3,9 @@
  * Foundational types for the entire application
  */
 
+// Brand type for nominal typing
+export type Brand<T, B> = T & { __brand: B }
+
 // Base Entity Types
 export interface BaseEntity {
   readonly id: string
@@ -15,36 +18,31 @@ export interface SoftDeletableEntity extends BaseEntity {
   readonly is_active: boolean
 }
 
-// Re-export branded types from centralized system
-export type {
-  Brand,
-  UserId,
-  OrganizationId,
-  AssetId,
-  VaultId,
-  AnnotationId,
-  BoardMateId,
-  EventId,
-  WorkflowId,
-  RuleId,
-  SessionId,
-  NotificationId
-} from '../branded'
+// Branded ID types
+export type UserId = Brand<string, 'UserId'>
+export type OrganizationId = Brand<string, 'OrganizationId'>
+export type AssetId = Brand<string, 'AssetId'>
+export type VaultId = Brand<string, 'VaultId'>
+export type AnnotationId = Brand<string, 'AnnotationId'>
+export type BoardMateId = Brand<string, 'BoardMateId'>
+export type EventId = Brand<string, 'EventId'>
+export type WorkflowId = Brand<string, 'WorkflowId'>
+export type RuleId = Brand<string, 'RuleId'>
+export type SessionId = Brand<string, 'SessionId'>
+export type NotificationId = Brand<string, 'NotificationId'>
 
-// Re-export utility functions for backward compatibility
-export {
-  unsafeUserId as createUserId,
-  unsafeOrganizationId as createOrganizationId,
-  unsafeAssetId as createAssetId,
-  unsafeVaultId as createVaultId,
-  unsafeAnnotationId as createAnnotationId,
-  unsafeBoardMateId as createBoardMateId,
-  unsafeEventId as createEventId,
-  unsafeWorkflowId as createWorkflowId,
-  unsafeRuleId as createRuleId,
-  unsafeSessionId as createSessionId,
-  unsafeNotificationId as createNotificationId
-} from '../branded'
+// Utility functions for creating branded IDs
+export const createUserId = (id: string): UserId => id as UserId
+export const createOrganizationId = (id: string): OrganizationId => id as OrganizationId
+export const createAssetId = (id: string): AssetId => id as AssetId
+export const createVaultId = (id: string): VaultId => id as VaultId
+export const createAnnotationId = (id: string): AnnotationId => id as AnnotationId
+export const createBoardMateId = (id: string): BoardMateId => id as BoardMateId
+export const createEventId = (id: string): EventId => id as EventId
+export const createWorkflowId = (id: string): WorkflowId => id as WorkflowId
+export const createRuleId = (id: string): RuleId => id as RuleId
+export const createSessionId = (id: string): SessionId => id as SessionId
+export const createNotificationId = (id: string): NotificationId => id as NotificationId
 
 // Pagination Types
 export interface PaginationParams {

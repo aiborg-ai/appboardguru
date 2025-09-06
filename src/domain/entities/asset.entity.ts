@@ -215,12 +215,12 @@ export class Asset extends AggregateRoot {
     });
 
     // Add domain event
-    asset.addDomainEvent(new AssetUploadedEvent(
-      params.id,
-      params.fileMetadata.fileName,
-      params.uploadedBy,
-      params.organizationId
-    ));
+    asset.addDomainEvent('AssetUploaded', {
+      assetId: params.id,
+      fileName: params.fileMetadata.fileName,
+      uploadedBy: params.uploadedBy,
+      organizationId: params.organizationId
+    });
 
     return ResultUtils.ok(asset);
   }
@@ -246,10 +246,10 @@ export class Asset extends AggregateRoot {
     this.props.updatedAt = new Date();
     
     if (reason) {
-      this.addDomainEvent(new DomainEvent('AssetProcessingFailed', { 
+      this.addDomainEvent('AssetProcessingFailed', { 
         assetId: this.props.id, 
         reason 
-      }));
+      });
     }
     
     return ResultUtils.ok(undefined);
@@ -301,12 +301,12 @@ export class Asset extends AggregateRoot {
       return ResultUtils.fail(new Error('Cannot share asset with its owner'));
     }
 
-    this.addDomainEvent(new AssetSharedEvent(
-      this.props.id,
+    this.addDomainEvent('AssetShared', {
+      assetId: this.props.id,
       sharedWith,
       sharedBy,
       permissions
-    ));
+    });
 
     return ResultUtils.ok(undefined);
   }
@@ -326,11 +326,11 @@ export class Asset extends AggregateRoot {
     this.props.status = AssetStatus.DELETED;
     this.props.updatedAt = new Date();
 
-    this.addDomainEvent(new AssetDeletedEvent(
-      this.props.id,
+    this.addDomainEvent('AssetDeleted', {
+      assetId: this.props.id,
       deletedBy,
       reason
-    ));
+    });
 
     return ResultUtils.ok(undefined);
   }

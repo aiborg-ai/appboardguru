@@ -3,8 +3,8 @@
  * Implements domain event handling and business invariants
  */
 
-import { BaseEntity } from '@/01-shared/types/core.types';
-import { EventBus } from '@/01-shared/lib/event-bus';
+import { BaseEntity } from '../../01-shared/types/core.types';
+import { EventBus } from '../../01-shared/lib/event-bus';
 
 // Define DomainEvent interface locally
 export interface DomainEvent {

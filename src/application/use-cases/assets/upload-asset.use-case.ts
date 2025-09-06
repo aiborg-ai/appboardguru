@@ -82,7 +82,7 @@ export class UploadAssetUseCase {
       // Step 1: Validate input
       const validationResult = this.validateInput(input);
       if (!validationResult.success) {
-        return validationResult;
+        return ResultUtils.fail(validationResult.error);
       }
 
       // Step 2: Check user permissions (if organization/vault provided)
@@ -93,7 +93,7 @@ export class UploadAssetUseCase {
           input.vaultId
         );
         if (!permissionCheck.success) {
-          return permissionCheck;
+          return ResultUtils.fail(permissionCheck.error);
         }
       }
 
@@ -120,7 +120,7 @@ export class UploadAssetUseCase {
       });
 
       if (!uploadResult.success) {
-        return ResultUtils.fail(new Error(`Failed to upload file: ${uploadResult.error.message}`));
+        return ResultUtils.fail(uploadResult.error);
       }
 
       // Step 5: Create FileMetadata value object
@@ -137,7 +137,7 @@ export class UploadAssetUseCase {
       if (!fileMetadataResult.success) {
         // Cleanup uploaded file if metadata creation fails
         // await this.storageService.deleteFile({ bucket: storageBucket, path: storagePath });
-        return fileMetadataResult;
+        return ResultUtils.fail(fileMetadataResult.error);
       }
 
       // Step 6: Generate thumbnail if requested and applicable
@@ -176,7 +176,7 @@ export class UploadAssetUseCase {
       if (!assetResult.success) {
         // Cleanup uploaded file if asset creation fails
         // await this.storageService.deleteFile({ bucket: storageBucket, path: storagePath });
-        return assetResult;
+        return ResultUtils.fail(assetResult.error);
       }
 
       const asset = assetResult.data;
@@ -191,7 +191,7 @@ export class UploadAssetUseCase {
       if (!saveResult.success) {
         // Cleanup uploaded file if save fails
         // await this.storageService.deleteFile({ bucket: storageBucket, path: storagePath });
-        return saveResult;
+        return ResultUtils.fail(saveResult.error);
       }
 
       // Step 10: Mark asset as ready
