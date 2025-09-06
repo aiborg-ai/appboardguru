@@ -3,7 +3,8 @@
  * Represents a document or file in the system with its business rules
  */
 
-import { AggregateRoot, DomainEvent } from '../core';
+import { AggregateRoot } from '../core';
+import type { DomainEvent } from '../core';
 import { Result } from '../../01-shared/types/core.types';
 import { ResultUtils } from '../../01-shared/lib/result';
 import { 
