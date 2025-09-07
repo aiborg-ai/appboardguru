@@ -11,7 +11,7 @@ import { Upload, FileText, Image, Video, Music, Archive, X, AlertCircle, CheckCi
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { formatFileSize } from '@/lib/utils'
+import { formatFileSize } from '@/types/upload'
 import type { FileUploadItem, UploadedAsset } from '@/types/upload'
 
 // Move constants outside component to prevent recreating
