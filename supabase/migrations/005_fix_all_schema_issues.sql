@@ -111,12 +111,34 @@ SET slug = LOWER(
 WHERE slug IS NULL OR slug = '';
 
 -- ============================================
--- 5. ADD BOARD_ID COLUMN TO MEETINGS
+-- 5. ADD MISSING COLUMNS TO MEETINGS
 -- ============================================
 SELECT add_column_if_not_exists('meetings', 'board_id', 'UUID REFERENCES boards(id) ON DELETE CASCADE');
+SELECT add_column_if_not_exists('meetings', 'chairperson_id', 'UUID REFERENCES auth.users(id)');
+SELECT add_column_if_not_exists('meetings', 'secretary_id', 'UUID REFERENCES auth.users(id)');
+SELECT add_column_if_not_exists('meetings', 'created_by', 'UUID REFERENCES auth.users(id)');
+SELECT add_column_if_not_exists('meetings', 'updated_by', 'UUID REFERENCES auth.users(id)');
+SELECT add_column_if_not_exists('meetings', 'location', 'JSONB DEFAULT ''{\"type\": \"virtual\"}''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'agenda_items', 'JSONB DEFAULT ''[]''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'minutes', 'JSONB');
+SELECT add_column_if_not_exists('meetings', 'decisions', 'JSONB DEFAULT ''[]''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'action_items', 'JSONB DEFAULT ''[]''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'documents', 'JSONB DEFAULT ''[]''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'recordings', 'JSONB DEFAULT ''[]''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'attendees', 'JSONB DEFAULT ''[]''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'quorum_required', 'INTEGER DEFAULT 1');
+SELECT add_column_if_not_exists('meetings', 'attendance_count', 'INTEGER DEFAULT 0');
+SELECT add_column_if_not_exists('meetings', 'recurrence', 'JSONB');
+SELECT add_column_if_not_exists('meetings', 'parent_meeting_id', 'UUID REFERENCES meetings(id)');
+SELECT add_column_if_not_exists('meetings', 'tags', 'TEXT[] DEFAULT ''{}''');
+SELECT add_column_if_not_exists('meetings', 'metadata', 'JSONB DEFAULT ''{}''::jsonb');
+SELECT add_column_if_not_exists('meetings', 'actual_start', 'TIMESTAMPTZ');
+SELECT add_column_if_not_exists('meetings', 'actual_end', 'TIMESTAMPTZ');
 
--- Create index for board_id
+-- Create indexes for new columns
 CREATE INDEX IF NOT EXISTS idx_meetings_board_id ON meetings(board_id);
+CREATE INDEX IF NOT EXISTS idx_meetings_chairperson_id ON meetings(chairperson_id);
+CREATE INDEX IF NOT EXISTS idx_meetings_created_by ON meetings(created_by);
 
 -- ============================================
 -- 6. ENABLE RLS ON ALL TABLES
@@ -294,7 +316,7 @@ BEGIN
   RAISE NOTICE '2. Created board_members table';
   RAISE NOTICE '3. Created meeting_attendees table';
   RAISE NOTICE '4. Added status column to organizations';
-  RAISE NOTICE '5. Added board_id column to meetings';
+  RAISE NOTICE '5. Added ALL missing columns to meetings (board_id, chairperson_id, etc.)';
   RAISE NOTICE '6. Set up RLS policies';
   RAISE NOTICE '7. Created sample board data';
   RAISE NOTICE '========================================';
