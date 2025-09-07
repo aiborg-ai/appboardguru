@@ -187,7 +187,7 @@ export function DocumentAttributor({ document, onComplete }: DocumentAttributorP
       if (selectedOrganization !== document.organization_id) {
         const { error: orgError } = await supabase
           .from('assets')
-          .update({ organization_id: selectedOrganization || null })
+          .update({ organization_id: selectedOrganization === 'none' ? null : selectedOrganization || null })
           .eq('id', document.id)
         
         if (orgError) throw orgError
@@ -323,7 +323,7 @@ export function DocumentAttributor({ document, onComplete }: DocumentAttributorP
             <SelectValue placeholder="Select an organization" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None</SelectItem>
+            <SelectItem value="none">None</SelectItem>
             {organizations.map(org => (
               <SelectItem key={org.id} value={org.id}>
                 {org.name}
@@ -343,7 +343,7 @@ export function DocumentAttributor({ document, onComplete }: DocumentAttributorP
           Vaults
         </Label>
         
-        {!selectedOrganization ? (
+        {!selectedOrganization || selectedOrganization === 'none' ? (
           <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500">
             Please select an organization first to view available vaults
           </div>

@@ -64,8 +64,8 @@ export default function TrainingCatalog({ userId }: TrainingCatalogProps) {
   const [recommendations, setRecommendations] = useState<TrainingCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('all');
 
@@ -108,8 +108,8 @@ export default function TrainingCatalog({ userId }: TrainingCatalogProps) {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory) params.append('category_id', selectedCategory);
-      if (selectedDifficulty) params.append('difficulty_level', selectedDifficulty);
+      if (selectedCategory && selectedCategory !== 'all') params.append('category_id', selectedCategory);
+      if (selectedDifficulty && selectedDifficulty !== 'all') params.append('difficulty_level', selectedDifficulty);
       params.append('is_active', 'true');
 
       const response = await fetch(`/api/training/courses?${params}`);
@@ -287,7 +287,7 @@ export default function TrainingCatalog({ userId }: TrainingCatalogProps) {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -301,7 +301,7 @@ export default function TrainingCatalog({ userId }: TrainingCatalogProps) {
                   <SelectValue placeholder="All Levels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="all">All Levels</SelectItem>
                   <SelectItem value="beginner">Beginner</SelectItem>
                   <SelectItem value="intermediate">Intermediate</SelectItem>
                   <SelectItem value="advanced">Advanced</SelectItem>

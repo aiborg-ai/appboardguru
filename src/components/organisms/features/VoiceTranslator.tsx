@@ -396,7 +396,7 @@ export function VoiceTranslator({
                   <SelectValue placeholder="Select speaker..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unknown Speaker</SelectItem>
+                  <SelectItem value="unknown">Unknown Speaker</SelectItem>
                   {participants.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
