@@ -6,6 +6,7 @@ import { QueryProvider } from '@/lib/providers/query-provider'
 import { OrganizationProvider } from '@/contexts/OrganizationContext'
 import { DemoProvider } from '@/contexts/DemoContext'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { CommandBusProvider } from '@/contexts/CommandBusContext'
 import { Toaster } from '@/features/shared/ui/toaster'
 import { ErrorBoundary } from '@/components/error-boundary'
 
@@ -17,14 +18,16 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryProvider>
         <ErrorBoundary level="component">
           <AuthProvider>
-            <DemoProvider>
-              <OrganizationProvider>
-                <TooltipProvider delayDuration={300}>
-                  {children}
-                  <Toaster />
-                </TooltipProvider>
-              </OrganizationProvider>
-            </DemoProvider>
+            <CommandBusProvider>
+              <DemoProvider>
+                <OrganizationProvider>
+                  <TooltipProvider delayDuration={300}>
+                    {children}
+                    <Toaster />
+                  </TooltipProvider>
+                </OrganizationProvider>
+              </DemoProvider>
+            </CommandBusProvider>
           </AuthProvider>
         </ErrorBoundary>
       </QueryProvider>

@@ -30,6 +30,7 @@ export type WorkflowId = Brand<string, 'WorkflowId'>
 export type RuleId = Brand<string, 'RuleId'>
 export type SessionId = Brand<string, 'SessionId'>
 export type NotificationId = Brand<string, 'NotificationId'>
+export type DocumentId = Brand<string, 'DocumentId'>
 
 // Utility functions for creating branded IDs
 export const createUserId = (id: string): UserId => id as UserId
@@ -43,6 +44,7 @@ export const createWorkflowId = (id: string): WorkflowId => id as WorkflowId
 export const createRuleId = (id: string): RuleId => id as RuleId
 export const createSessionId = (id: string): SessionId => id as SessionId
 export const createNotificationId = (id: string): NotificationId => id as NotificationId
+export const createDocumentId = (id: string): DocumentId => id as DocumentId
 
 // Pagination Types
 export interface PaginationParams {

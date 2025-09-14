@@ -19,12 +19,15 @@ import {
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
-import { createSupabaseBrowserClient } from '@/lib/supabase-client'
+import { useDocumentService } from '@/hooks/use-document-service'
+import { useAuth } from '@/contexts/AuthContext'
 import { DocumentUploader } from '@/components/documents/DocumentUploader'
 import { DocumentLibrary } from '@/components/documents/DocumentLibrary'
 import { Badge } from '@/components/ui/badge'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import DashboardLayout from '@/features/dashboard/layout/DashboardLayout'
+import { Document as DomainDocument } from '@/domain/entities/document.entity'
+import { DocumentFilters, DocumentSortOptions } from '@/application/interfaces/repositories/document.repository.interface'
 
 interface Document {
   id: string
@@ -68,6 +71,8 @@ export default function DocumentsPage() {
   })
   
   const { toast } = useToast()
+  const documentService = useDocumentService()
+  const { user } = useAuth()
   
   // Safely use organization context with defensive checks
   let currentOrganization = null
@@ -77,39 +82,44 @@ export default function DocumentsPage() {
   } catch (error) {
     console.error('Organization context error:', error)
   }
-  
-  const supabase = createSupabaseBrowserClient()
 
   // Fetch documents
   useEffect(() => {
-    fetchDocuments()
-  }, [currentOrganization])
+    if (user) {
+      fetchDocuments()
+    }
+  }, [currentOrganization, user])
 
   const fetchDocuments = async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please sign in to view documents',
+        variant: 'destructive'
+      })
+      return
+    }
+
     try {
       setIsLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
       
-      if (!user) {
-        toast({
-          title: 'Authentication required',
-          description: 'Please sign in to view documents',
-          variant: 'destructive'
-        })
-        return
+      // Build filters
+      const filters: DocumentFilters = {}
+      if (currentOrganization) {
+        filters.organizationId = currentOrganization.id
       }
 
-      // Fetch documents where user is owner or has been granted access
-      // Simplified query without joins that might not exist yet
-      const { data: assets, error } = await supabase
-        .from('assets')
-        .select('*')
-        .or(`owner_id.eq.${user.id}`)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: false })
+      // Use CQRS to fetch documents
+      const result = await documentService.getUserDocuments(
+        user.id,
+        filters,
+        { field: 'createdAt', direction: 'desc' },
+        { page: 1, limit: 100 },
+        true // includeShared
+      )
 
-      if (error) {
-        console.error('Error fetching documents:', error)
+      if (!result.success) {
+        console.error('Error fetching documents:', result.error)
         toast({
           title: 'Error',
           description: 'Failed to load documents',
@@ -118,23 +128,36 @@ export default function DocumentsPage() {
         return
       }
 
-      // Transform assets to documents format
-      const transformedDocs: Document[] = (assets || []).map(asset => ({
-        id: asset.id,
-        title: asset.title || asset.file_name || 'Untitled',
-        file_name: asset.file_name,
-        file_type: asset.file_type || 'application/octet-stream',
-        file_size: asset.file_size || 0,
-        file_path: asset.file_url || asset.file_path || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Use a dummy PDF for testing
-        organization_id: asset.organization_id || null,
-        organization: null, // Will be populated when DB is ready
-        vault_associations: [], // Will be populated from vault_assets table
-        shared_with_boardmates: [], // Will be populated from asset_shares table
-        annotation_count: 0, // Will be populated when DB is ready
-        created_at: asset.created_at,
-        updated_at: asset.updated_at,
-        attribution_status: asset.attribution_status || (asset.organization_id ? 'complete' : 'pending')
-      }))
+      // Transform domain documents to UI format
+      const transformedDocs: Document[] = result.data.items.map(doc => {
+        const props = doc.toPersistence()
+        return {
+          id: props.id,
+          title: props.title,
+          file_name: props.title, // Using title as file_name for now
+          file_type: props.type,
+          file_size: props.metadata?.fileSize || 0,
+          file_path: props.metadata?.fileUrl || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+          organization_id: props.organizationId || undefined,
+          organization: props.organizationId ? { 
+            id: props.organizationId, 
+            name: 'Organization' 
+          } : undefined,
+          vault_associations: props.metadata?.vaultIds?.map((vaultId: string) => ({
+            vault_id: vaultId,
+            vault_name: 'Vault'
+          })) || [],
+          shared_with_boardmates: props.collaborators?.map(collab => ({
+            user_id: collab.userId,
+            user_name: 'User',
+            permission: collab.accessLevel
+          })) || [],
+          annotation_count: props.comments?.length || 0,
+          created_at: props.createdAt.toISOString(),
+          updated_at: props.updatedAt.toISOString(),
+          attribution_status: props.organizationId ? 'complete' : 'pending'
+        }
+      })
 
       setDocuments(transformedDocs)
       setFilteredDocuments(transformedDocs)
@@ -151,31 +174,51 @@ export default function DocumentsPage() {
   }
 
   // Handle document upload completion
-  const handleUploadComplete = (newDocument: any) => {
-    toast({
-      title: 'Document uploaded',
-      description: 'Now you can add organization and vault associations',
-    })
-    
-    // Add to documents list
-    const doc: Document = {
-      id: newDocument.id,
-      title: newDocument.title,
-      file_name: newDocument.file_name,
-      file_type: newDocument.file_type,
-      file_size: newDocument.file_size,
-      organization_id: newDocument.organization_id,
-      vault_associations: [],
-      shared_with_boardmates: [],
-      annotation_count: 0,
-      created_at: newDocument.created_at,
-      updated_at: newDocument.updated_at,
-      attribution_status: 'pending'
+  const handleUploadComplete = async (newAsset: any) => {
+    if (!user) return
+
+    try {
+      // Create document using CQRS
+      const result = await documentService.createDocument(
+        {
+          title: newAsset.title || newAsset.file_name || 'Untitled',
+          type: newAsset.file_type || 'other',
+          assetId: newAsset.id,
+          organizationId: currentOrganization?.id,
+          metadata: {
+            fileName: newAsset.file_name,
+            fileSize: newAsset.file_size,
+            mimeType: newAsset.file_type,
+            fileUrl: newAsset.file_url || newAsset.file_path
+          }
+        },
+        user.id
+      )
+
+      if (result.success) {
+        toast({
+          title: 'Document created',
+          description: 'Document has been successfully created in the system',
+        })
+        
+        // Refresh the documents list
+        await fetchDocuments()
+        setActiveTab('library')
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to create document record',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error creating document:', error)
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive'
+      })
     }
-    
-    setDocuments(prev => [doc, ...prev])
-    setFilteredDocuments(prev => [doc, ...prev])
-    setActiveTab('library')
   }
 
   // Filter documents based on search and filters

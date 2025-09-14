@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - main [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - link "BoardGuru Enterprise Board Governance" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e9] [cursor=pointer]:
+            - img "BoardGuru" [ref=e12] [cursor=pointer]
+            - paragraph [ref=e13] [cursor=pointer]: Enterprise Board Governance
+        - heading "Welcome back" [level=2] [ref=e14]
+        - paragraph [ref=e15]: Sign in to your BoardGuru account
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: Email Address
+          - textbox "Enter your email address" [ref=e20]
+        - generic [ref=e21]:
+          - generic [ref=e22]: Password
+          - generic [ref=e23]:
+            - textbox "Enter your password" [ref=e24]
+            - button [ref=e25] [cursor=pointer]:
+              - img [ref=e26] [cursor=pointer]
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - checkbox "Remember me" [ref=e31]
+            - generic [ref=e32]: Remember me
+          - link "Forgot password?" [ref=e34] [cursor=pointer]:
+            - /url: /auth/forgot-password
+        - button "Sign In" [ref=e35] [cursor=pointer]
+        - button "🧪 Quick Test Login (Dev Only)" [ref=e36] [cursor=pointer]
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - paragraph [ref=e39]:
+            - strong [ref=e40]: First time signing in?
+            - text: "If you've been approved but haven't set up your password yet:"
+          - button "🔐 Get Password Setup Link" [ref=e41] [cursor=pointer]
+        - generic [ref=e42]:
+          - paragraph [ref=e43]:
+            - text: Don't have an account?
+            - link "Request access" [ref=e44] [cursor=pointer]:
+              - /url: /
+          - link "Forgot password?" [ref=e45] [cursor=pointer]:
+            - /url: /auth/forgot-password
+      - generic [ref=e47]:
+        - img [ref=e48]
+        - generic [ref=e50]:
+          - heading "Secure Authentication" [level=4] [ref=e51]
+          - paragraph [ref=e52]: Your session is protected with enterprise-grade security. All data is encrypted end-to-end.
+  - region "Notifications (F8)":
+    - list
+```

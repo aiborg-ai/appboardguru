@@ -28,18 +28,23 @@ export class StorageServiceImpl implements IStorageService {
         size: params.content.length,
         mimeType: params.mimeType
       });
-
-      // Ensure bucket exists (this is idempotent in Supabase)
-      const { error: bucketError } = await this.supabase.storage.createBucket(params.bucket, {
-        public: false,
-        allowedMimeTypes: undefined, // Allow all mime types
-        fileSizeLimit: 52428800 // 50MB
-      });
-
-      // Ignore error if bucket already exists
-      if (bucketError && !bucketError.message.includes('already exists')) {
-        console.error('[StorageService] Failed to create bucket:', bucketError);
-        return ResultUtils.fail(new Error(`Failed to create storage bucket: ${bucketError.message}`));
+      // Verify bucket exists without requiring service role.
+      // 1) Try listing buckets (best-effort). Some roles cannot list; continue on permission errors.
+      try {
+        const { data: buckets, error: listErr } = await this.supabase.storage.listBuckets();
+        if (!listErr && buckets) {
+          const found = !!buckets.find(b => b.name === params.bucket || b.id === params.bucket);
+          if (!found) {
+            // Bucket truly missing; return actionable guidance rather than attempting privileged create.
+            console.error('[StorageService] Bucket not found:', params.bucket);
+            return ResultUtils.fail(new Error(
+              `Storage bucket "${params.bucket}" not found. Ask an admin to run database/migrations/20250103_fix_storage_bucket_complete.sql or node src/scripts/setup-storage-buckets.ts`
+            ));
+          }
+        }
+      } catch (e) {
+        // Non-fatal: some auth contexts can’t list buckets; proceed to upload and rely on error handling there.
+        console.warn('[StorageService] Unable to list buckets with current auth; proceeding to upload');
       }
 
       // Upload the file
@@ -59,6 +64,16 @@ export class StorageServiceImpl implements IStorageService {
           // Generate a unique path if file already exists
           const uniquePath = this.generateUniquePath(params.path);
           return this.uploadFile({ ...params, path: uniquePath });
+        }
+        if (error.message.toLowerCase().includes('not found') || error.message.toLowerCase().includes('does not exist')) {
+          return ResultUtils.fail(new Error(
+            `Storage bucket or path not found. Ensure bucket "${params.bucket}" exists and policies are applied (see database/migrations/20250103_fix_storage_bucket_complete.sql)`
+          ));
+        }
+        if (error.message.toLowerCase().includes('permission') || error.message.toLowerCase().includes('policy') || error.message.toLowerCase().includes('unauthor')) {
+          return ResultUtils.fail(new Error(
+            'Permission denied by storage policies. Confirm you are authenticated and storage RLS policies allow INSERT for authenticated users.'
+          ));
         }
         
         return ResultUtils.fail(new Error(`Failed to upload file: ${error.message}`));

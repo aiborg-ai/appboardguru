@@ -11,7 +11,7 @@ import { UploadAssetCommand } from '@/application/cqrs/commands/upload-asset.com
 import { registerAssetHandlers } from '@/application/cqrs/register-asset-handlers';
 import { AssetRepositoryImpl } from '@/infrastructure/repositories/asset.repository.impl';
 import { StorageServiceImpl } from '@/infrastructure/services/storage.service.impl';
-import { createUserId, createOrganizationId, createVaultId } from '@/types/core';
+import { createUserId, createOrganizationId, createVaultId } from '@/types/core/index';
 import type { Database } from '@/types/database';
 
 // Force dynamic rendering
