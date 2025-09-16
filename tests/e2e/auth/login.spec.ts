@@ -1,121 +1,94 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/auth.fixture'
+import { LoginPage } from '../pages/login.page'
 
-test.describe('Authentication Flow', () => {
+test.describe('Authentication - Login', () => {
+  let loginPage: LoginPage
+
   test.beforeEach(async ({ page }) => {
-    // Clear any existing auth state
-    await page.context().clearCookies();
-    await page.goto('/login');
-  });
+    loginPage = new LoginPage(page)
+    await loginPage.goto()
+  })
 
-  test('should display login page correctly', async ({ page }) => {
-    // Check if login page loads
-    await expect(page).toHaveURL(/.*login/);
-    
-    // Check for essential elements
-    await expect(page.locator('h1, h2').filter({ hasText: /sign in|login/i })).toBeVisible();
-    await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.locator('input[type="password"]')).toBeVisible();
-    await expect(page.locator('button[type="submit"]')).toBeVisible();
-  });
+  test('should display login form elements', async ({ page }) => {
+    await expect(page.locator('input[type="email"]')).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toBeVisible()
+    await expect(page.locator('button[type="submit"]')).toBeVisible()
+  })
 
-  test('should show error for invalid credentials', async ({ page }) => {
-    // Enter invalid credentials
-    await page.fill('input[type="email"]', 'invalid@example.com');
-    await page.fill('input[type="password"]', 'wrongpassword');
-    await page.click('button[type="submit"]');
+  test('should show validation errors for empty fields', async () => {
+    await loginPage.clickSignIn()
     
-    // Check for error message
-    const errorMessage = page.locator('text=/invalid|incorrect|error|failed/i');
-    await expect(errorMessage).toBeVisible({ timeout: 10000 });
-  });
+    const emailError = await loginPage.getEmailValidationError()
+    const passwordError = await loginPage.getPasswordValidationError()
+    
+    expect(emailError).toBeTruthy()
+    expect(passwordError).toBeTruthy()
+  })
 
-  test('should show validation errors for empty fields', async ({ page }) => {
-    // Try to submit without filling fields
-    await page.click('button[type="submit"]');
+  test('should show error for invalid credentials', async () => {
+    await loginPage.login('invalid@email.com', 'wrongpassword')
     
-    // Check for validation messages
-    await expect(page.locator('text=/required|enter|provide/i')).toBeVisible();
-  });
+    const errorMessage = await loginPage.getErrorMessage()
+    expect(errorMessage).toContain('Invalid')
+  })
 
-  test('should successfully login with valid credentials', async ({ page }) => {
-    // Enter valid credentials
-    await page.fill('input[type="email"]', 'test.director@appboardguru.com');
-    await page.fill('input[type="password"]', 'TestDirector123!');
+  test('should login successfully with valid credentials', async ({ page, testUser }) => {
+    await loginPage.login(testUser.email, testUser.password)
     
-    // Click login
-    await page.click('button[type="submit"]');
-    
-    // Should redirect to dashboard
-    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15000 });
-    
-    // Check for user menu or profile indicator
-    await expect(page.locator('text=/test.director|TechCorp/i')).toBeVisible({ timeout: 10000 });
-  });
+    await page.waitForURL('**/dashboard/**', { timeout: 10000 })
+    expect(page.url()).toContain('/dashboard')
+  })
 
-  test('should handle "Remember me" functionality', async ({ page }) => {
-    // Check if remember me checkbox exists
-    const rememberMe = page.locator('input[type="checkbox"]').filter({ hasText: /remember/i });
-    if (await rememberMe.count() > 0) {
-      await rememberMe.check();
-      
-      // Login
-      await page.fill('input[type="email"]', 'test.director@appboardguru.com');
-      await page.fill('input[type="password"]', 'TestDirector123!');
-      await page.click('button[type="submit"]');
-      
-      // Wait for dashboard
-      await page.waitForURL('**/dashboard', { timeout: 15000 });
-      
-      // Close and reopen browser context
-      await page.context().close();
-      const newContext = await page.context().browser()?.newContext();
-      const newPage = await newContext?.newPage();
-      
-      if (newPage) {
-        await newPage.goto('/dashboard');
-        // Should still be logged in
-        await expect(newPage).toHaveURL(/.*dashboard/);
-      }
-    }
-  });
-
-  test('should handle logout correctly', async ({ page }) => {
-    // First login
-    await page.fill('input[type="email"]', 'test.director@appboardguru.com');
-    await page.fill('input[type="password"]', 'TestDirector123!');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('**/dashboard', { timeout: 15000 });
+  test('should remember user when remember me is checked', async ({ testUser, page }) => {
+    await loginPage.login(testUser.email, testUser.password, true)
     
-    // Find and click logout
-    const userMenu = page.locator('[data-testid="user-menu"], button:has-text("TD"), button:has-text("test.director")');
-    if (await userMenu.count() > 0) {
-      await userMenu.click();
-      await page.click('text=/logout|sign out/i');
-    } else {
-      // Direct navigation to logout
-      await page.goto('/logout');
-    }
+    await page.waitForURL('**/dashboard/**')
     
-    // Should redirect to login page
-    await expect(page).toHaveURL(/.*login/, { timeout: 10000 });
-  });
+    // Check if remember me cookie is set
+    const cookies = await page.context().cookies()
+    const rememberCookie = cookies.find(c => c.name.includes('remember'))
+    expect(rememberCookie).toBeTruthy()
+  })
 
-  test('should handle password reset flow', async ({ page }) => {
-    // Look for forgot password link
-    const forgotLink = page.locator('a').filter({ hasText: /forgot|reset/i });
-    if (await forgotLink.count() > 0) {
-      await forgotLink.click();
-      
-      // Should show password reset form
-      await expect(page.locator('input[type="email"]')).toBeVisible();
-      await expect(page.locator('button').filter({ hasText: /reset|send/i })).toBeVisible();
-      
-      // Enter email
-      await page.fill('input[type="email"]', 'test.director@appboardguru.com');
-      await page.click('button:has-text(/reset|send/i)');
-      
-      // Check for success message
-      await expect(page.locator('text=/sent|check|email/i')).toBeVisible({ timeout: 10000 });
-    }
-  });
-});
+  test('should redirect to sign-up page', async ({ page }) => {
+    await loginPage.clickSignUp()
+    await page.waitForURL('**/sign-up')
+    expect(page.url()).toContain('/sign-up')
+  })
+
+  test('should redirect to forgot password page', async ({ page }) => {
+    await loginPage.clickForgotPassword()
+    await page.waitForURL('**/forgot-password')
+    expect(page.url()).toContain('/forgot-password')
+  })
+
+  test('should show loading state during login', async ({ testUser }) => {
+    const loginPromise = loginPage.login(testUser.email, testUser.password)
+    
+    const isLoading = await loginPage.isLoading()
+    expect(isLoading).toBeTruthy()
+    
+    await loginPromise
+  })
+
+  test('should disable sign in button with invalid email', async () => {
+    await loginPage.fillEmail('invalid-email')
+    await loginPage.fillPassword('password123')
+    
+    const isEnabled = await loginPage.isSignInButtonEnabled()
+    expect(isEnabled).toBeFalsy()
+  })
+
+  test('should clear form fields', async ({ page }) => {
+    await loginPage.fillEmail('test@example.com')
+    await loginPage.fillPassword('password123')
+    
+    await loginPage.clearForm()
+    
+    const emailInput = page.locator('input[type="email"]')
+    const passwordInput = page.locator('input[type="password"]')
+    
+    await expect(emailInput).toHaveValue('')
+    await expect(passwordInput).toHaveValue('')
+  })
+})
