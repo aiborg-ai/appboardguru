@@ -116,16 +116,63 @@ await user.publishDomainEvents();
 - `/src/lib/supabase-client.ts` - Complete rewrite for cookie-based storage
 - `/src/contexts/AuthContext.tsx` - Added centralized auth state management
 
+### Document Upload Issue (FIXED - Sep 17, 2025)
+**Problem**: Users unable to upload documents in the Documents page.
+
+**Root Causes**:
+1. API response structure mismatch between upload route and DocumentUploader component
+2. Storage bucket configuration needed verification
+
+**Solution**:
+- Fixed API response handling to support both `result.asset` and `result.data.asset` formats
+- Verified Supabase storage bucket 'assets' exists with proper RLS policies
+- Created diagnostic endpoint at `/api/assets/diagnose` for troubleshooting
+
+**Files Modified**:
+- `/src/components/documents/DocumentUploader.tsx` - Fixed response structure handling
+- `/src/app/api/assets/diagnose/route.ts` - Added diagnostic endpoint
+- `/scripts/test-upload.js` - Created test script for upload verification
+
+## 🚀 Deployment Information
+
+### GitHub Repository
+- **Primary**: https://github.com/aiborg-ai/appboardguru
+- **Alternative**: https://github.com/BoardGuruHV/appboardguru
+
+### Vercel Deployment
+- **Project URL**: https://vercel.com/h-viks-projects/app-boardguru
+- **Deployments**: https://vercel.com/h-viks-projects/app-boardguru/deployments
+- **Production URL**: https://appboardguru.vercel.app
+
+### Deployment Configuration
+- **Auto-deploy**: Enabled via GitHub integration (triggers on push to main branch)
+- **Build Command**: `rm -rf .next && SKIP_ENV_VALIDATION=true npm run build`
+- **Install Command**: `npm cache clean --force && npm install --force`
+- **Framework**: Next.js
+- **Node Version**: 18.x
+- **Environment Variables**: Configured in Vercel dashboard
+
+### Latest Deployment (Sep 17, 2025)
+- **Commit**: `78d1b3cf` - Fixed document upload functionality
+- **Status**: Auto-deployed via GitHub integration
+- **Changes**: Document upload fixes, API response structure improvements
+
+### Supabase Configuration
+- **Storage Buckets**: 
+  - `assets` - Main document storage (private, 50MB limit)
+  - `email-assets` - Email attachment storage
+- **RLS Policies**: Configured for authenticated users (INSERT, SELECT, UPDATE, DELETE)
+
 ## Important Notes
 
 - **Test User**: `test.director@appboardguru.com` / Password: `TestDirector123!`
 - **Architecture Docs**: See `ARCHITECTURE.md` for full details
 - **Migration Guide**: See `MIGRATION_GUIDE.md` for step-by-step instructions
 - **Refactor Plan**: See `REFACTOR_PLAN.md` for 12-week roadmap
+- **AI Features**: See `AI_INVESTMENT_FEATURES.md` for implementation tracking
 
 ---
 
-*Last Updated: August 2025*
+*Last Updated: September 17, 2025*
 *Architecture: Hexagonal (DDD) + CQRS + Event-Driven*
 *Status: Production Ready for 500+ Features*
-- but i checked that these values are already same in Vercel, i didnt have to change anything, can yo0u diagnose thge error once more
