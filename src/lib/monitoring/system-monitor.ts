@@ -433,12 +433,8 @@ export class SystemMonitor {
   private initializeHealthChecks(): void {
     // Database health check
     this.addHealthCheck('database', async () => {
-      try {
-        // Simple connectivity test - would be replaced with actual DB ping
-        return true
-      } catch {
-        return false
-      }
+      // Simple connectivity test - would be replaced with actual DB ping
+      return true
     })
 
     // API health check

@@ -88,10 +88,10 @@ describe('Advanced Type Bridge', () => {
 
       const formBridge = createFormBridge(initialData, {
         fieldTransformers: {
-          expiresIn: value: unknown) => typeof value === 'string' ? parseInt(value, 10) : value
+          expiresIn: (value: unknown) => typeof value === 'string' ? parseInt(value, 10) : value
         },
         fieldValidators: {
-          expiresIn: value: unknown) => {
+          expiresIn: (value: unknown) => {
             const num = typeof value === 'string' ? parseInt(value, 10) : value
             return (num >= 1 && num <= 168) ? true : 'Invalid expiration time'
           }

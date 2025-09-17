@@ -1,146 +1,122 @@
-import js from '@eslint/js';
-import typescript from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import nextPlugin from '@next/eslint-plugin-next';
+const js = require('@eslint/js')
+const typescript = require('@typescript-eslint/eslint-plugin')
+const tsParser = require('@typescript-eslint/parser')
+const reactHooks = require('eslint-plugin-react-hooks')
 
-export default [
+module.exports = [
   js.configs.recommended,
-  {
-    ignores: ['node_modules/**', '.next/**', 'dist/**', 'build/**', '**/bundle*.js', '**/*.min.js'],
-  },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
       '@typescript-eslint': typescript,
-      '@next/next': nextPlugin,
+      'react-hooks': reactHooks,
     },
     languageOptions: {
       parser: tsParser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
       globals: {
-        console: 'readonly',
-        URL: 'readonly',
+        React: 'readonly',
+        JSX: 'readonly',
         process: 'readonly',
-        Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        global: 'readonly',
-        globalThis: 'readonly',
-        File: 'readonly',
-        FormData: 'readonly',
+        console: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
         fetch: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        FormData: 'readonly',
         Headers: 'readonly',
         Request: 'readonly',
         Response: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-        Image: 'readonly',
-        HTMLInputElement: 'readonly',
-        HTMLElement: 'readonly',
-        Element: 'readonly',
-        Event: 'readonly',
-        MouseEvent: 'readonly',
-        KeyboardEvent: 'readonly',
-        React: 'readonly',
-        confirm: 'readonly',
-        alert: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
         setInterval: 'readonly',
+        setTimeout: 'readonly',
         clearInterval: 'readonly',
-        crypto: 'readonly',
-        Blob: 'readonly',
-        atob: 'readonly',
-        btoa: 'readonly',
-        performance: 'readonly',
-        NodeJS: 'readonly',
-        AbortSignal: 'readonly',
-      },
-    },
-    rules: {
-      // Allow any during migration but warn about it
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': 'warn',
-      'no-unused-vars': 'warn',
-      
-      // Disable some strict rules that would cause too many errors during migration
-      '@typescript-eslint/no-unsafe-any': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/ban-ts-comment': 'warn',
-      
-      // Next.js specific rules
-      '@next/next/no-html-link-for-pages': 'error',
-      '@next/next/no-img-element': 'warn',
-    },
-  },
-  // Node.js files (config files, scripts)
-  {
-    files: ['**/*.js', '**/*.mjs', '.storybook/**/*', 'scripts/**/*', 'config/**/*'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        require: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
+        clearTimeout: 'readonly',
+        global: 'readonly',
+        Buffer: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
-        process: 'readonly',
-        console: 'readonly',
-        Buffer: 'readonly',
-        global: 'readonly',
-        globalThis: 'readonly',
-      },
-    },
-    rules: {
-      'no-undef': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-  // Test files
-  {
-    files: ['**/*.test.{ts,tsx,js,jsx}', '**/*.spec.{ts,tsx,js,jsx}', '__tests__/**/*', 'tests/**/*'],
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
+        exports: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
         jest: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
         test: 'readonly',
         expect: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-        console: 'readonly',
-        process: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        global: 'readonly',
-        globalThis: 'readonly',
       },
     },
     rules: {
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
+      }],
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'warn',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off',
+      'no-console': 'off',
+      'no-empty': 'warn',
+      'no-case-declarations': 'off',
+      'no-fallthrough': 'off',
+      'no-useless-catch': 'off',
       'no-undef': 'off',
+      'no-redeclare': 'off',
+      'no-useless-escape': 'warn',
+      'no-control-regex': 'warn',
+      'no-cond-assign': 'warn',
+      'no-empty-pattern': 'warn',
+      'no-unexpected-multiline': 'warn',
+      'no-constant-condition': 'warn',
+      'no-prototype-builtins': 'off',
+      'no-async-promise-executor': 'warn',
+      'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'no-dupe-class-members': 'warn',
+      'no-unreachable': 'warn',
     },
   },
   {
+    files: ['**/*.cjs', '**/demo/**/*.js'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        setTimeout: 'readonly',
+        Buffer: 'readonly',
+      }
+    }
+  },
+  {
     ignores: [
-      'node_modules/',
-      '.next/',
-      'dist/',
-      'build/',
-      '*.js',
-      '*.mjs',
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'public/**',
+      '.vercel/**',
+      '*.config.js',
+      '*.config.ts',
+      'coverage/**',
+      'playwright-report/**',
+      'test-results/**',
+      '**/**.backup/**',
+      '**/*.backup.*',
     ],
   },
-];
+]

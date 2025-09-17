@@ -66,8 +66,8 @@ function validateCreateRequest(data: any): { isValid: boolean; errors: string[];
     }
 
     if (personal.phoneNumber && typeof personal.phoneNumber === 'string') {
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
-      if (!phoneRegex.test(personal.phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+      const phoneRegex = /^[+]?[1-9][\d]{0,15}$/
+      if (!phoneRegex.test(personal.phoneNumber.replace(/[\s\-()]/g, ''))) {
         errors.push('Invalid phone number format')
       }
     }

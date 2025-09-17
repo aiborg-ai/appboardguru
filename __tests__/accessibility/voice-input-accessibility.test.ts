@@ -218,9 +218,9 @@ describe('Voice Input Accessibility Tests', () => {
   describe('WCAG 2.1 Compliance', () => {
     
     test('should pass automated accessibility audit', async () => {
-      const onTranscription = jest.fn()
+      const onVoiceInput = jest.fn()
       const { container } = render(
-        <VoiceInputButton onTranscription={onTranscription} />
+        <VoiceInputButton onVoiceInput={onVoiceInput} />
       )
       
       // Run axe accessibility audit

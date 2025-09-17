@@ -1027,8 +1027,8 @@ export class EnhancedWebSocketCoordinatorService extends BaseService {
   }
 
   // Expose specific feature methods to maintain compatibility
-  async sendComplianceAlert = this.baseCoordinator.sendComplianceAlert.bind(this.baseCoordinator)
-  async sendMeetingWorkflowUpdate = this.baseCoordinator.sendMeetingWorkflowUpdate.bind(this.baseCoordinator)
-  async sendDocumentCollaborationSync = this.baseCoordinator.sendDocumentCollaborationSync.bind(this.baseCoordinator)
-  async sendAIInsightsReady = this.baseCoordinator.sendAIInsightsReady.bind(this.baseCoordinator)
+  sendComplianceAlert = this.baseCoordinator.sendComplianceAlert.bind(this.baseCoordinator)
+  sendMeetingWorkflowUpdate = this.baseCoordinator.sendMeetingWorkflowUpdate.bind(this.baseCoordinator)
+  sendDocumentCollaborationSync = this.baseCoordinator.sendDocumentCollaborationSync.bind(this.baseCoordinator)
+  sendAIInsightsReady = this.baseCoordinator.sendAIInsightsReady.bind(this.baseCoordinator)
 }

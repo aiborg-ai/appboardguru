@@ -32,7 +32,7 @@ function sanitizeInput(input: string): string {
 function sanitizeFolderPath(path: string): string {
   return path
     .replace(/^\/+|\/+$/g, '')
-    .replace(/[^a-zA-Z0-9\-_\/]/g, '_')
+    .replace(/[^a-zA-Z0-9\-_/]/g, '_')
     .replace(/\/+/g, '/')
 }
 

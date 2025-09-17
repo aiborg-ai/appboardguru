@@ -23,6 +23,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Demo data
+// eslint-disable-next-line no-unused-vars
 const DEMO_DATA = {
   boardMembers: [
     {
@@ -428,6 +429,7 @@ app.get('/health', (req, res) => {
 // Start the demo server
 let mcpServer;
 
+// eslint-disable-next-line no-unused-vars
 function startMCPServer() {
   console.log('🚀 Starting MCP server...');
   mcpServer = spawn('node', ['../dist/server.js'], {

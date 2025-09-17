@@ -173,7 +173,8 @@ export function DocumentUploader({ onUploadComplete, currentOrganization }: Docu
         return newFiles
       })
 
-      const asset = result.asset
+      // Handle both response formats for backward compatibility
+      const asset = result.data?.asset || result.asset
 
       // Update file status
       setFiles(prev => {
